@@ -7,9 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
-import DetailedAnalysis from "./pages/DetailedAnalysis";
-import Profile from "./pages/Profile";
-import SignupForm from "./components/SignupForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,11 +19,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/signup" element={<SignupForm />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/predictions" element={<Predictions />} />
-          <Route path="/prediction/:symbol" element={<DetailedAnalysis />} />
+          <Route path="/prediction/:symbol" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

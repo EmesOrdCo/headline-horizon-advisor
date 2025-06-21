@@ -28,7 +28,7 @@ const Hero = () => {
               placeholder="Enter your email"
               className="px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 flex-1 max-w-sm focus:outline-none focus:border-emerald-500"
             />
-            <Link to="/signup">
+            <Link to="/dashboard">
               <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 text-lg">
                 Start Free Trial →
               </Button>
