@@ -7,6 +7,7 @@ import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import PredictionCard from "@/components/PredictionCard";
 import AnalysisPipeline from "@/components/AnalysisPipeline";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Dashboard = () => {
   const newsItems = [
@@ -89,30 +90,56 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col">
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
-              <div className="space-y-4">
-                {newsItems.slice(1).map((item, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                        {item.symbol}
-                      </Badge>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium mb-1 line-clamp-2">
-                        {item.title}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge className={`${item.sentiment === 'Bullish' ? 'bg-emerald-500' : 'bg-red-500'} text-white text-xs`}>
-                          {item.sentiment?.toUpperCase()}
+              <ScrollArea className="flex-1">
+                <div className="space-y-4 pr-4">
+                  {newsItems.slice(1).map((item, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
+                          {item.symbol}
                         </Badge>
-                        <span className="text-slate-400">{item.timeAgo}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium mb-1 line-clamp-2">
+                          {item.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Badge className={`${item.sentiment === 'Bullish' ? 'bg-emerald-500' : 'bg-red-500'} text-white text-xs`}>
+                            {item.sentiment?.toUpperCase()}
+                          </Badge>
+                          <span className="text-slate-400">{item.timeAgo}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {/* Add more dummy headlines to demonstrate scrolling */}
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <div key={`extra-${i}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
+                          {i % 2 === 0 ? 'MSFT' : 'GOOGL'}
+                        </Badge>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium mb-1 line-clamp-2">
+                          {i % 2 === 0 
+                            ? 'Microsoft announces new AI partnership with OpenAI' 
+                            : 'Google reports strong cloud growth in Q4 earnings'
+                          }
+                        </p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Badge className={`${i % 2 === 0 ? 'bg-emerald-500' : 'bg-red-500'} text-white text-xs`}>
+                            {i % 2 === 0 ? 'BULLISH' : 'BEARISH'}
+                          </Badge>
+                          <span className="text-slate-400">{10 + i}m ago</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </div>
