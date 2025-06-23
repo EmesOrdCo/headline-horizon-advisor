@@ -1,6 +1,5 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 
 interface NewsCardProps {
@@ -20,7 +19,11 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Badge className="bg-blue-500 text-white">{symbol}</Badge>
         {priority && (
-          <Badge className={`${priority === 'HIGH' ? 'bg-red-500' : 'bg-orange-500'} text-white`}>
+          <Badge className={`${
+            priority === 'HIGH' ? 'bg-red-500' : 
+            priority === 'MEDIUM' ? 'bg-orange-500' : 
+            'bg-gray-500'
+          } text-white`}>
             {priority}
           </Badge>
         )}
@@ -43,7 +46,7 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
               </Badge>
             </div>
             <p className="text-slate-300 text-sm mb-3">
-              Based on historical analysis of similar earnings beats, {symbol} is expected to see continued upward momentum.
+              Based on AI analysis of this news and market patterns, {symbol} shows potential for movement.
             </p>
             
             <div className="mb-2">
@@ -64,7 +67,11 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
             <div className="mb-4">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-slate-400">Market Sentiment</span>
-                <span className="text-emerald-400 font-semibold">{sentiment}</span>
+                <span className={`font-semibold ${
+                  sentiment === 'Bullish' ? 'text-emerald-400' :
+                  sentiment === 'Bearish' ? 'text-red-400' :
+                  'text-gray-400'
+                }`}>{sentiment}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                 <span>Bearish</span>
@@ -72,14 +79,24 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
                 <span>Bullish</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2 relative">
-                <div className="absolute right-0 bg-emerald-500 h-2 rounded-full w-1/3"></div>
+                <div 
+                  className={`absolute h-2 rounded-full w-1/3 ${
+                    sentiment === 'Bullish' ? 'right-0 bg-emerald-500' :
+                    sentiment === 'Bearish' ? 'left-0 bg-red-500' :
+                    'left-1/3 bg-gray-500'
+                  }`}
+                ></div>
               </div>
             </div>
           )}
           
           {category && (
             <div className="flex items-center gap-2">
-              <Badge className="bg-emerald-500 text-white text-xs">{sentiment?.toUpperCase()}</Badge>
+              <Badge className={`${
+                sentiment === 'Bullish' ? 'bg-emerald-500' :
+                sentiment === 'Bearish' ? 'bg-red-500' :
+                'bg-gray-500'
+              } text-white text-xs`}>{sentiment?.toUpperCase()}</Badge>
               <span className="text-slate-400 text-sm">{category}</span>
             </div>
           )}

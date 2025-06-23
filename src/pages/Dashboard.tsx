@@ -1,41 +1,42 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, TrendingUp, TrendingDown } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import PredictionCard from "@/components/PredictionCard";
 import AnalysisPipeline from "@/components/AnalysisPipeline";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const newsItems = [
-    {
-      symbol: "AAPL",
-      priority: "HIGH",
-      title: "Apple announces record quarterly earnings, beats estimates by 15%",
-      description: "Apple Inc. reported its strongest quarterly performance in company history, with revenue jumping 18% year-over-year driven by iPhone and services growth.",
-      prediction: "+2.8% (24h)",
-      confidence: 85,
-      sentiment: "Bullish",
-      category: "Technology"
-    },
-    {
-      symbol: "TSLA", 
-      priority: "MEDIUM",
-      title: "Tesla recalls 200,000 vehicles due to software issue",
-      sentiment: "Bearish",
-      timeAgo: "5m ago"
-    },
-    {
-      symbol: "NVDA",
-      title: "NVIDIA partners with Microsoft for AI chip development", 
-      priority: "HIGH",
-      sentiment: "Bullish",
-      timeAgo: "8m ago"
+  const { data: newsData, isLoading, refetch } = useNews();
+  const fetchNews = useFetchNews();
+  const [isFetching, setIsFetching] = useState(false);
+  const { toast } = useToast();
+
+  const handleRefreshNews = async () => {
+    setIsFetching(true);
+    try {
+      await fetchNews();
+      await refetch();
+      toast({
+        title: "News Updated",
+        description: "Latest news has been fetched and analyzed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch news. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetching(false);
     }
-  ];
+  };
 
   const predictions = [
     {
@@ -70,22 +71,52 @@ const Dashboard = () => {
       
       <main className="p-6 max-w-7xl mx-auto">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-white">Live Market News</h1>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-emerald-400 text-sm font-medium">LIVE</span>
-              <span className="text-slate-400 text-sm">Updated 2m ago</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">Live Market News</h1>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-emerald-400 text-sm font-medium">LIVE</span>
+                <span className="text-slate-400 text-sm">AI Analyzed</span>
+              </div>
             </div>
+            <Button 
+              onClick={handleRefreshNews}
+              disabled={isFetching}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh News
+            </Button>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-12">
           <div className="lg:col-span-2">
             <div className="space-y-4">
-              {newsItems.map((item, index) => (
-                <NewsCard key={index} {...item} />
-              ))}
+              {isLoading ? (
+                <div className="text-center text-slate-400 py-8">
+                  Loading news...
+                </div>
+              ) : newsData && newsData.length > 0 ? (
+                newsData.slice(0, 3).map((item, index) => (
+                  <NewsCard 
+                    key={item.id} 
+                    symbol={item.symbol}
+                    priority={item.priority}
+                    title={item.title}
+                    description={item.description}
+                    prediction={item.ai_prediction}
+                    confidence={item.ai_confidence}
+                    sentiment={item.ai_sentiment}
+                    category={item.category}
+                  />
+                ))
+              ) : (
+                <div className="text-center text-slate-400 py-8">
+                  No news available. Click "Refresh News" to fetch the latest headlines.
+                </div>
+              )}
             </div>
           </div>
           
@@ -94,8 +125,8 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {newsItems.slice(1).map((item, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                  {newsData && newsData.slice(3).map((item, index) => (
+                    <div key={item.id} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
                           {item.symbol}
@@ -106,34 +137,12 @@ const Dashboard = () => {
                           {item.title}
                         </p>
                         <div className="flex items-center gap-2 text-xs">
-                          <Badge className={`${item.sentiment === 'Bullish' ? 'bg-emerald-500' : 'bg-red-500'} text-white text-xs`}>
-                            {item.sentiment?.toUpperCase()}
+                          <Badge className={`${item.ai_sentiment === 'Bullish' ? 'bg-emerald-500' : item.ai_sentiment === 'Bearish' ? 'bg-red-500' : 'bg-gray-500'} text-white text-xs`}>
+                            {item.ai_sentiment?.toUpperCase()}
                           </Badge>
-                          <span className="text-slate-400">{item.timeAgo}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {/* Add more dummy headlines to demonstrate scrolling */}
-                  {Array.from({ length: 10 }, (_, i) => (
-                    <div key={`extra-${i}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                          {i % 2 === 0 ? 'MSFT' : 'GOOGL'}
-                        </Badge>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium mb-1 line-clamp-2">
-                          {i % 2 === 0 
-                            ? 'Microsoft announces new AI partnership with OpenAI' 
-                            : 'Google reports strong cloud growth in Q4 earnings'
-                          }
-                        </p>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Badge className={`${i % 2 === 0 ? 'bg-emerald-500' : 'bg-red-500'} text-white text-xs`}>
-                            {i % 2 === 0 ? 'BULLISH' : 'BEARISH'}
-                          </Badge>
-                          <span className="text-slate-400">{10 + i}m ago</span>
+                          <span className="text-slate-400">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                     </div>
