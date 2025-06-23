@@ -13,6 +13,9 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
+// Magnificent 7 stocks
+const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,107 +29,153 @@ serve(async (req) => {
       throw new Error('Missing API keys');
     }
 
-    console.log('Fetching news from MarketAux...');
+    console.log('Starting iterative news fetching for Magnificent 7...');
     
-    // Fetch news from MarketAux
-    const newsResponse = await fetch(
-      `https://api.marketaux.com/v1/news/all?symbols=TSLA,AAPL,NVDA,MSFT,GOOGL&filter_entities=true&language=en&api_token=${marketauxApiKey}`
-    );
-
-    if (!newsResponse.ok) {
-      throw new Error(`MarketAux API error: ${newsResponse.status}`);
-    }
-
-    const newsData = await newsResponse.json();
-    console.log(`Fetched ${newsData.data?.length || 0} articles`);
-
     const analyzedNews = [];
+    const stockAnalysis = new Map(); // Track one analysis per stock
+    let totalFetched = 0;
+    let page = 0;
 
-    // Process first 5 articles
-    for (const article of (newsData.data || []).slice(0, 5)) {
-      console.log(`Analyzing article: ${article.title}`);
+    // Continue fetching until we have analysis for all Magnificent 7 stocks or reach limit
+    while (stockAnalysis.size < MAGNIFICENT_7.length && totalFetched < 100) {
+      console.log(`Fetching page ${page + 1}...`);
+      
+      // Fetch news from MarketAux with pagination
+      const newsResponse = await fetch(
+        `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${page}&api_token=${marketauxApiKey}`
+      );
 
-      // Analyze with ChatGPT
-      const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a financial analyst. Analyze the given news article and provide a JSON response with: prediction (string like "+2.8% (24h)" or "-1.5% (24h)"), confidence (number 1-100), sentiment ("Bullish", "Bearish", or "Neutral"), priority ("HIGH", "MEDIUM", "LOW"), and category. Be realistic and conservative with predictions.'
-            },
-            {
-              role: 'user',
-              content: `Title: ${article.title}\nDescription: ${article.description}\nSymbols: ${article.entities?.map(e => e.symbol).join(', ') || 'Unknown'}`
-            }
-          ],
-          response_format: { type: "json_object" }
-        }),
-      });
-
-      if (!chatResponse.ok) {
-        console.error(`OpenAI API error: ${chatResponse.status}`);
-        continue;
+      if (!newsResponse.ok) {
+        throw new Error(`MarketAux API error: ${newsResponse.status}`);
       }
 
-      const chatData = await chatResponse.json();
-      const analysis = JSON.parse(chatData.choices[0].message.content);
+      const newsData = await newsResponse.json();
+      const articles = newsData.data || [];
+      
+      if (articles.length === 0) {
+        console.log('No more articles available');
+        break;
+      }
 
-      // Get primary symbol
-      const symbol = article.entities?.[0]?.symbol || 'MARKET';
+      console.log(`Fetched ${articles.length} articles from page ${page + 1}`);
+      totalFetched += articles.length;
 
-      const processedArticle = {
-        symbol,
-        title: article.title,
-        description: article.description,
-        prediction: analysis.prediction,
-        confidence: analysis.confidence,
-        sentiment: analysis.sentiment,
-        priority: analysis.priority,
-        category: analysis.category || 'Technology',
-        url: article.url,
-        published_at: article.published_at,
-        ai_confidence: analysis.confidence,
-        ai_prediction: analysis.prediction,
-        ai_sentiment: analysis.sentiment,
-        ai_reasoning: `Analysis based on: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`
-      };
+      // Process articles for stocks we don't have analysis for yet
+      for (const article of articles) {
+        const symbol = article.entities?.[0]?.symbol;
+        
+        // Skip if not Magnificent 7 or already analyzed
+        if (!symbol || !MAGNIFICENT_7.includes(symbol) || stockAnalysis.has(symbol)) {
+          continue;
+        }
 
-      analyzedNews.push(processedArticle);
+        console.log(`Analyzing article for ${symbol}: ${article.title}`);
 
-      // Store in database
+        try {
+          // Analyze with ChatGPT
+          const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a financial analyst. Analyze the given news article and provide a JSON response with: prediction (string like "+2.8% (24h)" or "-1.5% (24h)"), confidence (number 1-100), sentiment ("Bullish", "Bearish", or "Neutral"), priority ("HIGH", "MEDIUM", "LOW"), and category. Be realistic and conservative with predictions. Make a clear decision on sentiment - avoid neutral unless truly uncertain.'
+                },
+                {
+                  role: 'user',
+                  content: `Title: ${article.title}\nDescription: ${article.description}\nSymbol: ${symbol}`
+                }
+              ],
+              response_format: { type: "json_object" }
+            }),
+          });
+
+          if (!chatResponse.ok) {
+            console.error(`OpenAI API error for ${symbol}: ${chatResponse.status}`);
+            continue;
+          }
+
+          const chatData = await chatResponse.json();
+          const analysis = JSON.parse(chatData.choices[0].message.content);
+
+          const processedArticle = {
+            symbol,
+            title: article.title,
+            description: article.description,
+            prediction: analysis.prediction,
+            confidence: analysis.confidence,
+            sentiment: analysis.sentiment,
+            priority: analysis.priority,
+            category: analysis.category || 'Technology',
+            url: article.url,
+            published_at: article.published_at,
+            ai_confidence: analysis.confidence,
+            ai_prediction: analysis.prediction,
+            ai_sentiment: analysis.sentiment,
+            ai_reasoning: `Analysis based on: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`
+          };
+
+          // Store this as the analysis for this stock
+          stockAnalysis.set(symbol, processedArticle);
+          analyzedNews.push(processedArticle);
+
+          console.log(`Successfully analyzed ${symbol} with ${analysis.sentiment} sentiment`);
+
+        } catch (error) {
+          console.error(`Error analyzing article for ${symbol}:`, error);
+        }
+      }
+
+      page++;
+      
+      // Add delay between API calls to respect rate limits
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Store all analyzed articles in database
+    for (const article of analyzedNews) {
+      // Delete existing articles for this symbol to ensure only one per stock
+      await supabase
+        .from('news_articles')
+        .delete()
+        .eq('symbol', article.symbol);
+
+      // Insert new analysis
       const { error } = await supabase
         .from('news_articles')
-        .upsert({
-          title: processedArticle.title,
-          description: processedArticle.description,
-          symbol: processedArticle.symbol,
-          url: processedArticle.url,
-          published_at: processedArticle.published_at,
-          ai_confidence: processedArticle.ai_confidence,
-          ai_prediction: processedArticle.ai_prediction,
-          ai_sentiment: processedArticle.ai_sentiment,
-          ai_reasoning: processedArticle.ai_reasoning,
-          priority: processedArticle.priority,
-          category: processedArticle.category
+        .insert({
+          title: article.title,
+          description: article.description,
+          symbol: article.symbol,
+          url: article.url,
+          published_at: article.published_at,
+          ai_confidence: article.ai_confidence,
+          ai_prediction: article.ai_prediction,
+          ai_sentiment: article.ai_sentiment,
+          ai_reasoning: article.ai_reasoning,
+          priority: article.priority,
+          category: article.category
         });
 
       if (error) {
-        console.error('Database error:', error);
+        console.error(`Database error for ${article.symbol}:`, error);
       }
     }
 
-    console.log(`Successfully analyzed ${analyzedNews.length} articles`);
+    console.log(`Successfully analyzed ${analyzedNews.length} stocks from ${totalFetched} total articles`);
+    console.log(`Stocks analyzed: ${Array.from(stockAnalysis.keys()).join(', ')}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
       articles: analyzedNews,
-      count: analyzedNews.length 
+      count: analyzedNews.length,
+      stocksAnalyzed: Array.from(stockAnalysis.keys()),
+      totalArticlesProcessed: totalFetched
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

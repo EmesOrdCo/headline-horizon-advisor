@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
+import AnalysisPipeline from "@/components/AnalysisPipeline";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 
@@ -18,10 +19,13 @@ const Index = () => {
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-16">Powered by Advanced AI</h2>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+          <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-16">
             Our platform combines cutting-edge machine learning with real-time market 
             data to give you the edge you need.
           </p>
+          <div className="max-w-7xl mx-auto">
+            <AnalysisPipeline />
+          </div>
         </div>
       </section>
       <Pricing />

@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import PredictionCard from "@/components/PredictionCard";
-import AnalysisPipeline from "@/components/AnalysisPipeline";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useState } from "react";
@@ -18,6 +17,11 @@ const Dashboard = () => {
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
+  // Filter for Magnificent 7 stocks only
+  const magnificent7News = newsData?.filter(item => 
+    ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'].includes(item.symbol)
+  ) || [];
+
   const handleRefreshNews = async () => {
     setIsFetching(true);
     try {
@@ -25,7 +29,7 @@ const Dashboard = () => {
       await refetch();
       toast({
         title: "News Updated",
-        description: "Latest news has been fetched and analyzed.",
+        description: "Latest news has been fetched and analyzed for Magnificent 7 stocks.",
       });
     } catch (error) {
       toast({
@@ -73,7 +77,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">Live Market News</h1>
+              <h1 className="text-3xl font-bold text-white">Magnificent 7 Market News</h1>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-400 text-sm font-medium">LIVE</span>
@@ -89,6 +93,7 @@ const Dashboard = () => {
               Refresh News
             </Button>
           </div>
+          <p className="text-slate-400">Latest AI-analyzed news for Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, and Meta</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-12">
@@ -96,10 +101,10 @@ const Dashboard = () => {
             <div className="space-y-4">
               {isLoading ? (
                 <div className="text-center text-slate-400 py-8">
-                  Loading news...
+                  Loading Magnificent 7 news...
                 </div>
-              ) : newsData && newsData.length > 0 ? (
-                newsData.slice(0, 3).map((item, index) => (
+              ) : magnificent7News && magnificent7News.length > 0 ? (
+                magnificent7News.slice(0, 3).map((item, index) => (
                   <NewsCard 
                     key={item.id} 
                     symbol={item.symbol}
@@ -114,7 +119,7 @@ const Dashboard = () => {
                 ))
               ) : (
                 <div className="text-center text-slate-400 py-8">
-                  No news available. Click "Refresh News" to fetch the latest headlines.
+                  No Magnificent 7 news available. Click "Refresh News" to fetch the latest headlines.
                 </div>
               )}
             </div>
@@ -122,10 +127,10 @@ const Dashboard = () => {
           
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col">
-              <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Other Magnificent 7 Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {newsData && newsData.slice(3).map((item, index) => (
+                  {magnificent7News && magnificent7News.slice(3).map((item, index) => (
                     <div key={item.id} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
@@ -152,8 +157,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        <AnalysisPipeline />
         
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
