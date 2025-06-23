@@ -11,9 +11,10 @@ interface NewsCardProps {
   confidence?: number;
   sentiment?: string;
   category?: string;
+  isHistorical?: boolean;
 }
 
-const NewsCard = ({ symbol, priority, title, description, prediction, confidence, sentiment, category }: NewsCardProps) => {
+const NewsCard = ({ symbol, priority, title, description, prediction, confidence, sentiment, category, isHistorical }: NewsCardProps) => {
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -25,6 +26,11 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
             'bg-gray-500'
           } text-white`}>
             {priority}
+          </Badge>
+        )}
+        {isHistorical && (
+          <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 text-xs">
+            HISTORICAL*
           </Badge>
         )}
       </div>
@@ -46,7 +52,10 @@ const NewsCard = ({ symbol, priority, title, description, prediction, confidence
               </Badge>
             </div>
             <p className="text-slate-300 text-sm mb-3">
-              Based on AI analysis of this news and market patterns, {symbol} shows potential for movement.
+              {isHistorical 
+                ? `*Based on historical market analysis and trends for ${symbol}.`
+                : `Based on AI analysis of this news and market patterns, ${symbol} shows potential for movement.`
+              }
             </p>
             
             <div className="mb-2">

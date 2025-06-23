@@ -29,7 +29,7 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get additional headlines (without AI analysis)
+  // Get additional headlines (all 40 articles for Other Headlines section)
   const additionalHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
     (!item.ai_prediction || !item.ai_confidence || !item.ai_sentiment)
@@ -116,8 +116,8 @@ const Dashboard = () => {
                 <div className="text-center text-slate-400 py-8">
                   Loading Magnificent 7 news...
                 </div>
-              ) : mainAnalysisArticles && mainAnalysisArticles.length > 0 ? (
-                // Create 7 boxes, one for each Magnificent 7 stock
+              ) : (
+                // Always show 7 boxes, one for each Magnificent 7 stock
                 MAGNIFICENT_7.map((symbol) => {
                   const article = mainAnalysisArticles.find(item => item.symbol === symbol);
                   
@@ -155,10 +155,6 @@ const Dashboard = () => {
                     );
                   }
                 })
-              ) : (
-                <div className="text-center text-slate-400 py-8">
-                  No Magnificent 7 news available. Click "Refresh News" to fetch the latest headlines.
-                </div>
               )}
             </div>
           </div>
@@ -169,7 +165,7 @@ const Dashboard = () => {
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
                   {additionalHeadlines && additionalHeadlines.length > 0 ? (
-                    additionalHeadlines.map((item, index) => (
+                    additionalHeadlines.slice(0, 40).map((item, index) => (
                       <div key={`${item.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
@@ -177,9 +173,14 @@ const Dashboard = () => {
                           </Badge>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-medium mb-1 line-clamp-2">
+                          <a 
+                            href={item.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-white text-sm font-medium mb-1 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer"
+                          >
                             {item.title}
-                          </p>
+                          </a>
                           <div className="flex items-center gap-2 text-xs">
                             <span className="text-slate-400">
                               {new Date(item.created_at).toLocaleDateString()}
