@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 interface StockPrice {
@@ -14,23 +13,29 @@ export const useStockPrices = () => {
     queryKey: ['stock-prices'],
     queryFn: async () => {
       const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+      const finnhubApiKey = 'demo'; // Will be replaced with user's actual API key
       
       try {
-        // Using a free API endpoint for stock prices
+        console.log('Fetching live stock prices from Finnhub...');
+        
         const promises = MAGNIFICENT_7.map(async (symbol) => {
           try {
-            const response = await fetch(
-              `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=demo`
+            // Get current price
+            const quoteResponse = await fetch(
+              `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`
             );
-            const data = await response.json();
-            const quote = data['Global Quote'];
+            const quoteData = await quoteResponse.json();
             
-            if (quote && quote['05. price']) {
+            if (quoteData.c && quoteData.dp !== undefined) {
+              const price = quoteData.c; // Current price
+              const changePercent = quoteData.dp; // Percent change
+              const change = quoteData.d; // Dollar change
+              
               return {
                 symbol,
-                price: parseFloat(quote['05. price']),
-                change: parseFloat(quote['09. change']),
-                changePercent: parseFloat(quote['10. change percent'].replace('%', ''))
+                price: parseFloat(price.toFixed(2)),
+                change: parseFloat(change.toFixed(2)),
+                changePercent: parseFloat(changePercent.toFixed(2))
               };
             }
             
@@ -43,18 +48,19 @@ export const useStockPrices = () => {
         });
 
         const results = await Promise.all(promises);
+        console.log('Successfully fetched stock prices from Finnhub');
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
         return MAGNIFICENT_7.map(generateFallbackPrice);
       }
     },
-    staleTime: 60000, // 1 minute
-    refetchInterval: 60000, // Refetch every minute
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds for live data
   });
 };
 
-// Fallback prices that simulate real market data
+// Enhanced fallback prices that simulate real market data
 const generateFallbackPrice = (symbol: string): StockPrice => {
   const basePrices: { [key: string]: number } = {
     'AAPL': 178.50,
