@@ -26,18 +26,18 @@ serve(async (req) => {
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!marketauxApiKey || !openaiApiKey) {
-      throw new Error('Missing API keys');
+      throw new Error('Missing API keys - MarketAux or OpenAI');
     }
 
-    console.log('Starting news fetching with 2 API calls for Magnificent 7...');
+    console.log('Starting news fetching with OpenAI analysis for Magnificent 7...');
     
     const allArticles = [];
     const magnificentAnalysis = new Map();
     const additionalHeadlines = [];
 
-    // Make 2 API calls to get 40 articles total for Other Headlines
+    // Make 2 API calls to get 40 articles total
     for (let apiCall = 0; apiCall < 2; apiCall++) {
-      console.log(`Making API call ${apiCall + 1}/2...`);
+      console.log(`Making MarketAux API call ${apiCall + 1}/2...`);
       
       const newsResponse = await fetch(
         `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
@@ -61,7 +61,7 @@ serve(async (req) => {
 
     console.log(`Total articles fetched: ${allArticles.length}`);
 
-    // Process articles for Magnificent 7 main analysis (one per stock)
+    // Process articles for Magnificent 7 main analysis (one per stock with OpenAI)
     for (const article of allArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
@@ -69,11 +69,35 @@ serve(async (req) => {
         continue;
       }
 
-      // For main analysis cards - only one per stock
+      // For main analysis cards - only one per stock, analyzed by OpenAI
       if (!magnificentAnalysis.has(symbol)) {
-        console.log(`Analyzing main article for ${symbol}: ${article.title}`);
+        console.log(`Analyzing article for ${symbol} with OpenAI: ${article.title}`);
 
         try {
+          const analysisPrompt = `
+You are a professional financial analyst. Analyze this news article and provide a JSON response with the following structure:
+
+{
+  "prediction": "string showing expected price movement like '+2.8% (24h)' or '-1.5% (24h)'",
+  "confidence": "number between 1-100 representing your confidence level",
+  "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral'",
+  "priority": "string that MUST be either 'HIGH', 'MEDIUM', or 'LOW'",
+  "category": "string describing the news category"
+}
+
+Rules:
+1. Be realistic and conservative with predictions
+2. Make a clear decision on sentiment - avoid neutral unless truly uncertain
+3. Base confidence on the clarity and impact of the news
+4. Consider the stock's recent performance and market context
+
+Article to analyze:
+Title: ${article.title}
+Description: ${article.description || 'No description available'}
+Stock Symbol: ${symbol}
+Published: ${article.published_at}
+`;
+
           const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -85,29 +109,36 @@ serve(async (req) => {
               messages: [
                 {
                   role: 'system',
-                  content: 'You are a financial analyst. Analyze the given news article and provide a JSON response with: prediction (string like "+2.8% (24h)" or "-1.5% (24h)"), confidence (number 1-100), sentiment ("Bullish", "Bearish", or "Neutral"), priority ("HIGH", "MEDIUM", "LOW"), and category. Be realistic and conservative with predictions. Make a clear decision on sentiment - avoid neutral unless truly uncertain.'
+                  content: 'You are a professional financial analyst. Provide clear, actionable market analysis in valid JSON format only.'
                 },
                 {
                   role: 'user',
-                  content: `Title: ${article.title}\nDescription: ${article.description}\nSymbol: ${symbol}`
+                  content: analysisPrompt
                 }
               ],
-              response_format: { type: "json_object" }
+              response_format: { type: "json_object" },
+              temperature: 0.7
             }),
           });
 
           if (!chatResponse.ok) {
-            console.error(`OpenAI API error for ${symbol}: ${chatResponse.status}`);
+            console.error(`OpenAI API error for ${symbol}: ${chatResponse.status} - ${await chatResponse.text()}`);
             continue;
           }
 
           const chatData = await chatResponse.json();
+          
+          if (!chatData.choices || !chatData.choices[0] || !chatData.choices[0].message) {
+            console.error(`Invalid OpenAI response for ${symbol}:`, chatData);
+            continue;
+          }
+
           const analysis = JSON.parse(chatData.choices[0].message.content);
 
           const processedArticle = {
             symbol,
             title: article.title,
-            description: article.description,
+            description: article.description || `Latest market analysis for ${symbol}`,
             prediction: analysis.prediction,
             confidence: analysis.confidence,
             sentiment: analysis.sentiment,
@@ -118,46 +149,114 @@ serve(async (req) => {
             ai_confidence: analysis.confidence,
             ai_prediction: analysis.prediction,
             ai_sentiment: analysis.sentiment,
-            ai_reasoning: `Analysis based on: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`,
+            ai_reasoning: `OpenAI analysis of: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`,
             is_main_analysis: true,
             is_historical: false
           };
 
           magnificentAnalysis.set(symbol, processedArticle);
-          console.log(`Successfully analyzed main ${symbol} with ${analysis.sentiment} sentiment`);
+          console.log(`✅ Successfully analyzed ${symbol} with OpenAI: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence`);
 
         } catch (error) {
-          console.error(`Error analyzing main article for ${symbol}:`, error);
+          console.error(`❌ Error analyzing article for ${symbol} with OpenAI:`, error);
         }
       }
     }
 
-    // For stocks without current analysis, create historical data placeholders
+    // For stocks without current analysis, create historical data with OpenAI analysis
     for (const symbol of MAGNIFICENT_7) {
       if (!magnificentAnalysis.has(symbol)) {
-        console.log(`Creating historical analysis for ${symbol}`);
+        console.log(`Creating historical analysis for ${symbol} using OpenAI...`);
         
-        // Generate historical analysis based on general market knowledge
-        const historicalAnalysis = {
-          symbol,
-          title: `${symbol} Market Analysis - Historical Data*`,
-          description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
-          prediction: symbol === 'NVDA' ? '+3.2% (24h)' : symbol === 'TSLA' ? '-1.8% (24h)' : '+1.5% (24h)',
-          confidence: 65,
-          sentiment: symbol === 'TSLA' ? 'Bearish' : 'Bullish',
-          priority: 'MEDIUM',
-          category: 'Technology',
-          url: `https://finance.yahoo.com/quote/${symbol}`,
-          published_at: new Date().toISOString(),
-          ai_confidence: 65,
-          ai_prediction: symbol === 'NVDA' ? '+3.2% (24h)' : symbol === 'TSLA' ? '-1.8% (24h)' : '+1.5% (24h)',
-          ai_sentiment: symbol === 'TSLA' ? 'Bearish' : 'Bullish',
-          ai_reasoning: `*Historical analysis based on market trends. No current news available for ${symbol}.`,
-          is_main_analysis: true,
-          is_historical: true
-        };
+        try {
+          const historicalPrompt = `
+Analyze ${symbol} stock based on general market knowledge and recent trends. Provide a JSON response:
 
-        magnificentAnalysis.set(symbol, historicalAnalysis);
+{
+  "prediction": "realistic price movement prediction like '+1.5% (24h)' or '-0.8% (24h)'",
+  "confidence": "number between 50-75 for historical analysis",
+  "sentiment": "Bullish, Bearish, or Neutral based on general market sentiment",
+  "priority": "MEDIUM",
+  "category": "Technology"
+}
+
+Consider ${symbol}'s general market position, recent trends, and typical volatility patterns.
+`;
+
+          const historicalResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a financial analyst providing historical market analysis based on general market knowledge.'
+                },
+                {
+                  role: 'user',
+                  content: historicalPrompt
+                }
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.5
+            }),
+          });
+
+          if (historicalResponse.ok) {
+            const historicalData = await historicalResponse.json();
+            const analysis = JSON.parse(historicalData.choices[0].message.content);
+
+            const historicalAnalysis = {
+              symbol,
+              title: `${symbol} Market Analysis - Historical Data*`,
+              description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
+              prediction: analysis.prediction,
+              confidence: analysis.confidence,
+              sentiment: analysis.sentiment,
+              priority: analysis.priority,
+              category: analysis.category,
+              url: `https://finance.yahoo.com/quote/${symbol}`,
+              published_at: new Date().toISOString(),
+              ai_confidence: analysis.confidence,
+              ai_prediction: analysis.prediction,
+              ai_sentiment: analysis.sentiment,
+              ai_reasoning: `*Historical analysis based on market trends. No current news available for ${symbol}.`,
+              is_main_analysis: true,
+              is_historical: true
+            };
+
+            magnificentAnalysis.set(symbol, historicalAnalysis);
+            console.log(`✅ Created historical analysis for ${symbol}: ${analysis.sentiment} sentiment`);
+          }
+        } catch (error) {
+          console.error(`❌ Error creating historical analysis for ${symbol}:`, error);
+          
+          // Fallback to basic historical data
+          const fallbackAnalysis = {
+            symbol,
+            title: `${symbol} Market Analysis - Historical Data*`,
+            description: `Basic historical analysis for ${symbol}.`,
+            prediction: '+1.2% (24h)',
+            confidence: 60,
+            sentiment: 'Neutral',
+            priority: 'MEDIUM',
+            category: 'Technology',
+            url: `https://finance.yahoo.com/quote/${symbol}`,
+            published_at: new Date().toISOString(),
+            ai_confidence: 60,
+            ai_prediction: '+1.2% (24h)',
+            ai_sentiment: 'Neutral',
+            ai_reasoning: `*Basic historical analysis. No current news or AI analysis available for ${symbol}.`,
+            is_main_analysis: true,
+            is_historical: true
+          };
+
+          magnificentAnalysis.set(symbol, fallbackAnalysis);
+        }
       }
     }
 
@@ -180,9 +279,11 @@ serve(async (req) => {
 
     // Store all articles in database
     // First, clear existing articles
+    console.log('Clearing existing articles from database...');
     await supabase.from('news_articles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Insert main analysis articles (including historical)
+    console.log('Inserting main analysis articles...');
     for (const article of magnificentAnalysis.values()) {
       const { error } = await supabase
         .from('news_articles')
@@ -201,11 +302,14 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error(`Database error for main ${article.symbol}:`, error);
+        console.error(`❌ Database error for main ${article.symbol}:`, error);
+      } else {
+        console.log(`✅ Stored analysis for ${article.symbol}`);
       }
     }
 
-    // Insert all 40 additional headlines for Other Headlines section
+    // Insert all additional headlines for Other Headlines section
+    console.log('Inserting additional headlines...');
     for (const article of additionalHeadlines) {
       const { error } = await supabase
         .from('news_articles')
@@ -219,23 +323,27 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error(`Database error for additional headline ${article.symbol}:`, error);
+        console.error(`❌ Database error for additional headline ${article.symbol}:`, error);
       }
     }
 
-    console.log(`Successfully processed ${magnificentAnalysis.size} main analyses and ${additionalHeadlines.length} additional headlines`);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
+    const summary = {
+      success: true,
       mainAnalyses: magnificentAnalysis.size,
       additionalHeadlines: additionalHeadlines.length,
-      totalArticlesProcessed: allArticles.length
-    }), {
+      totalArticlesProcessed: allArticles.length,
+      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length,
+      historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length
+    };
+
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses (${summary.openaiAnalysisCount} with OpenAI, ${summary.historicalAnalysisCount} historical) and ${summary.additionalHeadlines} additional headlines`);
+
+    return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in fetch-news function:', error);
+    console.error('❌ Error in fetch-news function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false 
