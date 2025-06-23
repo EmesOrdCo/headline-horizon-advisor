@@ -29,20 +29,18 @@ serve(async (req) => {
       throw new Error('Missing API keys');
     }
 
-    console.log('Starting iterative news fetching for Magnificent 7...');
+    console.log('Starting news fetching with 2 API calls for Magnificent 7...');
     
-    const analyzedNews = [];
-    const stockAnalysis = new Map(); // Track one analysis per stock
-    let totalFetched = 0;
-    let page = 0;
+    const allArticles = [];
+    const magnificentAnalysis = new Map();
+    const additionalHeadlines = [];
 
-    // Continue fetching until we have analysis for all Magnificent 7 stocks or reach limit
-    while (stockAnalysis.size < MAGNIFICENT_7.length && totalFetched < 100) {
-      console.log(`Fetching page ${page + 1}...`);
+    // Make 2 API calls to get 40 articles total
+    for (let apiCall = 0; apiCall < 2; apiCall++) {
+      console.log(`Making API call ${apiCall + 1}/2...`);
       
-      // Fetch news from MarketAux with pagination
       const newsResponse = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${page}&api_token=${marketauxApiKey}`
+        `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
       );
 
       if (!newsResponse.ok) {
@@ -52,27 +50,30 @@ serve(async (req) => {
       const newsData = await newsResponse.json();
       const articles = newsData.data || [];
       
-      if (articles.length === 0) {
-        console.log('No more articles available');
-        break;
+      console.log(`Fetched ${articles.length} articles from API call ${apiCall + 1}`);
+      allArticles.push(...articles);
+
+      // Add delay between API calls
+      if (apiCall < 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    console.log(`Total articles fetched: ${allArticles.length}`);
+
+    // Process articles for Magnificent 7 analysis (one per stock for main cards)
+    for (const article of allArticles) {
+      const symbol = article.entities?.[0]?.symbol;
+      
+      if (!symbol || !MAGNIFICENT_7.includes(symbol)) {
+        continue;
       }
 
-      console.log(`Fetched ${articles.length} articles from page ${page + 1}`);
-      totalFetched += articles.length;
-
-      // Process articles for stocks we don't have analysis for yet
-      for (const article of articles) {
-        const symbol = article.entities?.[0]?.symbol;
-        
-        // Skip if not Magnificent 7 or already analyzed
-        if (!symbol || !MAGNIFICENT_7.includes(symbol) || stockAnalysis.has(symbol)) {
-          continue;
-        }
-
-        console.log(`Analyzing article for ${symbol}: ${article.title}`);
+      // For main analysis cards - only one per stock
+      if (!magnificentAnalysis.has(symbol)) {
+        console.log(`Analyzing main article for ${symbol}: ${article.title}`);
 
         try {
-          // Analyze with ChatGPT
           const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -117,35 +118,36 @@ serve(async (req) => {
             ai_confidence: analysis.confidence,
             ai_prediction: analysis.prediction,
             ai_sentiment: analysis.sentiment,
-            ai_reasoning: `Analysis based on: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`
+            ai_reasoning: `Analysis based on: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`,
+            is_main_analysis: true
           };
 
-          // Store this as the analysis for this stock
-          stockAnalysis.set(symbol, processedArticle);
-          analyzedNews.push(processedArticle);
-
-          console.log(`Successfully analyzed ${symbol} with ${analysis.sentiment} sentiment`);
+          magnificentAnalysis.set(symbol, processedArticle);
+          console.log(`Successfully analyzed main ${symbol} with ${analysis.sentiment} sentiment`);
 
         } catch (error) {
-          console.error(`Error analyzing article for ${symbol}:`, error);
+          console.error(`Error analyzing main article for ${symbol}:`, error);
         }
+      } else {
+        // For additional headlines - no AI analysis needed
+        additionalHeadlines.push({
+          symbol,
+          title: article.title,
+          description: article.description,
+          url: article.url,
+          published_at: article.published_at,
+          category: 'Technology',
+          is_main_analysis: false
+        });
       }
-
-      page++;
-      
-      // Add delay between API calls to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Store all analyzed articles in database
-    for (const article of analyzedNews) {
-      // Delete existing articles for this symbol to ensure only one per stock
-      await supabase
-        .from('news_articles')
-        .delete()
-        .eq('symbol', article.symbol);
+    // Store all articles in database
+    // First, clear existing articles
+    await supabase.from('news_articles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-      // Insert new analysis
+    // Insert main analysis articles
+    for (const article of magnificentAnalysis.values()) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -163,19 +165,35 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error(`Database error for ${article.symbol}:`, error);
+        console.error(`Database error for main ${article.symbol}:`, error);
       }
     }
 
-    console.log(`Successfully analyzed ${analyzedNews.length} stocks from ${totalFetched} total articles`);
-    console.log(`Stocks analyzed: ${Array.from(stockAnalysis.keys()).join(', ')}`);
+    // Insert additional headlines
+    for (const article of additionalHeadlines.slice(0, 30)) { // Limit to 30 additional headlines
+      const { error } = await supabase
+        .from('news_articles')
+        .insert({
+          title: article.title,
+          description: article.description,
+          symbol: article.symbol,
+          url: article.url,
+          published_at: article.published_at,
+          category: article.category
+        });
+
+      if (error) {
+        console.error(`Database error for additional headline ${article.symbol}:`, error);
+      }
+    }
+
+    console.log(`Successfully processed ${magnificentAnalysis.size} main analyses and ${additionalHeadlines.length} additional headlines`);
 
     return new Response(JSON.stringify({ 
       success: true, 
-      articles: analyzedNews,
-      count: analyzedNews.length,
-      stocksAnalyzed: Array.from(stockAnalysis.keys()),
-      totalArticlesProcessed: totalFetched
+      mainAnalyses: magnificentAnalysis.size,
+      additionalHeadlines: additionalHeadlines.length,
+      totalArticlesProcessed: allArticles.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

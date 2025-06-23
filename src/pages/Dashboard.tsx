@@ -17,9 +17,22 @@ const Dashboard = () => {
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
-  // Filter for Magnificent 7 stocks only
-  const magnificent7News = newsData?.filter(item => 
-    ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'].includes(item.symbol)
+  const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+
+  // Get main analysis articles (one per stock with AI analysis)
+  const mainAnalysisArticles = MAGNIFICENT_7.map(symbol => {
+    return newsData?.find(item => 
+      item.symbol === symbol && 
+      item.ai_prediction && 
+      item.ai_confidence && 
+      item.ai_sentiment
+    );
+  }).filter(Boolean);
+
+  // Get additional headlines (without AI analysis)
+  const additionalHeadlines = newsData?.filter(item => 
+    MAGNIFICENT_7.includes(item.symbol) && 
+    (!item.ai_prediction || !item.ai_confidence || !item.ai_sentiment)
   ) || [];
 
   const handleRefreshNews = async () => {
@@ -77,7 +90,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">Magnificent 7 Market News</h1>
+              <h1 className="text-3xl font-bold text-white">Live Market News</h1>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-400 text-sm font-medium">LIVE</span>
@@ -98,25 +111,50 @@ const Dashboard = () => {
 
         <div className="grid lg:grid-cols-3 gap-6 mb-12">
           <div className="lg:col-span-2">
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
               {isLoading ? (
                 <div className="text-center text-slate-400 py-8">
                   Loading Magnificent 7 news...
                 </div>
-              ) : magnificent7News && magnificent7News.length > 0 ? (
-                magnificent7News.slice(0, 3).map((item, index) => (
-                  <NewsCard 
-                    key={item.id} 
-                    symbol={item.symbol}
-                    priority={item.priority}
-                    title={item.title}
-                    description={item.description}
-                    prediction={item.ai_prediction}
-                    confidence={item.ai_confidence}
-                    sentiment={item.ai_sentiment}
-                    category={item.category}
-                  />
-                ))
+              ) : mainAnalysisArticles && mainAnalysisArticles.length > 0 ? (
+                // Create 7 boxes, one for each Magnificent 7 stock
+                MAGNIFICENT_7.map((symbol) => {
+                  const article = mainAnalysisArticles.find(item => item.symbol === symbol);
+                  
+                  if (article) {
+                    return (
+                      <NewsCard 
+                        key={article.id} 
+                        symbol={article.symbol}
+                        priority={article.priority}
+                        title={article.title}
+                        description={article.description}
+                        prediction={article.ai_prediction}
+                        confidence={article.ai_confidence}
+                        sentiment={article.ai_sentiment}
+                        category={article.category}
+                      />
+                    );
+                  } else {
+                    // Show placeholder for stocks without current analysis
+                    return (
+                      <div key={symbol} className="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Badge className="bg-blue-500 text-white">{symbol}</Badge>
+                          <Badge variant="secondary" className="bg-gray-500/20 text-gray-400 text-xs">
+                            NO RECENT NEWS
+                          </Badge>
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-400 mb-2">
+                          No recent analysis available for {symbol}
+                        </h3>
+                        <p className="text-slate-500 text-sm">
+                          Click "Refresh News" to fetch the latest market updates and AI analysis.
+                        </p>
+                      </div>
+                    );
+                  }
+                })
               ) : (
                 <div className="text-center text-slate-400 py-8">
                   No Magnificent 7 news available. Click "Refresh News" to fetch the latest headlines.
@@ -127,31 +165,35 @@ const Dashboard = () => {
           
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col">
-              <h3 className="text-lg font-semibold text-white mb-4">Other Magnificent 7 Headlines</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {magnificent7News && magnificent7News.slice(3).map((item, index) => (
-                    <div key={item.id} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                          {item.symbol}
-                        </Badge>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium mb-1 line-clamp-2">
-                          {item.title}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Badge className={`${item.ai_sentiment === 'Bullish' ? 'bg-emerald-500' : item.ai_sentiment === 'Bearish' ? 'bg-red-500' : 'bg-gray-500'} text-white text-xs`}>
-                            {item.ai_sentiment?.toUpperCase()}
+                  {additionalHeadlines && additionalHeadlines.length > 0 ? (
+                    additionalHeadlines.map((item, index) => (
+                      <div key={`${item.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
+                            {item.symbol}
                           </Badge>
-                          <span className="text-slate-400">
-                            {new Date(item.created_at).toLocaleDateString()}
-                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium mb-1 line-clamp-2">
+                            {item.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-400">
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-400 py-4">
+                      <p>No additional headlines available.</p>
+                      <p className="text-sm mt-2">Click "Refresh News" to load more articles.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </ScrollArea>
             </div>
