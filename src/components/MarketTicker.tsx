@@ -17,8 +17,6 @@ const MarketTicker = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const finnhubApiKey = 'demo'; // Will be replaced with user's actual API key
-        
         // Expanded list of major indices and ETFs
         const indices = [
           { symbol: 'SPY', name: 'S&P 500' },
@@ -29,22 +27,31 @@ const MarketTicker = () => {
           { symbol: 'EFA', name: 'EAFE' }
         ];
         
-        console.log('Fetching live market data from Finnhub...');
+        console.log('Fetching live market data...');
         
         const promises = indices.map(async (index) => {
           try {
-            const response = await fetch(
-              `https://finnhub.io/api/v1/quote?symbol=${index.symbol}&token=${finnhubApiKey}`
-            );
+            const response = await fetch('/api/stock-price', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ symbol: index.symbol }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
-            if (data.c && data.dp !== undefined) {
+            if (data.price && data.changePercent !== undefined) {
               return {
                 symbol: index.name,
                 name: index.name,
-                price: parseFloat(data.c.toFixed(2)),
-                change: parseFloat(data.d.toFixed(2)),
-                changePercent: parseFloat(data.dp.toFixed(2))
+                price: parseFloat(data.price.toFixed(2)),
+                change: parseFloat(data.change.toFixed(2)),
+                changePercent: parseFloat(data.changePercent.toFixed(2))
               };
             }
             
@@ -92,7 +99,7 @@ const MarketTicker = () => {
           ]);
         } else {
           setMarketData(validResults);
-          console.log('Successfully fetched market data from Finnhub');
+          console.log('Successfully fetched live market data');
         }
       } catch (error) {
         console.error('Error fetching market data:', error);

@@ -13,29 +13,33 @@ export const useStockPrices = () => {
     queryKey: ['stock-prices'],
     queryFn: async () => {
       const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-      const finnhubApiKey = 'demo'; // Will be replaced with user's actual API key
       
       try {
         console.log('Fetching live stock prices from Finnhub...');
         
         const promises = MAGNIFICENT_7.map(async (symbol) => {
           try {
-            // Get current price
-            const quoteResponse = await fetch(
-              `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`
-            );
-            const quoteData = await quoteResponse.json();
+            // Get current price using Supabase edge function to access API key securely
+            const response = await fetch('/api/stock-price', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ symbol }),
+            });
             
-            if (quoteData.c && quoteData.dp !== undefined) {
-              const price = quoteData.c; // Current price
-              const changePercent = quoteData.dp; // Percent change
-              const change = quoteData.d; // Dollar change
-              
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.price && data.changePercent !== undefined) {
               return {
                 symbol,
-                price: parseFloat(price.toFixed(2)),
-                change: parseFloat(change.toFixed(2)),
-                changePercent: parseFloat(changePercent.toFixed(2))
+                price: parseFloat(data.price.toFixed(2)),
+                change: parseFloat(data.change.toFixed(2)),
+                changePercent: parseFloat(data.changePercent.toFixed(2))
               };
             }
             
@@ -48,7 +52,7 @@ export const useStockPrices = () => {
         });
 
         const results = await Promise.all(promises);
-        console.log('Successfully fetched stock prices from Finnhub');
+        console.log('Successfully fetched stock prices');
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
