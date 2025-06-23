@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
@@ -17,19 +16,22 @@ const MarketTicker = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        // Expanded list of major indices and ETFs
+        // Major market indices and ETFs - using symbols that work with Finnhub free tier
         const indices = [
           { symbol: 'SPY', name: 'S&P 500' },
           { symbol: 'QQQ', name: 'NASDAQ' },
           { symbol: 'DIA', name: 'Dow Jones' },
           { symbol: 'IWM', name: 'Russell 2000' },
-          { symbol: 'VTI', name: 'Total Stock Market' },
+          { symbol: 'VTI', name: 'Total Market' },
           { symbol: 'EFA', name: 'EAFE' }
         ];
         
-        console.log('Fetching live market data...');
+        console.log('Fetching live market data from Finnhub...');
         
-        const promises = indices.map(async (index) => {
+        const results: MarketIndex[] = [];
+        
+        // Fetch sequentially to respect Finnhub free tier rate limits
+        for (const index of indices) {
           try {
             const response = await fetch('/api/stock-price', {
               method: 'POST',
@@ -40,107 +42,51 @@ const MarketTicker = () => {
             });
             
             if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+              console.error(`HTTP error for ${index.symbol}! status: ${response.status}`);
+              continue;
             }
             
             const data = await response.json();
             
-            if (data.price && data.changePercent !== undefined) {
-              return {
+            if (data.error) {
+              console.error(`API error for ${index.symbol}:`, data.error);
+              continue;
+            }
+            
+            if (data.price && data.price > 0) {
+              results.push({
                 symbol: index.name,
                 name: index.name,
                 price: parseFloat(data.price.toFixed(2)),
                 change: parseFloat(data.change.toFixed(2)),
                 changePercent: parseFloat(data.changePercent.toFixed(2))
-              };
+              });
             }
-            
-            return null;
           } catch (error) {
             console.error(`Error fetching data for ${index.symbol}:`, error);
-            return null;
           }
-        });
-
-        const results = await Promise.all(promises);
-        const validResults = results.filter(Boolean) as MarketIndex[];
+        }
         
-        if (validResults.length === 0) {
-          // Fallback to simulated live data if API fails
-          setMarketData([
-            {
-              symbol: 'S&P 500',
-              name: 'S&P 500',
-              price: 4750.89,
-              change: 23.45,
-              changePercent: 0.49
-            },
-            {
-              symbol: 'NASDAQ',
-              name: 'NASDAQ',
-              price: 14825.33,
-              change: -45.67,
-              changePercent: -0.31
-            },
-            {
-              symbol: 'Dow Jones',
-              name: 'Dow Jones',
-              price: 37850.12,
-              change: 156.78,
-              changePercent: 0.42
-            },
-            {
-              symbol: 'Russell 2000',
-              name: 'Russell 2000',
-              price: 2045.67,
-              change: -12.34,
-              changePercent: -0.60
-            }
-          ]);
+        if (results.length > 0) {
+          setMarketData(results);
+          console.log(`Successfully fetched ${results.length} market indices`);
         } else {
-          setMarketData(validResults);
-          console.log('Successfully fetched live market data');
+          console.error('No valid market data received');
+          // Keep existing data if available, otherwise show error
+          if (marketData.length === 0) {
+            setMarketData([]);
+          }
         }
       } catch (error) {
         console.error('Error fetching market data:', error);
-        // Fallback data with more indices
-        setMarketData([
-          {
-            symbol: 'S&P 500',
-            name: 'S&P 500',
-            price: 4750.89,
-            change: 23.45,
-            changePercent: 0.49
-          },
-          {
-            symbol: 'NASDAQ',
-            name: 'NASDAQ',
-            price: 14825.33,
-            change: -45.67,
-            changePercent: -0.31
-          },
-          {
-            symbol: 'Dow Jones',
-            name: 'Dow Jones',
-            price: 37850.12,
-            change: 156.78,
-            changePercent: 0.42
-          },
-          {
-            symbol: 'Russell 2000',
-            name: 'Russell 2000',
-            price: 2045.67,
-            change: -12.34,
-            changePercent: -0.60
-          }
-        ]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 30000); // Update every 30 seconds
+    // Refetch every 2 minutes to respect rate limits
+    const interval = setInterval(fetchMarketData, 120000);
 
     return () => clearInterval(interval);
   }, []);
@@ -150,6 +96,16 @@ const MarketTicker = () => {
       <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
         <div className="flex items-center justify-center">
           <div className="text-slate-400">Loading live market data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (marketData.length === 0) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
+        <div className="flex items-center justify-center">
+          <div className="text-red-400">Unable to fetch live market data. Please check your Finnhub API key.</div>
         </div>
       </div>
     );

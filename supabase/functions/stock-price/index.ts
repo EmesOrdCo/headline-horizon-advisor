@@ -22,21 +22,26 @@ serve(async (req) => {
 
     console.log(`Fetching live price for ${symbol} from Finnhub...`);
     
+    // Add delay to respect rate limits for free tier (60 calls/minute)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     // Get current price
     const quoteResponse = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`
     );
     
     if (!quoteResponse.ok) {
+      console.error(`Finnhub API error for ${symbol}: ${quoteResponse.status}`);
       throw new Error(`Finnhub API error: ${quoteResponse.status}`);
     }
     
     const quoteData = await quoteResponse.json();
+    console.log(`Finnhub response for ${symbol}:`, quoteData);
     
-    if (quoteData.c && quoteData.dp !== undefined) {
+    if (quoteData.c && quoteData.c > 0) {
       const price = quoteData.c; // Current price
-      const changePercent = quoteData.dp; // Percent change
-      const change = quoteData.d; // Dollar change
+      const change = quoteData.d || 0; // Dollar change
+      const changePercent = quoteData.dp || 0; // Percent change
       
       return new Response(JSON.stringify({
         symbol,
@@ -48,7 +53,7 @@ serve(async (req) => {
       });
     }
     
-    throw new Error('Invalid data from Finnhub API');
+    throw new Error(`Invalid or empty data from Finnhub API for ${symbol}`);
   } catch (error) {
     console.error('Error fetching stock price:', error);
     return new Response(JSON.stringify({ 
