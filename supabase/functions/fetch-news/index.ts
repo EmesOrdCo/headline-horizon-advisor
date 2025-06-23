@@ -260,11 +260,92 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // All remaining articles go to additional headlines (for Other Headlines section)
+    // Process remaining articles for "Other Headlines" with ChatGPT analysis
+    const otherHeadlinesWithAnalysis = [];
+    let analysisCount = 0;
+    const maxAnalysisCount = 15; // Limit to avoid too many API calls
+
     for (const article of allArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
-      if (symbol && MAGNIFICENT_7.includes(symbol)) {
+      if (symbol && MAGNIFICENT_7.includes(symbol) && analysisCount < maxAnalysisCount) {
+        // Skip articles already used for main analysis
+        if (magnificentAnalysis.has(symbol) && !magnificentAnalysis.get(symbol).is_historical) {
+          const mainArticle = magnificentAnalysis.get(symbol);
+          if (mainArticle.title === article.title) {
+            continue;
+          }
+        }
+
+        console.log(`Analyzing additional headline for ${symbol}: ${article.title.substring(0, 50)}...`);
+
+        try {
+          const headlinePrompt = `Analyse this article, decide if you are, as a result, bullish, bearish or neutral on the stock the article is about, and how confident you are out of 100% on that statement.
+
+Article:
+Title: ${article.title}
+Description: ${article.description || 'No description available'}
+Stock Symbol: ${symbol}
+
+Provide JSON response:
+{
+  "sentiment": "Bullish, Bearish, or Neutral",
+  "confidence": "number between 1-100",
+  "prediction": "expected price movement like '+1.2% (24h)' or '-0.5% (24h)'"
+}`;
+
+          const headlineResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a financial analyst providing quick market sentiment analysis.'
+                },
+                {
+                  role: 'user',
+                  content: headlinePrompt
+                }
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.6
+            }),
+          });
+
+          if (headlineResponse.ok) {
+            const headlineData = await headlineResponse.json();
+            const headlineAnalysis = JSON.parse(headlineData.choices[0].message.content);
+
+            otherHeadlinesWithAnalysis.push({
+              symbol,
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              published_at: article.published_at,
+              category: 'Technology',
+              ai_confidence: headlineAnalysis.confidence,
+              ai_prediction: headlineAnalysis.prediction,
+              ai_sentiment: headlineAnalysis.sentiment,
+              ai_reasoning: `ChatGPT analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
+              is_main_analysis: false
+            });
+
+            analysisCount++;
+            console.log(`✅ Analyzed headline for ${symbol}: ${headlineAnalysis.sentiment} (${headlineAnalysis.confidence}%)`);
+          }
+        } catch (error) {
+          console.error(`❌ Error analyzing headline for ${symbol}:`, error);
+        }
+
+        // Add delay between analysis calls
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else if (symbol && MAGNIFICENT_7.includes(symbol)) {
+        // Add remaining articles without analysis
         additionalHeadlines.push({
           symbol,
           title: article.title,
@@ -308,8 +389,31 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // Insert all additional headlines for Other Headlines section
-    console.log('Inserting additional headlines...');
+    // Insert analyzed other headlines
+    console.log('Inserting analyzed other headlines...');
+    for (const article of otherHeadlinesWithAnalysis) {
+      const { error } = await supabase
+        .from('news_articles')
+        .insert({
+          title: article.title,
+          description: article.description,
+          symbol: article.symbol,
+          url: article.url,
+          published_at: article.published_at,
+          ai_confidence: article.ai_confidence,
+          ai_prediction: article.ai_prediction,
+          ai_sentiment: article.ai_sentiment,
+          ai_reasoning: article.ai_reasoning,
+          category: article.category
+        });
+
+      if (error) {
+        console.error(`❌ Database error for analyzed headline ${article.symbol}:`, error);
+      }
+    }
+
+    // Insert remaining additional headlines
+    console.log('Inserting remaining additional headlines...');
     for (const article of additionalHeadlines) {
       const { error } = await supabase
         .from('news_articles')
@@ -330,13 +434,14 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
     const summary = {
       success: true,
       mainAnalyses: magnificentAnalysis.size,
+      analyzedHeadlines: otherHeadlinesWithAnalysis.length,
       additionalHeadlines: additionalHeadlines.length,
       totalArticlesProcessed: allArticles.length,
-      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length,
+      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + otherHeadlinesWithAnalysis.length,
       historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses (${summary.openaiAnalysisCount} with OpenAI, ${summary.historicalAnalysisCount} historical) and ${summary.additionalHeadlines} additional headlines`);
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} analyzed headlines with ChatGPT`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

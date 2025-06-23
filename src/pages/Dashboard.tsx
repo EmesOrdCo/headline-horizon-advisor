@@ -29,10 +29,20 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get additional headlines (all 40 articles for Other Headlines section)
-  const additionalHeadlines = newsData?.filter(item => 
+  // Get analyzed additional headlines (articles with ChatGPT analysis)
+  const analyzedHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
-    (!item.ai_prediction || !item.ai_confidence || !item.ai_sentiment)
+    item.ai_prediction && 
+    item.ai_confidence && 
+    item.ai_sentiment &&
+    !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
+  ) || [];
+
+  // Get remaining headlines without analysis
+  const remainingHeadlines = newsData?.filter(item => 
+    MAGNIFICENT_7.includes(item.symbol) && 
+    (!item.ai_prediction || !item.ai_confidence || !item.ai_sentiment) &&
+    !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
   ) || [];
 
   const handleRefreshNews = async () => {
@@ -164,32 +174,82 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {additionalHeadlines && additionalHeadlines.length > 0 ? (
-                    additionalHeadlines.slice(0, 40).map((item, index) => (
-                      <div key={`${item.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                            {item.symbol}
-                          </Badge>
-                        </div>
-                        <div className="flex-1 min-w-0">
+                  {/* First show analyzed headlines with AI analysis */}
+                  {analyzedHeadlines && analyzedHeadlines.length > 0 && (
+                    <>
+                      {analyzedHeadlines.slice(0, 15).map((item, index) => (
+                        <div key={`analyzed-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
+                              {item.symbol}
+                            </Badge>
+                            <Badge className={`text-xs ${
+                              item.ai_sentiment === 'Bullish' ? 'bg-emerald-500/20 text-emerald-400' :
+                              item.ai_sentiment === 'Bearish' ? 'bg-red-500/20 text-red-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {item.ai_sentiment}
+                            </Badge>
+                            <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">
+                              {item.ai_prediction}
+                            </Badge>
+                          </div>
                           <a 
                             href={item.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-white text-sm font-medium mb-1 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer"
+                            className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
                           >
                             {item.title}
                           </a>
-                          <div className="flex items-center gap-2 text-xs">
+                          <div className="flex items-center justify-between text-xs mb-2">
                             <span className="text-slate-400">
-                              {new Date(item.created_at).toLocaleDateString()}
+                              {new Date(item.published_at).toLocaleDateString()}
                             </span>
+                            <span className="text-emerald-400 font-semibold">{item.ai_confidence}% confidence</span>
+                          </div>
+                          <div className="w-full bg-slate-700 rounded-full h-1.5">
+                            <div 
+                              className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" 
+                              style={{width: `${item.ai_confidence}%`}}
+                            ></div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  ) : (
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Then show remaining headlines without analysis */}
+                  {remainingHeadlines && remainingHeadlines.length > 0 && (
+                    <>
+                      {remainingHeadlines.slice(0, 25).map((item, index) => (
+                        <div key={`remaining-${item.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
+                              {item.symbol}
+                            </Badge>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <a 
+                              href={item.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-white text-sm font-medium mb-1 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer"
+                            >
+                              {item.title}
+                            </a>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-400">
+                                {new Date(item.published_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  
+                  {(!analyzedHeadlines || analyzedHeadlines.length === 0) && (!remainingHeadlines || remainingHeadlines.length === 0) && (
                     <div className="text-center text-slate-400 py-4">
                       <p>No additional headlines available.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load more articles.</p>

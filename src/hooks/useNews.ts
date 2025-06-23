@@ -10,7 +10,7 @@ export const useNews = () => {
         .from('news_articles')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50); // Increased limit to get more articles
 
       if (error) {
         throw error;
