@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -78,18 +77,15 @@ serve(async (req) => {
 You are a professional financial analyst. Analyze this news article and provide a JSON response with the following structure:
 
 {
-  "prediction": "string showing expected price movement like '+2.8% (24h)' or '-1.5% (24h)'",
   "confidence": "number between 1-100 representing your confidence level",
   "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral'",
-  "priority": "string that MUST be either 'HIGH', 'MEDIUM', or 'LOW'",
   "category": "string describing the news category"
 }
 
 Rules:
-1. Be realistic and conservative with predictions
-2. Make a clear decision on sentiment - avoid neutral unless truly uncertain
-3. Base confidence on the clarity and impact of the news
-4. Consider the stock's recent performance and market context
+1. Make a clear decision on sentiment - avoid neutral unless truly uncertain
+2. Base confidence on the clarity and impact of the news
+3. Consider the stock's recent performance and market context
 
 Article to analyze:
 Title: ${article.title}
@@ -139,15 +135,12 @@ Published: ${article.published_at}
             symbol,
             title: article.title,
             description: article.description || `Latest market analysis for ${symbol}`,
-            prediction: analysis.prediction,
             confidence: analysis.confidence,
             sentiment: analysis.sentiment,
-            priority: analysis.priority,
             category: analysis.category || 'Technology',
             url: article.url,
             published_at: article.published_at,
             ai_confidence: analysis.confidence,
-            ai_prediction: analysis.prediction,
             ai_sentiment: analysis.sentiment,
             ai_reasoning: `OpenAI analysis of: ${article.title}. ${article.description ? article.description.substring(0, 200) + '...' : ''}`,
             is_main_analysis: true,
@@ -173,10 +166,8 @@ Published: ${article.published_at}
 Analyze ${symbol} stock based on general market knowledge and recent trends. Provide a JSON response:
 
 {
-  "prediction": "realistic price movement prediction like '+1.5% (24h)' or '-0.8% (24h)'",
   "confidence": "number between 50-75 for historical analysis",
   "sentiment": "Bullish, Bearish, or Neutral based on general market sentiment",
-  "priority": "MEDIUM",
   "category": "Technology"
 }
 
@@ -214,15 +205,12 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
               symbol,
               title: `${symbol} Market Analysis - Historical Data*`,
               description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
-              prediction: analysis.prediction,
               confidence: analysis.confidence,
               sentiment: analysis.sentiment,
-              priority: analysis.priority,
               category: analysis.category,
               url: `https://finance.yahoo.com/quote/${symbol}`,
               published_at: new Date().toISOString(),
               ai_confidence: analysis.confidence,
-              ai_prediction: analysis.prediction,
               ai_sentiment: analysis.sentiment,
               ai_reasoning: `*Historical analysis based on market trends. No current news available for ${symbol}.`,
               is_main_analysis: true,
@@ -240,15 +228,12 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
             symbol,
             title: `${symbol} Market Analysis - Historical Data*`,
             description: `Basic historical analysis for ${symbol}.`,
-            prediction: '+1.2% (24h)',
             confidence: 60,
             sentiment: 'Neutral',
-            priority: 'MEDIUM',
             category: 'Technology',
             url: `https://finance.yahoo.com/quote/${symbol}`,
             published_at: new Date().toISOString(),
             ai_confidence: 60,
-            ai_prediction: '+1.2% (24h)',
             ai_sentiment: 'Neutral',
             ai_reasoning: `*Basic historical analysis. No current news or AI analysis available for ${symbol}.`,
             is_main_analysis: true,
@@ -290,8 +275,7 @@ Stock Symbol: ${symbol}
 Provide JSON response:
 {
   "sentiment": "Bullish, Bearish, or Neutral",
-  "confidence": "number between 1-100",
-  "prediction": "expected price movement like '+1.2% (24h)' or '-0.5% (24h)'"
+  "confidence": "number between 1-100"
 }`;
 
           const headlineResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -329,7 +313,6 @@ Provide JSON response:
               published_at: article.published_at,
               category: 'Technology',
               ai_confidence: headlineAnalysis.confidence,
-              ai_prediction: headlineAnalysis.prediction,
               ai_sentiment: headlineAnalysis.sentiment,
               ai_reasoning: `ChatGPT analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
               is_main_analysis: false
@@ -375,10 +358,8 @@ Provide JSON response:
           url: article.url,
           published_at: article.published_at,
           ai_confidence: article.ai_confidence,
-          ai_prediction: article.ai_prediction,
           ai_sentiment: article.ai_sentiment,
           ai_reasoning: article.ai_reasoning,
-          priority: article.priority,
           category: article.category
         });
 
@@ -401,7 +382,6 @@ Provide JSON response:
           url: article.url,
           published_at: article.published_at,
           ai_confidence: article.ai_confidence,
-          ai_prediction: article.ai_prediction,
           ai_sentiment: article.ai_sentiment,
           ai_reasoning: article.ai_reasoning,
           category: article.category

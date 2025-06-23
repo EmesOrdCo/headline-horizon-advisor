@@ -6,24 +6,31 @@ import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import PredictionCard from "@/components/PredictionCard";
+import MarketTicker from "@/components/MarketTicker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { data: newsData, isLoading, refetch } = useNews();
+  const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
+  // Get stock price for a symbol
+  const getStockPrice = (symbol: string) => {
+    return stockPrices?.find(stock => stock.symbol === symbol);
+  };
+
   // Get main analysis articles (one per stock with AI analysis)
   const mainAnalysisArticles = MAGNIFICENT_7.map(symbol => {
     return newsData?.find(item => 
       item.symbol === symbol && 
-      item.ai_prediction && 
       item.ai_confidence && 
       item.ai_sentiment
     );
@@ -32,7 +39,6 @@ const Dashboard = () => {
   // Get analyzed additional headlines (articles with ChatGPT analysis)
   const analyzedHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
-    item.ai_prediction && 
     item.ai_confidence && 
     item.ai_sentiment &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
@@ -41,7 +47,7 @@ const Dashboard = () => {
   // Get remaining headlines without analysis
   const remainingHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
-    (!item.ai_prediction || !item.ai_confidence || !item.ai_sentiment) &&
+    (!item.ai_confidence || !item.ai_sentiment) &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
   ) || [];
 
@@ -97,6 +103,8 @@ const Dashboard = () => {
       <DashboardNav />
       
       <main className="p-6 max-w-7xl mx-auto">
+        <MarketTicker />
+        
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -130,30 +138,44 @@ const Dashboard = () => {
                 // Always show 7 boxes, one for each Magnificent 7 stock
                 MAGNIFICENT_7.map((symbol) => {
                   const article = mainAnalysisArticles.find(item => item.symbol === symbol);
+                  const stockPrice = getStockPrice(symbol);
                   
                   if (article) {
                     return (
                       <NewsCard 
                         key={article.id} 
                         symbol={article.symbol}
-                        priority={article.priority}
                         title={article.title}
                         description={article.description}
-                        prediction={article.ai_prediction}
                         confidence={article.ai_confidence}
                         sentiment={article.ai_sentiment}
                         category={article.category}
+                        stockPrice={stockPrice}
                       />
                     );
                   } else {
                     // Show placeholder for stocks without current analysis
                     return (
                       <div key={symbol} className="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Badge className="bg-blue-500 text-white">{symbol}</Badge>
-                          <Badge variant="secondary" className="bg-gray-500/20 text-gray-400 text-xs">
-                            NO RECENT NEWS
-                          </Badge>
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-blue-500 text-white">{symbol}</Badge>
+                            <Badge variant="secondary" className="bg-gray-500/20 text-gray-400 text-xs">
+                              NO RECENT NEWS
+                            </Badge>
+                          </div>
+                          {stockPrice && (
+                            <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-600 rounded-lg px-3 py-2">
+                              <div className="text-right">
+                                <div className="text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
+                                <div className={`text-xs ${
+                                  stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                                }`}>
+                                  {stockPrice.change >= 0 ? '+' : ''}{stockPrice.change.toFixed(2)} ({stockPrice.changePercent.toFixed(2)}%)
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <h3 className="text-lg font-semibold text-slate-400 mb-2">
                           No recent analysis available for {symbol}
@@ -189,9 +211,6 @@ const Dashboard = () => {
                               'bg-gray-500/20 text-gray-400'
                             }`}>
                               {item.ai_sentiment}
-                            </Badge>
-                            <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">
-                              {item.ai_prediction}
                             </Badge>
                           </div>
                           <a 
