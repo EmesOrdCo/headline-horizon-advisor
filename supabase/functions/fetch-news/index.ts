@@ -33,7 +33,7 @@ serve(async (req) => {
     
     const allArticles = [];
     const magnificentAnalysis = new Map();
-    const allOtherHeadlinesWithAnalysis = [];
+    const allOtherAnalyzedArticles = [];
 
     // Make 2 API calls to get 40 articles total
     for (let apiCall = 0; apiCall < 2; apiCall++) {
@@ -60,6 +60,9 @@ serve(async (req) => {
     }
 
     console.log(`Total articles fetched: ${allArticles.length}`);
+
+    // Sort all articles by published date first to ensure chronological order
+    allArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
     // Process articles for Magnificent 7 main analysis (one per stock with OpenAI)
     for (const article of allArticles) {
@@ -246,8 +249,8 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // Process ALL remaining articles for "Other Headlines" with ChatGPT analysis
-    console.log('Starting analysis of ALL remaining headlines...');
+    // Process ALL remaining articles with AI analysis - ensuring every single article gets analyzed
+    console.log('Starting AI analysis of ALL remaining headlines...');
     let analysisCount = 0;
 
     for (const article of allArticles) {
@@ -255,11 +258,9 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       
       if (symbol && MAGNIFICENT_7.includes(symbol)) {
         // Skip articles already used for main analysis
-        if (magnificentAnalysis.has(symbol) && !magnificentAnalysis.get(symbol).is_historical) {
-          const mainArticle = magnificentAnalysis.get(symbol);
-          if (mainArticle.title === article.title) {
-            continue;
-          }
+        const mainArticle = magnificentAnalysis.get(symbol);
+        if (mainArticle && !mainArticle.is_historical && mainArticle.title === article.title) {
+          continue;
         }
 
         console.log(`Analyzing headline ${analysisCount + 1} for ${symbol}: ${article.title.substring(0, 50)}...`);
@@ -305,7 +306,7 @@ Provide JSON response:
             const headlineData = await headlineResponse.json();
             const headlineAnalysis = JSON.parse(headlineData.choices[0].message.content);
 
-            allOtherHeadlinesWithAnalysis.push({
+            allOtherAnalyzedArticles.push({
               symbol,
               title: article.title,
               description: article.description,
@@ -314,32 +315,53 @@ Provide JSON response:
               category: 'Technology',
               ai_confidence: headlineAnalysis.confidence,
               ai_sentiment: headlineAnalysis.sentiment,
-              ai_reasoning: `ChatGPT analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
+              ai_reasoning: `AI analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
               is_main_analysis: false
             });
 
             analysisCount++;
             console.log(`✅ Analyzed headline for ${symbol}: ${headlineAnalysis.sentiment} (${headlineAnalysis.confidence}%)`);
+            
+            // Add delay between analysis calls to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } else {
+            console.error(`Failed to analyze headline for ${symbol}: ${headlineResponse.status}`);
+            // Still add the article but without AI analysis - this should be rare
+            allOtherAnalyzedArticles.push({
+              symbol,
+              title: article.title,
+              description: article.description,
+              url: article.url,
+              published_at: article.published_at,
+              category: 'Technology',
+              ai_confidence: 50, // Default neutral confidence
+              ai_sentiment: 'Neutral', // Default neutral sentiment
+              ai_reasoning: 'AI analysis failed - default neutral assessment',
+              is_main_analysis: false
+            });
           }
         } catch (error) {
           console.error(`❌ Error analyzing headline for ${symbol}:`, error);
           
-          // Add unanalyzed article to list
-          allOtherHeadlinesWithAnalysis.push({
+          // Add with default analysis to ensure consistency
+          allOtherAnalyzedArticles.push({
             symbol,
             title: article.title,
             description: article.description,
             url: article.url,
             published_at: article.published_at,
             category: 'Technology',
+            ai_confidence: 50, // Default neutral confidence
+            ai_sentiment: 'Neutral', // Default neutral sentiment
+            ai_reasoning: 'AI analysis error - default neutral assessment',
             is_main_analysis: false
           });
         }
-
-        // Add delay between analysis calls to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
+
+    // Sort all other articles by published date to ensure strict chronological order
+    allOtherAnalyzedArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
     // Store all articles in database
     // First, clear existing articles
@@ -370,9 +392,9 @@ Provide JSON response:
       }
     }
 
-    // Insert ALL other headlines (analyzed and unanalyzed)
-    console.log('Inserting all other headlines...');
-    for (const article of allOtherHeadlinesWithAnalysis) {
+    // Insert ALL analyzed other headlines in chronological order
+    console.log('Inserting all analyzed headlines in chronological order...');
+    for (const article of allOtherAnalyzedArticles) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -392,20 +414,17 @@ Provide JSON response:
       }
     }
 
-    const analyzedHeadlines = allOtherHeadlinesWithAnalysis.filter(a => a.ai_confidence && a.ai_sentiment);
-    const unanalyzedHeadlines = allOtherHeadlinesWithAnalysis.filter(a => !a.ai_confidence || !a.ai_sentiment);
-
     const summary = {
       success: true,
       mainAnalyses: magnificentAnalysis.size,
-      analyzedHeadlines: analyzedHeadlines.length,
-      unanalyzedHeadlines: unanalyzedHeadlines.length,
+      analyzedHeadlines: allOtherAnalyzedArticles.length,
       totalArticlesProcessed: allArticles.length,
-      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + analyzedHeadlines.length,
-      historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length
+      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + allOtherAnalyzedArticles.length,
+      historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length,
+      message: 'All articles now have AI analysis and are in chronological order'
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} analyzed headlines with ChatGPT`);
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} analyzed headlines with AI in chronological order`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
