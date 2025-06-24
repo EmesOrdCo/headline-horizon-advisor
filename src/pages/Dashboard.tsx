@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -36,20 +35,20 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get analyzed additional headlines (articles with ChatGPT analysis)
+  // Get analyzed additional headlines (articles with ChatGPT analysis) - sorted by date
   const analyzedHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
     item.ai_confidence && 
     item.ai_sentiment &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
-  ) || [];
+  ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  // Get remaining headlines without analysis
+  // Get remaining headlines without analysis - sorted by date
   const remainingHeadlines = newsData?.filter(item => 
     MAGNIFICENT_7.includes(item.symbol) && 
     (!item.ai_confidence || !item.ai_sentiment) &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
-  ) || [];
+  ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
@@ -192,7 +191,7 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col">
+            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
