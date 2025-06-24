@@ -124,6 +124,18 @@ const Dashboard = () => {
             </Button>
           </div>
           <p className="text-slate-400">Latest AI-analyzed news for Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, and Meta</p>
+          
+          {isPricesLoading && (
+            <div className="text-yellow-400 text-sm mt-2">
+              Loading stock prices from Finnhub...
+            </div>
+          )}
+          
+          {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
+            <div className="text-red-400 text-sm mt-2">
+              ⚠️ Stock prices unavailable - check Finnhub API connection
+            </div>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-12">
@@ -139,6 +151,8 @@ const Dashboard = () => {
                   const article = mainAnalysisArticles.find(item => item.symbol === symbol);
                   const stockPrice = getStockPrice(symbol);
                   
+                  console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
+
                   if (article) {
                     return (
                       <NewsCard 
@@ -167,9 +181,14 @@ const Dashboard = () => {
                             <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-600 rounded-lg px-3 py-2">
                               <div className="text-right">
                                 <div className="text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
-                                <div className={`text-xs ${
+                                <div className={`text-xs flex items-center gap-1 ${
                                   stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
                                 }`}>
+                                  {stockPrice.change >= 0 ? (
+                                    <TrendingUp className="w-3 h-3" />
+                                  ) : (
+                                    <TrendingDown className="w-3 h-3" />
+                                  )}
                                   {stockPrice.change >= 0 ? '+' : ''}{stockPrice.change.toFixed(2)} ({stockPrice.changePercent.toFixed(2)}%)
                                 </div>
                               </div>
@@ -182,6 +201,11 @@ const Dashboard = () => {
                         <p className="text-slate-500 text-sm">
                           Click "Refresh News" to fetch the latest market updates and AI analysis.
                         </p>
+                        {!stockPrice && (
+                          <p className="text-red-400 text-xs mt-2">
+                            Stock price unavailable - check Finnhub connection
+                          </p>
+                        )}
                       </div>
                     );
                   }

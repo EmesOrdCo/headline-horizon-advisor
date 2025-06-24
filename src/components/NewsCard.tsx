@@ -35,7 +35,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             <div className="text-right">
               <div className="text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
               <div className={`text-xs flex items-center gap-1 ${
-                stockPrice.change >= 0 ? 'text-green-400' : 'text-red-400'
+                stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
               }`}>
                 {stockPrice.change >= 0 ? (
                   <TrendingUp className="w-3 h-3" />
@@ -87,7 +87,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-400">Market Sentiment</span>
               <span className={`font-semibold ${
-                sentiment === 'Bullish' ? 'text-green-400' :
+                sentiment === 'Bullish' ? 'text-emerald-400' :
                 sentiment === 'Bearish' ? 'text-red-400' :
                 'text-gray-400'
               }`}>{sentiment}</span>
@@ -100,7 +100,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             <div className="w-full bg-slate-700 rounded-full h-2 relative">
               <div 
                 className={`absolute h-2 rounded-full w-1/3 ${
-                  sentiment === 'Bullish' ? 'right-0 bg-green-500' :
+                  sentiment === 'Bullish' ? 'right-0 bg-emerald-500' :
                   sentiment === 'Bearish' ? 'left-0 bg-red-500' :
                   'left-1/3 bg-gray-500'
                 }`}
@@ -111,7 +111,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
           {category && (
             <div className="flex items-center gap-2">
               <Badge className={`${
-                sentiment === 'Bullish' ? 'bg-green-500' :
+                sentiment === 'Bullish' ? 'bg-emerald-500' :
                 sentiment === 'Bearish' ? 'bg-red-500' :
                 'bg-gray-500'
               } text-white text-xs`}>{sentiment?.toUpperCase()}</Badge>
