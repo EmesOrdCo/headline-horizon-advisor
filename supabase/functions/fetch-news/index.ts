@@ -13,7 +13,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// Magnificent 7 stocks
+// Magnificent 7 stocks for main analysis
 const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
 serve(async (req) => {
@@ -29,32 +29,60 @@ serve(async (req) => {
       throw new Error('Missing API keys - MarketAux or OpenAI');
     }
 
-    console.log('Starting news fetching with OpenAI analysis for Magnificent 7...');
+    console.log('Starting news fetching with OpenAI analysis for all stocks...');
     
     const allArticles = [];
     const magnificentAnalysis = new Map();
     const allProcessedArticles = [];
 
-    // Make 2 API calls to get 40 articles total
-    for (let apiCall = 0; apiCall < 2; apiCall++) {
-      console.log(`Making MarketAux API call ${apiCall + 1}/2...`);
+    // First, fetch news for Magnificent 7 stocks (4 API calls to get 80 articles)
+    console.log('Fetching Magnificent 7 news...');
+    for (let apiCall = 0; apiCall < 4; apiCall++) {
+      console.log(`Making Magnificent 7 API call ${apiCall + 1}/4...`);
       
       const newsResponse = await fetch(
         `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
       );
 
       if (!newsResponse.ok) {
-        throw new Error(`MarketAux API error: ${newsResponse.status}`);
+        console.error(`MarketAux API error for Magnificent 7: ${newsResponse.status}`);
+        continue;
       }
 
       const newsData = await newsResponse.json();
       const articles = newsData.data || [];
       
-      console.log(`Fetched ${articles.length} articles from API call ${apiCall + 1}`);
+      console.log(`Fetched ${articles.length} Magnificent 7 articles from API call ${apiCall + 1}`);
       allArticles.push(...articles);
 
       // Add delay between API calls
-      if (apiCall < 1) {
+      if (apiCall < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    // Then, fetch general market news (all stocks - 4 API calls to get 80 more articles)
+    console.log('Fetching general market news...');
+    for (let apiCall = 0; apiCall < 4; apiCall++) {
+      console.log(`Making general market API call ${apiCall + 1}/4...`);
+      
+      const newsResponse = await fetch(
+        `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
+      );
+
+      if (!newsResponse.ok) {
+        console.error(`MarketAux API error for general market: ${newsResponse.status}`);
+        continue;
+      }
+
+      const newsData = await newsResponse.json();
+      const articles = newsData.data || [];
+      
+      console.log(`Fetched ${articles.length} general market articles from API call ${apiCall + 1}`);
+      allArticles.push(...articles);
+
+      // Add delay between API calls
+      if (apiCall < 3) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -67,7 +95,7 @@ serve(async (req) => {
     
     for (const article of allArticles) {
       const symbol = article.entities?.[0]?.symbol;
-      if (!symbol || !MAGNIFICENT_7.includes(symbol)) {
+      if (!symbol) {
         continue;
       }
       
@@ -268,18 +296,20 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // Process ALL remaining unique articles with AI analysis - ensuring every single article gets analyzed
+    // Process ALL remaining unique articles with AI analysis - including non-Magnificent 7 stocks
     console.log('Starting AI analysis of ALL remaining unique headlines...');
     let analysisCount = 0;
 
     for (const article of uniqueArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
-      if (symbol && MAGNIFICENT_7.includes(symbol)) {
-        // Skip articles already used for main analysis
-        const mainArticle = magnificentAnalysis.get(symbol);
-        if (mainArticle && !mainArticle.is_historical && mainArticle.title === article.title) {
-          continue;
+      if (symbol) {
+        // Skip articles already used for Magnificent 7 main analysis
+        if (MAGNIFICENT_7.includes(symbol)) {
+          const mainArticle = magnificentAnalysis.get(symbol);
+          if (mainArticle && !mainArticle.is_historical && mainArticle.title === article.title) {
+            continue;
+          }
         }
 
         console.log(`Analyzing headline ${analysisCount + 1} for ${symbol}: ${article.title.substring(0, 50)}...`);
@@ -331,7 +361,7 @@ Provide JSON response:
               description: article.description,
               url: article.url,
               published_at: article.published_at,
-              category: 'Technology',
+              category: 'Market News',
               ai_confidence: headlineAnalysis.confidence,
               ai_sentiment: headlineAnalysis.sentiment,
               ai_reasoning: `AI analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
@@ -345,16 +375,16 @@ Provide JSON response:
             await new Promise(resolve => setTimeout(resolve, 300));
           } else {
             console.error(`Failed to analyze headline for ${symbol}: ${headlineResponse.status}`);
-            // Still add the article but without AI analysis - this should be rare
+            // Still add the article but without AI analysis
             allProcessedArticles.push({
               symbol,
               title: article.title,
               description: article.description,
               url: article.url,
               published_at: article.published_at,
-              category: 'Technology',
-              ai_confidence: 50, // Default neutral confidence
-              ai_sentiment: 'Neutral', // Default neutral sentiment
+              category: 'Market News',
+              ai_confidence: 50,
+              ai_sentiment: 'Neutral',
               ai_reasoning: 'AI analysis failed - default neutral assessment',
               is_main_analysis: false
             });
@@ -369,9 +399,9 @@ Provide JSON response:
             description: article.description,
             url: article.url,
             published_at: article.published_at,
-            category: 'Technology',
-            ai_confidence: 50, // Default neutral confidence
-            ai_sentiment: 'Neutral', // Default neutral sentiment
+            category: 'Market News',
+            ai_confidence: 50,
+            ai_sentiment: 'Neutral',
             ai_reasoning: 'AI analysis error - default neutral assessment',
             is_main_analysis: false
           });
@@ -441,10 +471,12 @@ Provide JSON response:
       openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + allProcessedArticles.length,
       historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length,
       duplicatesRemoved: allArticles.length - uniqueArticles.length,
-      message: 'All unique articles now have AI analysis and are in chronological order'
+      magnificentStocksCount: Array.from(magnificentAnalysis.values()).length,
+      allStocksHeadlinesCount: allProcessedArticles.length,
+      message: 'All unique articles from both Magnificent 7 and general market have AI analysis and are in chronological order'
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} unique analyzed headlines with AI in chronological order. Removed ${summary.duplicatesRemoved} duplicates.`);
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} unique analyzed headlines from ALL stocks with AI in chronological order. Removed ${summary.duplicatesRemoved} duplicates.`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
