@@ -61,13 +61,6 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               <span className="text-emerald-400 font-semibold">AI Analysis</span>
-              <Badge className={`text-xs ${
-                sentiment === 'Bullish' ? 'bg-emerald-500/20 text-emerald-400' :
-                sentiment === 'Bearish' ? 'bg-red-500/20 text-red-400' :
-                'bg-gray-500/20 text-gray-400'
-              }`}>
-                {sentiment}
-              </Badge>
             </div>
             <p className="text-slate-300 text-sm mb-3">
               {isHistorical 
