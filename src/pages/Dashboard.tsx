@@ -241,26 +241,24 @@ const Dashboard = () => {
                   {remainingHeadlines && remainingHeadlines.length > 0 && (
                     <>
                       {remainingHeadlines.slice(0, 25).map((item, index) => (
-                        <div key={`remaining-${item.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                          <div className="flex items-center gap-2">
+                        <div key={`remaining-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                          <div className="flex items-center gap-2 mb-3">
                             <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
                               {item.symbol}
                             </Badge>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <a 
-                              href={item.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-white text-sm font-medium mb-1 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer"
-                            >
-                              {item.title}
-                            </a>
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="text-slate-400">
-                                {new Date(item.published_at).toLocaleDateString()}
-                              </span>
-                            </div>
+                          <a 
+                            href={item.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
+                          >
+                            {item.title}
+                          </a>
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="text-slate-400">
+                              {new Date(item.published_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       ))}
