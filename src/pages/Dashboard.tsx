@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -203,6 +204,13 @@ const Dashboard = () => {
                           <div className="flex items-center gap-2 mb-3">
                             <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
                               {item.symbol}
+                            </Badge>
+                            <Badge className={`text-xs ${
+                              item.ai_sentiment === 'Bullish' ? 'bg-emerald-500/20 text-emerald-400' :
+                              item.ai_sentiment === 'Bearish' ? 'bg-red-500/20 text-red-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {item.ai_sentiment}
                             </Badge>
                           </div>
                           <a 
