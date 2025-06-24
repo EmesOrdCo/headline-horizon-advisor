@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -36,17 +35,15 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get analyzed additional headlines (articles with ChatGPT analysis) - sorted by date
+  // Get analyzed additional headlines (articles with ChatGPT analysis) from ALL stocks - sorted by date
   const analyzedHeadlines = newsData?.filter(item => 
-    MAGNIFICENT_7.includes(item.symbol) && 
     item.ai_confidence && 
     item.ai_sentiment &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
   ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  // Get remaining headlines without analysis - sorted by date
+  // Get remaining headlines without analysis from ALL stocks - sorted by date
   const remainingHeadlines = newsData?.filter(item => 
-    MAGNIFICENT_7.includes(item.symbol) && 
     (!item.ai_confidence || !item.ai_sentiment) &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
   ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
@@ -220,7 +217,7 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {/* First show analyzed headlines with AI analysis */}
+                  {/* First show analyzed headlines with AI analysis from ALL stocks */}
                   {analyzedHeadlines && analyzedHeadlines.length > 0 && (
                     <>
                       {analyzedHeadlines.slice(0, 15).map((item, index) => (
@@ -262,7 +259,7 @@ const Dashboard = () => {
                     </>
                   )}
                   
-                  {/* Then show remaining headlines without analysis */}
+                  {/* Then show remaining headlines without analysis from ALL stocks */}
                   {remainingHeadlines && remainingHeadlines.length > 0 && (
                     <>
                       {remainingHeadlines.slice(0, 25).map((item, index) => (
