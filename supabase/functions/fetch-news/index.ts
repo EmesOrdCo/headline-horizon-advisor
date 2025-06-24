@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -32,7 +33,7 @@ serve(async (req) => {
     
     const allArticles = [];
     const magnificentAnalysis = new Map();
-    const additionalHeadlines = [];
+    const allOtherHeadlinesWithAnalysis = [];
 
     // Make 2 API calls to get 40 articles total
     for (let apiCall = 0; apiCall < 2; apiCall++) {
@@ -245,15 +246,14 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // Process remaining articles for "Other Headlines" with ChatGPT analysis
-    const otherHeadlinesWithAnalysis = [];
+    // Process ALL remaining articles for "Other Headlines" with ChatGPT analysis
+    console.log('Starting analysis of ALL remaining headlines...');
     let analysisCount = 0;
-    const maxAnalysisCount = 15; // Limit to avoid too many API calls
 
     for (const article of allArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
-      if (symbol && MAGNIFICENT_7.includes(symbol) && analysisCount < maxAnalysisCount) {
+      if (symbol && MAGNIFICENT_7.includes(symbol)) {
         // Skip articles already used for main analysis
         if (magnificentAnalysis.has(symbol) && !magnificentAnalysis.get(symbol).is_historical) {
           const mainArticle = magnificentAnalysis.get(symbol);
@@ -262,7 +262,7 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
           }
         }
 
-        console.log(`Analyzing additional headline for ${symbol}: ${article.title.substring(0, 50)}...`);
+        console.log(`Analyzing headline ${analysisCount + 1} for ${symbol}: ${article.title.substring(0, 50)}...`);
 
         try {
           const headlinePrompt = `Analyse this article, decide if you are, as a result, bullish, bearish or neutral on the stock the article is about, and how confident you are out of 100% on that statement.
@@ -305,7 +305,7 @@ Provide JSON response:
             const headlineData = await headlineResponse.json();
             const headlineAnalysis = JSON.parse(headlineData.choices[0].message.content);
 
-            otherHeadlinesWithAnalysis.push({
+            allOtherHeadlinesWithAnalysis.push({
               symbol,
               title: article.title,
               description: article.description,
@@ -323,21 +323,21 @@ Provide JSON response:
           }
         } catch (error) {
           console.error(`❌ Error analyzing headline for ${symbol}:`, error);
+          
+          // Add unanalyzed article to list
+          allOtherHeadlinesWithAnalysis.push({
+            symbol,
+            title: article.title,
+            description: article.description,
+            url: article.url,
+            published_at: article.published_at,
+            category: 'Technology',
+            is_main_analysis: false
+          });
         }
 
-        // Add delay between analysis calls
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } else if (symbol && MAGNIFICENT_7.includes(symbol)) {
-        // Add remaining articles without analysis
-        additionalHeadlines.push({
-          symbol,
-          title: article.title,
-          description: article.description,
-          url: article.url,
-          published_at: article.published_at,
-          category: 'Technology',
-          is_main_analysis: false
-        });
+        // Add delay between analysis calls to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
 
@@ -370,9 +370,9 @@ Provide JSON response:
       }
     }
 
-    // Insert analyzed other headlines
-    console.log('Inserting analyzed other headlines...');
-    for (const article of otherHeadlinesWithAnalysis) {
+    // Insert ALL other headlines (analyzed and unanalyzed)
+    console.log('Inserting all other headlines...');
+    for (const article of allOtherHeadlinesWithAnalysis) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -388,36 +388,20 @@ Provide JSON response:
         });
 
       if (error) {
-        console.error(`❌ Database error for analyzed headline ${article.symbol}:`, error);
+        console.error(`❌ Database error for headline ${article.symbol}:`, error);
       }
     }
 
-    // Insert remaining additional headlines
-    console.log('Inserting remaining additional headlines...');
-    for (const article of additionalHeadlines) {
-      const { error } = await supabase
-        .from('news_articles')
-        .insert({
-          title: article.title,
-          description: article.description,
-          symbol: article.symbol,
-          url: article.url,
-          published_at: article.published_at,
-          category: article.category
-        });
-
-      if (error) {
-        console.error(`❌ Database error for additional headline ${article.symbol}:`, error);
-      }
-    }
+    const analyzedHeadlines = allOtherHeadlinesWithAnalysis.filter(a => a.ai_confidence && a.ai_sentiment);
+    const unanalyzedHeadlines = allOtherHeadlinesWithAnalysis.filter(a => !a.ai_confidence || !a.ai_sentiment);
 
     const summary = {
       success: true,
       mainAnalyses: magnificentAnalysis.size,
-      analyzedHeadlines: otherHeadlinesWithAnalysis.length,
-      additionalHeadlines: additionalHeadlines.length,
+      analyzedHeadlines: analyzedHeadlines.length,
+      unanalyzedHeadlines: unanalyzedHeadlines.length,
       totalArticlesProcessed: allArticles.length,
-      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + otherHeadlinesWithAnalysis.length,
+      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + analyzedHeadlines.length,
       historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length
     };
 
