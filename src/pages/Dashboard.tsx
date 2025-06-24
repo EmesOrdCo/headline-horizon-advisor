@@ -246,11 +246,11 @@ const Dashboard = () => {
                             <span className="text-slate-400">
                               {new Date(item.published_at).toLocaleDateString()}
                             </span>
-                            <span className="text-emerald-400 font-semibold">{item.ai_confidence}% confidence</span>
+                            <span className="text-cyan-400 font-semibold">{item.ai_confidence}% confidence</span>
                           </div>
                           <div className="w-full bg-slate-700 rounded-full h-1.5">
                             <div 
-                              className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" 
+                              className="bg-cyan-500 h-1.5 rounded-full transition-all duration-500" 
                               style={{width: `${item.ai_confidence}%`}}
                             ></div>
                           </div>
