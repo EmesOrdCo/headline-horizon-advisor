@@ -33,7 +33,7 @@ serve(async (req) => {
     
     const allArticles = [];
     const magnificentAnalysis = new Map();
-    const allOtherAnalyzedArticles = [];
+    const allProcessedArticles = [];
 
     // Make 2 API calls to get 40 articles total
     for (let apiCall = 0; apiCall < 2; apiCall++) {
@@ -61,11 +61,30 @@ serve(async (req) => {
 
     console.log(`Total articles fetched: ${allArticles.length}`);
 
-    // Sort all articles by published date first to ensure chronological order
-    allArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    // Remove duplicates based on title and symbol combination
+    const uniqueArticles = [];
+    const seenTitles = new Set();
+    
+    for (const article of allArticles) {
+      const symbol = article.entities?.[0]?.symbol;
+      if (!symbol || !MAGNIFICENT_7.includes(symbol)) {
+        continue;
+      }
+      
+      const uniqueKey = `${symbol}-${article.title}`;
+      if (!seenTitles.has(uniqueKey)) {
+        seenTitles.add(uniqueKey);
+        uniqueArticles.push(article);
+      }
+    }
+
+    console.log(`Unique articles after deduplication: ${uniqueArticles.length}`);
+
+    // Sort all unique articles by published date first to ensure chronological order
+    uniqueArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
     // Process articles for Magnificent 7 main analysis (one per stock with OpenAI)
-    for (const article of allArticles) {
+    for (const article of uniqueArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
       if (!symbol || !MAGNIFICENT_7.includes(symbol)) {
@@ -249,11 +268,11 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       }
     }
 
-    // Process ALL remaining articles with AI analysis - ensuring every single article gets analyzed
-    console.log('Starting AI analysis of ALL remaining headlines...');
+    // Process ALL remaining unique articles with AI analysis - ensuring every single article gets analyzed
+    console.log('Starting AI analysis of ALL remaining unique headlines...');
     let analysisCount = 0;
 
-    for (const article of allArticles) {
+    for (const article of uniqueArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
       if (symbol && MAGNIFICENT_7.includes(symbol)) {
@@ -306,7 +325,7 @@ Provide JSON response:
             const headlineData = await headlineResponse.json();
             const headlineAnalysis = JSON.parse(headlineData.choices[0].message.content);
 
-            allOtherAnalyzedArticles.push({
+            allProcessedArticles.push({
               symbol,
               title: article.title,
               description: article.description,
@@ -327,7 +346,7 @@ Provide JSON response:
           } else {
             console.error(`Failed to analyze headline for ${symbol}: ${headlineResponse.status}`);
             // Still add the article but without AI analysis - this should be rare
-            allOtherAnalyzedArticles.push({
+            allProcessedArticles.push({
               symbol,
               title: article.title,
               description: article.description,
@@ -344,7 +363,7 @@ Provide JSON response:
           console.error(`❌ Error analyzing headline for ${symbol}:`, error);
           
           // Add with default analysis to ensure consistency
-          allOtherAnalyzedArticles.push({
+          allProcessedArticles.push({
             symbol,
             title: article.title,
             description: article.description,
@@ -360,8 +379,8 @@ Provide JSON response:
       }
     }
 
-    // Sort all other articles by published date to ensure strict chronological order
-    allOtherAnalyzedArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    // Sort all processed articles by published date to ensure strict chronological order
+    allProcessedArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
     // Store all articles in database
     // First, clear existing articles
@@ -392,9 +411,9 @@ Provide JSON response:
       }
     }
 
-    // Insert ALL analyzed other headlines in chronological order
-    console.log('Inserting all analyzed headlines in chronological order...');
-    for (const article of allOtherAnalyzedArticles) {
+    // Insert ALL analyzed unique headlines in chronological order
+    console.log('Inserting all analyzed unique headlines in chronological order...');
+    for (const article of allProcessedArticles) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -417,14 +436,15 @@ Provide JSON response:
     const summary = {
       success: true,
       mainAnalyses: magnificentAnalysis.size,
-      analyzedHeadlines: allOtherAnalyzedArticles.length,
-      totalArticlesProcessed: allArticles.length,
-      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + allOtherAnalyzedArticles.length,
+      analyzedHeadlines: allProcessedArticles.length,
+      totalUniqueArticlesProcessed: uniqueArticles.length,
+      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + allProcessedArticles.length,
       historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length,
-      message: 'All articles now have AI analysis and are in chronological order'
+      duplicatesRemoved: allArticles.length - uniqueArticles.length,
+      message: 'All unique articles now have AI analysis and are in chronological order'
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} analyzed headlines with AI in chronological order`);
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} unique analyzed headlines with AI in chronological order. Removed ${summary.duplicatesRemoved} duplicates.`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
