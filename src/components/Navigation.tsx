@@ -16,7 +16,7 @@ const Navigation = () => {
         <a href="#features" className="text-slate-300 hover:text-white transition-colors">Features</a>
         <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors">How it Works</a>
         <a href="#pricing" className="text-slate-300 hover:text-white transition-colors">Pricing</a>
-        <Link to="/dashboard">
+        <Link to="/auth">
           <Button variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
             Sign In
           </Button>
