@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 interface MarketIndex {
   symbol: string;
@@ -32,32 +33,21 @@ const MarketTicker = () => {
           try {
             console.log(`Fetching data for ${index.symbol}...`);
             
-            const response = await fetch('/api/stock-price', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ symbol: index.symbol }),
+            const { data, error } = await supabase.functions.invoke('stock-price', {
+              body: { symbol: index.symbol },
             });
             
-            if (!response.ok) {
-              if (response.status === 429) {
-                console.error(`Rate limit hit for ${index.symbol}, skipping...`);
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                continue;
-              }
-              console.error(`HTTP error for ${index.symbol}! status: ${response.status}`);
+            if (error) {
+              console.error(`Supabase function error for ${index.symbol}:`, error);
               continue;
             }
             
-            const data = await response.json();
-            
-            if (data.error) {
+            if (data?.error) {
               console.error(`API error for ${index.symbol}:`, data.error);
               continue;
             }
             
-            if (data.price && data.price > 0) {
+            if (data?.price && data.price > 0) {
               results.push({
                 symbol: index.name,
                 name: index.name,

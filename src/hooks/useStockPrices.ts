@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockPrice {
   symbol: string;
@@ -26,33 +27,21 @@ export const useStockPrices = () => {
           try {
             console.log(`Fetching price for ${symbol}...`);
             
-            const response = await fetch('/api/stock-price', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ symbol }),
+            const { data, error } = await supabase.functions.invoke('stock-price', {
+              body: { symbol },
             });
             
-            if (!response.ok) {
-              if (response.status === 429) {
-                console.error(`Rate limit hit for ${symbol}, skipping...`);
-                // Wait longer before next request if we hit rate limit
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                continue;
-              }
-              console.error(`HTTP error for ${symbol}! status: ${response.status}`);
+            if (error) {
+              console.error(`Supabase function error for ${symbol}:`, error);
               continue;
             }
             
-            const data = await response.json();
-            
-            if (data.error) {
+            if (data?.error) {
               console.error(`API error for ${symbol}:`, data.error);
               continue;
             }
             
-            if (data.price && data.price > 0) {
+            if (data?.price && data.price > 0) {
               results.push({
                 symbol,
                 price: parseFloat(data.price.toFixed(2)),
