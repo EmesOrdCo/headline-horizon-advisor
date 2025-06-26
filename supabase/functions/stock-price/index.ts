@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -14,9 +13,16 @@ serve(async (req) => {
 
   try {
     const { symbol } = await req.json();
+
+    // <<< ADDED: Log the raw symbol for debugging
+    console.log(`→ RAW SYMBOL: "${symbol}" (length=${symbol.length})`);
+
+    // <<< ADDED: Clean up symbol by trimming and URI-encoding
+    const cleanSymbol = encodeURIComponent(symbol.trim());
+
     const finnhubApiKey = Deno.env.get('FINNHUB_API_KEY');
 
-    console.log(`=== DEBUGGING FINNHUB API FOR ${symbol} ===`);
+    console.log(`=== DEBUGGING FINNHUB API FOR ${cleanSymbol} ===`);
     console.log('Finnhub API Key exists:', !!finnhubApiKey);
     console.log('Finnhub API Key length:', finnhubApiKey?.length || 0);
 
@@ -30,7 +36,8 @@ serve(async (req) => {
       throw new Error('FINNHUB_API_KEY appears to be invalid');
     }
 
-    const apiUrl = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`;
+    // Use the cleaned symbol in the URL
+    const apiUrl = `https://finnhub.io/api/v1/quote?symbol=${cleanSymbol}&token=${finnhubApiKey}`;
     console.log(`Making request to: ${apiUrl.replace(finnhubApiKey, 'API_KEY_HIDDEN')}`);
     
     // Add delay to respect rate limits for free tier (60 calls/minute)
@@ -39,39 +46,39 @@ serve(async (req) => {
     // Get current price
     const quoteResponse = await fetch(apiUrl);
     
-    console.log(`Response status for ${symbol}:`, quoteResponse.status);
-    console.log(`Response headers for ${symbol}:`, Object.fromEntries(quoteResponse.headers.entries()));
+    console.log(`Response status for ${cleanSymbol}:`, quoteResponse.status);
+    console.log(`Response headers for ${cleanSymbol}:`, Object.fromEntries(quoteResponse.headers.entries()));
     
     if (!quoteResponse.ok) {
       const errorText = await quoteResponse.text();
-      console.error(`Finnhub API error for ${symbol}: ${quoteResponse.status} - ${errorText}`);
+      console.error(`Finnhub API error for ${cleanSymbol}: ${quoteResponse.status} - ${errorText}`);
       throw new Error(`Finnhub API error: ${quoteResponse.status} - ${errorText}`);
     }
     
     const responseText = await quoteResponse.text();
-    console.log(`Raw response for ${symbol}:`, responseText);
+    console.log(`Raw response for ${cleanSymbol}:`, responseText);
     
     let quoteData;
     try {
       quoteData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error(`JSON parse error for ${symbol}:`, parseError);
+      console.error(`JSON parse error for ${cleanSymbol}:`, parseError);
       console.error(`Response text that failed to parse:`, responseText);
       throw new Error(`Failed to parse JSON response: ${parseError.message}`);
     }
     
-    console.log(`Parsed data for ${symbol}:`, quoteData);
+    console.log(`Parsed data for ${cleanSymbol}:`, quoteData);
     
     // Check if we got an error from Finnhub
     if (quoteData.error) {
-      console.error(`Finnhub API returned error for ${symbol}:`, quoteData.error);
+      console.error(`Finnhub API returned error for ${cleanSymbol}:`, quoteData.error);
       throw new Error(`Finnhub API error: ${quoteData.error}`);
     }
     
     // Check if we have valid price data
     if (!quoteData.c || quoteData.c <= 0) {
-      console.error(`Invalid price data for ${symbol}:`, quoteData);
-      throw new Error(`Invalid or missing price data for ${symbol}`);
+      console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
+      throw new Error(`Invalid or missing price data for ${cleanSymbol}`);
     }
     
     const price = quoteData.c; // Current price
@@ -79,13 +86,13 @@ serve(async (req) => {
     const changePercent = quoteData.dp || 0; // Percent change
     
     const result = {
-      symbol,
+      symbol: cleanSymbol, // <<< NOTE: returning the cleaned symbol
       price: parseFloat(price.toFixed(2)),
       change: parseFloat(change.toFixed(2)),
       changePercent: parseFloat(changePercent.toFixed(2))
     };
     
-    console.log(`Successful result for ${symbol}:`, result);
+    console.log(`Successful result for ${cleanSymbol}:`, result);
     
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -107,3 +114,4 @@ serve(async (req) => {
     });
   }
 });
+
