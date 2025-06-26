@@ -16,23 +16,22 @@ const MarketTicker = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        // Major market indices and ETFs - using symbols that work with Finnhub free tier
+        // Major market indices and ETFs - reduced to fewer symbols to respect rate limits
         const indices = [
           { symbol: 'SPY', name: 'S&P 500' },
           { symbol: 'QQQ', name: 'NASDAQ' },
-          { symbol: 'DIA', name: 'Dow Jones' },
-          { symbol: 'IWM', name: 'Russell 2000' },
-          { symbol: 'VTI', name: 'Total Market' },
-          { symbol: 'EFA', name: 'EAFE' }
+          { symbol: 'DIA', name: 'Dow Jones' }
         ];
         
-        console.log('Fetching live market data from Finnhub...');
+        console.log('Fetching live market data from Finnhub with rate limiting...');
         
         const results: MarketIndex[] = [];
         
-        // Fetch sequentially to respect Finnhub free tier rate limits
+        // Fetch with longer delays to respect rate limits
         for (const index of indices) {
           try {
+            console.log(`Fetching data for ${index.symbol}...`);
+            
             const response = await fetch('/api/stock-price', {
               method: 'POST',
               headers: {
@@ -42,6 +41,11 @@ const MarketTicker = () => {
             });
             
             if (!response.ok) {
+              if (response.status === 429) {
+                console.error(`Rate limit hit for ${index.symbol}, skipping...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                continue;
+              }
               console.error(`HTTP error for ${index.symbol}! status: ${response.status}`);
               continue;
             }
@@ -61,7 +65,15 @@ const MarketTicker = () => {
                 change: parseFloat(data.change.toFixed(2)),
                 changePercent: parseFloat(data.changePercent.toFixed(2))
               });
+              console.log(`Successfully fetched data for ${index.symbol}: $${data.price}`);
             }
+            
+            // Wait 4 seconds between each request to respect rate limits
+            if (indices.indexOf(index) < indices.length - 1) {
+              console.log('Waiting 4 seconds before next request...');
+              await new Promise(resolve => setTimeout(resolve, 4000));
+            }
+            
           } catch (error) {
             console.error(`Error fetching data for ${index.symbol}:`, error);
           }
@@ -72,7 +84,6 @@ const MarketTicker = () => {
           console.log(`Successfully fetched ${results.length} market indices`);
         } else {
           console.error('No valid market data received');
-          // Keep existing data if available, otherwise show error
           if (marketData.length === 0) {
             setMarketData([]);
           }
@@ -85,8 +96,8 @@ const MarketTicker = () => {
     };
 
     fetchMarketData();
-    // Refetch every 2 minutes to respect rate limits
-    const interval = setInterval(fetchMarketData, 120000);
+    // Refetch every 10 minutes to respect rate limits
+    const interval = setInterval(fetchMarketData, 600000);
 
     return () => clearInterval(interval);
   }, []);
@@ -105,7 +116,7 @@ const MarketTicker = () => {
     return (
       <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
         <div className="flex items-center justify-center">
-          <div className="text-red-400">Unable to fetch live market data. Please check your Finnhub API key.</div>
+          <div className="text-red-400">Unable to fetch live market data. Please check your Finnhub API key and rate limits.</div>
         </div>
       </div>
     );
