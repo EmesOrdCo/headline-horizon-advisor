@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
@@ -17,18 +18,18 @@ const MarketTicker = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        // Major market indices and ETFs - reduced to fewer symbols to respect rate limits
+        // Major market indices - using fewer symbols to respect rate limits
         const indices = [
           { symbol: 'SPY', name: 'S&P 500' },
           { symbol: 'QQQ', name: 'NASDAQ' },
           { symbol: 'DIA', name: 'Dow Jones' }
         ];
         
-        console.log('Fetching live market data from Finnhub with rate limiting...');
+        console.log('Fetching live market data from Finnhub...');
         
         const results: MarketIndex[] = [];
         
-        // Fetch with longer delays to respect rate limits
+        // Fetch with 1.5 second delays
         for (const index of indices) {
           try {
             console.log(`Fetching data for ${index.symbol}...`);
@@ -58,10 +59,10 @@ const MarketTicker = () => {
               console.log(`Successfully fetched data for ${index.symbol}: $${data.price}`);
             }
             
-            // Wait 4 seconds between each request to respect rate limits
+            // Wait 1.5 seconds between each request
             if (indices.indexOf(index) < indices.length - 1) {
-              console.log('Waiting 4 seconds before next request...');
-              await new Promise(resolve => setTimeout(resolve, 4000));
+              console.log('Waiting 1.5 seconds before next request...');
+              await new Promise(resolve => setTimeout(resolve, 1500));
             }
             
           } catch (error) {
@@ -86,8 +87,8 @@ const MarketTicker = () => {
     };
 
     fetchMarketData();
-    // Refetch every 10 minutes to respect rate limits
-    const interval = setInterval(fetchMarketData, 600000);
+    // Refetch every 2 minutes (allows time for all API calls to complete)
+    const interval = setInterval(fetchMarketData, 120000);
 
     return () => clearInterval(interval);
   }, []);

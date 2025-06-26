@@ -10,7 +10,7 @@ export const useNews = () => {
         .from('news_articles')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50); // Increased limit to get more articles
+        .limit(50);
 
       if (error) {
         throw error;
@@ -18,7 +18,8 @@ export const useNews = () => {
 
       return data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - news is fresh for 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every 1 minute for faster news updates
   });
 };
 

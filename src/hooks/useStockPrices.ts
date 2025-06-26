@@ -16,13 +16,11 @@ export const useStockPrices = () => {
       const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
       
       try {
-        console.log('Fetching live stock prices from Finnhub with rate limiting...');
+        console.log('Fetching live stock prices from Finnhub...');
         
         const results: StockPrice[] = [];
         
-        // Fetch with longer delays to respect Finnhub free tier limits
-        // 60 calls/minute = 1 call per second minimum
-        // Adding 3-second delays to be extra conservative
+        // Fetch with 1 second delays to respect Finnhub limits (60 calls/minute)
         for (const symbol of MAGNIFICENT_7) {
           try {
             console.log(`Fetching price for ${symbol}...`);
@@ -51,10 +49,10 @@ export const useStockPrices = () => {
               console.log(`Successfully fetched price for ${symbol}: $${data.price}`);
             }
             
-            // Wait 3 seconds between each request to respect rate limits
+            // Wait 1.5 seconds between each request (40 calls/minute to be safe)
             if (MAGNIFICENT_7.indexOf(symbol) < MAGNIFICENT_7.length - 1) {
-              console.log('Waiting 3 seconds before next request...');
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              console.log('Waiting 1.5 seconds before next request...');
+              await new Promise(resolve => setTimeout(resolve, 1500));
             }
             
           } catch (error) {
@@ -63,7 +61,7 @@ export const useStockPrices = () => {
         }
 
         if (results.length === 0) {
-          throw new Error('No valid stock data received from Finnhub - check rate limits');
+          throw new Error('No valid stock data received from Finnhub');
         }
 
         console.log(`Successfully fetched ${results.length}/${MAGNIFICENT_7.length} stock prices`);
@@ -73,9 +71,9 @@ export const useStockPrices = () => {
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - longer cache to reduce API calls
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes instead of 1 minute
-    retry: 1, // Reduce retries to avoid hitting rate limits
-    retryDelay: 60000, // Wait 1 minute between retries
+    staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every 1 minute (allows for 7*1.5s = ~11s per cycle)
+    retry: 1,
+    retryDelay: 30000, // Wait 30 seconds between retries
   });
 };
