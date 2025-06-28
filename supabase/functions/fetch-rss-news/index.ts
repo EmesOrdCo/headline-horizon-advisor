@@ -12,7 +12,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// RSS Feed sources for financial news
+// RSS Feed sources - ONLY the 5 specified sources, NO Yahoo Finance
 const RSS_SOURCES = [
   {
     name: 'Reuters Business',
@@ -20,13 +20,13 @@ const RSS_SOURCES = [
     category: 'Business'
   },
   {
-    name: 'MarketWatch',
-    url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/',
+    name: 'CNBC Markets',
+    url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',
     category: 'Markets'
   },
   {
-    name: 'CNBC Markets',
-    url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',
+    name: 'MarketWatch',
+    url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/',
     category: 'Markets'
   },
   {
@@ -119,7 +119,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting RSS news fetch from multiple sources...');
+    console.log('🚀 Starting RSS news fetch from 5 specified sources (NO Yahoo Finance)...');
     
     // Fetch from all RSS sources in parallel
     const rssPromises = RSS_SOURCES.map(source => 
@@ -139,7 +139,7 @@ serve(async (req) => {
       }
     });
 
-    console.log(`📰 Total articles collected: ${allArticles.length}`);
+    console.log(`📰 Total articles collected from 5 sources: ${allArticles.length}`);
 
     if (allArticles.length > 0) {
       // Store articles in database
@@ -155,14 +155,15 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log(`💾 Successfully stored RSS news articles in database`);
+      console.log(`💾 Successfully stored RSS news articles from 5 sources in database`);
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Successfully fetched ${allArticles.length} RSS articles from ${RSS_SOURCES.length} sources`,
+      message: `Successfully fetched ${allArticles.length} RSS articles from 5 sources (Reuters, CNBC, MarketWatch, Bloomberg, Financial Times)`,
       sources: RSS_SOURCES.map(s => s.name),
-      articleCount: allArticles.length
+      articleCount: allArticles.length,
+      note: "Yahoo Finance has been removed - only using the 5 specified sources"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
