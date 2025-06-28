@@ -71,20 +71,13 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get ALL recent headlines in chronological order - now including RSS sources
-  const allRecentHeadlines = newsData?.filter(item => {
+  // Get ONLY RSS headlines from the 5 sources we specified
+  const rssHeadlines = newsData?.filter(item => {
+    const isRSSSource = item.symbol === 'RSS';
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
     
-    // For RSS articles (symbol === 'RSS'), include them if they're recent
-    if (item.symbol === 'RSS') {
-      return isRecent;
-    }
-    
-    // For analyzed articles, use existing logic
-    const isHighConfidence = item.ai_confidence && item.ai_confidence > 60;
-    const hasGoodSentiment = item.ai_sentiment && item.ai_sentiment !== 'Neutral';
-    
-    return isRecent && (isHighConfidence || hasGoodSentiment);
+    // Only include articles that are from RSS sources and recent
+    return isRSSSource && isRecent;
   }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   // Generate composite headline based on source articles with uniqueness checking
@@ -199,9 +192,9 @@ const Dashboard = () => {
     const description = item.description || '';
     
     // If it's from RSS source, provide source-specific context
-    if (item.symbol === 'RSS' && item.source) {
-      return `From ${item.source}: ${description.substring(0, 150)}...` || 
-             `Breaking news from ${item.source} covering important market developments and business updates.`;
+    if (item.symbol === 'RSS' && (item as any).source) {
+      return `From ${(item as any).source}: ${description.substring(0, 150)}...` || 
+             `Breaking news from ${(item as any).source} covering important market developments and business updates.`;
     }
     
     if (title.toLowerCase().includes('earnings') || title.toLowerCase().includes('revenue')) {
@@ -380,8 +373,8 @@ const Dashboard = () => {
               </div>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {allRecentHeadlines && allRecentHeadlines.length > 0 ? (
-                    allRecentHeadlines.slice(0, 30).map((item, index) => (
+                  {rssHeadlines && rssHeadlines.length > 0 ? (
+                    rssHeadlines.slice(0, 30).map((item, index) => (
                       <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <a 
@@ -410,7 +403,7 @@ const Dashboard = () => {
                     ))
                   ) : (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No headlines available.</p>
+                      <p>No RSS headlines available.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                     </div>
                   )}
