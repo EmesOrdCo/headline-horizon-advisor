@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -39,8 +40,83 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get ALL recent headlines in chronological order (including primary assets)
-  const allRecentHeadlines = newsData?.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+  // Get ALL recent headlines in chronological order (front-page news only)
+  const allRecentHeadlines = newsData?.filter(item => {
+    // Front-page news typically has higher confidence and recent publish dates
+    const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
+    const isHighConfidence = item.ai_confidence && item.ai_confidence > 60;
+    const hasGoodSentiment = item.ai_sentiment && item.ai_sentiment !== 'Neutral';
+    
+    return isRecent && (isHighConfidence || hasGoodSentiment);
+  }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+
+  // Generate composite headline based on source articles
+  const generateCompositeHeadline = (item: any) => {
+    const symbol = item.symbol;
+    const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
+    const confidence = item.ai_confidence || 50;
+    
+    // Parse source links to get article titles
+    let sourceArticles = [];
+    try {
+      sourceArticles = item.source_links ? JSON.parse(item.source_links) : [];
+    } catch (error) {
+      console.error('Error parsing source links:', error);
+    }
+
+    // Analyze source article titles to create composite headline
+    if (sourceArticles.length > 0) {
+      const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
+      
+      // Check for common themes in the source articles
+      const hasEarnings = titles.some((title: string) => title.includes('earnings') || title.includes('revenue') || title.includes('profit'));
+      const hasAI = titles.some((title: string) => title.includes('ai') || title.includes('artificial intelligence'));
+      const hasCollaboration = titles.some((title: string) => title.includes('partnership') || title.includes('collaboration') || title.includes('deal'));
+      const hasMarketNews = titles.some((title: string) => title.includes('market') || title.includes('stock') || title.includes('rally'));
+      const hasRecord = titles.some((title: string) => title.includes('record') || title.includes('high') || title.includes('surge'));
+      const hasConcerns = titles.some((title: string) => title.includes('concern') || title.includes('warning') || title.includes('risk'));
+      
+      // Generate headline based on detected themes and sentiment
+      if (sentiment === 'bullish' && confidence > 80) {
+        if (hasRecord) {
+          return `${symbol} Reaches New Heights Amid Strong Market Performance`;
+        } else if (hasAI && MAGNIFICENT_7.includes(symbol)) {
+          return `${symbol} Leads AI Innovation Wave with Strategic Developments`;
+        } else if (hasEarnings) {
+          return `${symbol} Shows Strong Financial Performance in Latest Results`;
+        } else if (hasCollaboration) {
+          return `${symbol} Expands Market Position Through Strategic Partnerships`;
+        } else if (hasMarketNews) {
+          return `${symbol} Benefits from Positive Market Momentum and Investor Confidence`;
+        } else {
+          return `${symbol} Demonstrates Strong Market Leadership and Growth Potential`;
+        }
+      } else if (sentiment === 'bearish' && confidence > 70) {
+        if (hasConcerns) {
+          return `${symbol} Faces Market Headwinds Amid Growing Investor Concerns`;
+        } else if (hasMarketNews) {
+          return `${symbol} Under Pressure as Market Conditions Present Challenges`;
+        } else {
+          return `${symbol} Navigates Uncertain Market Environment with Caution`;
+        }
+      } else if (sentiment === 'bullish' && confidence <= 80) {
+        return `${symbol} Shows Moderate Gains Amid Mixed Market Signals`;
+      } else if (sentiment === 'bearish' && confidence <= 70) {
+        return `${symbol} Experiences Volatility as Markets Remain Cautious`;
+      } else {
+        return `${symbol} Maintains Steady Position in Current Market Conditions`;
+      }
+    } else {
+      // Fallback headlines when no source articles available
+      if (sentiment === 'bullish') {
+        return `${symbol} Shows Positive Market Outlook Based on Historical Analysis`;
+      } else if (sentiment === 'bearish') {
+        return `${symbol} Faces Market Challenges According to Recent Trends`;
+      } else {
+        return `${symbol} Maintains Neutral Position in Current Market Environment`;
+      }
+    }
+  };
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
@@ -199,11 +275,14 @@ const Dashboard = () => {
                   console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
 
                   if (article) {
+                    // Generate composite headline for this stock/fund
+                    const compositeHeadline = generateCompositeHeadline(article);
+                    
                     return (
                       <NewsCard 
                         key={article.id} 
                         symbol={article.symbol}
-                        title={article.title}
+                        title={compositeHeadline}
                         description={article.description}
                         confidence={article.ai_confidence}
                         sentiment={article.ai_sentiment}
