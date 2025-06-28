@@ -70,24 +70,25 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Debug RSS data
+  // Debug MarketAux data
   console.log('All news data:', newsData);
-  console.log('RSS articles:', newsData?.filter(item => item.symbol === 'RSS'));
+  console.log('MarketAux articles:', newsData?.filter(item => item.symbol === 'RSS'));
 
-  // Get ONLY RSS headlines from the 5 sources with improved deduplication
+  // Get ONLY MarketAux headlines from the 5 sources with improved deduplication
   const rssHeadlines = newsData?.filter(item => {
-    const isRSSSource = item.symbol === 'RSS';
+    const isMarketAuxSource = item.symbol === 'RSS';
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000);
     
-    console.log('Checking RSS item:', {
+    console.log('Checking MarketAux item:', {
       title: item.title,
       symbol: item.symbol,
-      isRSSSource,
+      source: (item as any).source,
+      isMarketAuxSource,
       isRecent,
       published_at: item.published_at
     });
     
-    return isRSSSource && isRecent;
+    return isMarketAuxSource && isRecent;
   }).reduce((unique: any[], current: any) => {
     const isDuplicate = unique.some(existing => 
       areHeadlinesSimilar(current.title, existing.title)
@@ -100,7 +101,7 @@ const Dashboard = () => {
     return unique;
   }, []).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  console.log('Final RSS headlines count:', rssHeadlines.length);
+  console.log('Final MarketAux headlines count:', rssHeadlines.length);
 
   // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
@@ -280,7 +281,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE</span>
-                <span className="text-gray-600 dark:text-slate-400 text-sm">AI Analyzed + RSS Feeds</span>
+                <span className="text-gray-600 dark:text-slate-400 text-sm">AI Analyzed + MarketAux API</span>
               </div>
             </div>
             <Button 
@@ -292,11 +293,11 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
+          <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds + MarketAux headlines from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
           
           {/* Debug info */}
           <div className="text-xs text-slate-400 mt-2">
-            Total articles: {newsData?.length || 0} | RSS articles: {rssHeadlines.length} | Loading: {isLoading ? 'Yes' : 'No'}
+            Total articles: {newsData?.length || 0} | MarketAux articles: {rssHeadlines.length} | Loading: {isLoading ? 'Yes' : 'No'}
           </div>
           
           {isFetching && fetchingStatus && (
@@ -450,10 +451,10 @@ const Dashboard = () => {
                     ))
                   ) : (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No RSS headlines available.</p>
+                      <p>No headlines available from MarketAux.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                       <div className="text-xs mt-2 text-slate-500">
-                        Debug: {newsData?.length || 0} total articles, {newsData?.filter(item => item.symbol === 'RSS').length || 0} RSS articles
+                        Debug: {newsData?.length || 0} total articles, {newsData?.filter(item => item.symbol === 'RSS').length || 0} MarketAux articles
                       </div>
                     </div>
                   )}

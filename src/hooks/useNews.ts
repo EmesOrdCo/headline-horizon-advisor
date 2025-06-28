@@ -30,11 +30,11 @@ export const useFetchNews = () => {
     const results = await Promise.allSettled([
       supabase.functions.invoke('fetch-magnificent-7'),
       supabase.functions.invoke('fetch-index-funds'),
-      supabase.functions.invoke('fetch-rss-news')
+      supabase.functions.invoke('fetch-rss-news') // Still using same function name for compatibility
     ]);
 
     const responses = results.map((result, index) => {
-      const assetTypes = ['Magnificent 7', 'Index Funds', 'RSS News Sources'];
+      const assetTypes = ['Magnificent 7', 'Index Funds', 'MarketAux News Sources'];
       if (result.status === 'fulfilled') {
         console.log(`✅ ${assetTypes[index]} fetch completed:`, result.value.data);
         return { success: true, assetType: assetTypes[index], data: result.value.data };
@@ -50,7 +50,7 @@ export const useFetchNews = () => {
     return {
       success: successCount > 0,
       results: responses,
-      message: `Fetched news from ${successCount} out of 3 news sources (including RSS feeds)`
+      message: `Fetched news from ${successCount} out of 3 sources (including MarketAux for Reuters, CNBC, MarketWatch, Bloomberg, Financial Times)`
     };
   };
 };
