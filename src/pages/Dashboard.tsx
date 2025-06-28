@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -40,18 +39,8 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get analyzed additional headlines (articles with ChatGPT analysis) from ALL assets - sorted by date
-  const analyzedHeadlines = newsData?.filter(item => 
-    item.ai_confidence && 
-    item.ai_sentiment &&
-    !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
-  ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
-
-  // Get remaining headlines without analysis from ALL assets - sorted by date
-  const remainingHeadlines = newsData?.filter(item => 
-    (!item.ai_confidence || !item.ai_sentiment) &&
-    !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
-  ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+  // Get ALL recent headlines in chronological order (including primary assets)
+  const allRecentHeadlines = newsData?.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
@@ -114,9 +103,37 @@ const Dashboard = () => {
     }
   };
 
-  // Generate fallback analysis for articles without AI analysis
-  const generateFallbackAnalysis = (item: any) => {
-    return `Based on the article title and content, this news may have implications for ${item.symbol}. Without specific AI analysis, investors should consider the broader market context and company fundamentals when evaluating potential impact.`;
+  // Generate general article summary for recent headlines
+  const generateArticleSummary = (item: any) => {
+    const title = item.title || '';
+    const description = item.description || '';
+    
+    if (title.toLowerCase().includes('earnings') || title.toLowerCase().includes('revenue')) {
+      return `This earnings-related news discusses financial performance and may impact related companies and their stock valuations in the coming trading sessions.`;
+    } else if (title.toLowerCase().includes('merger') || title.toLowerCase().includes('acquisition')) {
+      return `This merger and acquisition news could significantly affect the companies involved and potentially influence sector-wide trading patterns.`;
+    } else if (title.toLowerCase().includes('ai') || title.toLowerCase().includes('artificial intelligence')) {
+      return `This AI-focused development may have broad implications for technology companies and could influence investor sentiment in the tech sector.`;
+    } else if (title.toLowerCase().includes('market') || title.toLowerCase().includes('stocks')) {
+      return `This market-focused article provides insights into current trading conditions and may influence overall investor sentiment and market direction.`;
+    } else if (title.toLowerCase().includes('federal reserve') || title.toLowerCase().includes('interest rates')) {
+      return `This monetary policy news could have wide-reaching effects on market liquidity, borrowing costs, and overall economic conditions.`;
+    } else {
+      return `This article covers significant business and financial developments that may influence market sentiment and investment decisions across various sectors.`;
+    }
+  };
+
+  // Format publish time to show date and time to the minute
+  const formatPublishTime = (publishedAt: string) => {
+    const date = new Date(publishedAt);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -249,102 +266,34 @@ const Dashboard = () => {
           
           <div className="space-y-6">
             <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Other Headlines</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {/* First show analyzed headlines with AI analysis from ALL assets */}
-                  {analyzedHeadlines && analyzedHeadlines.length > 0 && (
-                    <>
-                      {analyzedHeadlines.slice(0, 15).map((item, index) => {
-                        const assetInfo = getAssetInfo(item.symbol);
-                        return (
-                          <div key={`analyzed-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-700 dark:text-${assetInfo.color.split('-')[1]}-300 text-xs`}>
-                                {item.symbol}
-                              </Badge>
-                              <Badge className={`text-xs ${
-                                item.ai_sentiment === 'Bullish' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
-                                item.ai_sentiment === 'Bearish' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
-                                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                              }`}>
-                                {item.ai_sentiment}
-                              </Badge>
-                            </div>
-                            <a 
-                              href={item.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-gray-900 dark:text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer block"
-                            >
-                              {item.title}
-                            </a>
-                            <div className="flex items-center justify-between text-xs mb-3">
-                              <span className="text-gray-600 dark:text-slate-400">
-                                {new Date(item.published_at).toLocaleDateString()}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                {[1, 2, 3, 4, 5].map((dot) => (
-                                  <div
-                                    key={dot}
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'bg-gray-300 dark:bg-slate-600'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mt-3">
-                              <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
-                                <span className="text-cyan-400 font-medium">AI Analysis:</span> {generateAnalysisParagraph(item)}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-                  
-                  {/* Then show remaining headlines without analysis from ALL assets - but with fallback analysis */}
-                  {remainingHeadlines && remainingHeadlines.length > 0 && (
-                    <>
-                      {remainingHeadlines.slice(0, 25).map((item, index) => {
-                        const assetInfo = getAssetInfo(item.symbol);
-                        return (
-                          <div key={`remaining-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-700 dark:text-${assetInfo.color.split('-')[1]}-300 text-xs`}>
-                                {item.symbol}
-                              </Badge>
-                            </div>
-                            <a 
-                              href={item.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-gray-900 dark:text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer block"
-                            >
-                              {item.title}
-                            </a>
-                            <div className="flex items-center justify-between text-xs mb-3">
-                              <span className="text-gray-600 dark:text-slate-400">
-                                {new Date(item.published_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mt-3">
-                              <p className="text-xs text-slate-400 leading-relaxed">
-                                <span className="text-gray-500 font-medium">Analysis:</span> {generateFallbackAnalysis(item)}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-                  
-                  {(!analyzedHeadlines || analyzedHeadlines.length === 0) && (!remainingHeadlines || remainingHeadlines.length === 0) && (
+                  {allRecentHeadlines && allRecentHeadlines.length > 0 ? (
+                    allRecentHeadlines.slice(0, 30).map((item, index) => (
+                      <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
+                        <a 
+                          href={item.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-gray-900 dark:text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer block"
+                        >
+                          {item.title}
+                        </a>
+                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-3">
+                          {formatPublishTime(item.published_at)}
+                        </div>
+                        <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
+                          <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
+                            <span className="text-cyan-400 font-medium">Summary:</span> {generateArticleSummary(item)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No additional headlines available.</p>
-                      <p className="text-sm mt-2">Click "Refresh News" to load more articles.</p>
+                      <p>No headlines available.</p>
+                      <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                     </div>
                   )}
                 </div>
