@@ -20,9 +20,14 @@ const MarketTicker = () => {
       try {
         // Major market indices - using fewer symbols to respect rate limits
         const indices = [
-          { symbol: 'SPY', name: 'S&P 500' },
-          { symbol: 'QQQ', name: 'NASDAQ' },
-          { symbol: 'DIA', name: 'Dow Jones' }
+          { symbol: 'SPY', name: 'SPX' },
+          { symbol: 'QQQ', name: 'IXIC' },
+          { symbol: 'DIA', name: 'DJI' },
+          { symbol: 'AAPL', name: 'AAPL' },
+          { symbol: 'TSLA', name: 'TSLA' },
+          { symbol: 'NVDA', name: 'NVDA' },
+          { symbol: 'MSFT', name: 'MSFT' },
+          { symbol: 'GOOGL', name: 'GOOGL' }
         ];
         
         console.log('Fetching live market data from Finnhub...');
@@ -95,9 +100,9 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
+      <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 py-2">
         <div className="flex items-center justify-center">
-          <div className="text-slate-400">Loading live market data...</div>
+          <div className="text-gray-600 dark:text-slate-400 text-sm">Loading live market data...</div>
         </div>
       </div>
     );
@@ -105,40 +110,39 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
+      <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 py-2">
         <div className="flex items-center justify-center">
-          <div className="text-red-400">Unable to fetch live market data. Please check your Finnhub API key and rate limits.</div>
+          <div className="text-red-600 dark:text-red-400 text-sm">Unable to fetch live market data</div>
         </div>
       </div>
     );
   }
 
+  // Duplicate the data to create seamless scrolling
+  const duplicatedData = [...marketData, ...marketData];
+
   return (
-    <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 mb-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
-        </div>
-        <div className="flex items-center gap-6 overflow-x-auto">
-          {marketData.map((index) => (
-            <div key={index.symbol} className="flex items-center gap-3 min-w-fit">
-              <div>
-                <div className="text-white font-semibold text-sm">{index.symbol}</div>
-                <div className="text-slate-400 text-xs">${index.price.toFixed(2)}</div>
-              </div>
+    <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 overflow-hidden">
+      <div className="relative">
+        <div className="animate-scroll flex gap-8 py-2 px-4">
+          {duplicatedData.map((item, index) => (
+            <div key={`${item.symbol}-${index}`} className="flex items-center gap-2 whitespace-nowrap">
               <div className={`flex items-center gap-1 ${
-                index.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                item.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
               }`}>
-                {index.change >= 0 ? (
+                {item.change >= 0 ? (
                   <TrendingUp className="w-3 h-3" />
                 ) : (
                   <TrendingDown className="w-3 h-3" />
                 )}
-                <span className="text-xs font-medium">
-                  {index.change >= 0 ? '+' : ''}{index.change.toFixed(2)} ({index.changePercent.toFixed(2)}%)
-                </span>
               </div>
+              <span className="text-gray-900 dark:text-white font-semibold text-sm">{item.symbol}</span>
+              <span className="text-gray-700 dark:text-slate-300 text-sm">{item.price.toFixed(2)}</span>
+              <span className={`text-xs font-medium ${
+                item.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              }`}>
+                {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
+              </span>
             </div>
           ))}
         </div>

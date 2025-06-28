@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -98,10 +97,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <DashboardNav />
+      <MarketTicker />
       
       <main className="p-6 max-w-7xl mx-auto">
-        <MarketTicker />
-        
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
