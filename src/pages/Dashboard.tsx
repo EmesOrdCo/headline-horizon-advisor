@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -57,10 +56,16 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get ALL recent headlines in chronological order (front-page news only)
+  // Get ALL recent headlines in chronological order - now including RSS sources
   const allRecentHeadlines = newsData?.filter(item => {
-    // Front-page news typically has higher confidence and recent publish dates
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
+    
+    // For RSS articles (symbol === 'RSS'), include them if they're recent
+    if (item.symbol === 'RSS') {
+      return isRecent;
+    }
+    
+    // For analyzed articles, use existing logic
     const isHighConfidence = item.ai_confidence && item.ai_confidence > 60;
     const hasGoodSentiment = item.ai_sentiment && item.ai_sentiment !== 'Neutral';
     
@@ -410,10 +415,16 @@ const Dashboard = () => {
     }
   };
 
-  // Generate general article summary for recent headlines
+  // Generate general article summary for recent headlines - enhanced for RSS sources
   const generateArticleSummary = (item: any) => {
     const title = item.title || '';
     const description = item.description || '';
+    
+    // If it's from RSS source, provide source-specific context
+    if (item.symbol === 'RSS' && item.source) {
+      return `From ${item.source}: ${description.substring(0, 150)}...` || 
+             `Breaking news from ${item.source} covering important market developments and business updates.`;
+    }
     
     if (title.toLowerCase().includes('earnings') || title.toLowerCase().includes('revenue')) {
       return `This earnings-related news discusses financial performance and may impact related companies and their stock valuations in the coming trading sessions.`;
@@ -456,7 +467,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE</span>
-                <span className="text-gray-600 dark:text-slate-400 text-sm">AI Analyzed</span>
+                <span className="text-gray-600 dark:text-slate-400 text-sm">AI Analyzed + RSS Feeds</span>
               </div>
             </div>
             <Button 
@@ -468,7 +479,7 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds</p>
+          <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
@@ -581,19 +592,33 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Headlines</h3>
+              <div className="text-xs text-gray-500 dark:text-slate-400 mb-3 flex flex-wrap gap-2">
+                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">Reuters</span>
+                <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">CNBC</span>
+                <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded">MarketWatch</span>
+                <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 px-2 py-1 rounded">Bloomberg</span>
+                <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded">Financial Times</span>
+              </div>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
                   {allRecentHeadlines && allRecentHeadlines.length > 0 ? (
                     allRecentHeadlines.slice(0, 30).map((item, index) => (
                       <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
-                        <a 
-                          href={item.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-gray-900 dark:text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer block"
-                        >
-                          {item.title}
-                        </a>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <a 
+                            href={item.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-gray-900 dark:text-white text-sm font-medium line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer flex-1"
+                          >
+                            {item.title}
+                          </a>
+                          {item.source && (
+                            <span className="text-xs bg-slate-600 text-slate-200 px-2 py-1 rounded flex-shrink-0">
+                              {item.source}
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-600 dark:text-slate-400 mb-3">
                           {formatPublishTime(item.published_at)}
                         </div>
