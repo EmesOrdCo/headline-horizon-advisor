@@ -392,9 +392,9 @@ const Dashboard = () => {
                           >
                             {item.title}
                           </a>
-                          {item.source && (
+                          {(item as any).source && (
                             <span className="text-xs bg-slate-600 text-slate-200 px-2 py-1 rounded flex-shrink-0">
-                              {item.source}
+                              {(item as any).source}
                             </span>
                           )}
                         </div>
