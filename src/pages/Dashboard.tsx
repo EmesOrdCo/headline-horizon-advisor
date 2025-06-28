@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -92,6 +93,25 @@ const Dashboard = () => {
       return { type: 'Index', color: 'bg-purple-500' };
     }
     return { type: 'Other', color: 'bg-gray-500' };
+  };
+
+  // Helper function to generate AI analysis paragraph
+  const generateAnalysisParagraph = (item: any) => {
+    const sentimentText = item.ai_sentiment?.toLowerCase() || 'neutral';
+    const confidence = item.ai_confidence || 50;
+    
+    // Generate contextual analysis based on sentiment and confidence
+    if (sentimentText === 'bullish' && confidence > 70) {
+      return `Strong positive indicators suggest ${item.symbol} may benefit from this development. Market sentiment appears favorable with high confidence in upward momentum.`;
+    } else if (sentimentText === 'bearish' && confidence > 70) {
+      return `This news presents concerning factors for ${item.symbol} performance. Analysis indicates potential downward pressure with significant market implications.`;
+    } else if (sentimentText === 'bullish' && confidence <= 70) {
+      return `Moderate positive signals for ${item.symbol}, though market uncertainty remains. Cautious optimism warranted given mixed indicators and evolving conditions.`;
+    } else if (sentimentText === 'bearish' && confidence <= 70) {
+      return `Some negative factors identified for ${item.symbol}, but impact unclear. Market conditions suggest careful monitoring of developments ahead.`;
+    } else {
+      return `Mixed signals for ${item.symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
+    }
   };
 
   return (
@@ -254,7 +274,7 @@ const Dashboard = () => {
                             >
                               {item.title}
                             </a>
-                            <div className="flex items-center justify-between text-xs mb-2">
+                            <div className="flex items-center justify-between text-xs mb-3">
                               <span className="text-gray-600 dark:text-slate-400">
                                 {new Date(item.published_at).toLocaleDateString()}
                               </span>
@@ -268,6 +288,11 @@ const Dashboard = () => {
                                   />
                                 ))}
                               </div>
+                            </div>
+                            <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mt-3">
+                              <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
+                                <span className="text-cyan-400 font-medium">AI Analysis:</span> {generateAnalysisParagraph(item)}
+                              </p>
                             </div>
                           </div>
                         );
@@ -295,10 +320,15 @@ const Dashboard = () => {
                             >
                               {item.title}
                             </a>
-                            <div className="flex items-center justify-between text-xs mb-2">
+                            <div className="flex items-center justify-between text-xs mb-3">
                               <span className="text-gray-600 dark:text-slate-400">
                                 {new Date(item.published_at).toLocaleDateString()}
                               </span>
+                            </div>
+                            <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mt-3">
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                <span className="text-gray-500 font-medium">Analysis:</span> No AI analysis available for this article. Click "Refresh News" to generate comprehensive analysis with sentiment and confidence scoring.
+                              </p>
                             </div>
                           </div>
                         );
