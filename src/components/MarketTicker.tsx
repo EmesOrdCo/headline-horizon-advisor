@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Triangle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 
 interface MarketIndex {
@@ -100,9 +100,9 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 py-2">
+      <div className="w-full bg-green-600 dark:bg-green-700 py-2">
         <div className="flex items-center justify-center">
-          <div className="text-gray-600 dark:text-slate-400 text-sm">Loading live market data...</div>
+          <div className="text-white text-sm font-medium">Loading live market data...</div>
         </div>
       </div>
     );
@@ -110,9 +110,9 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 py-2">
+      <div className="w-full bg-green-600 dark:bg-green-700 py-2">
         <div className="flex items-center justify-center">
-          <div className="text-red-600 dark:text-red-400 text-sm">Unable to fetch live market data</div>
+          <div className="text-white text-sm font-medium">Unable to fetch live market data</div>
         </div>
       </div>
     );
@@ -122,29 +122,35 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 overflow-hidden">
+    <div className="w-full bg-green-600 dark:bg-green-700 overflow-hidden">
       <div className="relative">
         <div className="animate-scroll flex gap-8 py-2 px-4">
           {duplicatedData.map((item, index) => (
-            <div key={`${item.symbol}-${index}`} className="flex items-center gap-2 whitespace-nowrap">
-              <div className={`flex items-center gap-1 ${
-                item.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-              }`}>
-                {item.change >= 0 ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : (
-                  <TrendingDown className="w-3 h-3" />
-                )}
+            <div key={`${item.symbol}-${index}`} className="flex items-center gap-3 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <Triangle 
+                  className={`w-3 h-3 ${
+                    item.change >= 0 
+                      ? 'text-white fill-white' 
+                      : 'text-white fill-white rotate-180'
+                  }`} 
+                />
               </div>
-              <span className="text-gray-900 dark:text-white font-semibold text-sm">{item.symbol}</span>
-              <span className="text-gray-700 dark:text-slate-300 text-sm">{item.price.toFixed(2)}</span>
-              <span className={`text-xs font-medium ${
-                item.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-              }`}>
+              <span className="text-white font-bold text-sm">{item.symbol}</span>
+              <span className="text-white text-sm">{item.price.toFixed(2)}</span>
+              <span className="text-white text-sm">
                 {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
               </span>
             </div>
           ))}
+        </div>
+        
+        {/* Right side text */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 dark:bg-green-700 pl-4">
+          <div className="flex items-center gap-2 text-white text-sm">
+            <Triangle className="w-3 h-3 text-white fill-white" />
+            <span>Get real-time market data from LSEG</span>
+          </div>
         </div>
       </div>
     </div>
