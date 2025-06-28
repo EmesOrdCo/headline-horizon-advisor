@@ -21,7 +21,7 @@ const Dashboard = () => {
 
   // Primary assets for main analysis
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA']; // Match the ticker exactly
+  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 
   const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
 
@@ -53,7 +53,7 @@ const Dashboard = () => {
   // Function to check if headlines are too similar
   const areHeadlinesSimilar = (headline1: string, headline2: string): boolean => {
     const similarity = calculateSimilarity(headline1, headline2);
-    return similarity > 30; // Increased threshold to 30% for better deduplication
+    return similarity > 30;
   };
 
   // Get stock price for a symbol
@@ -70,14 +70,25 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get ONLY RSS headlines from the 5 sources we specified with improved deduplication
+  // Debug RSS data
+  console.log('All news data:', newsData);
+  console.log('RSS articles:', newsData?.filter(item => item.symbol === 'RSS'));
+
+  // Get ONLY RSS headlines from the 5 sources with improved deduplication
   const rssHeadlines = newsData?.filter(item => {
     const isRSSSource = item.symbol === 'RSS';
-    const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
+    const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000);
+    
+    console.log('Checking RSS item:', {
+      title: item.title,
+      symbol: item.symbol,
+      isRSSSource,
+      isRecent,
+      published_at: item.published_at
+    });
     
     return isRSSSource && isRecent;
   }).reduce((unique: any[], current: any) => {
-    // Check if current headline is similar to any existing headline
     const isDuplicate = unique.some(existing => 
       areHeadlinesSimilar(current.title, existing.title)
     );
@@ -88,6 +99,8 @@ const Dashboard = () => {
     
     return unique;
   }, []).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+
+  console.log('Final RSS headlines count:', rssHeadlines.length);
 
   // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
@@ -174,6 +187,7 @@ const Dashboard = () => {
         });
       }
     } catch (error) {
+      console.error('Error fetching news:', error);
       toast({
         title: "Error",
         description: "Failed to fetch news. Please try again.",
@@ -280,6 +294,11 @@ const Dashboard = () => {
           </div>
           <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
           
+          {/* Debug info */}
+          <div className="text-xs text-slate-400 mt-2">
+            Total articles: {newsData?.length || 0} | RSS articles: {rssHeadlines.length} | Loading: {isLoading ? 'Yes' : 'No'}
+          </div>
+          
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
               {fetchingStatus}
@@ -311,7 +330,7 @@ const Dashboard = () => {
                 PRIMARY_ASSETS.map((symbol) => {
                   const article = mainAnalysisArticles.find(item => item.symbol === symbol);
                   const stockPrice = getStockPrice(symbol);
-                  const assetInfo = getAssetInfo(symbol);
+                  const assetInfo = { type: MAGNIFICENT_7.includes(symbol) ? 'Stock' : 'Index', color: MAGNIFICENT_7.includes(symbol) ? 'bg-blue-500' : 'bg-purple-500' };
                   
                   console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
 
@@ -424,7 +443,7 @@ const Dashboard = () => {
                         </div>
                         <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
                           <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
-                            <span className="text-cyan-400 font-medium">Summary:</span> {generateArticleSummary(item)}
+                            <span className="text-cyan-400 font-medium">Summary:</span> {item.description?.substring(0, 150) || 'Breaking news from major financial sources covering important market developments and business updates.'}...
                           </p>
                         </div>
                       </div>
@@ -433,6 +452,9 @@ const Dashboard = () => {
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
                       <p>No RSS headlines available.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
+                      <div className="text-xs mt-2 text-slate-500">
+                        Debug: {newsData?.length || 0} total articles, {newsData?.filter(item => item.symbol === 'RSS').length || 0} RSS articles
+                      </div>
                     </div>
                   )}
                 </div>
