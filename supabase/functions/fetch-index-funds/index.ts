@@ -72,14 +72,19 @@ serve(async (req) => {
     // Sort by date
     uniqueArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
-    const processedArticles = [];
+    // Group articles by impacted funds
+    const fundArticles = new Map();
+    
+    // Initialize empty arrays for each fund
+    MAJOR_INDEX_FUNDS.forEach(symbol => {
+      fundArticles.set(symbol, []);
+    });
 
-    // Process each article with two-step ChatGPT analysis
-    for (const article of uniqueArticles.slice(0, 15)) { // Limit to 15 most recent articles
-      console.log(`Analyzing article: ${article.title}`);
+    // Process each article to determine fund impact and group them
+    for (const article of uniqueArticles.slice(0, 15)) {
+      console.log(`Analyzing article impact: ${article.title}`);
 
       try {
-        // Step 1: Determine which index funds are impacted
         const impactAnalysisPrompt = `
 You are a professional financial analyst. Analyze this news article and determine which of the following major index funds would be significantly impacted by this news:
 
@@ -134,81 +139,15 @@ Only include funds that would be meaningfully affected by this news. If no funds
         
         console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_funds.join(', ')}`);
 
-        if (!impactAnalysis.impacted_funds || impactAnalysis.impacted_funds.length === 0) {
-          console.log(`No significant fund impact found for article: ${article.title}`);
-          continue;
-        }
-
-        // Step 2: Analyze sentiment for each impacted fund
-        for (const symbol of impactAnalysis.impacted_funds) {
-          if (!MAJOR_INDEX_FUNDS.includes(symbol)) continue;
-
-          console.log(`Analyzing sentiment for ${symbol} based on: ${article.title}`);
-
-          const sentimentPrompt = `
-You are a professional financial analyst. Analyze this news article specifically for its impact on ${symbol} index fund and provide a JSON response:
-
-{
-  "confidence": "number between 1-100 representing your confidence level",
-  "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral'",
-  "category": "string describing the news category",
-  "reasoning": "brief explanation of the analysis for ${symbol}"
-}
-
-Article:
-Title: ${article.title}
-Description: ${article.description || 'No description available'}
-Target Fund: ${symbol}
-Published: ${article.published_at}
-
-Focus specifically on how this news affects ${symbol}.`;
-
-          const sentimentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a professional financial analyst specializing in index funds and ETFs. Provide clear, actionable market analysis in valid JSON format only.'
-                },
-                {
-                  role: 'user',
-                  content: sentimentPrompt
-                }
-              ],
-              response_format: { type: "json_object" },
-              temperature: 0.7
-            }),
-          });
-
-          if (sentimentResponse.ok) {
-            const sentimentData = await sentimentResponse.json();
-            const analysis = JSON.parse(sentimentData.choices[0].message.content);
-
-            processedArticles.push({
-              symbol,
-              title: article.title,
-              description: article.description || `Market analysis for ${symbol}`,
-              url: article.url,
-              published_at: article.published_at,
-              category: analysis.category || 'Index Fund',
-              ai_confidence: analysis.confidence,
-              ai_sentiment: analysis.sentiment,
-              ai_reasoning: analysis.reasoning || `AI analysis of ${article.title} impact on ${symbol}`,
-              is_main_analysis: true,
-              is_historical: false
-            });
-
-            console.log(`✅ Successfully analyzed ${symbol}: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence`);
+        if (impactAnalysis.impacted_funds && impactAnalysis.impacted_funds.length > 0) {
+          // Add this article to each impacted fund's collection
+          for (const symbol of impactAnalysis.impacted_funds) {
+            if (MAJOR_INDEX_FUNDS.includes(symbol)) {
+              const existingArticles = fundArticles.get(symbol);
+              existingArticles.push(article);
+              fundArticles.set(symbol, existingArticles);
+            }
           }
-
-          // Small delay between sentiment analyses
-          await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         // Delay between articles to respect rate limits
@@ -219,13 +158,100 @@ Focus specifically on how this news affects ${symbol}.`;
       }
     }
 
-    // Create historical analysis for funds without current news
-    const fundsWithNews = new Set(processedArticles.map(a => a.symbol));
-    for (const symbol of MAJOR_INDEX_FUNDS) {
-      if (!fundsWithNews.has(symbol)) {
+    const processedAnalyses = [];
+
+    // Create composite analysis for each fund that has relevant articles
+    for (const [symbol, articles] of fundArticles.entries()) {
+      if (articles.length > 0) {
+        console.log(`Creating composite analysis for ${symbol} based on ${articles.length} articles...`);
+
+        try {
+          // Prepare article summaries for composite analysis
+          const articleSummaries = articles.slice(0, 5).map((article, index) => 
+            `Article ${index + 1}:
+Title: ${article.title}
+Description: ${article.description || 'No description available'}
+Published: ${article.published_at}
+URL: ${article.url}`
+          ).join('\n\n');
+
+          const compositePrompt = `
+You are a professional financial analyst. Analyze the following news articles collectively for their impact on ${symbol} index fund and provide a comprehensive composite analysis:
+
+${articleSummaries}
+
+Based on all these articles together, provide a JSON response:
+{
+  "confidence": "number between 1-100 representing your confidence level for the overall analysis",
+  "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral' based on the collective impact",
+  "category": "string describing the dominant news category across articles",
+  "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
+}
+
+Focus on the overall trend and sentiment across all articles for ${symbol}.`;
+
+          const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a professional financial analyst specializing in index funds and ETFs. Provide comprehensive market analysis based on multiple news sources in valid JSON format only.'
+                },
+                {
+                  role: 'user',
+                  content: compositePrompt
+                }
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.7
+            }),
+          });
+
+          if (compositeResponse.ok) {
+            const compositeData = await compositeResponse.json();
+            const analysis = JSON.parse(compositeData.choices[0].message.content);
+
+            // Create source links array
+            const sourceLinks = articles.slice(0, 5).map(article => ({
+              title: article.title,
+              url: article.url,
+              published_at: article.published_at
+            }));
+
+            processedAnalyses.push({
+              symbol,
+              title: `${symbol} Composite Market Analysis`,
+              description: `Comprehensive analysis based on ${articles.length} recent news articles`,
+              url: `https://finance.yahoo.com/quote/${symbol}`,
+              published_at: new Date().toISOString(),
+              category: analysis.category || 'Index Fund',
+              ai_confidence: analysis.confidence,
+              ai_sentiment: analysis.sentiment,
+              ai_reasoning: analysis.reasoning,
+              source_links: JSON.stringify(sourceLinks),
+              is_main_analysis: true,
+              is_historical: false
+            });
+
+            console.log(`✅ Successfully created composite analysis for ${symbol}: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence based on ${articles.length} articles`);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (error) {
+          console.error(`❌ Error creating composite analysis for ${symbol}:`, error);
+        }
+      } else {
+        // Create historical analysis for funds without current news
         console.log(`Creating historical analysis for ${symbol}...`);
         
-        processedArticles.push({
+        processedAnalyses.push({
           symbol,
           title: `${symbol} Market Analysis - Historical Data*`,
           description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
@@ -235,6 +261,7 @@ Focus specifically on how this news affects ${symbol}.`;
           ai_confidence: 70,
           ai_sentiment: 'Neutral',
           ai_reasoning: `*Historical analysis based on market trends. No current news available for ${symbol}.`,
+          source_links: JSON.stringify([]),
           is_main_analysis: true,
           is_historical: true
         });
@@ -242,45 +269,46 @@ Focus specifically on how this news affects ${symbol}.`;
     }
 
     // Store articles in database
-    console.log('Storing Index Fund articles in database...');
+    console.log('Storing Index Fund composite analyses in database...');
     
     // Clear existing Index Fund articles
     for (const symbol of MAJOR_INDEX_FUNDS) {
       await supabase.from('news_articles').delete().eq('symbol', symbol);
     }
 
-    // Insert processed articles
-    for (const article of processedArticles) {
+    // Insert processed analyses
+    for (const analysis of processedAnalyses) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
-          title: article.title,
-          description: article.description,
-          symbol: article.symbol,
-          url: article.url,
-          published_at: article.published_at,
-          ai_confidence: article.ai_confidence,
-          ai_sentiment: article.ai_sentiment,
-          ai_reasoning: article.ai_reasoning,
-          category: article.category
+          title: analysis.title,
+          description: analysis.description,
+          symbol: analysis.symbol,
+          url: analysis.url,
+          published_at: analysis.published_at,
+          ai_confidence: analysis.ai_confidence,
+          ai_sentiment: analysis.ai_sentiment,
+          ai_reasoning: analysis.ai_reasoning,
+          category: analysis.category,
+          source_links: analysis.source_links
         });
 
       if (error) {
-        console.error(`❌ Database error for ${article.symbol}:`, error);
+        console.error(`❌ Database error for ${analysis.symbol}:`, error);
       } else {
-        console.log(`✅ Stored analysis for ${article.symbol}`);
+        console.log(`✅ Stored composite analysis for ${analysis.symbol}`);
       }
     }
 
     const summary = {
       success: true,
       assetType: 'Index Funds',
-      articlesProcessed: processedArticles.length,
-      fundsAnalyzed: [...fundsWithNews].length,
-      message: 'Index Funds processed successfully with impact-based analysis'
+      analysesProcessed: processedAnalyses.length,
+      fundsAnalyzed: processedAnalyses.filter(a => !a.is_historical).length,
+      message: 'Index Funds processed successfully with composite analysis from multiple sources'
     };
 
-    console.log(`🎉 Successfully processed ${summary.articlesProcessed} analyses for ${summary.fundsAnalyzed} funds`);
+    console.log(`🎉 Successfully processed ${summary.analysesProcessed} composite analyses for ${summary.fundsAnalyzed} funds`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

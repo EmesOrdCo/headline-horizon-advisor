@@ -1,6 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 
 interface NewsCardProps {
   symbol: string;
@@ -10,6 +10,7 @@ interface NewsCardProps {
   sentiment?: string;
   category?: string;
   isHistorical?: boolean;
+  sourceLinks?: string;
   stockPrice?: {
     price: number;
     change: number;
@@ -35,7 +36,7 @@ const ConfidenceDots = ({ confidence }: { confidence: number }) => {
   );
 };
 
-const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, stockPrice }: NewsCardProps) => {
+const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, sourceLinks, stockPrice }: NewsCardProps) => {
   // Helper function to get asset type and styling
   const getAssetInfo = (symbol: string) => {
     const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
@@ -51,6 +52,14 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
 
   const assetInfo = getAssetInfo(symbol);
 
+  // Parse source links
+  let parsedSourceLinks: Array<{title: string, url: string, published_at: string}> = [];
+  try {
+    parsedSourceLinks = sourceLinks ? JSON.parse(sourceLinks) : [];
+  } catch (error) {
+    console.error('Error parsing source links:', error);
+  }
+
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -62,6 +71,11 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
           {isHistorical && (
             <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 text-xs">
               HISTORICAL*
+            </Badge>
+          )}
+          {parsedSourceLinks.length > 0 && (
+            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">
+              {parsedSourceLinks.length} SOURCES
             </Badge>
           )}
         </div>
@@ -101,6 +115,8 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             <p className="text-slate-300 text-sm mb-3">
               {isHistorical 
                 ? `*Based on historical market analysis and trends for ${symbol}.`
+                : parsedSourceLinks.length > 0
+                ? `Based on AI analysis of ${parsedSourceLinks.length} news articles, ${symbol} shows ${sentiment.toLowerCase()} sentiment.`
                 : `Based on AI analysis of this news and market patterns, ${symbol} shows ${sentiment.toLowerCase()} sentiment.`
               }
             </p>
@@ -141,7 +157,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
           </div>
           
           {category && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-4">
               <Badge className={`${
                 sentiment === 'Bullish' ? 'bg-emerald-500' :
                 sentiment === 'Bearish' ? 'bg-red-500' :
@@ -151,6 +167,39 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             </div>
           )}
         </>
+      )}
+
+      {/* Source Articles Section */}
+      {parsedSourceLinks.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-slate-700">
+          <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+            <ExternalLink className="w-4 h-4" />
+            Source Articles ({parsedSourceLinks.length})
+          </h4>
+          <div className="space-y-2">
+            {parsedSourceLinks.map((link, index) => (
+              <a
+                key={index}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-2 bg-slate-800/30 border border-slate-700/50 rounded-lg hover:border-slate-600 hover:bg-slate-800/50 transition-all group"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-300 font-medium group-hover:text-white transition-colors line-clamp-2 leading-tight">
+                      {link.title}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {new Date(link.published_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-0.5" />
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
