@@ -30,11 +30,18 @@ const Navigation = () => {
             </Button>
           </Link>
         ) : (
-          <Link to="/onboarding/email">
-            <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
-              Sign Up
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/auth">
+              <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                Log In
+              </Button>
+            </Link>
+            <Link to="/onboarding/email">
+              <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                Sign Up
+              </Button>
+            </Link>
+          </div>
         )}
         <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-full p-1">
           <Sun className="h-4 w-4 text-gray-600 dark:text-slate-400" />
