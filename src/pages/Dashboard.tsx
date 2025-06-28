@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -25,6 +26,23 @@ const Dashboard = () => {
 
   const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
 
+  // Function to calculate similarity between two headlines
+  const calculateSimilarity = (headline1: string, headline2: string): number => {
+    const words1 = headline1.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+    const words2 = headline2.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+    
+    const commonWords = words1.filter(word => words2.includes(word));
+    const totalWords = new Set([...words1, ...words2]).size;
+    
+    return totalWords > 0 ? (commonWords.length / totalWords) * 100 : 0;
+  };
+
+  // Function to check if headlines are too similar
+  const areHeadlinesSimilar = (headline1: string, headline2: string): boolean => {
+    const similarity = calculateSimilarity(headline1, headline2);
+    return similarity > 25; // Consider similar if more than 25% word overlap
+  };
+
   // Get stock price for a symbol
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -49,8 +67,8 @@ const Dashboard = () => {
     return isRecent && (isHighConfidence || hasGoodSentiment);
   }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  // Generate composite headline based on source articles
-  const generateCompositeHeadline = (item: any) => {
+  // Generate composite headline based on source articles with uniqueness checking
+  const generateCompositeHeadline = async (item: any, existingHeadlines: string[] = []): Promise<string> => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
     const confidence = item.ai_confidence || 50;
@@ -64,6 +82,8 @@ const Dashboard = () => {
     }
 
     // Create unique headlines based on symbol-specific context and source content
+    let generatedHeadline = '';
+    
     if (sourceArticles.length > 0) {
       const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
       
@@ -71,106 +91,126 @@ const Dashboard = () => {
       switch (symbol) {
         case 'AAPL':
           if (titles.some(t => t.includes('iphone') || t.includes('mac') || t.includes('apple'))) {
-            return sentiment === 'bullish' 
+            generatedHeadline = sentiment === 'bullish' 
               ? "Apple's Hardware Innovation Cycle Accelerates Consumer Demand Projections"
               : "Consumer Electronics Giant Faces Shifting Market Dynamics in Key Categories";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Cupertino Tech Leader Expands Ecosystem Integration Across Product Lines"
+              : "Premium Device Manufacturer Navigates Supply Chain Complexities";
           }
-          return sentiment === 'bullish'
-            ? "Cupertino Tech Leader Expands Ecosystem Integration Across Product Lines"
-            : "Premium Device Manufacturer Navigates Supply Chain Complexities";
+          break;
 
         case 'MSFT':
           if (titles.some(t => t.includes('cloud') || t.includes('azure') || t.includes('ai'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Enterprise Cloud Architecture Drives Next-Generation Business Transformation"
               : "Software Infrastructure Provider Encounters Competitive Headwinds in Cloud Services";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Productivity Software Pioneer Revolutionizes Corporate Digital Workflows"
+              : "Technology Conglomerate Adjusts Strategy Amid Evolving Enterprise Needs";
           }
-          return sentiment === 'bullish'
-            ? "Productivity Software Pioneer Revolutionizes Corporate Digital Workflows"
-            : "Technology Conglomerate Adjusts Strategy Amid Evolving Enterprise Needs";
+          break;
 
         case 'GOOGL':
           if (titles.some(t => t.includes('search') || t.includes('advertising') || t.includes('youtube'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Digital Advertising Ecosystem Captures Unprecedented User Engagement Metrics"
               : "Search Engine Authority Confronts Regulatory Scrutiny Over Market Position";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Alphabet's Moonshot Ventures Generate Breakthrough Technology Applications"
+              : "Internet Conglomerate Reassesses Investment Priorities Across Multiple Verticals";
           }
-          return sentiment === 'bullish'
-            ? "Alphabet's Moonshot Ventures Generate Breakthrough Technology Applications"
-            : "Internet Conglomerate Reassesses Investment Priorities Across Multiple Verticals";
+          break;
 
         case 'AMZN':
           if (titles.some(t => t.includes('aws') || t.includes('retail') || t.includes('logistics'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "E-Commerce Infrastructure Backbone Enables Global Supply Chain Optimization"
               : "Retail Distribution Network Faces Operational Cost Pressures Across Regions";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Everything Store Concept Expands Into Untapped Consumer Service Categories"
+              : "Logistics Empire Recalibrates Fulfillment Operations for Efficiency Gains";
           }
-          return sentiment === 'bullish'
-            ? "Everything Store Concept Expands Into Untapped Consumer Service Categories"
-            : "Logistics Empire Recalibrates Fulfillment Operations for Efficiency Gains";
+          break;
 
         case 'NVDA':
           if (titles.some(t => t.includes('gpu') || t.includes('chip') || t.includes('ai'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Graphics Processing Revolution Unlocks Artificial Intelligence Computing Potential"
               : "Semiconductor Specialist Encounters Production Bottlenecks in High-Demand Chips";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Visual Computing Pioneer Transforms Gaming Industry Performance Standards"
+              : "Hardware Innovation Leader Adapts to Cyclical Semiconductor Market Conditions";
           }
-          return sentiment === 'bullish'
-            ? "Visual Computing Pioneer Transforms Gaming Industry Performance Standards"
-            : "Hardware Innovation Leader Adapts to Cyclical Semiconductor Market Conditions";
+          break;
 
         case 'TSLA':
           if (titles.some(t => t.includes('electric') || t.includes('vehicle') || t.includes('musk'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Electric Vehicle Manufacturing Scales Sustainable Transportation Adoption Worldwide"
               : "Automotive Disruptor Encounters Production Challenges in Global Expansion Plans";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Clean Energy Ecosystem Integrates Battery Technology with Solar Solutions"
+              : "Transportation Innovator Navigates Regulatory Hurdles in Multiple Markets";
           }
-          return sentiment === 'bullish'
-            ? "Clean Energy Ecosystem Integrates Battery Technology with Solar Solutions"
-            : "Transportation Innovator Navigates Regulatory Hurdles in Multiple Markets";
+          break;
 
         case 'META':
           if (titles.some(t => t.includes('metaverse') || t.includes('facebook') || t.includes('reality'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Virtual Reality Platform Architecture Redefines Social Connection Paradigms"
               : "Social Media Conglomerate Faces User Privacy Concerns Across Global Markets";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Digital Social Framework Monetizes Creator Economy Through Advanced Analytics"
+              : "Communication Platform Provider Adjusts Content Moderation Policies Globally";
           }
-          return sentiment === 'bullish'
-            ? "Digital Social Framework Monetizes Creator Economy Through Advanced Analytics"
-            : "Communication Platform Provider Adjusts Content Moderation Policies Globally";
+          break;
 
         case 'SPY':
           if (titles.some(t => t.includes('market') || t.includes('s&p') || t.includes('index'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Broad Market Index Reflects Institutional Confidence in Economic Recovery Trajectory"
               : "Diversified Equity Benchmark Shows Volatility Amid Macroeconomic Uncertainty";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "S&P 500 Tracking Fund Benefits from Corporate Earnings Growth Across Sectors"
+              : "Large-Cap Equity Composite Experiences Rotation Between Growth and Value Segments";
           }
-          return sentiment === 'bullish'
-            ? "S&P 500 Tracking Fund Benefits from Corporate Earnings Growth Across Sectors"
-            : "Large-Cap Equity Composite Experiences Rotation Between Growth and Value Segments";
+          break;
 
         case 'QQQ':
           if (titles.some(t => t.includes('nasdaq') || t.includes('tech') || t.includes('growth'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Technology-Heavy Index Fund Capitalizes on Innovation Sector Momentum"
               : "NASDAQ Composite Tracker Faces Headwinds from Interest Rate Sensitivity";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Growth-Oriented Equity Fund Attracts Capital Flows from Institutional Investors"
+              : "Tech-Focused Investment Vehicle Adjusts to Changing Market Leadership Dynamics";
           }
-          return sentiment === 'bullish'
-            ? "Growth-Oriented Equity Fund Attracts Capital Flows from Institutional Investors"
-            : "Tech-Focused Investment Vehicle Adjusts to Changing Market Leadership Dynamics";
+          break;
 
         case 'DIA':
           if (titles.some(t => t.includes('dow') || t.includes('industrial') || t.includes('blue'))) {
-            return sentiment === 'bullish'
+            generatedHeadline = sentiment === 'bullish'
               ? "Industrial Average Tracking Fund Demonstrates Resilience in Manufacturing Sectors"
               : "Blue-Chip Equity Index Encounters Headwinds from Trade Policy Uncertainties";
+          } else {
+            generatedHeadline = sentiment === 'bullish'
+              ? "Dow Jones Composite Fund Attracts Conservative Investors Seeking Stability"
+              : "Traditional Industrial Index Shows Mixed Performance Across Cyclical Sectors";
           }
-          return sentiment === 'bullish'
-            ? "Dow Jones Composite Fund Attracts Conservative Investors Seeking Stability"
-            : "Traditional Industrial Index Shows Mixed Performance Across Cyclical Sectors";
+          break;
 
         default:
-          return sentiment === 'bullish'
+          generatedHeadline = sentiment === 'bullish'
             ? `${symbol} Demonstrates Strong Fundamental Performance in Current Market Environment`
             : `${symbol} Faces Market Headwinds Requiring Strategic Operational Adjustments`;
       }
@@ -209,8 +249,104 @@ const Dashboard = () => {
           : "Blue-Chip Stock Fund Faces Challenges from Global Trade Dynamics"
       };
       
-      return fallbackHeadlines[symbol] || `${symbol} Maintains Market Position Through Strategic Analysis`;
+      generatedHeadline = fallbackHeadlines[symbol] || `${symbol} Maintains Market Position Through Strategic Analysis`;
     }
+
+    // Check for similarity with existing headlines
+    const maxAttempts = 5;
+    let attempts = 0;
+    let finalHeadline = generatedHeadline;
+
+    while (attempts < maxAttempts && existingHeadlines.some(existing => areHeadlinesSimilar(finalHeadline, existing))) {
+      attempts++;
+      console.log(`Headline similarity detected for ${symbol}, generating alternative (attempt ${attempts})`);
+      
+      // Generate alternative unique headlines with specific uniqueness prompts
+      const alternativeHeadlines = {
+        'AAPL': [
+          sentiment === 'bullish' ? "iPhone Maker Strengthens Wearable Technology Market Dominance" : "Smartphone Leader Confronts Regulatory Challenges in App Store Operations",
+          sentiment === 'bullish' ? "Silicon Valley Icon Drives Services Revenue Through Ecosystem Lock-in Strategy" : "Technology Hardware Veteran Experiences Supply Chain Disruptions",
+          sentiment === 'bullish' ? "Premium Electronics Brand Expands Health Technology Integration Initiatives" : "Mobile Device Pioneer Adjusts to Changing Consumer Preferences",
+          sentiment === 'bullish' ? "Consumer Electronics Innovator Accelerates Augmented Reality Development Timeline" : "Cupertino-Based Company Faces Antitrust Investigations Worldwide",
+          sentiment === 'bullish' ? "Hardware Design Leader Transforms Manufacturing Efficiency Standards" : "Luxury Technology Provider Encounters Market Saturation Challenges"
+        ],
+        'MSFT': [
+          sentiment === 'bullish' ? "Seattle Software Giant Dominates Hybrid Work Solution Market" : "Office Suite Provider Struggles with Subscription Model Adoption",
+          sentiment === 'bullish' ? "Cloud Computing Leader Revolutionizes Enterprise Data Management" : "Windows Operating System Faces Open Source Competition Pressure",
+          sentiment === 'bullish' ? "Business Software Pioneer Integrates Gaming Division for Growth" : "Enterprise Technology Vendor Confronts Cybersecurity Breach Concerns",
+          sentiment === 'bullish' ? "Productivity Platform Creator Enhances AI-Powered Collaboration Tools" : "Software Licensing Model Experiences Regulatory Scrutiny",
+          sentiment === 'bullish' ? "Corporate Technology Partner Streamlines Remote Work Infrastructure" : "Traditional Software Company Adapts to SaaS Market Dynamics"
+        ],
+        'GOOGL': [
+          sentiment === 'bullish' ? "Mountain View Search Leader Monetizes Video Platform Effectively" : "Internet Advertising Monopoly Faces Regulatory Breakup Threats",
+          sentiment === 'bullish' ? "Alphabet Subsidiary Advances Quantum Computing Research Breakthrough" : "Search Algorithm Provider Encounters Privacy Lawsuit Challenges",
+          sentiment === 'bullish' ? "Digital Information Organizer Expands Healthcare Technology Investments" : "Online Platform Operator Struggles with Content Moderation Costs",
+          sentiment === 'bullish' ? "Web Services Innovator Transforms Cloud Storage Market Leadership" : "Technology Conglomerate Experiences Talent Retention Difficulties",
+          sentiment === 'bullish' ? "Search Engine Architect Develops Advanced Machine Learning Capabilities" : "Advertising Technology Platform Faces European Regulatory Penalties"
+        ],
+        'AMZN': [
+          sentiment === 'bullish' ? "Seattle E-Commerce Pioneer Dominates Last-Mile Delivery Innovation" : "Online Marketplace Operator Encounters Labor Union Organization Efforts",
+          sentiment === 'bullish' ? "Web Services Provider Strengthens Enterprise Database Solutions" : "Retail Distribution Giant Faces Antitrust Investigation Pressure",
+          sentiment === 'bullish' ? "Digital Streaming Platform Competes with Traditional Entertainment Media" : "Logistics Network Operator Struggles with Rising Fuel Costs",
+          sentiment === 'bullish' ? "Cloud Infrastructure Leader Advances Machine Learning Service Offerings" : "E-Commerce Platform Experiences Third-Party Seller Fraud Issues",
+          sentiment === 'bullish' ? "Online Retail Innovator Expands Grocery Delivery Service Footprint" : "Marketplace Technology Provider Confronts Counterfeit Product Problems"
+        ],
+        'NVDA': [
+          sentiment === 'bullish' ? "Santa Clara Chip Designer Accelerates Autonomous Vehicle Computing" : "Graphics Card Manufacturer Encounters Cryptocurrency Mining Volatility",
+          sentiment === 'bullish' ? "GPU Technology Pioneer Transforms Scientific Computing Applications" : "Semiconductor Vendor Faces Geopolitical Trade Restriction Challenges",
+          sentiment === 'bullish' ? "Parallel Processing Innovator Advances Medical Imaging Technology" : "Hardware Acceleration Provider Struggles with Supply Chain Shortages",
+          sentiment === 'bullish' ? "Machine Learning Processor Creator Expands Data Center Market Share" : "Graphics Computing Specialist Experiences Gaming Market Saturation",
+          sentiment === 'bullish' ? "AI Chip Architecture Leader Revolutionizes Edge Computing Solutions" : "High-Performance Computing Vendor Confronts Intense Competition Pressure"
+        ],
+        'TSLA': [
+          sentiment === 'bullish' ? "Austin Electric Vehicle Manufacturer Scales Battery Production Capacity" : "Automotive Startup Encounters Quality Control Manufacturing Issues",
+          sentiment === 'bullish' ? "Sustainable Mobility Leader Advances Full Self-Driving Technology" : "Electric Car Pioneer Faces Regulatory Safety Investigation Concerns",
+          sentiment === 'bullish' ? "Clean Transportation Innovator Expands Supercharger Network Infrastructure" : "Battery Technology Developer Struggles with Raw Material Cost Inflation",
+          sentiment === 'bullish' ? "Energy Storage Solutions Provider Transforms Grid-Scale Applications" : "Automotive Disruptor Experiences Production Bottleneck Challenges",
+          sentiment === 'bullish' ? "Solar Panel Integration Specialist Optimizes Renewable Energy Systems" : "Electric Vehicle Manufacturer Confronts Traditional Automaker Competition"
+        ],
+        'META': [
+          sentiment === 'bullish' ? "Menlo Park Social Network Monetizes Creator Economy Platform" : "Social Media Conglomerate Faces Teen Mental Health Lawsuit Challenges",
+          sentiment === 'bullish' ? "Virtual Reality Headset Manufacturer Advances Immersive Technology" : "Digital Advertising Platform Struggles with Apple Privacy Policy Changes",
+          sentiment === 'bullish' ? "Messaging Application Provider Integrates E-Commerce Shopping Features" : "Social Networking Giant Encounters Regulatory Data Protection Penalties",
+          sentiment === 'bullish' ? "Metaverse Platform Developer Transforms Remote Work Collaboration" : "Communication Technology Vendor Faces Content Moderation Controversies",
+          sentiment === 'bullish' ? "Digital Community Builder Expands Short-Form Video Content Strategy" : "Social Media Operator Experiences User Engagement Decline Issues"
+        ],
+        'SPY': [
+          sentiment === 'bullish' ? "Broad Market ETF Reflects Corporate Dividend Growth Momentum" : "S&P 500 Index Fund Shows Sector Rotation Uncertainty Patterns",
+          sentiment === 'bullish' ? "Large-Cap Equity Tracker Benefits from Earnings Season Outperformance" : "Diversified Stock Portfolio Experiences Inflationary Pressure Concerns",
+          sentiment === 'bullish' ? "Blue-Chip Index Representative Captures Market Recovery Optimism" : "Broad-Based Equity Fund Faces Interest Rate Sensitivity Challenges",
+          sentiment === 'bullish' ? "Market Capitalization Weighted Fund Demonstrates Institutional Confidence" : "Large Company Stock Composite Shows Valuation Concern Signals",
+          sentiment === 'bullish' ? "Equity Market Benchmark Reflects Economic Expansion Indicators" : "Stock Market Index Tracker Encounters Geopolitical Risk Factors"
+        ],
+        'QQQ': [
+          sentiment === 'bullish' ? "NASDAQ-100 ETF Captures Innovation Sector Investment Flows" : "Technology-Heavy Index Fund Faces Growth Stock Valuation Concerns",
+          sentiment === 'bullish' ? "Growth Stock Composite Benefits from Digital Transformation Trends" : "Tech-Focused Portfolio Experiences Interest Rate Sensitivity Pressure",
+          sentiment === 'bullish' ? "Large-Cap Growth Fund Attracts Momentum Investment Strategies" : "Technology Sector Tracker Shows Earnings Multiple Compression",
+          sentiment === 'bullish' ? "Innovation-Driven Equity Fund Reflects Venture Capital Confidence" : "Growth-Oriented Index Experiences Regulatory Technology Scrutiny",
+          sentiment === 'bullish' ? "High-Growth Company Tracker Demonstrates Market Leadership Rotation" : "Technology Investment Vehicle Faces Profitability Margin Pressure"
+        ],
+        'DIA': [
+          sentiment === 'bullish' ? "Dow Jones Industrial ETF Reflects Manufacturing Sector Resilience" : "Blue-Chip Index Fund Shows Traditional Industry Decline Concerns",
+          sentiment === 'bullish' ? "Industrial Average Tracker Benefits from Infrastructure Investment Spending" : "Value Stock Composite Faces Cyclical Economic Headwind Challenges",
+          sentiment === 'bullish' ? "Established Company Index Demonstrates Dividend Yield Attractiveness" : "Traditional Industrial Fund Experiences Energy Transition Pressures",
+          sentiment === 'bullish' ? "Legacy Corporation Tracker Reflects Economic Reopening Optimism" : "Manufacturing-Heavy Portfolio Shows Supply Chain Disruption Impact",
+          sentiment === 'bullish' ? "Blue-Chip Equity Fund Captures Conservative Investment Allocation" : "Industrial Stock Index Encounters Global Trade Policy Uncertainties"
+        ]
+      };
+
+      const alternatives = alternativeHeadlines[symbol] || [
+        sentiment === 'bullish' ? `${symbol} Achieves Strategic Market Position Through Operational Excellence` : `${symbol} Encounters Challenging Market Conditions Requiring Adaptation`
+      ];
+
+      finalHeadline = alternatives[attempts - 1] || alternatives[0];
+    }
+
+    if (attempts >= maxAttempts) {
+      console.warn(`Could not generate unique headline for ${symbol} after ${maxAttempts} attempts`);
+    }
+
+    return finalHeadline;
   };
 
   const handleRefreshNews = async () => {
@@ -370,8 +506,12 @@ const Dashboard = () => {
                   console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
 
                   if (article) {
-                    // Generate composite headline for this stock/fund
-                    const compositeHeadline = generateCompositeHeadline(article);
+                    // Generate composite headline for this stock/fund with uniqueness checking
+                    const existingHeadlines = mainAnalysisArticles
+                      .filter(item => item.symbol !== symbol)
+                      .map(item => generateCompositeHeadline(item, []));
+                    
+                    const compositeHeadline = generateCompositeHeadline(article, existingHeadlines);
                     
                     return (
                       <NewsCard 
