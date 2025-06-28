@@ -1,5 +1,7 @@
+
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { useArticleWeights } from "@/hooks/useArticleWeights";
 
 interface NewsCardProps {
   symbol: string;
@@ -35,6 +37,21 @@ const ConfidenceDots = ({ confidence }: { confidence: number }) => {
   );
 };
 
+const WeightDots = ({ weight }: { weight: number }) => {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((dot) => (
+        <div
+          key={dot}
+          className={`w-2 h-2 rounded-full ${
+            dot <= weight ? 'bg-emerald-500' : 'bg-slate-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, sourceLinks, stockPrice }: NewsCardProps) => {
   // Helper function to get asset type and styling
   const getAssetInfo = (symbol: string) => {
@@ -48,6 +65,23 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
     }
     return { type: 'Other', color: 'bg-gray-500' };
   };
+
+  // Parse source links
+  let parsedSourceLinks: Array<{title: string, url: string, published_at: string}> = [];
+  try {
+    parsedSourceLinks = sourceLinks ? JSON.parse(sourceLinks) : [];
+  } catch (error) {
+    console.error('Error parsing source links:', error);
+  }
+
+  // Use the article weights hook
+  const { data: articleWeights, isLoading: weightsLoading } = useArticleWeights({
+    articles: parsedSourceLinks,
+    overallSentiment: sentiment || 'Neutral',
+    overallConfidence: confidence || 50,
+    symbol,
+    enabled: parsedSourceLinks.length > 0 && !isHistorical
+  });
 
   // Helper function to generate AI analysis paragraph
   const generateAnalysisParagraph = (item: any) => {
@@ -82,14 +116,6 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
   };
 
   const assetInfo = getAssetInfo(symbol);
-
-  // Parse source links
-  let parsedSourceLinks: Array<{title: string, url: string, published_at: string}> = [];
-  try {
-    parsedSourceLinks = sourceLinks ? JSON.parse(sourceLinks) : [];
-  } catch (error) {
-    console.error('Error parsing source links:', error);
-  }
 
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
@@ -207,35 +233,51 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         </>
       )}
 
-      {/* Source Articles Section */}
+      {/* Source Articles Section with Weights */}
       {parsedSourceLinks.length > 0 && (
         <div className="mt-4 pt-4 border-t border-slate-700">
           <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
             <ExternalLink className="w-4 h-4" />
             Source Articles ({parsedSourceLinks.length})
+            {!isHistorical && (
+              <span className="text-xs text-slate-500 ml-2">
+                {weightsLoading ? 'Calculating weights...' : 'Weighted by significance'}
+              </span>
+            )}
           </h4>
           <div className="space-y-2">
-            {parsedSourceLinks.map((link, index) => (
-              <a
-                key={index}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-2 bg-slate-800/30 border border-slate-700/50 rounded-lg hover:border-slate-600 hover:bg-slate-800/50 transition-all group"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-300 font-medium group-hover:text-white transition-colors line-clamp-2 leading-tight">
-                      {link.title}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {formatPublishTime(link.published_at)}
-                    </p>
+            {parsedSourceLinks.map((link, index) => {
+              const weight = articleWeights?.find(w => w.article_index === index);
+              
+              return (
+                <a
+                  key={index}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-2 bg-slate-800/30 border border-slate-700/50 rounded-lg hover:border-slate-600 hover:bg-slate-800/50 transition-all group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-300 font-medium group-hover:text-white transition-colors line-clamp-2 leading-tight">
+                        {link.title}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatPublishTime(link.published_at)}
+                      </p>
+                      {!isHistorical && weight && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-slate-400">Weight:</span>
+                          <WeightDots weight={weight.weight} />
+                          <span className="text-xs text-slate-500">({weight.reasoning})</span>
+                        </div>
+                      )}
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-0.5" />
                   </div>
-                  <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-0.5" />
-                </div>
-              </a>
-            ))}
+                </a>
+              );
+            })}
           </div>
         </div>
       )}
