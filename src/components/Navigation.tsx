@@ -10,28 +10,28 @@ const Navigation = () => {
   const { isDarkMode, toggleTheme } = useTheme();
 
   return (
-    <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto">
+    <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <div className="text-2xl font-bold text-emerald-600">StockPredict AI</div>
-        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+        <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">StockPredict AI</div>
+        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
           BETA
         </Badge>
       </div>
       <div className="hidden md:flex items-center gap-8">
-        <a href="#features" className="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors">Features</a>
-        <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors">How it Works</a>
-        <a href="#pricing" className="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors">Pricing</a>
+        <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
+        <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
+        <a href="#pricing" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Pricing</a>
         <Link to="/auth">
-          <Button variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+          <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
             Sign In
           </Button>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-full p-1">
           <Sun className="h-4 w-4 text-gray-600 dark:text-slate-400" />
           <Switch
             checked={isDarkMode}
             onCheckedChange={toggleTheme}
-            className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-gray-300"
+            className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
           />
           <Moon className="h-4 w-4 text-gray-600 dark:text-slate-400" />
         </div>

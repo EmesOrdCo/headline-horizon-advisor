@@ -44,28 +44,28 @@ const DashboardNav = () => {
   };
 
   return (
-    <nav className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <nav className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
       <Link to="/" className="flex items-center gap-3">
         <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">StockPredict AI</div>
-        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
           LIVE
         </Badge>
       </Link>
       <div className="flex items-center gap-4">
-        <span className="text-gray-600 dark:text-slate-400 text-sm">{formatTime(currentTime)}</span>
+        <span className="text-gray-600 dark:text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
         <Button 
           onClick={handleSignOut}
           variant="outline" 
-          className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           Sign Out
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-full p-1">
           <Sun className="h-4 w-4 text-gray-600 dark:text-slate-400" />
           <Switch
             checked={isDarkMode}
             onCheckedChange={toggleTheme}
-            className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-gray-300"
+            className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
           />
           <Moon className="h-4 w-4 text-gray-600 dark:text-slate-400" />
         </div>

@@ -115,7 +115,7 @@ const Dashboard = () => {
             <Button 
               onClick={handleRefreshNews}
               disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               {isFetching ? 'Fetching...' : 'Refresh News'}
@@ -124,19 +124,19 @@ const Dashboard = () => {
           <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds</p>
           
           {isFetching && fetchingStatus && (
-            <div className="text-yellow-600 dark:text-yellow-400 text-sm mt-2">
+            <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
               {fetchingStatus}
             </div>
           )}
           
           {isPricesLoading && (
-            <div className="text-yellow-600 dark:text-yellow-400 text-sm mt-2">
+            <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
               Loading asset prices from Finnhub...
             </div>
           )}
           
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
-            <div className="text-red-600 dark:text-red-400 text-sm mt-2">
+            <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
               ⚠️ Asset prices unavailable - check Finnhub API connection
             </div>
           )}
@@ -176,19 +176,19 @@ const Dashboard = () => {
                   } else {
                     // Show placeholder for assets without current analysis
                     return (
-                      <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/30 dark:backdrop-blur dark:border-slate-700/50 rounded-xl p-6">
+                      <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
                         <div className="flex items-center justify-between gap-2 mb-4">
                           <div className="flex items-center gap-2">
                             <Badge className={`${assetInfo.color} text-white`}>{symbol}</Badge>
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-slate-500/20 dark:text-slate-400 text-xs">
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300 text-xs">
                               {assetInfo.type}
                             </Badge>
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 text-xs">
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
                               NO RECENT NEWS
                             </Badge>
                           </div>
                           {stockPrice && (
-                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 dark:bg-slate-800/50 dark:border-slate-600 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 dark:bg-slate-800 dark:border-slate-600 rounded-lg px-3 py-2">
                               <div className="text-right">
                                 <div className="text-gray-900 dark:text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
                                 <div className={`text-xs flex items-center gap-1 ${
@@ -225,7 +225,7 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
-            <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:backdrop-blur dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
+            <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
@@ -235,15 +235,15 @@ const Dashboard = () => {
                       {analyzedHeadlines.slice(0, 15).map((item, index) => {
                         const assetInfo = getAssetInfo(item.symbol);
                         return (
-                          <div key={`analyzed-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-800/30 dark:border-slate-700/50 rounded-lg p-4">
+                          <div key={`analyzed-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-600 dark:text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
+                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-700 dark:text-${assetInfo.color.split('-')[1]}-300 text-xs`}>
                                 {item.symbol}
                               </Badge>
                               <Badge className={`text-xs ${
-                                item.ai_sentiment === 'Bullish' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                item.ai_sentiment === 'Bearish' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
-                                'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400'
+                                item.ai_sentiment === 'Bullish' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
+                                item.ai_sentiment === 'Bearish' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                               }`}>
                                 {item.ai_sentiment}
                               </Badge>
@@ -283,9 +283,9 @@ const Dashboard = () => {
                       {remainingHeadlines.slice(0, 25).map((item, index) => {
                         const assetInfo = getAssetInfo(item.symbol);
                         return (
-                          <div key={`remaining-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-800/30 dark:border-slate-700/50 rounded-lg p-4">
+                          <div key={`remaining-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-600 dark:text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
+                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-700 dark:text-${assetInfo.color.split('-')[1]}-300 text-xs`}>
                                 {item.symbol}
                               </Badge>
                             </div>
