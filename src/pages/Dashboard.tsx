@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -26,18 +25,18 @@ const Dashboard = () => {
 
   const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
 
-  // Stock name mappings
+  // Stock name mappings - using standard company names
   const STOCK_NAMES: { [key: string]: string } = {
-    'AAPL': 'Apple Inc.',
-    'MSFT': 'Microsoft Corporation',
-    'GOOGL': 'Alphabet Inc.',
-    'AMZN': 'Amazon.com Inc.',
-    'NVDA': 'NVIDIA Corporation',
-    'TSLA': 'Tesla Inc.',
-    'META': 'Meta Platforms Inc.',
-    'SPY': 'SPDR S&P 500 ETF Trust',
-    'QQQ': 'Invesco QQQ Trust',
-    'DIA': 'SPDR Dow Jones Industrial Average ETF Trust'
+    'AAPL': 'Apple',
+    'MSFT': 'Microsoft',
+    'GOOGL': 'Alphabet',
+    'AMZN': 'Amazon',
+    'NVDA': 'NVIDIA',
+    'TSLA': 'Tesla',
+    'META': 'Meta',
+    'SPY': 'S&P 500 ETF',
+    'QQQ': 'Nasdaq 100 ETF',
+    'DIA': 'Dow Jones ETF'
   };
 
   // Function to calculate similarity between two headlines
@@ -54,7 +53,7 @@ const Dashboard = () => {
   // Function to check if headlines are too similar
   const areHeadlinesSimilar = (headline1: string, headline2: string): boolean => {
     const similarity = calculateSimilarity(headline1, headline2);
-    return similarity > 25; // Consider similar if more than 25% word overlap
+    return similarity > 30; // Increased threshold to 30% for better deduplication
   };
 
   // Get stock price for a symbol
@@ -71,14 +70,24 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get ONLY RSS headlines from the 5 sources we specified
+  // Get ONLY RSS headlines from the 5 sources we specified with improved deduplication
   const rssHeadlines = newsData?.filter(item => {
     const isRSSSource = item.symbol === 'RSS';
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
     
-    // Only include articles that are from RSS sources and recent
     return isRSSSource && isRecent;
-  }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+  }).reduce((unique: any[], current: any) => {
+    // Check if current headline is similar to any existing headline
+    const isDuplicate = unique.some(existing => 
+      areHeadlinesSimilar(current.title, existing.title)
+    );
+    
+    if (!isDuplicate) {
+      unique.push(current);
+    }
+    
+    return unique;
+  }, []).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
@@ -94,8 +103,8 @@ const Dashboard = () => {
       console.error('Error parsing source links:', error);
     }
 
-    // Get full stock name
-    const fullName = STOCK_NAMES[symbol] || symbol;
+    // Get standard company name
+    const companyName = STOCK_NAMES[symbol] || symbol;
     
     // Create short, easy-to-understand summary based on sentiment and context
     let summary = '';
@@ -122,7 +131,26 @@ const Dashboard = () => {
       summary = sentiment === 'bullish' ? 'Positive momentum drives investor interest' : 'Market pressures weigh on performance';
     }
 
-    return `${fullName}: ${summary}`;
+    const proposedHeadline = `${companyName}: ${summary}`;
+    
+    // Check if this headline is too similar to existing ones
+    const isSimilar = existingHeadlines.some(existing =>
+      areHeadlinesSimilar(proposedHeadline, existing)
+    );
+    
+    if (isSimilar) {
+      // Generate alternative summary
+      const alternatives = [
+        sentiment === 'bullish' ? 'Recent developments create upward momentum' : 'Current conditions present challenges',
+        sentiment === 'bullish' ? 'Market factors align for potential gains' : 'Various headwinds impact outlook',
+        sentiment === 'bullish' ? 'Strong fundamentals drive optimism' : 'Uncertainty clouds near-term prospects'
+      ];
+      
+      const randomAlt = alternatives[Math.floor(Math.random() * alternatives.length)];
+      return `${companyName}: ${randomAlt}`;
+    }
+
+    return proposedHeadline;
   };
 
   const handleRefreshNews = async () => {
@@ -311,7 +339,7 @@ const Dashboard = () => {
                     );
                   } else {
                     // Show placeholder for assets without current analysis
-                    const fullName = STOCK_NAMES[symbol] || symbol;
+                    const companyName = STOCK_NAMES[symbol] || symbol;
                     return (
                       <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
                         <div className="flex items-center justify-between gap-2 mb-4">
@@ -343,7 +371,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                          {fullName}: No recent analysis available
+                          {companyName}: No recent analysis available
                         </h3>
                         <p className="text-gray-500 dark:text-slate-500 text-sm">
                           Click "Refresh News" to fetch the latest market updates and AI analysis.
