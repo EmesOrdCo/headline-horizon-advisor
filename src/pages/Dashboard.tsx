@@ -1,7 +1,6 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -20,13 +19,9 @@ const Dashboard = () => {
   const [fetchingStatus, setFetchingStatus] = useState<string>('');
   const { toast } = useToast();
 
-  // Primary assets for main analysis
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA']; // Match the ticker exactly
+  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 
-  const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
-
-  // Stock name mappings
   const STOCK_NAMES: { [key: string]: string } = {
     'AAPL': 'Apple Inc.',
     'MSFT': 'Microsoft Corporation',
@@ -39,6 +34,48 @@ const Dashboard = () => {
     'QQQ': 'Invesco QQQ Trust',
     'DIA': 'SPDR Dow Jones Industrial Average ETF Trust'
   };
+
+  const getStockPrice = (symbol: string) => {
+    return stockPrices?.find(stock => stock.symbol === symbol);
+  };
+
+  // Get the top story from Magnificent 7 (highest confidence or most bullish/bearish)
+  const topMagnificent7Story = MAGNIFICENT_7.map(symbol => {
+    return newsData?.find(item => 
+      item.symbol === symbol && 
+      item.ai_confidence && 
+      item.ai_sentiment
+    );
+  }).filter(Boolean)
+  .sort((a, b) => {
+    // Sort by confidence first, then by sentiment strength
+    const confidenceDiff = (b.ai_confidence || 0) - (a.ai_confidence || 0);
+    if (confidenceDiff !== 0) return confidenceDiff;
+    
+    // Prefer non-neutral sentiments
+    if (a.ai_sentiment === 'Neutral' && b.ai_sentiment !== 'Neutral') return 1;
+    if (b.ai_sentiment === 'Neutral' && a.ai_sentiment !== 'Neutral') return -1;
+    
+    return 0;
+  })[0];
+
+  // Get the top story from Index Funds
+  const topIndexFundStory = MAJOR_INDEX_FUNDS.map(symbol => {
+    return newsData?.find(item => 
+      item.symbol === symbol && 
+      item.ai_confidence && 
+      item.ai_sentiment
+    );
+  }).filter(Boolean)
+  .sort((a, b) => {
+    const confidenceDiff = (b.ai_confidence || 0) - (a.ai_confidence || 0);
+    if (confidenceDiff !== 0) return confidenceDiff;
+    
+    if (a.ai_sentiment === 'Neutral' && b.ai_sentiment !== 'Neutral') return 1;
+    if (b.ai_sentiment === 'Neutral' && a.ai_sentiment !== 'Neutral') return -1;
+    
+    return 0;
+  })[0];
 
   // Function to calculate similarity between two headlines
   const calculateSimilarity = (headline1: string, headline2: string): number => {
@@ -57,10 +94,7 @@ const Dashboard = () => {
     return similarity > 25; // Consider similar if more than 25% word overlap
   };
 
-  // Get stock price for a symbol
-  const getStockPrice = (symbol: string) => {
-    return stockPrices?.find(stock => stock.symbol === symbol);
-  };
+  const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
 
   // Get main analysis articles (one per primary asset with AI analysis)
   const mainAnalysisArticles = PRIMARY_ASSETS.map(symbol => {
@@ -253,7 +287,7 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400">Latest AI-analyzed news for major stocks and index funds + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
+          <p className="text-gray-600 dark:text-slate-400">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
@@ -275,91 +309,80 @@ const Dashboard = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 gap-4">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Magnificent 7 Section */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
+                  <Badge className="bg-blue-500 text-white">Top Story</Badge>
+                </div>
+                <Link to="/magnificent-7">
+                  <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                    View All 7 Stocks
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              
               {isLoading ? (
                 <div className="text-center text-gray-600 dark:text-slate-400 py-8">
-                  Loading primary assets news...
+                  Loading Magnificent 7 analysis...
                 </div>
+              ) : topMagnificent7Story ? (
+                <NewsCard 
+                  symbol={topMagnificent7Story.symbol}
+                  title={generateCompositeHeadline(topMagnificent7Story)}
+                  description={topMagnificent7Story.description}
+                  confidence={topMagnificent7Story.ai_confidence}
+                  sentiment={topMagnificent7Story.ai_sentiment}
+                  category={topMagnificent7Story.category}
+                  isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                  sourceLinks={topMagnificent7Story.source_links || '[]'}
+                  stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                />
               ) : (
-                // Always show boxes, one for each primary asset
-                PRIMARY_ASSETS.map((symbol) => {
-                  const article = mainAnalysisArticles.find(item => item.symbol === symbol);
-                  const stockPrice = getStockPrice(symbol);
-                  const assetInfo = getAssetInfo(symbol);
-                  
-                  console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
+                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
+                  <p className="text-gray-600 dark:text-slate-400">No Magnificent 7 analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                </div>
+              )}
+            </div>
 
-                  if (article) {
-                    // Generate composite headline for this stock/fund with uniqueness checking
-                    const existingHeadlines = mainAnalysisArticles
-                      .filter(item => item.symbol !== symbol)
-                      .map(item => generateCompositeHeadline(item, []));
-                    
-                    const compositeHeadline = generateCompositeHeadline(article, existingHeadlines);
-                    
-                    return (
-                      <NewsCard 
-                        key={article.id} 
-                        symbol={article.symbol}
-                        title={compositeHeadline}
-                        description={article.description}
-                        confidence={article.ai_confidence}
-                        sentiment={article.ai_sentiment}
-                        category={article.category}
-                        isHistorical={article.ai_reasoning?.includes('Historical')}
-                        sourceLinks={article.source_links || '[]'}
-                        stockPrice={stockPrice}
-                      />
-                    );
-                  } else {
-                    // Show placeholder for assets without current analysis
-                    const fullName = STOCK_NAMES[symbol] || symbol;
-                    return (
-                      <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                        <div className="flex items-center justify-between gap-2 mb-4">
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${assetInfo.color} text-white`}>{symbol}</Badge>
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300 text-xs">
-                              {assetInfo.type}
-                            </Badge>
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
-                              NO RECENT NEWS
-                            </Badge>
-                          </div>
-                          {stockPrice && (
-                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 dark:bg-slate-800 dark:border-slate-600 rounded-lg px-3 py-2">
-                              <div className="text-right">
-                                <div className="text-gray-900 dark:text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
-                                <div className={`text-xs flex items-center gap-1 ${
-                                  stockPrice.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-                                }`}>
-                                  {stockPrice.change >= 0 ? (
-                                    <TrendingUp className="w-3 h-3" />
-                                  ) : (
-                                    <TrendingDown className="w-3 h-3" />
-                                  )}
-                                  {stockPrice.change >= 0 ? '+' : ''}{stockPrice.change.toFixed(2)} ({stockPrice.changePercent.toFixed(2)}%)
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                          {symbol}: No recent analysis available
-                        </h3>
-                        <p className="text-gray-500 dark:text-slate-500 text-sm">
-                          Click "Refresh News" to fetch the latest market updates and AI analysis.
-                        </p>
-                        {!stockPrice && (
-                          <p className="text-red-600 dark:text-red-400 text-xs mt-2">
-                            Asset price unavailable - check Finnhub connection
-                          </p>
-                        )}
-                      </div>
-                    );
-                  }
-                })
+            {/* Index Funds Section */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
+                  <Badge className="bg-purple-500 text-white">Top Story</Badge>
+                </div>
+                <Link to="/index-funds">
+                  <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20">
+                    View All Index Funds
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              
+              {isLoading ? (
+                <div className="text-center text-gray-600 dark:text-slate-400 py-8">
+                  Loading Index Funds analysis...
+                </div>
+              ) : topIndexFundStory ? (
+                <NewsCard 
+                  symbol={topIndexFundStory.symbol}
+                  title={generateCompositeHeadline(topIndexFundStory)}
+                  description={topIndexFundStory.description}
+                  confidence={topIndexFundStory.ai_confidence}
+                  sentiment={topIndexFundStory.ai_sentiment}
+                  category={topIndexFundStory.category}
+                  isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                  sourceLinks={topIndexFundStory.source_links || '[]'}
+                  stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                />
+              ) : (
+                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
+                  <p className="text-gray-600 dark:text-slate-400">No Index Fund analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                </div>
               )}
             </div>
           </div>

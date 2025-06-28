@@ -13,6 +13,8 @@ import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
 import DetailedAnalysis from "./pages/DetailedAnalysis";
 import BiggestMovers from "./pages/BiggestMovers";
+import Magnificent7 from "./pages/Magnificent7";
+import IndexFunds from "./pages/IndexFunds";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
               <Route path="/analysis/:symbol" element={<ProtectedRoute><DetailedAnalysis /></ProtectedRoute>} />
               <Route path="/biggest-movers" element={<ProtectedRoute><BiggestMovers /></ProtectedRoute>} />
+              <Route path="/magnificent-7" element={<ProtectedRoute><Magnificent7 /></ProtectedRoute>} />
+              <Route path="/index-funds" element={<ProtectedRoute><IndexFunds /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
