@@ -100,7 +100,7 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full bg-green-600 dark:bg-green-700 py-2">
+      <div className="w-full bg-blue-600 dark:bg-blue-700 py-2">
         <div className="flex items-center justify-center">
           <div className="text-white text-sm font-medium">Loading live market data...</div>
         </div>
@@ -110,7 +110,7 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="w-full bg-green-600 dark:bg-green-700 py-2">
+      <div className="w-full bg-blue-600 dark:bg-blue-700 py-2">
         <div className="flex items-center justify-center">
           <div className="text-white text-sm font-medium">Unable to fetch live market data</div>
         </div>
@@ -122,7 +122,7 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="w-full bg-green-600 dark:bg-green-700 overflow-hidden">
+    <div className="w-full bg-blue-600 dark:bg-blue-700 overflow-hidden">
       <div className="relative">
         <div className="animate-scroll flex gap-8 py-2 px-4">
           {duplicatedData.map((item, index) => (
@@ -143,14 +143,6 @@ const MarketTicker = () => {
               </span>
             </div>
           ))}
-        </div>
-        
-        {/* Right side text */}
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-green-600 dark:bg-green-700 pl-4">
-          <div className="flex items-center gap-2 text-white text-sm">
-            <Triangle className="w-3 h-3 text-white fill-white" />
-            <span>Get real-time market data from LSEG</span>
-          </div>
         </div>
       </div>
     </div>

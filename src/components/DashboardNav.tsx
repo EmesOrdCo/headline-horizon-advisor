@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Sun, Moon, ChevronDown, Search } from "lucide-react";
+import { Sun, Moon, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,49 +54,48 @@ const DashboardNav = () => {
       {/* Top Navigation Bar - Reuters Style */}
       <nav className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between px-6 py-3">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              </div>
-            </div>
-            <div className="text-xl font-bold text-gray-900 dark:text-white">StockPredict AI</div>
-          </Link>
-          
-          {/* Navigation Menu */}
+          {/* Left Side - Logo and Navigation Menu */}
           <div className="flex items-center gap-8">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
-                Live Market News <ChevronDown className="w-4 h-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <Link to="/dashboard">Magnificent 7</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link to="/dashboard">Funds</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link to="/dashboard">Crypto</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Link to="/my-stocks" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
-              My Stocks
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                </div>
+              </div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">StockPredict AI</div>
             </Link>
             
-            <Link to="/biggest-movers" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
-              Biggest Movers
-            </Link>
+            {/* Navigation Menu */}
+            <div className="flex items-center gap-8">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                  Live Market News <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    <Link to="/dashboard">Magnificent 7</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/dashboard">Funds</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/dashboard">Crypto</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Link to="/my-stocks" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                My Stocks
+              </Link>
+              
+              <Link to="/biggest-movers" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                Biggest Movers
+              </Link>
+            </div>
           </div>
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="p-2">
-              <Search className="w-4 h-4" />
-            </Button>
             <span className="text-gray-600 dark:text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             <Button 
               onClick={handleSignOut}
