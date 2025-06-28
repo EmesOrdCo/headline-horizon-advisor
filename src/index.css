@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,20 +38,23 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Light mode specific colors */
+    --app-background: 255 255 255;
+    --app-foreground: 15 23 42;
+    --app-card: 248 250 252;
+    --app-card-border: 226 232 240;
+    --app-accent: 16 185 129;
+    --app-accent-secondary: 5 150 105;
+    --app-muted: 100 116 139;
+    --app-muted-light: 148 163 184;
   }
 
   .dark {
@@ -89,6 +93,16 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Dark mode specific colors */
+    --app-background: 15 23 42;
+    --app-foreground: 248 250 252;
+    --app-card: 30 41 59;
+    --app-card-border: 51 65 85;
+    --app-accent: 16 185 129;
+    --app-accent-secondary: 5 150 105;
+    --app-muted: 148 163 184;
+    --app-muted-light: 100 116 139;
   }
 }
 

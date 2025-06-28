@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -95,7 +96,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen dark:bg-slate-900 bg-slate-50">
       <DashboardNav />
       
       <main className="p-6 max-w-7xl mx-auto">
@@ -104,11 +105,11 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">Live Market News</h1>
+              <h1 className="text-3xl font-bold dark:text-white text-slate-900">Live Market News</h1>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-400 text-sm font-medium">LIVE</span>
-                <span className="text-slate-400 text-sm">AI Analyzed</span>
+                <span className="dark:text-slate-400 text-slate-600 text-sm">AI Analyzed</span>
               </div>
             </div>
             <Button 
@@ -120,7 +121,7 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-slate-400">Latest AI-analyzed news for major stocks and index funds</p>
+          <p className="dark:text-slate-400 text-slate-600">Latest AI-analyzed news for major stocks and index funds</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-yellow-400 text-sm mt-2">
@@ -145,7 +146,7 @@ const Dashboard = () => {
           <div className="lg:col-span-2">
             <div className="grid grid-cols-1 gap-4">
               {isLoading ? (
-                <div className="text-center text-slate-400 py-8">
+                <div className="text-center dark:text-slate-400 text-slate-600 py-8">
                   Loading primary assets news...
                 </div>
               ) : (
@@ -175,21 +176,21 @@ const Dashboard = () => {
                   } else {
                     // Show placeholder for assets without current analysis
                     return (
-                      <div key={symbol} className="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-6">
+                      <div key={symbol} className="dark:bg-slate-800/30 bg-white/50 backdrop-blur border dark:border-slate-700/50 border-slate-200 rounded-xl p-6">
                         <div className="flex items-center justify-between gap-2 mb-4">
                           <div className="flex items-center gap-2">
                             <Badge className={`${assetInfo.color} text-white`}>{symbol}</Badge>
-                            <Badge variant="secondary" className="bg-slate-500/20 text-slate-400 text-xs">
+                            <Badge variant="secondary" className="dark:bg-slate-500/20 dark:text-slate-400 bg-slate-200 text-slate-600 text-xs">
                               {assetInfo.type}
                             </Badge>
-                            <Badge variant="secondary" className="bg-gray-500/20 text-gray-400 text-xs">
+                            <Badge variant="secondary" className="dark:bg-gray-500/20 dark:text-gray-400 bg-gray-200 text-gray-600 text-xs">
                               NO RECENT NEWS
                             </Badge>
                           </div>
                           {stockPrice && (
-                            <div className="flex items-center gap-3 bg-slate-800/50 border border-slate-600 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-3 dark:bg-slate-800/50 bg-slate-100/80 border dark:border-slate-600 border-slate-300 rounded-lg px-3 py-2">
                               <div className="text-right">
-                                <div className="text-white font-semibold">${stockPrice.price.toFixed(2)}</div>
+                                <div className="dark:text-white text-slate-900 font-semibold">${stockPrice.price.toFixed(2)}</div>
                                 <div className={`text-xs flex items-center gap-1 ${
                                   stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
                                 }`}>
@@ -204,10 +205,10 @@ const Dashboard = () => {
                             </div>
                           )}
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-400 mb-2">
+                        <h3 className="text-lg font-semibold dark:text-slate-400 text-slate-600 mb-2">
                           No recent analysis available for {symbol}
                         </h3>
-                        <p className="text-slate-500 text-sm">
+                        <p className="dark:text-slate-500 text-slate-500 text-sm">
                           Click "Refresh News" to fetch the latest market updates and AI analysis.
                         </p>
                         {!stockPrice && (
@@ -224,8 +225,8 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
+            <div className="dark:bg-slate-800/50 bg-white/50 backdrop-blur border dark:border-slate-700 border-slate-200 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
+              <h3 className="text-lg font-semibold dark:text-white text-slate-900 mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
                   {/* First show analyzed headlines with AI analysis from ALL assets */}
@@ -234,7 +235,7 @@ const Dashboard = () => {
                       {analyzedHeadlines.slice(0, 15).map((item, index) => {
                         const assetInfo = getAssetInfo(item.symbol);
                         return (
-                          <div key={`analyzed-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                          <div key={`analyzed-${item.id}-${index}`} className="dark:bg-slate-800/30 bg-white/30 rounded-lg border dark:border-slate-700/50 border-slate-200 p-4">
                             <div className="flex items-center gap-2 mb-3">
                               <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
                                 {item.symbol}
@@ -251,12 +252,12 @@ const Dashboard = () => {
                               href={item.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
+                              className="dark:text-white text-slate-900 text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
                             >
                               {item.title}
                             </a>
                             <div className="flex items-center justify-between text-xs mb-2">
-                              <span className="text-slate-400">
+                              <span className="dark:text-slate-400 text-slate-600">
                                 {new Date(item.published_at).toLocaleDateString()}
                               </span>
                               <div className="flex items-center gap-1">
@@ -264,7 +265,7 @@ const Dashboard = () => {
                                   <div
                                     key={dot}
                                     className={`w-1.5 h-1.5 rounded-full ${
-                                      dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'bg-slate-600'
+                                      dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'dark:bg-slate-600 bg-slate-300'
                                     }`}
                                   />
                                 ))}
@@ -282,7 +283,7 @@ const Dashboard = () => {
                       {remainingHeadlines.slice(0, 25).map((item, index) => {
                         const assetInfo = getAssetInfo(item.symbol);
                         return (
-                          <div key={`remaining-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                          <div key={`remaining-${item.id}-${index}`} className="dark:bg-slate-800/30 bg-white/30 rounded-lg border dark:border-slate-700/50 border-slate-200 p-4">
                             <div className="flex items-center gap-2 mb-3">
                               <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
                                 {item.symbol}
@@ -292,12 +293,12 @@ const Dashboard = () => {
                               href={item.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
+                              className="dark:text-white text-slate-900 text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
                             >
                               {item.title}
                             </a>
                             <div className="flex items-center justify-between text-xs mb-2">
-                              <span className="text-slate-400">
+                              <span className="dark:text-slate-400 text-slate-600">
                                 {new Date(item.published_at).toLocaleDateString()}
                               </span>
                             </div>
@@ -308,7 +309,7 @@ const Dashboard = () => {
                   )}
                   
                   {(!analyzedHeadlines || analyzedHeadlines.length === 0) && (!remainingHeadlines || remainingHeadlines.length === 0) && (
-                    <div className="text-center text-slate-400 py-4">
+                    <div className="text-center dark:text-slate-400 text-slate-600 py-4">
                       <p>No additional headlines available.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load more articles.</p>
                     </div>
