@@ -13,7 +13,6 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// Only the 3 basket funds that match the market ticker
 const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 
 serve(async (req) => {
@@ -57,17 +56,13 @@ serve(async (req) => {
       }
     }
 
-    // Remove duplicates and process articles
+    // Remove duplicates based on title
     const uniqueArticles = [];
     const seenTitles = new Set();
     
     for (const article of allArticles) {
-      const symbol = article.entities?.[0]?.symbol;
-      if (!symbol || !MAJOR_INDEX_FUNDS.includes(symbol)) continue;
-      
-      const uniqueKey = `${symbol}-${article.title}`;
-      if (!seenTitles.has(uniqueKey)) {
-        seenTitles.add(uniqueKey);
+      if (!seenTitles.has(article.title)) {
+        seenTitles.add(article.title);
         uniqueArticles.push(article);
       }
     }
@@ -77,36 +72,98 @@ serve(async (req) => {
     // Sort by date
     uniqueArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
-    const primaryAnalysis = new Map();
-    const allProcessedArticles = [];
+    const processedArticles = [];
 
-    // Process main analysis articles (one per fund)
-    for (const article of uniqueArticles) {
-      const symbol = article.entities?.[0]?.symbol;
-      
-      if (!symbol || !MAJOR_INDEX_FUNDS.includes(symbol)) continue;
+    // Process each article with two-step ChatGPT analysis
+    for (const article of uniqueArticles.slice(0, 15)) { // Limit to 15 most recent articles
+      console.log(`Analyzing article: ${article.title}`);
 
-      if (!primaryAnalysis.has(symbol)) {
-        console.log(`Analyzing article for ${symbol} with OpenAI: ${article.title}`);
+      try {
+        // Step 1: Determine which index funds are impacted
+        const impactAnalysisPrompt = `
+You are a professional financial analyst. Analyze this news article and determine which of the following major index funds would be significantly impacted by this news:
 
-        try {
-          const analysisPrompt = `
-You are a professional financial analyst. Analyze this news article about the index fund ${symbol} and provide a JSON response:
+Index Funds to consider: 
+- SPY (S&P 500 ETF)
+- QQQ (NASDAQ-100 ETF)  
+- DIA (Dow Jones Industrial Average ETF)
+
+Article:
+Title: ${article.title}
+Description: ${article.description || 'No description available'}
+Published: ${article.published_at}
+
+Provide a JSON response with this structure:
+{
+  "impacted_funds": ["SPY", "QQQ", "DIA"],
+  "reasoning": "Brief explanation of why these funds are impacted"
+}
+
+Only include funds that would be meaningfully affected by this news. If no funds would be significantly impacted, return an empty array for impacted_funds.`;
+
+        const impactResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a professional financial analyst specializing in index funds and ETFs. Provide clear analysis in valid JSON format only.'
+              },
+              {
+                role: 'user',
+                content: impactAnalysisPrompt
+              }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.3
+          }),
+        });
+
+        if (!impactResponse.ok) {
+          console.error(`OpenAI impact analysis failed for article: ${article.title}`);
+          continue;
+        }
+
+        const impactData = await impactResponse.json();
+        const impactAnalysis = JSON.parse(impactData.choices[0].message.content);
+        
+        console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_funds.join(', ')}`);
+
+        if (!impactAnalysis.impacted_funds || impactAnalysis.impacted_funds.length === 0) {
+          console.log(`No significant fund impact found for article: ${article.title}`);
+          continue;
+        }
+
+        // Step 2: Analyze sentiment for each impacted fund
+        for (const symbol of impactAnalysis.impacted_funds) {
+          if (!MAJOR_INDEX_FUNDS.includes(symbol)) continue;
+
+          console.log(`Analyzing sentiment for ${symbol} based on: ${article.title}`);
+
+          const sentimentPrompt = `
+You are a professional financial analyst. Analyze this news article specifically for its impact on ${symbol} index fund and provide a JSON response:
 
 {
   "confidence": "number between 1-100 representing your confidence level",
   "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral'",
-  "category": "string describing the news category"
+  "category": "string describing the news category",
+  "reasoning": "brief explanation of the analysis for ${symbol}"
 }
 
-Article to analyze:
+Article:
 Title: ${article.title}
 Description: ${article.description || 'No description available'}
-Asset Symbol: ${symbol}
+Target Fund: ${symbol}
 Published: ${article.published_at}
-`;
 
-          const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+Focus specifically on how this news affects ${symbol}.`;
+
+          const sentimentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${openaiApiKey}`,
@@ -121,7 +178,7 @@ Published: ${article.published_at}
                 },
                 {
                   role: 'user',
-                  content: analysisPrompt
+                  content: sentimentPrompt
                 }
               ],
               response_format: { type: "json_object" },
@@ -129,119 +186,58 @@ Published: ${article.published_at}
             }),
           });
 
-          if (chatResponse.ok) {
-            const chatData = await chatResponse.json();
-            const analysis = JSON.parse(chatData.choices[0].message.content);
+          if (sentimentResponse.ok) {
+            const sentimentData = await sentimentResponse.json();
+            const analysis = JSON.parse(sentimentData.choices[0].message.content);
 
-            const processedArticle = {
+            processedArticles.push({
               symbol,
               title: article.title,
-              description: article.description || `Latest market analysis for ${symbol}`,
-              confidence: analysis.confidence,
-              sentiment: analysis.sentiment,
-              category: analysis.category || 'Index Fund',
+              description: article.description || `Market analysis for ${symbol}`,
               url: article.url,
               published_at: article.published_at,
+              category: analysis.category || 'Index Fund',
               ai_confidence: analysis.confidence,
               ai_sentiment: analysis.sentiment,
-              ai_reasoning: `OpenAI analysis of: ${article.title}`,
+              ai_reasoning: analysis.reasoning || `AI analysis of ${article.title} impact on ${symbol}`,
               is_main_analysis: true,
               is_historical: false
-            };
+            });
 
-            primaryAnalysis.set(symbol, processedArticle);
-            console.log(`✅ Successfully analyzed ${symbol} with OpenAI: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence`);
+            console.log(`✅ Successfully analyzed ${symbol}: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence`);
           }
-        } catch (error) {
-          console.error(`❌ Error analyzing article for ${symbol} with OpenAI:`, error);
+
+          // Small delay between sentiment analyses
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
+
+        // Delay between articles to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+      } catch (error) {
+        console.error(`❌ Error analyzing article "${article.title}":`, error);
       }
     }
 
     // Create historical analysis for funds without current news
+    const fundsWithNews = new Set(processedArticles.map(a => a.symbol));
     for (const symbol of MAJOR_INDEX_FUNDS) {
-      if (!primaryAnalysis.has(symbol)) {
+      if (!fundsWithNews.has(symbol)) {
         console.log(`Creating historical analysis for ${symbol}...`);
         
-        const historicalAnalysis = {
+        processedArticles.push({
           symbol,
           title: `${symbol} Market Analysis - Historical Data*`,
           description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
-          confidence: 70,
-          sentiment: 'Neutral',
-          category: 'Index Fund',
           url: `https://finance.yahoo.com/quote/${symbol}`,
           published_at: new Date().toISOString(),
+          category: 'Index Fund',
           ai_confidence: 70,
           ai_sentiment: 'Neutral',
           ai_reasoning: `*Historical analysis based on market trends. No current news available for ${symbol}.`,
           is_main_analysis: true,
           is_historical: true
-        };
-
-        primaryAnalysis.set(symbol, historicalAnalysis);
-      }
-    }
-
-    // Process additional headlines with AI analysis
-    for (const article of uniqueArticles) {
-      const symbol = article.entities?.[0]?.symbol;
-      
-      if (symbol && MAJOR_INDEX_FUNDS.includes(symbol)) {
-        const mainArticle = primaryAnalysis.get(symbol);
-        if (mainArticle && !mainArticle.is_historical && mainArticle.title === article.title) {
-          continue;
-        }
-
-        try {
-          const headlinePrompt = `Analyze this index fund article and provide JSON response:
-{
-  "sentiment": "Bullish, Bearish, or Neutral",
-  "confidence": "number between 1-100"
-}
-
-Title: ${article.title}
-Symbol: ${symbol}`;
-
-          const headlineResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                { role: 'system', content: 'You are a financial analyst providing quick market sentiment analysis for index funds.' },
-                { role: 'user', content: headlinePrompt }
-              ],
-              response_format: { type: "json_object" },
-              temperature: 0.6
-            }),
-          });
-
-          if (headlineResponse.ok) {
-            const headlineData = await headlineResponse.json();
-            const headlineAnalysis = JSON.parse(headlineData.choices[0].message.content);
-
-            allProcessedArticles.push({
-              symbol,
-              title: article.title,
-              description: article.description,
-              url: article.url,
-              published_at: article.published_at,
-              category: 'Index Fund',
-              ai_confidence: headlineAnalysis.confidence,
-              ai_sentiment: headlineAnalysis.sentiment,
-              ai_reasoning: `AI analysis: ${headlineAnalysis.sentiment} sentiment with ${headlineAnalysis.confidence}% confidence`,
-              is_main_analysis: false
-            });
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (error) {
-          console.error(`❌ Error analyzing headline for ${symbol}:`, error);
-        }
+        });
       }
     }
 
@@ -253,8 +249,8 @@ Symbol: ${symbol}`;
       await supabase.from('news_articles').delete().eq('symbol', symbol);
     }
 
-    // Insert main analysis articles
-    for (const article of primaryAnalysis.values()) {
+    // Insert processed articles
+    for (const article of processedArticles) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -276,33 +272,15 @@ Symbol: ${symbol}`;
       }
     }
 
-    // Insert additional headlines
-    for (const article of allProcessedArticles) {
-      await supabase
-        .from('news_articles')
-        .insert({
-          title: article.title,
-          description: article.description,
-          symbol: article.symbol,
-          url: article.url,
-          published_at: article.published_at,
-          ai_confidence: article.ai_confidence,
-          ai_sentiment: article.ai_sentiment,
-          ai_reasoning: article.ai_reasoning,
-          category: article.category
-        });
-    }
-
     const summary = {
       success: true,
       assetType: 'Index Funds',
-      mainAnalyses: primaryAnalysis.size,
-      additionalHeadlines: allProcessedArticles.length,
-      totalArticles: uniqueArticles.length,
-      message: 'Index Funds processed successfully'
+      articlesProcessed: processedArticles.length,
+      fundsAnalyzed: [...fundsWithNews].length,
+      message: 'Index Funds processed successfully with impact-based analysis'
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.additionalHeadlines} additional headlines for Index Funds`);
+    console.log(`🎉 Successfully processed ${summary.articlesProcessed} analyses for ${summary.fundsAnalyzed} funds`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
