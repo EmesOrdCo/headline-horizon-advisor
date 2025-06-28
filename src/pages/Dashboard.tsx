@@ -87,11 +87,10 @@ const Dashboard = () => {
     return isRecent && (isHighConfidence || hasGoodSentiment);
   }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  // Generate composite headline based on source articles with uniqueness checking
+  // Generate SHORT composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
-    const confidence = item.ai_confidence || 50;
     
     // Parse source links to get article titles
     let sourceArticles = [];
@@ -101,35 +100,32 @@ const Dashboard = () => {
       console.error('Error parsing source links:', error);
     }
 
-    // Get full stock name
-    const fullName = STOCK_NAMES[symbol] || symbol;
-    
     // Create short, easy-to-understand summary based on sentiment and context
     let summary = '';
     
     if (sourceArticles.length > 0) {
       const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
       
-      // Generate context-aware summaries
+      // Generate context-aware SHORT summaries
       if (titles.some(t => t.includes('earnings') || t.includes('revenue') || t.includes('profit'))) {
-        summary = sentiment === 'bullish' ? 'Strong earnings results boost investor confidence' : 'Earnings concerns weigh on stock performance';
+        summary = sentiment === 'bullish' ? 'Strong earnings boost confidence' : 'Earnings disappoint investors';
       } else if (titles.some(t => t.includes('upgrade') || t.includes('analyst') || t.includes('target'))) {
-        summary = sentiment === 'bullish' ? 'Analysts upgrade stock with higher price targets' : 'Analyst downgrades create selling pressure';
+        summary = sentiment === 'bullish' ? 'Analysts raise price targets' : 'Analysts downgrade stock';
       } else if (titles.some(t => t.includes('ai') || t.includes('artificial intelligence'))) {
-        summary = sentiment === 'bullish' ? 'AI developments drive growth expectations' : 'AI market concerns impact valuation';
+        summary = sentiment === 'bullish' ? 'AI developments drive growth' : 'AI concerns weigh on stock';
       } else if (titles.some(t => t.includes('chip') || t.includes('semiconductor'))) {
-        summary = sentiment === 'bullish' ? 'Chip demand supports strong outlook' : 'Semiconductor headwinds create uncertainty';
+        summary = sentiment === 'bullish' ? 'Chip demand supports outlook' : 'Semiconductor headwinds emerge';
       } else if (titles.some(t => t.includes('cloud') || t.includes('enterprise'))) {
-        summary = sentiment === 'bullish' ? 'Cloud services growth accelerates' : 'Enterprise spending concerns emerge';
+        summary = sentiment === 'bullish' ? 'Cloud growth accelerates' : 'Enterprise spending slows';
       } else {
-        summary = sentiment === 'bullish' ? 'Positive market developments support growth' : 'Market challenges create headwinds';
+        summary = sentiment === 'bullish' ? 'Positive developments support growth' : 'Market challenges create headwinds';
       }
     } else {
-      // Fallback summaries
-      summary = sentiment === 'bullish' ? 'Positive momentum drives investor interest' : 'Market pressures weigh on performance';
+      // Fallback short summaries
+      summary = sentiment === 'bullish' ? 'Positive momentum continues' : 'Market pressures weigh on stock';
     }
 
-    return `${fullName}: ${summary}`;
+    return `${symbol}: ${summary}`;
   };
 
   const handleRefreshNews = async () => {
@@ -350,7 +346,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                          {fullName}: No recent analysis available
+                          {symbol}: No recent analysis available
                         </h3>
                         <p className="text-gray-500 dark:text-slate-500 text-sm">
                           Click "Refresh News" to fetch the latest market updates and AI analysis.
