@@ -87,6 +87,69 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stock_articles: {
+        Row: {
+          ai_confidence: number | null
+          ai_reasoning: string | null
+          ai_sentiment: string | null
+          created_at: string
+          description: string | null
+          id: string
+          published_at: string | null
+          symbol: string
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          ai_sentiment?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          symbol: string
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_reasoning?: string | null
+          ai_sentiment?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          symbol?: string
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stocks: {
+        Row: {
+          created_at: string
+          id: string
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
