@@ -68,7 +68,7 @@ const Dashboard = () => {
   }).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   // Generate composite headline based on source articles with uniqueness checking
-  const generateCompositeHeadline = async (item: any, existingHeadlines: string[] = []): Promise<string> => {
+  const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
     const confidence = item.ai_confidence || 50;
@@ -216,7 +216,7 @@ const Dashboard = () => {
       }
     } else {
       // Unique fallback headlines when no source articles available
-      const fallbackHeadlines = {
+      const fallbackHeadlines: { [key: string]: string } = {
         'AAPL': sentiment === 'bullish' 
           ? "Consumer Technology Leader Maintains Premium Market Position Through Innovation"
           : "Hardware Manufacturer Encounters Competitive Pressures in Core Product Categories",
@@ -262,7 +262,7 @@ const Dashboard = () => {
       console.log(`Headline similarity detected for ${symbol}, generating alternative (attempt ${attempts})`);
       
       // Generate alternative unique headlines with specific uniqueness prompts
-      const alternativeHeadlines = {
+      const alternativeHeadlines: { [key: string]: string[] } = {
         'AAPL': [
           sentiment === 'bullish' ? "iPhone Maker Strengthens Wearable Technology Market Dominance" : "Smartphone Leader Confronts Regulatory Challenges in App Store Operations",
           sentiment === 'bullish' ? "Silicon Valley Icon Drives Services Revenue Through Ecosystem Lock-in Strategy" : "Technology Hardware Veteran Experiences Supply Chain Disruptions",
