@@ -1,108 +1,119 @@
 
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, TrendingUp, BarChart3, Activity, Star, PieChart, User } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Sun, Moon, ChevronDown } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const DashboardNav = () => {
-  const { signOut, user } = useAuth();
-  const location = useLocation();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const { signOut } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
+  const { toast } = useToast();
 
-  const handleSignOut = async () => {
-    await signOut();
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleDateString('en-GB') + ', ' + date.toLocaleTimeString('en-GB');
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="flex items-center gap-3">
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">StockPredict AI</div>
-              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30">
-                BETA
-              </Badge>
+    <>
+      {/* Top Navigation Bar - Dark Theme */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900 border-b border-slate-700">
+        <div className="w-[95%] mx-auto flex items-center justify-between px-6 py-3">
+          {/* Left Side - Logo and Navigation Menu */}
+          <div className="flex items-center gap-8">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="text-xl font-bold text-emerald-400">StockPredict AI</div>
+              <Badge className="bg-emerald-500 text-white text-xs">LIVE</Badge>
             </Link>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/dashboard">
-              <Button 
-                variant={isActive("/dashboard") ? "default" : "ghost"} 
-                className={isActive("/dashboard") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
-            <Link to="/predictions">
-              <Button 
-                variant={isActive("/predictions") ? "default" : "ghost"} 
-                className={isActive("/predictions") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Predictions
-              </Button>
-            </Link>
-            <Link to="/biggest-movers">
-              <Button 
-                variant={isActive("/biggest-movers") ? "default" : "ghost"} 
-                className={isActive("/biggest-movers") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <Activity className="w-4 h-4 mr-2" />
-                Biggest Movers
-              </Button>
-            </Link>
-            <Link to="/magnificent-7">
-              <Button 
-                variant={isActive("/magnificent-7") ? "default" : "ghost"} 
-                className={isActive("/magnificent-7") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <Star className="w-4 h-4 mr-2" />
-                Magnificent 7
-              </Button>
-            </Link>
-            <Link to="/index-funds">
-              <Button 
-                variant={isActive("/index-funds") ? "default" : "ghost"} 
-                className={isActive("/index-funds") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <PieChart className="w-4 h-4 mr-2" />
-                Index Funds
-              </Button>
-            </Link>
-            <Link to="/my-stocks">
-              <Button 
-                variant={isActive("/my-stocks") ? "default" : "ghost"} 
-                className={isActive("/my-stocks") ? "bg-emerald-600 hover:bg-emerald-700" : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"}
-              >
-                <User className="w-4 h-4 mr-2" />
+            
+            {/* Navigation Menu */}
+            <div className="flex items-center gap-8">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
+                  Live Market News <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-800 border-slate-700">
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
+                    <Link to="/dashboard">Magnificent 7</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
+                    <Link to="/dashboard">Funds</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
+                    <Link to="/dashboard">Crypto</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
                 My Stocks
-              </Button>
-            </Link>
+              </Link>
+              
+              <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
+                Biggest Movers
+              </Link>
+            </div>
           </div>
 
+          {/* Right Side Controls */}
           <div className="flex items-center gap-4">
-            <span className="text-gray-600 dark:text-gray-300 text-sm hidden md:block">
-              {user?.email}
-            </span>
+            <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             <Button 
-              variant="ghost" 
               onClick={handleSignOut}
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              variant="outline" 
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800"
             >
-              <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </Button>
+            <div className="flex items-center gap-2 bg-slate-800 rounded-full p-1">
+              <Sun className="h-4 w-4 text-slate-400" />
+              <Switch
+                checked={isDarkMode}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
+              />
+              <Moon className="h-4 w-4 text-slate-400" />
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 
