@@ -168,7 +168,7 @@ const Dashboard = () => {
                         sentiment={article.ai_sentiment}
                         category={article.category}
                         isHistorical={article.ai_reasoning?.includes('Historical')}
-                        sourceLinks={article.source_links}
+                        sourceLinks={article.source_links || '[]'}
                         stockPrice={stockPrice}
                       />
                     );

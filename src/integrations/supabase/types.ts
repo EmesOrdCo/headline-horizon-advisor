@@ -21,6 +21,7 @@ export type Database = {
           id: string
           priority: string | null
           published_at: string | null
+          source_links: string | null
           symbol: string
           title: string
           updated_at: string
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           priority?: string | null
           published_at?: string | null
+          source_links?: string | null
           symbol: string
           title: string
           updated_at?: string
@@ -53,6 +55,7 @@ export type Database = {
           id?: string
           priority?: string | null
           published_at?: string | null
+          source_links?: string | null
           symbol?: string
           title?: string
           updated_at?: string
