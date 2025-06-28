@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,8 +52,10 @@ const OnboardingEmail = () => {
           variant: "destructive",
         });
       } else {
-        // Store email in sessionStorage for next step
-        sessionStorage.setItem('onboarding_email', email);
+        toast({
+          title: "Account created successfully",
+          description: "Welcome! Let's get you set up.",
+        });
         navigate('/onboarding/details');
       }
     } catch (error) {
