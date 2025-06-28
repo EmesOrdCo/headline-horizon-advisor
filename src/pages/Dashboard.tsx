@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -40,35 +39,8 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Filter for front-page news only (major news sources and important stories)
-  const frontPageHeadlines = newsData?.filter(item => {
-    const title = item.title?.toLowerCase() || '';
-    const description = item.description?.toLowerCase() || '';
-    
-    // Filter for major financial news indicators
-    const isFrontPageNews = 
-      // Market-wide news
-      title.includes('s&p 500') || title.includes('nasdaq') || title.includes('dow') ||
-      title.includes('market') && (title.includes('record') || title.includes('high') || title.includes('rally') || title.includes('surge')) ||
-      // Major economic indicators
-      title.includes('federal reserve') || title.includes('fed') || title.includes('interest rate') ||
-      title.includes('inflation') || title.includes('gdp') || title.includes('unemployment') ||
-      // Major corporate news
-      title.includes('earnings') && (title.includes('beat') || title.includes('miss') || title.includes('guidance')) ||
-      title.includes('merger') || title.includes('acquisition') || title.includes('ipo') ||
-      // Geopolitical and regulatory
-      title.includes('trump') || title.includes('biden') || title.includes('congress') ||
-      title.includes('sec') || title.includes('regulation') || title.includes('tariff') ||
-      // Major tech developments
-      title.includes('ai') && (title.includes('breakthrough') || title.includes('partnership') || title.includes('deal')) ||
-      // Crisis or major events
-      title.includes('crisis') || title.includes('crash') || title.includes('surge') ||
-      title.includes('billion') || title.includes('trillion') ||
-      // Major company-specific news that affects markets
-      description.includes('stock price') || description.includes('shares jump') || description.includes('shares fall');
-    
-    return isFrontPageNews;
-  })?.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+  // Get ALL recent headlines in chronological order (including primary assets)
+  const allRecentHeadlines = newsData?.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
@@ -112,17 +84,42 @@ const Dashboard = () => {
     return { type: 'Other', color: 'bg-gray-500' };
   };
 
-  // Generate composite headline based on AI analysis
-  const generateCompositeHeadline = (symbol: string, sentiment: string, confidence: number) => {
-    const assetInfo = getAssetInfo(symbol);
-    const confidenceLevel = confidence > 80 ? 'Strong' : confidence > 60 ? 'Moderate' : 'Cautious';
+  // Helper function to generate AI analysis paragraph for ANY article
+  const generateAnalysisParagraph = (item: any) => {
+    const sentimentText = item.ai_sentiment?.toLowerCase() || 'neutral';
+    const confidence = item.ai_confidence || 50;
     
-    if (sentiment === 'Bullish') {
-      return `${symbol} Shows ${confidenceLevel} Bullish Momentum Amid Market Analysis`;
-    } else if (sentiment === 'Bearish') {
-      return `${symbol} Faces ${confidenceLevel} Bearish Pressure According to Latest Analysis`;
+    // Generate contextual analysis based on sentiment and confidence
+    if (sentimentText === 'bullish' && confidence > 70) {
+      return `Strong positive indicators suggest ${item.symbol} may benefit from this development. Market sentiment appears favorable with high confidence in upward momentum.`;
+    } else if (sentimentText === 'bearish' && confidence > 70) {
+      return `This news presents concerning factors for ${item.symbol} performance. Analysis indicates potential downward pressure with significant market implications.`;
+    } else if (sentimentText === 'bullish' && confidence <= 70) {
+      return `Moderate positive signals for ${item.symbol}, though market uncertainty remains. Cautious optimism warranted given mixed indicators and evolving conditions.`;
+    } else if (sentimentText === 'bearish' && confidence <= 70) {
+      return `Some negative factors identified for ${item.symbol}, but impact unclear. Market conditions suggest careful monitoring of developments ahead.`;
     } else {
-      return `${symbol} Maintains Neutral Outlook with ${confidenceLevel} Market Position`;
+      return `Mixed signals for ${item.symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
+    }
+  };
+
+  // Generate general article summary for recent headlines
+  const generateArticleSummary = (item: any) => {
+    const title = item.title || '';
+    const description = item.description || '';
+    
+    if (title.toLowerCase().includes('earnings') || title.toLowerCase().includes('revenue')) {
+      return `This earnings-related news discusses financial performance and may impact related companies and their stock valuations in the coming trading sessions.`;
+    } else if (title.toLowerCase().includes('merger') || title.toLowerCase().includes('acquisition')) {
+      return `This merger and acquisition news could significantly affect the companies involved and potentially influence sector-wide trading patterns.`;
+    } else if (title.toLowerCase().includes('ai') || title.toLowerCase().includes('artificial intelligence')) {
+      return `This AI-focused development may have broad implications for technology companies and could influence investor sentiment in the tech sector.`;
+    } else if (title.toLowerCase().includes('market') || title.toLowerCase().includes('stocks')) {
+      return `This market-focused article provides insights into current trading conditions and may influence overall investor sentiment and market direction.`;
+    } else if (title.toLowerCase().includes('federal reserve') || title.toLowerCase().includes('interest rates')) {
+      return `This monetary policy news could have wide-reaching effects on market liquidity, borrowing costs, and overall economic conditions.`;
+    } else {
+      return `This article covers significant business and financial developments that may influence market sentiment and investment decisions across various sectors.`;
     }
   };
 
@@ -202,18 +199,11 @@ const Dashboard = () => {
                   console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
 
                   if (article) {
-                    // Generate composite headline for articles with analysis
-                    const compositeHeadline = generateCompositeHeadline(
-                      article.symbol, 
-                      article.ai_sentiment, 
-                      article.ai_confidence
-                    );
-
                     return (
                       <NewsCard 
                         key={article.id} 
                         symbol={article.symbol}
-                        title={compositeHeadline}
+                        title={article.title}
                         description={article.description}
                         confidence={article.ai_confidence}
                         sentiment={article.ai_sentiment}
@@ -276,11 +266,11 @@ const Dashboard = () => {
           
           <div className="space-y-6">
             <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Front Page Headlines</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {frontPageHeadlines && frontPageHeadlines.length > 0 ? (
-                    frontPageHeadlines.slice(0, 20).map((item, index) => (
+                  {allRecentHeadlines && allRecentHeadlines.length > 0 ? (
+                    allRecentHeadlines.slice(0, 30).map((item, index) => (
                       <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                         <a 
                           href={item.url} 
@@ -290,14 +280,19 @@ const Dashboard = () => {
                         >
                           {item.title}
                         </a>
-                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-1">
+                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-3">
                           {formatPublishTime(item.published_at)}
+                        </div>
+                        <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
+                          <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
+                            <span className="text-cyan-400 font-medium">Summary:</span> {generateArticleSummary(item)}
+                          </p>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No front page headlines available.</p>
+                      <p>No headlines available.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                     </div>
                   )}
