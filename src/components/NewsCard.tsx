@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 
@@ -37,20 +36,6 @@ const ConfidenceDots = ({ confidence }: { confidence: number }) => {
 };
 
 const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, sourceLinks, stockPrice }: NewsCardProps) => {
-  // Stock name mappings - using standard company names
-  const STOCK_NAMES: { [key: string]: string } = {
-    'AAPL': 'Apple',
-    'MSFT': 'Microsoft',
-    'GOOGL': 'Alphabet',
-    'AMZN': 'Amazon',
-    'NVDA': 'NVIDIA',
-    'TSLA': 'Tesla',
-    'META': 'Meta',
-    'SPY': 'S&P 500 ETF',
-    'QQQ': 'Nasdaq 100 ETF',
-    'DIA': 'Dow Jones ETF'
-  };
-
   // Helper function to get asset type and styling
   const getAssetInfo = (symbol: string) => {
     const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
@@ -68,19 +53,18 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
   const generateAnalysisParagraph = (item: any) => {
     const sentimentText = item.ai_sentiment?.toLowerCase() || 'neutral';
     const confidence = item.ai_confidence || 50;
-    const companyName = STOCK_NAMES[item.symbol] || item.symbol;
     
     // Generate contextual analysis based on sentiment and confidence
     if (sentimentText === 'bullish' && confidence > 70) {
-      return `Strong positive indicators suggest ${companyName} may benefit from this development. Market sentiment appears favorable with high confidence in upward momentum.`;
+      return `Strong positive indicators suggest ${item.symbol} may benefit from this development. Market sentiment appears favorable with high confidence in upward momentum.`;
     } else if (sentimentText === 'bearish' && confidence > 70) {
-      return `This news presents concerning factors for ${companyName} performance. Analysis indicates potential downward pressure with significant market implications.`;
+      return `This news presents concerning factors for ${item.symbol} performance. Analysis indicates potential downward pressure with significant market implications.`;
     } else if (sentimentText === 'bullish' && confidence <= 70) {
-      return `Moderate positive signals for ${companyName}, though market uncertainty remains. Cautious optimism warranted given mixed indicators and evolving conditions.`;
+      return `Moderate positive signals for ${item.symbol}, though market uncertainty remains. Cautious optimism warranted given mixed indicators and evolving conditions.`;
     } else if (sentimentText === 'bearish' && confidence <= 70) {
-      return `Some negative factors identified for ${companyName}, but impact unclear. Market conditions suggest careful monitoring of developments ahead.`;
+      return `Some negative factors identified for ${item.symbol}, but impact unclear. Market conditions suggest careful monitoring of developments ahead.`;
     } else {
-      return `Mixed signals for ${companyName} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
+      return `Mixed signals for ${item.symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
     }
   };
 
@@ -161,10 +145,10 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             </div>
             <p className="text-slate-300 text-sm mb-3">
               {isHistorical 
-                ? `*Based on historical market analysis and trends for ${STOCK_NAMES[symbol] || symbol}.`
+                ? `*Based on historical market analysis and trends for ${symbol}.`
                 : parsedSourceLinks.length > 0
-                ? `Based on AI analysis of ${parsedSourceLinks.length} news articles, ${STOCK_NAMES[symbol] || symbol} shows ${sentiment.toLowerCase()} sentiment.`
-                : `Based on AI analysis of this news and market patterns, ${STOCK_NAMES[symbol] || symbol} shows ${sentiment.toLowerCase()} sentiment.`
+                ? `Based on AI analysis of ${parsedSourceLinks.length} news articles, ${symbol} shows ${sentiment.toLowerCase()} sentiment.`
+                : `Based on AI analysis of this news and market patterns, ${symbol} shows ${sentiment.toLowerCase()} sentiment.`
               }
             </p>
             
