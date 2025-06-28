@@ -70,13 +70,14 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Debug MarketAux data
+  // Debug all data
   console.log('All news data:', newsData);
-  console.log('MarketAux articles:', newsData?.filter(item => item.symbol === 'RSS'));
+  console.log('Articles with RSS symbol:', newsData?.filter(item => item.symbol === 'RSS'));
+  console.log('All unique symbols:', [...new Set(newsData?.map(item => item.symbol))]);
 
-  // Get ONLY MarketAux headlines from the 5 sources with improved deduplication
-  const rssHeadlines = newsData?.filter(item => {
-    const isMarketAuxSource = item.symbol === 'RSS';
+  // Get MarketAux headlines - these are the articles with symbol 'RSS' from fetch-rss-news function
+  const marketauxHeadlines = newsData?.filter(item => {
+    const isMarketAuxSource = item.symbol === 'RSS'; // This is how fetch-rss-news marks articles
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000);
     
     console.log('Checking MarketAux item:', {
@@ -101,7 +102,7 @@ const Dashboard = () => {
     return unique;
   }, []).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  console.log('Final MarketAux headlines count:', rssHeadlines.length);
+  console.log('Final MarketAux headlines count:', marketauxHeadlines.length);
 
   // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
@@ -297,7 +298,7 @@ const Dashboard = () => {
           
           {/* Debug info */}
           <div className="text-xs text-slate-400 mt-2">
-            Total articles: {newsData?.length || 0} | MarketAux articles: {rssHeadlines.length} | Loading: {isLoading ? 'Yes' : 'No'}
+            Total articles: {newsData?.length || 0} | MarketAux headlines: {marketauxHeadlines.length} | Loading: {isLoading ? 'Yes' : 'No'}
           </div>
           
           {isFetching && fetchingStatus && (
@@ -421,8 +422,8 @@ const Dashboard = () => {
               </div>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {rssHeadlines && rssHeadlines.length > 0 ? (
-                    rssHeadlines.slice(0, 30).map((item, index) => (
+                  {marketauxHeadlines && marketauxHeadlines.length > 0 ? (
+                    marketauxHeadlines.slice(0, 30).map((item, index) => (
                       <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <a 
@@ -454,7 +455,10 @@ const Dashboard = () => {
                       <p>No headlines available from MarketAux.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                       <div className="text-xs mt-2 text-slate-500">
-                        Debug: {newsData?.length || 0} total articles, {newsData?.filter(item => item.symbol === 'RSS').length || 0} MarketAux articles
+                        Debug: {newsData?.length || 0} total articles, {marketauxHeadlines.length} MarketAux headlines
+                      </div>
+                      <div className="text-xs mt-1 text-slate-500">
+                        Symbols found: {[...new Set(newsData?.map(item => item.symbol))].join(', ')}
                       </div>
                     </div>
                   )}
