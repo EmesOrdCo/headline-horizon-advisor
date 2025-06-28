@@ -10,6 +10,41 @@ const corsHeaders = {
 
 const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
+// Function to fetch full article content
+async function fetchArticleContent(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      console.log(`Failed to fetch article content from ${url}: ${response.status}`);
+      return '';
+    }
+    
+    const html = await response.text();
+    
+    // Basic HTML parsing to extract text content
+    // Remove script and style tags
+    let cleanText = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    cleanText = cleanText.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    
+    // Remove HTML tags
+    cleanText = cleanText.replace(/<[^>]*>/g, ' ');
+    
+    // Clean up whitespace
+    cleanText = cleanText.replace(/\s+/g, ' ').trim();
+    
+    // Limit to reasonable length (first 3000 characters to avoid token limits)
+    return cleanText.length > 3000 ? cleanText.substring(0, 3000) + '...' : cleanText;
+  } catch (error) {
+    console.error(`Error fetching article content from ${url}:`, error);
+    return '';
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -98,28 +133,43 @@ serve(async (req) => {
         console.log(`Found ${articles.length} articles for ${symbol}`);
 
         if (articles.length > 0) {
-          // Create composite analysis like in fetch-magnificent-7
-          const articleSummaries = articles.slice(0, 5).map((article: any, index: number) => 
+          // Fetch full content for top 3 articles (to balance comprehensiveness with API limits)
+          const articlesWithContent = [];
+          
+          for (let i = 0; i < Math.min(3, articles.length); i++) {
+            const article = articles[i];
+            console.log(`Fetching full content for article ${i + 1}: ${article.title}`);
+            
+            const fullContent = await fetchArticleContent(article.url);
+            
+            articlesWithContent.push({
+              ...article,
+              fullContent: fullContent || article.description || 'No content available'
+            });
+          }
+
+          // Create composite analysis with full article content
+          const articleSummaries = articlesWithContent.map((article: any, index: number) => 
             `Article ${index + 1}:
 Title: ${article.title}
-Description: ${article.description || 'No description available'}
 Published: ${article.published_at}
-URL: ${article.url}`
+URL: ${article.url}
+Full Content: ${article.fullContent}`
           ).join('\n\n');
 
           const compositePrompt = `
-You are a professional financial analyst. Analyze the following news articles collectively for their impact on ${symbol} stock and provide a comprehensive composite analysis:
+You are a professional financial analyst. Analyze the following complete news articles for their impact on ${symbol} stock and provide a comprehensive composite analysis:
 
 ${articleSummaries}
 
-Based on all these articles together, provide a JSON response:
+Based on all these complete articles together, provide a JSON response:
 {
   "confidence": "number between 1-100 representing your confidence level for the overall analysis",
   "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral' based on the collective impact",
-  "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
+  "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}, referencing specific details from the article content"
 }
 
-Focus on the overall trend and sentiment across all articles for ${symbol}.`;
+Focus on the overall trend and sentiment across all articles for ${symbol}. Use specific details from the article content to support your analysis.`;
 
           const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -132,7 +182,7 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
               messages: [
                 {
                   role: 'system',
-                  content: 'You are a professional financial analyst. Provide comprehensive market analysis based on multiple news sources in valid JSON format only.'
+                  content: 'You are a professional financial analyst. Provide comprehensive market analysis based on complete article content in valid JSON format only.'
                 },
                 {
                   role: 'user',
@@ -161,8 +211,8 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
             .insert({
               user_id: userId,
               symbol: symbol,
-              title: `${symbol} Composite Market Analysis`,
-              description: `Comprehensive analysis based on ${articles.length} recent news articles`,
+              title: `${symbol} Comprehensive Market Analysis`,
+              description: `In-depth analysis based on ${articlesWithContent.length} complete news articles`,
               url: `https://finance.yahoo.com/quote/${symbol}`,
               published_at: new Date().toISOString(),
               ai_sentiment: analysis.sentiment,
