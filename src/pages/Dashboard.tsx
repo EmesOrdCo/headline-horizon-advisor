@@ -39,10 +39,8 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get all other headlines in chronological order (excluding main analysis articles)
-  const otherHeadlines = newsData?.filter(item => 
-    !mainAnalysisArticles.find(main => main?.id === item.id)
-  ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
+  // Get ALL recent headlines in chronological order (including primary assets)
+  const allRecentHeadlines = newsData?.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
@@ -105,13 +103,11 @@ const Dashboard = () => {
     }
   };
 
-  // Generate article summary for other headlines
+  // Generate general article summary for recent headlines
   const generateArticleSummary = (item: any) => {
-    // Create a general summary based on the title and any available context
     const title = item.title || '';
     const description = item.description || '';
     
-    // Generate a contextual summary based on the article content
     if (title.toLowerCase().includes('earnings') || title.toLowerCase().includes('revenue')) {
       return `This earnings-related news discusses financial performance and may impact related companies and their stock valuations in the coming trading sessions.`;
     } else if (title.toLowerCase().includes('merger') || title.toLowerCase().includes('acquisition')) {
@@ -273,8 +269,8 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {otherHeadlines && otherHeadlines.length > 0 ? (
-                    otherHeadlines.slice(0, 30).map((item, index) => (
+                  {allRecentHeadlines && allRecentHeadlines.length > 0 ? (
+                    allRecentHeadlines.slice(0, 30).map((item, index) => (
                       <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
                         <a 
                           href={item.url} 

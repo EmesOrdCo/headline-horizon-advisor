@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 
@@ -67,6 +66,19 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
     } else {
       return `Mixed signals for ${item.symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
     }
+  };
+
+  // Format publish time to show date and time to the minute
+  const formatPublishTime = (publishedAt: string) => {
+    const date = new Date(publishedAt);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const assetInfo = getAssetInfo(symbol);
@@ -217,7 +229,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
                       {link.title}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                      {new Date(link.published_at).toLocaleDateString()}
+                      {formatPublishTime(link.published_at)}
                     </p>
                   </div>
                   <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-0.5" />
