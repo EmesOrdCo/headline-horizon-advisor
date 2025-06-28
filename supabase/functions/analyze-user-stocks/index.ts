@@ -8,6 +8,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -26,37 +28,100 @@ serve(async (req) => {
 
     console.log('Analyzing stocks for user:', userId, 'symbols:', symbols);
 
-    // Clear existing articles for these symbols
+    // Clear existing articles for these symbols for this user
     await supabase
       .from('user_stock_articles')
       .delete()
       .eq('user_id', userId)
       .in('symbol', symbols);
 
-    // Fetch news for each symbol
+    // Process each symbol
     for (const symbol of symbols) {
-      console.log(`Fetching news for ${symbol}`);
+      console.log(`Processing ${symbol}...`);
       
-      // Fetch news from Marketaux
-      const newsResponse = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${symbol}&filter_entities=true&language=en&api_token=${marketauxKey}&limit=10`
-      );
+      // Check if this is a Magnificent 7 stock - if so, duplicate from news_articles
+      if (MAGNIFICENT_7.includes(symbol)) {
+        console.log(`${symbol} is Magnificent 7 - duplicating existing data`);
+        
+        const { data: existingArticle, error: fetchError } = await supabase
+          .from('news_articles')
+          .select('*')
+          .eq('symbol', symbol)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (!newsResponse.ok) {
-        console.error(`Failed to fetch news for ${symbol}:`, await newsResponse.text());
-        continue;
-      }
+        if (fetchError) {
+          console.error(`Failed to fetch existing article for ${symbol}:`, fetchError);
+          continue;
+        }
 
-      const newsData = await newsResponse.json();
-      const articles = newsData.data || [];
+        if (existingArticle) {
+          // Create user-specific copy
+          const { error: insertError } = await supabase
+            .from('user_stock_articles')
+            .insert({
+              user_id: userId,
+              symbol: symbol,
+              title: existingArticle.title,
+              description: existingArticle.description,
+              url: existingArticle.url,
+              published_at: existingArticle.published_at,
+              ai_sentiment: existingArticle.ai_sentiment,
+              ai_confidence: existingArticle.ai_confidence,
+              ai_reasoning: existingArticle.ai_reasoning
+            });
 
-      console.log(`Found ${articles.length} articles for ${symbol}`);
+          if (insertError) {
+            console.error(`Failed to create user copy for ${symbol}:`, insertError);
+          } else {
+            console.log(`Successfully duplicated ${symbol} analysis for user`);
+          }
+        }
+      } else {
+        // Not Magnificent 7 - fetch and analyze new data
+        console.log(`${symbol} is not Magnificent 7 - fetching fresh data`);
+        
+        // Fetch news from Marketaux
+        const newsResponse = await fetch(
+          `https://api.marketaux.com/v1/news/all?symbols=${symbol}&filter_entities=true&language=en&api_token=${marketauxKey}&limit=10`
+        );
 
-      // Process each article with AI
-      for (const article of articles) {
-        try {
-          // Analyze article with OpenAI
-          const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        if (!newsResponse.ok) {
+          console.error(`Failed to fetch news for ${symbol}:`, await newsResponse.text());
+          continue;
+        }
+
+        const newsData = await newsResponse.json();
+        const articles = newsData.data || [];
+
+        console.log(`Found ${articles.length} articles for ${symbol}`);
+
+        if (articles.length > 0) {
+          // Create composite analysis like in fetch-magnificent-7
+          const articleSummaries = articles.slice(0, 5).map((article: any, index: number) => 
+            `Article ${index + 1}:
+Title: ${article.title}
+Description: ${article.description || 'No description available'}
+Published: ${article.published_at}
+URL: ${article.url}`
+          ).join('\n\n');
+
+          const compositePrompt = `
+You are a professional financial analyst. Analyze the following news articles collectively for their impact on ${symbol} stock and provide a comprehensive composite analysis:
+
+${articleSummaries}
+
+Based on all these articles together, provide a JSON response:
+{
+  "confidence": "number between 1-100 representing your confidence level for the overall analysis",
+  "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral' based on the collective impact",
+  "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
+}
+
+Focus on the overall trend and sentiment across all articles for ${symbol}.`;
+
+          const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${openaiKey}`,
@@ -67,51 +132,49 @@ serve(async (req) => {
               messages: [
                 {
                   role: 'system',
-                  content: `You are a financial analyst. Analyze the following news article about ${symbol} and provide:
-1. Sentiment (positive, negative, or neutral)
-2. Confidence score (1-100)
-3. Brief reasoning for your analysis
-
-Respond in JSON format: {"sentiment": "positive/negative/neutral", "confidence": 85, "reasoning": "brief explanation"}`
+                  content: 'You are a professional financial analyst. Provide comprehensive market analysis based on multiple news sources in valid JSON format only.'
                 },
                 {
                   role: 'user',
-                  content: `Title: ${article.title}\nDescription: ${article.description || ''}\nURL: ${article.url}`
+                  content: compositePrompt
                 }
               ],
-              temperature: 0.3,
+              response_format: { type: "json_object" },
+              temperature: 0.7
             }),
           });
 
-          let analysis = { sentiment: 'neutral', confidence: 50, reasoning: 'Unable to analyze' };
+          let analysis = { sentiment: 'Neutral', confidence: 50, reasoning: 'Unable to analyze' };
           
-          if (analysisResponse.ok) {
-            const analysisData = await analysisResponse.json();
+          if (compositeResponse.ok) {
+            const compositeData = await compositeResponse.json();
             try {
-              analysis = JSON.parse(analysisData.choices[0].message.content);
+              analysis = JSON.parse(compositeData.choices[0].message.content);
             } catch (e) {
               console.error('Failed to parse AI response:', e);
             }
           }
 
-          // Store article with analysis
-          await supabase
+          // Store composite analysis
+          const { error: insertError } = await supabase
             .from('user_stock_articles')
             .insert({
               user_id: userId,
               symbol: symbol,
-              title: article.title,
-              description: article.description || '',
-              url: article.url,
-              published_at: article.published_at,
+              title: `${symbol} Composite Market Analysis`,
+              description: `Comprehensive analysis based on ${articles.length} recent news articles`,
+              url: `https://finance.yahoo.com/quote/${symbol}`,
+              published_at: new Date().toISOString(),
               ai_sentiment: analysis.sentiment,
               ai_confidence: analysis.confidence,
               ai_reasoning: analysis.reasoning
             });
 
-          console.log(`Analyzed and stored article for ${symbol}: ${analysis.sentiment}`);
-        } catch (error) {
-          console.error(`Error processing article for ${symbol}:`, error);
+          if (insertError) {
+            console.error(`Failed to store analysis for ${symbol}:`, insertError);
+          } else {
+            console.log(`Successfully analyzed and stored ${symbol}: ${analysis.sentiment} sentiment`);
+          }
         }
       }
     }
