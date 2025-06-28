@@ -37,8 +37,8 @@ async function fetchArticleContent(url: string): Promise<string> {
     // Clean up whitespace
     cleanText = cleanText.replace(/\s+/g, ' ').trim();
     
-    // Limit to reasonable length (first 3000 characters to avoid token limits)
-    return cleanText.length > 3000 ? cleanText.substring(0, 3000) + '...' : cleanText;
+    // Return full content without length limitation
+    return cleanText;
   } catch (error) {
     console.error(`Error fetching article content from ${url}:`, error);
     return '';
@@ -133,10 +133,10 @@ serve(async (req) => {
         console.log(`Found ${articles.length} articles for ${symbol}`);
 
         if (articles.length > 0) {
-          // Fetch full content for top 3 articles (to balance comprehensiveness with API limits)
+          // Fetch full content for top 5 articles
           const articlesWithContent = [];
           
-          for (let i = 0; i < Math.min(3, articles.length); i++) {
+          for (let i = 0; i < Math.min(5, articles.length); i++) {
             const article = articles[i];
             console.log(`Fetching full content for article ${i + 1}: ${article.title}`);
             
@@ -178,7 +178,7 @@ Focus on the overall trend and sentiment across all articles for ${symbol}. Use 
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: 'gpt-4.1-2025-04-14',
               messages: [
                 {
                   role: 'system',
