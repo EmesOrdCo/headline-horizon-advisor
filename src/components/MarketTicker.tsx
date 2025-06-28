@@ -20,9 +20,9 @@ const MarketTicker = () => {
       try {
         // Major market indices - using fewer symbols to respect rate limits
         const indices = [
-          { symbol: 'SPY', name: 'SPX' },
-          { symbol: 'QQQ', name: 'IXIC' },
-          { symbol: 'DIA', name: 'DJI' },
+          { symbol: 'SPY', name: 'S&P 500' },
+          { symbol: 'QQQ', name: 'NASDAQ' },
+          { symbol: 'DIA', name: 'Dow Jones' },
           { symbol: 'AAPL', name: 'AAPL' },
           { symbol: 'TSLA', name: 'TSLA' },
           { symbol: 'NVDA', name: 'NVDA' },
@@ -100,9 +100,15 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full bg-blue-600 dark:bg-blue-700 py-2">
-        <div className="flex items-center justify-center">
-          <div className="text-white text-sm font-medium">Loading live market data...</div>
+      <div className="fixed top-[73px] left-0 right-0 z-40 bg-slate-800 border-b border-slate-700">
+        <div className="w-[95%] mx-auto py-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
+            </div>
+            <div className="text-slate-300 text-sm font-medium">Loading live market data...</div>
+          </div>
         </div>
       </div>
     );
@@ -110,9 +116,15 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="w-full bg-blue-600 dark:bg-blue-700 py-2">
-        <div className="flex items-center justify-center">
-          <div className="text-white text-sm font-medium">Unable to fetch live market data</div>
+      <div className="fixed top-[73px] left-0 right-0 z-40 bg-slate-800 border-b border-slate-700">
+        <div className="w-[95%] mx-auto py-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
+            </div>
+            <div className="text-slate-300 text-sm font-medium">Unable to fetch live market data</div>
+          </div>
         </div>
       </div>
     );
@@ -122,27 +134,35 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="w-full bg-blue-600 dark:bg-blue-700 overflow-hidden">
-      <div className="relative">
-        <div className="animate-scroll flex gap-8 py-2 px-4">
-          {duplicatedData.map((item, index) => (
-            <div key={`${item.symbol}-${index}`} className="flex items-center gap-3 whitespace-nowrap">
-              <div className="flex items-center gap-1">
-                <Triangle 
-                  className={`w-3 h-3 ${
-                    item.change >= 0 
-                      ? 'text-white fill-white' 
-                      : 'text-white fill-white rotate-180'
-                  }`} 
-                />
-              </div>
-              <span className="text-white font-bold text-sm">{item.symbol}</span>
-              <span className="text-white text-sm">{item.price.toFixed(2)}</span>
-              <span className="text-white text-sm">
-                {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
-              </span>
+    <div className="fixed top-[73px] left-0 right-0 z-40 bg-slate-800 border-b border-slate-700 overflow-hidden">
+      <div className="w-[95%] mx-auto py-3">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="animate-scroll flex gap-8">
+              {duplicatedData.map((item, index) => (
+                <div key={`${item.symbol}-${index}`} className="flex items-center gap-4 whitespace-nowrap">
+                  <span className="text-white font-semibold text-sm">{item.symbol}</span>
+                  <span className="text-slate-300 text-sm">${item.price.toFixed(2)}</span>
+                  <span className={`text-sm flex items-center gap-1 ${
+                    item.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    <Triangle 
+                      className={`w-3 h-3 ${
+                        item.change >= 0 
+                          ? 'text-emerald-400 fill-emerald-400' 
+                          : 'text-red-400 fill-red-400 rotate-180'
+                      }`} 
+                    />
+                    {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>

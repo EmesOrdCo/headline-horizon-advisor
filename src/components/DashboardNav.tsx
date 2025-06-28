@@ -51,44 +51,40 @@ const DashboardNav = () => {
 
   return (
     <>
-      {/* Top Navigation Bar - Reuters Style */}
-      <nav className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
-        <div className="flex items-center justify-between px-6 py-3">
+      {/* Top Navigation Bar - Dark Theme */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900 border-b border-slate-700">
+        <div className="w-[95%] mx-auto flex items-center justify-between px-6 py-3">
           {/* Left Side - Logo and Navigation Menu */}
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                </div>
-              </div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">StockPredict AI</div>
+              <div className="text-xl font-bold text-emerald-400">StockPredict AI</div>
+              <Badge className="bg-emerald-500 text-white text-xs">LIVE</Badge>
             </Link>
             
             {/* Navigation Menu */}
             <div className="flex items-center gap-8">
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
                   Live Market News <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>
+                <DropdownMenuContent className="bg-slate-800 border-slate-700">
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
                     <Link to="/dashboard">Magnificent 7</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
                     <Link to="/dashboard">Funds</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
                     <Link to="/dashboard">Crypto</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Link to="/my-stocks" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+              <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
                 My Stocks
               </Link>
               
-              <Link to="/biggest-movers" className="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+              <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
                 Biggest Movers
               </Link>
             </div>
@@ -96,23 +92,23 @@ const DashboardNav = () => {
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-4">
-            <span className="text-gray-600 dark:text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
+            <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             <Button 
               onClick={handleSignOut}
               variant="outline" 
               size="sm"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800"
             >
               Sign Out
             </Button>
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-full p-1">
-              <Sun className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+            <div className="flex items-center gap-2 bg-slate-800 rounded-full p-1">
+              <Sun className="h-4 w-4 text-slate-400" />
               <Switch
                 checked={isDarkMode}
                 onCheckedChange={toggleTheme}
                 className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
               />
-              <Moon className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+              <Moon className="h-4 w-4 text-slate-400" />
             </div>
           </div>
         </div>
