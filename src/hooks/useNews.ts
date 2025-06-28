@@ -10,7 +10,7 @@ export const useNews = () => {
         .from('news_articles')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) {
         throw error;
@@ -25,12 +25,32 @@ export const useNews = () => {
 
 export const useFetchNews = () => {
   return async () => {
-    const { data, error } = await supabase.functions.invoke('fetch-news');
+    console.log('Starting to fetch news from all sources...');
     
-    if (error) {
-      throw error;
-    }
+    const results = await Promise.allSettled([
+      supabase.functions.invoke('fetch-magnificent-7'),
+      supabase.functions.invoke('fetch-index-funds'),
+      supabase.functions.invoke('fetch-crypto')
+    ]);
+
+    const responses = results.map((result, index) => {
+      const assetTypes = ['Magnificent 7', 'Index Funds', 'Cryptocurrencies'];
+      if (result.status === 'fulfilled') {
+        console.log(`✅ ${assetTypes[index]} fetch completed:`, result.value.data);
+        return { success: true, assetType: assetTypes[index], data: result.value.data };
+      } else {
+        console.error(`❌ ${assetTypes[index]} fetch failed:`, result.reason);
+        return { success: false, assetType: assetTypes[index], error: result.reason };
+      }
+    });
+
+    const successCount = responses.filter(r => r.success).length;
+    console.log(`Completed fetching news: ${successCount}/3 asset types successful`);
     
-    return data;
+    return {
+      success: successCount > 0,
+      results: responses,
+      message: `Fetched news for ${successCount} out of 3 asset types`
+    };
   };
 };

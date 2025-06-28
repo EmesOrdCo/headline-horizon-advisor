@@ -17,6 +17,7 @@ const Dashboard = () => {
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
   const [isFetching, setIsFetching] = useState(false);
+  const [fetchingStatus, setFetchingStatus] = useState<string>('');
   const { toast } = useToast();
 
   // Primary assets for main analysis
@@ -55,13 +56,24 @@ const Dashboard = () => {
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
+    setFetchingStatus('Fetching news from all sources...');
+    
     try {
-      await fetchNews();
+      const result = await fetchNews();
       await refetch();
-      toast({
-        title: "News Updated",
-        description: "Latest news has been fetched and analyzed for all primary assets.",
-      });
+      
+      if (result.success) {
+        toast({
+          title: "News Updated",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: "Some news sources may have failed. Check the results.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -70,6 +82,7 @@ const Dashboard = () => {
       });
     } finally {
       setIsFetching(false);
+      setFetchingStatus('');
     }
   };
 
@@ -108,10 +121,16 @@ const Dashboard = () => {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh News
+              {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
           <p className="text-slate-400">Latest AI-analyzed news for major stocks, index funds, and cryptocurrencies</p>
+          
+          {isFetching && fetchingStatus && (
+            <div className="text-yellow-400 text-sm mt-2">
+              {fetchingStatus}
+            </div>
+          )}
           
           {isPricesLoading && (
             <div className="text-yellow-400 text-sm mt-2">
