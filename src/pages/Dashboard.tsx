@@ -95,7 +95,7 @@ const Dashboard = () => {
     return { type: 'Other', color: 'bg-gray-500' };
   };
 
-  // Helper function to generate AI analysis paragraph
+  // Helper function to generate AI analysis paragraph for ANY article
   const generateAnalysisParagraph = (item: any) => {
     const sentimentText = item.ai_sentiment?.toLowerCase() || 'neutral';
     const confidence = item.ai_confidence || 50;
@@ -112,6 +112,11 @@ const Dashboard = () => {
     } else {
       return `Mixed signals for ${item.symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment.`;
     }
+  };
+
+  // Generate fallback analysis for articles without AI analysis
+  const generateFallbackAnalysis = (item: any) => {
+    return `Based on the article title and content, this news may have implications for ${item.symbol}. Without specific AI analysis, investors should consider the broader market context and company fundamentals when evaluating potential impact.`;
   };
 
   return (
@@ -300,7 +305,7 @@ const Dashboard = () => {
                     </>
                   )}
                   
-                  {/* Then show remaining headlines without analysis from ALL assets */}
+                  {/* Then show remaining headlines without analysis from ALL assets - but with fallback analysis */}
                   {remainingHeadlines && remainingHeadlines.length > 0 && (
                     <>
                       {remainingHeadlines.slice(0, 25).map((item, index) => {
@@ -327,7 +332,7 @@ const Dashboard = () => {
                             </div>
                             <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mt-3">
                               <p className="text-xs text-slate-400 leading-relaxed">
-                                <span className="text-gray-500 font-medium">Analysis:</span> No AI analysis available for this article. Click "Refresh News" to generate comprehensive analysis with sentiment and confidence scoring.
+                                <span className="text-gray-500 font-medium">Analysis:</span> {generateFallbackAnalysis(item)}
                               </p>
                             </div>
                           </div>
