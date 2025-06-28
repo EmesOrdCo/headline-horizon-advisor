@@ -14,6 +14,8 @@ export const useStockPrices = () => {
     queryKey: ['stock-prices'],
     queryFn: async () => {
       const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+      const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+      const ALL_SYMBOLS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
       
       try {
         console.log('Fetching live stock prices from Finnhub...');
@@ -21,7 +23,7 @@ export const useStockPrices = () => {
         const results: StockPrice[] = [];
         
         // Fetch with 1 second delays to respect Finnhub limits (60 calls/minute)
-        for (const symbol of MAGNIFICENT_7) {
+        for (const symbol of ALL_SYMBOLS) {
           try {
             console.log(`Fetching price for ${symbol}...`);
             
@@ -50,7 +52,7 @@ export const useStockPrices = () => {
             }
             
             // Wait 1.5 seconds between each request (40 calls/minute to be safe)
-            if (MAGNIFICENT_7.indexOf(symbol) < MAGNIFICENT_7.length - 1) {
+            if (ALL_SYMBOLS.indexOf(symbol) < ALL_SYMBOLS.length - 1) {
               console.log('Waiting 1.5 seconds before next request...');
               await new Promise(resolve => setTimeout(resolve, 1500));
             }
@@ -64,7 +66,7 @@ export const useStockPrices = () => {
           throw new Error('No valid stock data received from Finnhub');
         }
 
-        console.log(`Successfully fetched ${results.length}/${MAGNIFICENT_7.length} stock prices`);
+        console.log(`Successfully fetched ${results.length}/${ALL_SYMBOLS.length} stock prices`);
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
@@ -72,7 +74,7 @@ export const useStockPrices = () => {
       }
     },
     staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 1 minute (allows for 7*1.5s = ~11s per cycle)
+    refetchInterval: 60 * 1000, // Refetch every 1 minute (allows for 10*1.5s = ~15s per cycle)
     retry: 1,
     retryDelay: 30000, // Wait 30 seconds between retries
   });
