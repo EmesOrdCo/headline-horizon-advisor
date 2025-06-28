@@ -66,9 +66,11 @@ const PredictionCard = ({ symbol, current, predicted, change, confidence, timefr
       </div>
       
       <div className="mb-4">
-        <div className="flex justify-between items-center text-sm mb-2">
-          <span className="text-slate-400">Confidence</span>
-          <ConfidenceDots confidence={confidence} />
+        <div className="flex items-center justify-between text-sm mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Confidence</span>
+            <ConfidenceDots confidence={confidence} />
+          </div>
         </div>
       </div>
       

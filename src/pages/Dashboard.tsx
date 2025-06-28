@@ -19,15 +19,20 @@ const Dashboard = () => {
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
+  // Primary assets for main analysis
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'IWM', 'VTI', 'VOO'];
+  const MAJOR_CRYPTOCURRENCIES = ['BTC-USD', 'ETH-USD', 'ADA-USD', 'SOL-USD', 'DOGE-USD'];
+
+  const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...MAJOR_CRYPTOCURRENCIES];
 
   // Get stock price for a symbol
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
 
-  // Get main analysis articles (one per stock with AI analysis)
-  const mainAnalysisArticles = MAGNIFICENT_7.map(symbol => {
+  // Get main analysis articles (one per primary asset with AI analysis)
+  const mainAnalysisArticles = PRIMARY_ASSETS.map(symbol => {
     return newsData?.find(item => 
       item.symbol === symbol && 
       item.ai_confidence && 
@@ -35,14 +40,14 @@ const Dashboard = () => {
     );
   }).filter(Boolean);
 
-  // Get analyzed additional headlines (articles with ChatGPT analysis) from ALL stocks - sorted by date
+  // Get analyzed additional headlines (articles with ChatGPT analysis) from ALL assets - sorted by date
   const analyzedHeadlines = newsData?.filter(item => 
     item.ai_confidence && 
     item.ai_sentiment &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
   ).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  // Get remaining headlines without analysis from ALL stocks - sorted by date
+  // Get remaining headlines without analysis from ALL assets - sorted by date
   const remainingHeadlines = newsData?.filter(item => 
     (!item.ai_confidence || !item.ai_sentiment) &&
     !mainAnalysisArticles.find(main => main?.symbol === item.symbol && main?.title === item.title)
@@ -55,7 +60,7 @@ const Dashboard = () => {
       await refetch();
       toast({
         title: "News Updated",
-        description: "Latest news has been fetched and analyzed for Magnificent 7 stocks.",
+        description: "Latest news has been fetched and analyzed for all primary assets.",
       });
     } catch (error) {
       toast({
@@ -66,6 +71,18 @@ const Dashboard = () => {
     } finally {
       setIsFetching(false);
     }
+  };
+
+  // Helper function to get asset type and styling
+  const getAssetInfo = (symbol: string) => {
+    if (MAGNIFICENT_7.includes(symbol)) {
+      return { type: 'Stock', color: 'bg-blue-500' };
+    } else if (MAJOR_INDEX_FUNDS.includes(symbol)) {
+      return { type: 'Index', color: 'bg-purple-500' };
+    } else if (MAJOR_CRYPTOCURRENCIES.includes(symbol)) {
+      return { type: 'Crypto', color: 'bg-orange-500' };
+    }
+    return { type: 'Other', color: 'bg-gray-500' };
   };
 
   return (
@@ -94,17 +111,17 @@ const Dashboard = () => {
               Refresh News
             </Button>
           </div>
-          <p className="text-slate-400">Latest AI-analyzed news for Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, and Meta</p>
+          <p className="text-slate-400">Latest AI-analyzed news for major stocks, index funds, and cryptocurrencies</p>
           
           {isPricesLoading && (
             <div className="text-yellow-400 text-sm mt-2">
-              Loading stock prices from Finnhub...
+              Loading asset prices from Finnhub...
             </div>
           )}
           
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
             <div className="text-red-400 text-sm mt-2">
-              ⚠️ Stock prices unavailable - check Finnhub API connection
+              ⚠️ Asset prices unavailable - check Finnhub API connection
             </div>
           )}
         </div>
@@ -114,13 +131,14 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 gap-4">
               {isLoading ? (
                 <div className="text-center text-slate-400 py-8">
-                  Loading Magnificent 7 news...
+                  Loading primary assets news...
                 </div>
               ) : (
-                // Always show 7 boxes, one for each Magnificent 7 stock
-                MAGNIFICENT_7.map((symbol) => {
+                // Always show boxes, one for each primary asset
+                PRIMARY_ASSETS.map((symbol) => {
                   const article = mainAnalysisArticles.find(item => item.symbol === symbol);
                   const stockPrice = getStockPrice(symbol);
+                  const assetInfo = getAssetInfo(symbol);
                   
                   console.log(`Stock price for ${symbol}:`, stockPrice); // Debug log
 
@@ -138,12 +156,15 @@ const Dashboard = () => {
                       />
                     );
                   } else {
-                    // Show placeholder for stocks without current analysis
+                    // Show placeholder for assets without current analysis
                     return (
                       <div key={symbol} className="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-6">
                         <div className="flex items-center justify-between gap-2 mb-4">
                           <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-500 text-white">{symbol}</Badge>
+                            <Badge className={`${assetInfo.color} text-white`}>{symbol}</Badge>
+                            <Badge variant="secondary" className="bg-slate-500/20 text-slate-400 text-xs">
+                              {assetInfo.type}
+                            </Badge>
                             <Badge variant="secondary" className="bg-gray-500/20 text-gray-400 text-xs">
                               NO RECENT NEWS
                             </Badge>
@@ -174,7 +195,7 @@ const Dashboard = () => {
                         </p>
                         {!stockPrice && (
                           <p className="text-red-400 text-xs mt-2">
-                            Stock price unavailable - check Finnhub connection
+                            Asset price unavailable - check Finnhub connection
                           </p>
                         )}
                       </div>
@@ -190,76 +211,82 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-white mb-4">Other Headlines</h3>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
-                  {/* First show analyzed headlines with AI analysis from ALL stocks */}
+                  {/* First show analyzed headlines with AI analysis from ALL assets */}
                   {analyzedHeadlines && analyzedHeadlines.length > 0 && (
                     <>
-                      {analyzedHeadlines.slice(0, 15).map((item, index) => (
-                        <div key={`analyzed-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                              {item.symbol}
-                            </Badge>
-                            <Badge className={`text-xs ${
-                              item.ai_sentiment === 'Bullish' ? 'bg-emerald-500/20 text-emerald-400' :
-                              item.ai_sentiment === 'Bearish' ? 'bg-red-500/20 text-red-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
-                              {item.ai_sentiment}
-                            </Badge>
-                          </div>
-                          <a 
-                            href={item.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
-                          >
-                            {item.title}
-                          </a>
-                          <div className="flex items-center justify-between text-xs mb-2">
-                            <span className="text-slate-400">
-                              {new Date(item.published_at).toLocaleDateString()}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5].map((dot) => (
-                                <div
-                                  key={dot}
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'bg-slate-600'
-                                  }`}
-                                />
-                              ))}
+                      {analyzedHeadlines.slice(0, 15).map((item, index) => {
+                        const assetInfo = getAssetInfo(item.symbol);
+                        return (
+                          <div key={`analyzed-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
+                                {item.symbol}
+                              </Badge>
+                              <Badge className={`text-xs ${
+                                item.ai_sentiment === 'Bullish' ? 'bg-emerald-500/20 text-emerald-400' :
+                                item.ai_sentiment === 'Bearish' ? 'bg-red-500/20 text-red-400' :
+                                'bg-gray-500/20 text-gray-400'
+                              }`}>
+                                {item.ai_sentiment}
+                              </Badge>
+                            </div>
+                            <a 
+                              href={item.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
+                            >
+                              {item.title}
+                            </a>
+                            <div className="flex items-center justify-between text-xs mb-2">
+                              <span className="text-slate-400">
+                                {new Date(item.published_at).toLocaleDateString()}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((dot) => (
+                                  <div
+                                    key={dot}
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'bg-slate-600'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </>
                   )}
                   
-                  {/* Then show remaining headlines without analysis from ALL stocks */}
+                  {/* Then show remaining headlines without analysis from ALL assets */}
                   {remainingHeadlines && remainingHeadlines.length > 0 && (
                     <>
-                      {remainingHeadlines.slice(0, 25).map((item, index) => (
-                        <div key={`remaining-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 text-xs">
-                              {item.symbol}
-                            </Badge>
+                      {remainingHeadlines.slice(0, 25).map((item, index) => {
+                        const assetInfo = getAssetInfo(item.symbol);
+                        return (
+                          <div key={`remaining-${item.id}-${index}`} className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant="secondary" className={`${assetInfo.color}/20 text-${assetInfo.color.split('-')[1]}-400 text-xs`}>
+                                {item.symbol}
+                              </Badge>
+                            </div>
+                            <a 
+                              href={item.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
+                            >
+                              {item.title}
+                            </a>
+                            <div className="flex items-center justify-between text-xs mb-2">
+                              <span className="text-slate-400">
+                                {new Date(item.published_at).toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
-                          <a 
-                            href={item.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-white text-sm font-medium mb-2 line-clamp-2 hover:text-emerald-400 transition-colors cursor-pointer block"
-                          >
-                            {item.title}
-                          </a>
-                          <div className="flex items-center justify-between text-xs mb-2">
-                            <span className="text-slate-400">
-                              {new Date(item.published_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </>
                   )}
                   

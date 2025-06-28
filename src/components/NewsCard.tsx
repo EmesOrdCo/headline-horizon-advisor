@@ -89,8 +89,10 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             
             <div className="mb-2">
               <div className="flex justify-between items-center text-sm mb-2">
-                <span className="text-slate-400">Confidence Level</span>
-                <ConfidenceDots confidence={confidence} />
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">Confidence Level</span>
+                  <ConfidenceDots confidence={confidence} />
+                </div>
               </div>
             </div>
           </div>

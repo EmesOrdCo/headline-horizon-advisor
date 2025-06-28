@@ -67,9 +67,11 @@ const AnalysisPipeline = () => {
             Apple announces record quarterly earnings, beats estimates by 15%
           </h3>
           <div className="mb-4">
-            <div className="flex justify-between items-center text-sm mb-1">
-              <span className="text-slate-400">Confidence</span>
-              <ConfidenceDots confidence={78} />
+            <div className="flex items-center text-sm mb-1">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">Confidence</span>
+                <ConfidenceDots confidence={78} />
+              </div>
             </div>
           </div>
         </div>

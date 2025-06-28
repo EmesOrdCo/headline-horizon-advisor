@@ -13,8 +13,13 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// Magnificent 7 stocks for main analysis
+// Primary assets for main analysis
 const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'IWM', 'VTI', 'VOO'];
+const MAJOR_CRYPTOCURRENCIES = ['BTC-USD', 'ETH-USD', 'ADA-USD', 'SOL-USD', 'DOGE-USD'];
+
+// Combine all primary assets
+const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...MAJOR_CRYPTOCURRENCIES];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -29,39 +34,39 @@ serve(async (req) => {
       throw new Error('Missing API keys - MarketAux or OpenAI');
     }
 
-    console.log('Starting news fetching with OpenAI analysis for all stocks...');
+    console.log('Starting news fetching with OpenAI analysis for all primary assets...');
     
     const allArticles = [];
-    const magnificentAnalysis = new Map();
+    const primaryAnalysis = new Map();
     const allProcessedArticles = [];
 
-    // First, fetch news for Magnificent 7 stocks (4 API calls to get 80 articles)
-    console.log('Fetching Magnificent 7 news...');
-    for (let apiCall = 0; apiCall < 4; apiCall++) {
-      console.log(`Making Magnificent 7 API call ${apiCall + 1}/4...`);
+    // First, fetch news for primary assets (6 API calls to get 120 articles)
+    console.log('Fetching primary assets news...');
+    for (let apiCall = 0; apiCall < 6; apiCall++) {
+      console.log(`Making primary assets API call ${apiCall + 1}/6...`);
       
       const newsResponse = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
+        `https://api.marketaux.com/v1/news/all?symbols=${PRIMARY_ASSETS.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
       );
 
       if (!newsResponse.ok) {
-        console.error(`MarketAux API error for Magnificent 7: ${newsResponse.status}`);
+        console.error(`MarketAux API error for primary assets: ${newsResponse.status}`);
         continue;
       }
 
       const newsData = await newsResponse.json();
       const articles = newsData.data || [];
       
-      console.log(`Fetched ${articles.length} Magnificent 7 articles from API call ${apiCall + 1}`);
+      console.log(`Fetched ${articles.length} primary assets articles from API call ${apiCall + 1}`);
       allArticles.push(...articles);
 
       // Add delay between API calls
-      if (apiCall < 3) {
+      if (apiCall < 5) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
-    // Then, fetch general market news (all stocks - 4 API calls to get 80 more articles)
+    // Then, fetch general market news (4 API calls to get 80 more articles)
     console.log('Fetching general market news...');
     for (let apiCall = 0; apiCall < 4; apiCall++) {
       console.log(`Making general market API call ${apiCall + 1}/4...`);
@@ -111,16 +116,16 @@ serve(async (req) => {
     // Sort all unique articles by published date first to ensure chronological order
     uniqueArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
-    // Process articles for Magnificent 7 main analysis (one per stock with OpenAI)
+    // Process articles for primary assets main analysis (one per asset with OpenAI)
     for (const article of uniqueArticles) {
       const symbol = article.entities?.[0]?.symbol;
       
-      if (!symbol || !MAGNIFICENT_7.includes(symbol)) {
+      if (!symbol || !PRIMARY_ASSETS.includes(symbol)) {
         continue;
       }
 
-      // For main analysis cards - only one per stock, analyzed by OpenAI
-      if (!magnificentAnalysis.has(symbol)) {
+      // For main analysis cards - only one per asset, analyzed by OpenAI
+      if (!primaryAnalysis.has(symbol)) {
         console.log(`Analyzing article for ${symbol} with OpenAI: ${article.title}`);
 
         try {
@@ -136,12 +141,12 @@ You are a professional financial analyst. Analyze this news article and provide 
 Rules:
 1. Make a clear decision on sentiment - avoid neutral unless truly uncertain
 2. Base confidence on the clarity and impact of the news
-3. Consider the stock's recent performance and market context
+3. Consider the asset's recent performance and market context
 
 Article to analyze:
 Title: ${article.title}
 Description: ${article.description || 'No description available'}
-Stock Symbol: ${symbol}
+Asset Symbol: ${symbol}
 Published: ${article.published_at}
 `;
 
@@ -188,7 +193,7 @@ Published: ${article.published_at}
             description: article.description || `Latest market analysis for ${symbol}`,
             confidence: analysis.confidence,
             sentiment: analysis.sentiment,
-            category: analysis.category || 'Technology',
+            category: analysis.category || 'Financial Markets',
             url: article.url,
             published_at: article.published_at,
             ai_confidence: analysis.confidence,
@@ -198,7 +203,7 @@ Published: ${article.published_at}
             is_historical: false
           };
 
-          magnificentAnalysis.set(symbol, processedArticle);
+          primaryAnalysis.set(symbol, processedArticle);
           console.log(`✅ Successfully analyzed ${symbol} with OpenAI: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence`);
 
         } catch (error) {
@@ -207,19 +212,22 @@ Published: ${article.published_at}
       }
     }
 
-    // For stocks without current analysis, create historical data with OpenAI analysis
-    for (const symbol of MAGNIFICENT_7) {
-      if (!magnificentAnalysis.has(symbol)) {
+    // For assets without current analysis, create historical data with OpenAI analysis
+    for (const symbol of PRIMARY_ASSETS) {
+      if (!primaryAnalysis.has(symbol)) {
         console.log(`Creating historical analysis for ${symbol} using OpenAI...`);
         
         try {
+          const assetType = MAGNIFICENT_7.includes(symbol) ? 'Technology Stock' :
+                           MAJOR_INDEX_FUNDS.includes(symbol) ? 'Index Fund' : 'Cryptocurrency';
+          
           const historicalPrompt = `
-Analyze ${symbol} stock based on general market knowledge and recent trends. Provide a JSON response:
+Analyze ${symbol} (${assetType}) based on general market knowledge and recent trends. Provide a JSON response:
 
 {
   "confidence": "number between 50-75 for historical analysis",
   "sentiment": "Bullish, Bearish, or Neutral based on general market sentiment",
-  "category": "Technology"
+  "category": "${assetType}"
 }
 
 Consider ${symbol}'s general market position, recent trends, and typical volatility patterns.
@@ -268,20 +276,23 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
               is_historical: true
             };
 
-            magnificentAnalysis.set(symbol, historicalAnalysis);
+            primaryAnalysis.set(symbol, historicalAnalysis);
             console.log(`✅ Created historical analysis for ${symbol}: ${analysis.sentiment} sentiment`);
           }
         } catch (error) {
           console.error(`❌ Error creating historical analysis for ${symbol}:`, error);
           
           // Fallback to basic historical data
+          const assetType = MAGNIFICENT_7.includes(symbol) ? 'Technology' :
+                           MAJOR_INDEX_FUNDS.includes(symbol) ? 'Index Fund' : 'Cryptocurrency';
+          
           const fallbackAnalysis = {
             symbol,
             title: `${symbol} Market Analysis - Historical Data*`,
             description: `Basic historical analysis for ${symbol}.`,
             confidence: 60,
             sentiment: 'Neutral',
-            category: 'Technology',
+            category: assetType,
             url: `https://finance.yahoo.com/quote/${symbol}`,
             published_at: new Date().toISOString(),
             ai_confidence: 60,
@@ -291,12 +302,12 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
             is_historical: true
           };
 
-          magnificentAnalysis.set(symbol, fallbackAnalysis);
+          primaryAnalysis.set(symbol, fallbackAnalysis);
         }
       }
     }
 
-    // Process ALL remaining unique articles with AI analysis - including non-Magnificent 7 stocks
+    // Process ALL remaining unique articles with AI analysis - including non-primary assets
     console.log('Starting AI analysis of ALL remaining unique headlines...');
     let analysisCount = 0;
 
@@ -304,9 +315,9 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
       const symbol = article.entities?.[0]?.symbol;
       
       if (symbol) {
-        // Skip articles already used for Magnificent 7 main analysis
-        if (MAGNIFICENT_7.includes(symbol)) {
-          const mainArticle = magnificentAnalysis.get(symbol);
+        // Skip articles already used for primary assets main analysis
+        if (PRIMARY_ASSETS.includes(symbol)) {
+          const mainArticle = primaryAnalysis.get(symbol);
           if (mainArticle && !mainArticle.is_historical && mainArticle.title === article.title) {
             continue;
           }
@@ -315,12 +326,12 @@ Consider ${symbol}'s general market position, recent trends, and typical volatil
         console.log(`Analyzing headline ${analysisCount + 1} for ${symbol}: ${article.title.substring(0, 50)}...`);
 
         try {
-          const headlinePrompt = `Analyse this article, decide if you are, as a result, bullish, bearish or neutral on the stock the article is about, and how confident you are out of 100% on that statement.
+          const headlinePrompt = `Analyse this article, decide if you are, as a result, bullish, bearish or neutral on the asset the article is about, and how confident you are out of 100% on that statement.
 
 Article:
 Title: ${article.title}
 Description: ${article.description || 'No description available'}
-Stock Symbol: ${symbol}
+Asset Symbol: ${symbol}
 
 Provide JSON response:
 {
@@ -419,7 +430,7 @@ Provide JSON response:
 
     // Insert main analysis articles (including historical)
     console.log('Inserting main analysis articles...');
-    for (const article of magnificentAnalysis.values()) {
+    for (const article of primaryAnalysis.values()) {
       const { error } = await supabase
         .from('news_articles')
         .insert({
@@ -465,18 +476,18 @@ Provide JSON response:
 
     const summary = {
       success: true,
-      mainAnalyses: magnificentAnalysis.size,
+      mainAnalyses: primaryAnalysis.size,
       analyzedHeadlines: allProcessedArticles.length,
       totalUniqueArticlesProcessed: uniqueArticles.length,
-      openaiAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => !a.is_historical).length + allProcessedArticles.length,
-      historicalAnalysisCount: Array.from(magnificentAnalysis.values()).filter(a => a.is_historical).length,
+      openaiAnalysisCount: Array.from(primaryAnalysis.values()).filter(a => !a.is_historical).length + allProcessedArticles.length,
+      historicalAnalysisCount: Array.from(primaryAnalysis.values()).filter(a => a.is_historical).length,
       duplicatesRemoved: allArticles.length - uniqueArticles.length,
-      magnificentStocksCount: Array.from(magnificentAnalysis.values()).length,
-      allStocksHeadlinesCount: allProcessedArticles.length,
-      message: 'All unique articles from both Magnificent 7 and general market have AI analysis and are in chronological order'
+      primaryAssetsCount: Array.from(primaryAnalysis.values()).length,
+      allAssetsHeadlinesCount: allProcessedArticles.length,
+      message: 'All unique articles from primary assets and general market have AI analysis and are in chronological order'
     };
 
-    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} unique analyzed headlines from ALL stocks with AI in chronological order. Removed ${summary.duplicatesRemoved} duplicates.`);
+    console.log(`🎉 Successfully processed ${summary.mainAnalyses} main analyses and ${summary.analyzedHeadlines} unique analyzed headlines from ALL assets with AI in chronological order. Removed ${summary.duplicatesRemoved} duplicates.`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
