@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -22,10 +21,9 @@ const Dashboard = () => {
 
   // Primary assets for main analysis
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'IWM', 'VTI', 'VOO'];
-  const MAJOR_CRYPTOCURRENCIES = ['BTC-USD', 'ETH-USD', 'ADA-USD', 'SOL-USD', 'DOGE-USD'];
+  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA']; // Match the ticker exactly
 
-  const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...MAJOR_CRYPTOCURRENCIES];
+  const PRIMARY_ASSETS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
 
   // Get stock price for a symbol
   const getStockPrice = (symbol: string) => {
@@ -92,8 +90,6 @@ const Dashboard = () => {
       return { type: 'Stock', color: 'bg-blue-500' };
     } else if (MAJOR_INDEX_FUNDS.includes(symbol)) {
       return { type: 'Index', color: 'bg-purple-500' };
-    } else if (MAJOR_CRYPTOCURRENCIES.includes(symbol)) {
-      return { type: 'Crypto', color: 'bg-orange-500' };
     }
     return { type: 'Other', color: 'bg-gray-500' };
   };
@@ -124,7 +120,7 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-slate-400">Latest AI-analyzed news for major stocks, index funds, and cryptocurrencies</p>
+          <p className="text-slate-400">Latest AI-analyzed news for major stocks and index funds</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-yellow-400 text-sm mt-2">

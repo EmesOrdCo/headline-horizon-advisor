@@ -13,7 +13,8 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'IWM', 'VTI', 'VOO'];
+// Only the 3 basket funds that match the market ticker
+const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

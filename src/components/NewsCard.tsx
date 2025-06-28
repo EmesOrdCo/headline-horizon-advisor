@@ -36,11 +36,29 @@ const ConfidenceDots = ({ confidence }: { confidence: number }) => {
 };
 
 const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, stockPrice }: NewsCardProps) => {
+  // Helper function to get asset type and styling
+  const getAssetInfo = (symbol: string) => {
+    const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+    const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+    
+    if (MAGNIFICENT_7.includes(symbol)) {
+      return { type: 'Stock', color: 'bg-blue-500' };
+    } else if (MAJOR_INDEX_FUNDS.includes(symbol)) {
+      return { type: 'Index', color: 'bg-purple-500' };
+    }
+    return { type: 'Other', color: 'bg-gray-500' };
+  };
+
+  const assetInfo = getAssetInfo(symbol);
+
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
-          <Badge className="bg-blue-500 text-white">{symbol}</Badge>
+          <Badge className={`${assetInfo.color} text-white`}>{symbol}</Badge>
+          <Badge variant="secondary" className="bg-slate-500/20 text-slate-400 text-xs">
+            {assetInfo.type}
+          </Badge>
           {isHistorical && (
             <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 text-xs">
               HISTORICAL*
