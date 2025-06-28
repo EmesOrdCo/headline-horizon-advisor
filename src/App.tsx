@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
 import DetailedAnalysis from "./pages/DetailedAnalysis";
@@ -31,6 +32,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding/*" element={<Onboarding />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
               <Route path="/analysis/:symbol" element={<ProtectedRoute><DetailedAnalysis /></ProtectedRoute>} />

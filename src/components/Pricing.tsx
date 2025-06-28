@@ -1,8 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Pricing = () => {
+  const { user } = useAuth();
+
   return (
     <section id="pricing" className="py-20 px-6 bg-gradient-to-b from-slate-800 to-slate-900">
       <div className="max-w-4xl mx-auto text-center">
@@ -16,7 +19,7 @@ const Pricing = () => {
           </p>
         </div>
         
-        <Link to="/dashboard">
+        <Link to={user ? "/dashboard" : "/onboarding/email"}>
           <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-12 py-4 text-xl mb-6">
             Start Your Free Trial
           </Button>
