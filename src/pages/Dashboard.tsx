@@ -99,7 +99,7 @@ const Dashboard = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-32 p-6 max-w-7xl mx-auto">
+      <main className="pt-28 p-6 max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
