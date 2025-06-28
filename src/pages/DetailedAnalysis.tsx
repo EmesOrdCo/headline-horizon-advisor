@@ -6,6 +6,24 @@ import { Link, useParams } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const ConfidenceDots = ({ confidence }: { confidence: number }) => {
+  // Convert percentage to dots (0-100% -> 0-5 dots)
+  const dots = Math.round((confidence / 100) * 5);
+  
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((dot) => (
+        <div
+          key={dot}
+          className={`w-2 h-2 rounded-full ${
+            dot <= dots ? 'bg-slate-400' : 'bg-slate-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const DetailedAnalysis = () => {
   const { symbol } = useParams();
   const upperSymbol = symbol?.toUpperCase() || 'AAPL';
@@ -125,7 +143,7 @@ const DetailedAnalysis = () => {
                       <span className="text-slate-400 text-xs">{headline.timeAgo}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 text-xs">Weight:</span>
-                        <span className="text-emerald-400 font-semibold text-xs">{headline.weight}%</span>
+                        <ConfidenceDots confidence={headline.weight} />
                       </div>
                     </div>
                   </div>
@@ -171,15 +189,9 @@ const DetailedAnalysis = () => {
                     </div>
                     
                     <div className="mb-4">
-                      <div className="flex justify-between text-xs mb-2">
+                      <div className="flex justify-between items-center text-xs mb-2">
                         <span className="text-slate-400">Confidence</span>
-                        <span className="text-slate-300 font-semibold">{prediction.confidence}%</span>
-                      </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
-                        <div 
-                          className="bg-slate-400 h-2 rounded-full transition-all duration-500" 
-                          style={{width: `${prediction.confidence}%`}}
-                        ></div>
+                        <ConfidenceDots confidence={prediction.confidence} />
                       </div>
                     </div>
                     

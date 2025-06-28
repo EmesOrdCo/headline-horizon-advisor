@@ -17,6 +17,24 @@ interface NewsCardProps {
   };
 }
 
+const ConfidenceDots = ({ confidence }: { confidence: number }) => {
+  // Convert percentage to dots (0-100% -> 0-5 dots)
+  const dots = Math.round((confidence / 100) * 5);
+  
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((dot) => (
+        <div
+          key={dot}
+          className={`w-2 h-2 rounded-full ${
+            dot <= dots ? 'bg-cyan-500' : 'bg-slate-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, stockPrice }: NewsCardProps) => {
   return (
     <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">
@@ -70,15 +88,9 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             </p>
             
             <div className="mb-2">
-              <div className="flex justify-between text-sm mb-1">
+              <div className="flex justify-between items-center text-sm mb-2">
                 <span className="text-slate-400">Confidence Level</span>
-                <span className="text-cyan-400 font-semibold">{confidence}%</span>
-              </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
-                <div 
-                  className="bg-cyan-500 h-2 rounded-full transition-all duration-500" 
-                  style={{width: `${confidence}%`}}
-                ></div>
+                <ConfidenceDots confidence={confidence} />
               </div>
             </div>
           </div>

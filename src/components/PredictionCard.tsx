@@ -13,6 +13,24 @@ interface PredictionCardProps {
   timeframe: string;
 }
 
+const ConfidenceDots = ({ confidence }: { confidence: number }) => {
+  // Convert percentage to dots (0-100% -> 0-5 dots)
+  const dots = Math.round((confidence / 100) * 5);
+  
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((dot) => (
+        <div
+          key={dot}
+          className={`w-2 h-2 rounded-full ${
+            dot <= dots ? 'bg-slate-400' : 'bg-slate-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const PredictionCard = ({ symbol, current, predicted, change, confidence, timeframe }: PredictionCardProps) => {
   const isPositive = change > 0;
   
@@ -48,15 +66,9 @@ const PredictionCard = ({ symbol, current, predicted, change, confidence, timefr
       </div>
       
       <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
+        <div className="flex justify-between items-center text-sm mb-2">
           <span className="text-slate-400">Confidence</span>
-          <span className="text-slate-300 font-semibold">{confidence}%</span>
-        </div>
-        <div className="w-full bg-slate-700 rounded-full h-2">
-          <div 
-            className="bg-slate-400 h-2 rounded-full transition-all duration-500" 
-            style={{width: `${confidence}%`}}
-          ></div>
+          <ConfidenceDots confidence={confidence} />
         </div>
       </div>
       

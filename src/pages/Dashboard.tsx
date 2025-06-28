@@ -1,10 +1,10 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
-import PredictionCard from "@/components/PredictionCard";
 import MarketTicker from "@/components/MarketTicker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNews, useFetchNews } from "@/hooks/useNews";
@@ -68,33 +68,6 @@ const Dashboard = () => {
     }
   };
 
-  const predictions = [
-    {
-      symbol: "AAPL",
-      current: 178.5,
-      predicted: 182.3,
-      change: 2.13,
-      confidence: 78,
-      timeframe: "24h"
-    },
-    {
-      symbol: "TSLA", 
-      current: 245.8,
-      predicted: 238.9,
-      change: -2.81,
-      confidence: 65,
-      timeframe: "24h"
-    },
-    {
-      symbol: "NVDA",
-      current: 712.4,
-      predicted: 728.6, 
-      change: 2.27,
-      confidence: 82,
-      timeframe: "24h"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -136,7 +109,7 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="grid grid-cols-1 gap-4">
               {isLoading ? (
@@ -246,13 +219,16 @@ const Dashboard = () => {
                             <span className="text-slate-400">
                               {new Date(item.published_at).toLocaleDateString()}
                             </span>
-                            <span className="text-cyan-400 font-semibold">{item.ai_confidence}% confidence</span>
-                          </div>
-                          <div className="w-full bg-slate-700 rounded-full h-1.5">
-                            <div 
-                              className="bg-cyan-500 h-1.5 rounded-full transition-all duration-500" 
-                              style={{width: `${item.ai_confidence}%`}}
-                            ></div>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((dot) => (
+                                <div
+                                  key={dot}
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    dot <= Math.round((item.ai_confidence / 100) * 5) ? 'bg-cyan-500' : 'bg-slate-600'
+                                  }`}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -296,24 +272,6 @@ const Dashboard = () => {
                 </div>
               </ScrollArea>
             </div>
-          </div>
-        </div>
-        
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">AI Predictions</h2>
-            <Link to="/predictions">
-              <Button variant="link" className="text-emerald-400 hover:text-emerald-300">
-                View more →
-              </Button>
-            </Link>
-          </div>
-          <p className="text-slate-400 mb-8">Keep up with the latest AI-generated market forecasts</p>
-          
-          <div className="space-y-4">
-            {predictions.map((prediction, index) => (
-              <PredictionCard key={index} {...prediction} />
-            ))}
           </div>
         </div>
       </main>

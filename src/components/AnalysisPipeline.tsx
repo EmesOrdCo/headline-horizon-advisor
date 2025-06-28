@@ -1,6 +1,24 @@
 
 import { Badge } from "@/components/ui/badge";
 
+const ConfidenceDots = ({ confidence }: { confidence: number }) => {
+  // Convert percentage to dots (0-100% -> 0-5 dots)
+  const dots = Math.round((confidence / 100) * 5);
+  
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((dot) => (
+        <div
+          key={dot}
+          className={`w-2 h-2 rounded-full ${
+            dot <= dots ? 'bg-emerald-500' : 'bg-slate-600'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
+
 const AnalysisPipeline = () => {
   const stages = [
     {
@@ -49,12 +67,9 @@ const AnalysisPipeline = () => {
             Apple announces record quarterly earnings, beats estimates by 15%
           </h3>
           <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
+            <div className="flex justify-between items-center text-sm mb-1">
               <span className="text-slate-400">Confidence</span>
-              <span className="text-emerald-400 font-semibold">78%</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
-              <div className="bg-emerald-500 h-2 rounded-full" style={{width: '78%'}}></div>
+              <ConfidenceDots confidence={78} />
             </div>
           </div>
         </div>
@@ -86,7 +101,7 @@ const AnalysisPipeline = () => {
               </div>
               {stage.confidence && (
                 <div className="text-right">
-                  <div className="text-emerald-400 font-semibold text-sm">{stage.confidence}%</div>
+                  <ConfidenceDots confidence={stage.confidence} />
                 </div>
               )}
             </div>
