@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -55,32 +56,25 @@ const Hero = () => {
           )}
         </div>
         
-        <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+        <div className="relative bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 overflow-hidden">
           <div className="flex items-center gap-3 mb-4">
-            <Badge className="bg-blue-500 text-white">AAPL</Badge>
-            <Badge className="bg-blue-500 text-white text-xs">AI PREDICTION</Badge>
+            <Badge className="bg-blue-500 text-white">DASHBOARD PREVIEW</Badge>
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">Apple beats Q4 earnings by 15%</h3>
-          <p className="text-slate-300 mb-4">AI predicts continued upward momentum based on historical patterns</p>
+          <h3 className="text-xl font-bold text-white mb-4">Your AI-Powered Investment Dashboard</h3>
           
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <div className="text-sm text-slate-400">Current Price</div>
-              <div className="text-2xl font-bold text-white">$178.50</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">24h Prediction</div>
-              <div className="text-2xl font-bold text-emerald-400">$182.30</div>
-            </div>
-          </div>
-          
-          <div className="mb-2">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-slate-400">Confidence Level</span>
-              <span className="text-emerald-400 font-semibold">85%</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
-              <div className="bg-emerald-500 h-2 rounded-full" style={{width: '85%'}}></div>
+          <div className="relative rounded-lg overflow-hidden border border-slate-600">
+            <img 
+              src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=500&fit=crop" 
+              alt="Dashboard Preview - Monitor showing data analysis"
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+            <div className="absolute bottom-4 left-4 right-4">
+              <p className="text-white text-sm font-medium mb-2">Real-time market analysis at your fingertips</p>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span className="text-emerald-400 text-xs">Live data streaming</span>
+              </div>
             </div>
           </div>
         </div>
