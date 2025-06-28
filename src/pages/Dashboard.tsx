@@ -72,24 +72,24 @@ const Dashboard = () => {
 
   // Debug all data
   console.log('All news data:', newsData);
-  console.log('Articles with RSS symbol:', newsData?.filter(item => item.symbol === 'RSS'));
+  console.log('Articles with GENERAL_NEWS symbol:', newsData?.filter(item => item.symbol === 'GENERAL_NEWS'));
   console.log('All unique symbols:', [...new Set(newsData?.map(item => item.symbol))]);
 
-  // Get MarketAux headlines - these are the articles with symbol 'RSS' from fetch-rss-news function
+  // Get MarketAux general headlines - these are the articles with symbol 'GENERAL_NEWS' from fetch-rss-news function
   const marketauxHeadlines = newsData?.filter(item => {
-    const isMarketAuxSource = item.symbol === 'RSS'; // This is how fetch-rss-news marks articles
+    const isGeneralNews = item.symbol === 'GENERAL_NEWS'; // This is how fetch-rss-news marks general headlines
     const isRecent = new Date(item.published_at).getTime() > Date.now() - (24 * 60 * 60 * 1000);
     
-    console.log('Checking MarketAux item:', {
+    console.log('Checking MarketAux general headline:', {
       title: item.title,
       symbol: item.symbol,
       source: (item as any).source,
-      isMarketAuxSource,
+      isGeneralNews,
       isRecent,
       published_at: item.published_at
     });
     
-    return isMarketAuxSource && isRecent;
+    return isGeneralNews && isRecent;
   }).reduce((unique: any[], current: any) => {
     const isDuplicate = unique.some(existing => 
       areHeadlinesSimilar(current.title, existing.title)
@@ -102,7 +102,7 @@ const Dashboard = () => {
     return unique;
   }, []).sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()) || [];
 
-  console.log('Final MarketAux headlines count:', marketauxHeadlines.length);
+  console.log('Final MarketAux general headlines count:', marketauxHeadlines.length);
 
   // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
@@ -452,7 +452,7 @@ const Dashboard = () => {
                     ))
                   ) : (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No headlines available from MarketAux.</p>
+                      <p>No general headlines available from MarketAux.</p>
                       <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
                       <div className="text-xs mt-2 text-slate-500">
                         Debug: {newsData?.length || 0} total articles, {marketauxHeadlines.length} MarketAux headlines

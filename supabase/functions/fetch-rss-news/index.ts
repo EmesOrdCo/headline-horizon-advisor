@@ -13,20 +13,21 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// News sources we want to target
+// Target news sources for general headlines
 const TARGET_SOURCES = ['Reuters', 'CNBC', 'MarketWatch', 'Bloomberg', 'Financial Times'];
 
-async function fetchNewsFromMarketaux() {
+async function fetchGeneralHeadlinesFromMarketaux() {
   try {
-    console.log('🔄 Fetching news from MarketAux API...');
+    console.log('🔄 Fetching general headlines from MarketAux API...');
     
+    // Fetch general news without entity filtering for broader coverage
     const response = await fetch(
-      `https://api.marketaux.com/v1/news/all?api_token=${marketauxApiKey}&limit=50&language=en&sort=published_desc&filter_entities=true`,
+      `https://api.marketaux.com/v1/news/all?api_token=${marketauxApiKey}&limit=50&language=en&sort=published_desc`,
       {
         headers: {
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(30000) // 30 second timeout
+        signal: AbortSignal.timeout(30000)
       }
     );
 
@@ -36,14 +37,14 @@ async function fetchNewsFromMarketaux() {
     }
 
     const data = await response.json();
-    console.log(`📄 Received ${data.data?.length || 0} articles from MarketAux`);
+    console.log(`📄 Received ${data.data?.length || 0} general articles from MarketAux`);
 
     if (!data.data || !Array.isArray(data.data)) {
       console.error('❌ Invalid response format from MarketAux');
       return [];
     }
 
-    // Filter and process articles from our target sources
+    // Filter articles from our target sources
     const filteredArticles = data.data
       .filter((article: any) => {
         const source = article.source || '';
@@ -52,15 +53,15 @@ async function fetchNewsFromMarketaux() {
           targetSource.toLowerCase().includes(source.toLowerCase())
         );
       })
-      .slice(0, 30) // Limit to 30 articles
+      .slice(0, 40) // Get more articles for better coverage
       .map((article: any) => ({
         title: article.title?.substring(0, 500) || 'No title',
         description: article.description?.substring(0, 1000) || article.snippet?.substring(0, 1000) || 'No description available',
         url: article.url || '',
         published_at: article.published_at ? new Date(article.published_at).toISOString() : new Date().toISOString(),
         source: article.source || 'Unknown',
-        category: 'Business',
-        symbol: 'RSS', // Mark as RSS source for compatibility
+        category: 'General News',
+        symbol: 'GENERAL_NEWS', // Mark as general news headlines
         ai_confidence: null,
         ai_sentiment: null,
         ai_reasoning: null,
@@ -71,7 +72,7 @@ async function fetchNewsFromMarketaux() {
         }])
       }));
 
-    console.log(`✅ Filtered ${filteredArticles.length} articles from target sources`);
+    console.log(`✅ Filtered ${filteredArticles.length} general headlines from target sources`);
     
     // Group by source for logging
     const sourceGroups = filteredArticles.reduce((acc: any, article: any) => {
@@ -79,12 +80,12 @@ async function fetchNewsFromMarketaux() {
       return acc;
     }, {});
     
-    console.log('📊 Articles by source:', sourceGroups);
+    console.log('📊 General headlines by source:', sourceGroups);
     
     return filteredArticles;
 
   } catch (error) {
-    console.error('❌ Error fetching from MarketAux:', error.message);
+    console.error('❌ Error fetching general headlines from MarketAux:', error.message);
     return [];
   }
 }
@@ -95,12 +96,12 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting news fetch from MarketAux API for 5 target sources...');
+    console.log('🚀 Starting general headlines fetch from MarketAux API...');
     console.log('🎯 Target sources:', TARGET_SOURCES.join(', '));
     
-    const articles = await fetchNewsFromMarketaux();
+    const articles = await fetchGeneralHeadlinesFromMarketaux();
     
-    console.log(`📰 Total articles collected: ${articles.length}`);
+    console.log(`📰 Total general headlines collected: ${articles.length}`);
 
     if (articles.length > 0) {
       // Store articles in database
@@ -116,21 +117,21 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log(`💾 Successfully stored ${articles.length} news articles from MarketAux in database`);
+      console.log(`💾 Successfully stored ${articles.length} general headlines from MarketAux in database`);
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Successfully fetched ${articles.length} articles from MarketAux API`,
+      message: `Successfully fetched ${articles.length} general headlines from MarketAux API`,
       sources: TARGET_SOURCES,
       articleCount: articles.length,
-      note: "Using MarketAux API to fetch news from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times"
+      note: "Using MarketAux API to fetch general headlines from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('❌ News fetch error:', error.message);
+    console.error('❌ General headlines fetch error:', error.message);
     return new Response(JSON.stringify({
       success: false,
       error: error.message,
