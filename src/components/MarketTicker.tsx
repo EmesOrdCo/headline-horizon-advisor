@@ -99,8 +99,8 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed top-[50px] left-0 right-0 z-40 bg-slate-800 border-none">
-        <div className="w-[95%] mx-auto py-3">
+      <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none">
+        <div className="w-[95%] mx-auto py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -115,8 +115,8 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="fixed top-[50px] left-0 right-0 z-40 bg-slate-800 border-none">
-        <div className="w-[95%] mx-auto py-3">
+      <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none">
+        <div className="w-[95%] mx-auto py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -133,8 +133,8 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="fixed top-[50px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
-      <div className="w-[95%] mx-auto py-3">
+    <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
+      <div className="w-[95%] mx-auto py-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
