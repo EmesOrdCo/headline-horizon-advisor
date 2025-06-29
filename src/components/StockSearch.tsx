@@ -50,21 +50,6 @@ const StockSearch = ({ value, onValueChange, excludedSymbols }: StockSearchProps
     };
   }, [searchValue]);
 
-  const isValidUSStock = (stock: StockResult): boolean => {
-    // Filter for US stocks only - exclude symbols with dots, foreign exchanges, etc.
-    if (stock.symbol.includes('.')) return false;
-    if (stock.symbol.includes('-')) return false;
-    if (stock.symbol.length > 5) return false; // Most US stocks are 1-5 characters
-    
-    // Only allow common stocks
-    if (stock.type !== 'Common Stock') return false;
-    
-    // Exclude if symbol contains non-alphanumeric characters
-    if (!/^[A-Z]+$/.test(stock.symbol)) return false;
-    
-    return true;
-  };
-
   const searchStocks = async (query: string) => {
     if (query.length < 1) return;
 
@@ -78,15 +63,14 @@ const StockSearch = ({ value, onValueChange, excludedSymbols }: StockSearchProps
         throw error;
       }
       
-      // Filter for US stocks only and exclude already selected symbols
+      // Filter out excluded symbols and limit results
       const filteredResults = (data.result || [])
         .filter((stock: StockResult) => 
           !excludedSymbols.includes(stock.symbol.toUpperCase()) &&
-          isValidUSStock(stock)
+          stock.type === 'Common Stock' // Focus on common stocks
         )
         .slice(0, 50); // Limit to 50 results for performance
 
-      console.log('Filtered search results to US stocks only:', filteredResults.length);
       setSearchResults(filteredResults);
     } catch (error) {
       console.error('Error searching stocks:', error);
@@ -111,14 +95,14 @@ const StockSearch = ({ value, onValueChange, excludedSymbols }: StockSearchProps
             ? `${selectedStock.symbol} - ${selectedStock.description}`
             : value
             ? value
-            : "Search for a US stock..."}
+            : "Search for a stock..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 bg-slate-800 border-slate-600" style={{ width: "var(--radix-popover-trigger-width)" }}>
         <Command className="bg-slate-800">
           <CommandInput
-            placeholder="Search US stocks by symbol or company name..."
+            placeholder="Search stocks by symbol or company name..."
             value={searchValue}
             onValueChange={setSearchValue}
             className="text-white"
@@ -135,15 +119,15 @@ const StockSearch = ({ value, onValueChange, excludedSymbols }: StockSearchProps
               <CommandEmpty>
                 <div className="text-slate-400 p-4">
                   {searchValue.length < 1 
-                    ? "Start typing to search US stocks..." 
-                    : "No US stocks found. Try a different search term."}
+                    ? "Start typing to search stocks..." 
+                    : "No stocks found. Try a different search term."}
                 </div>
               </CommandEmpty>
             )}
 
             {!loading && searchValue.length < 1 && (
               <div className="text-slate-400 p-4 text-center text-sm">
-                Start typing to search through US-traded stocks...
+                Start typing to search through thousands of stocks...
               </div>
             )}
 
