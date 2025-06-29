@@ -1,14 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Sun, Moon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navigation = () => {
-  const { isDarkMode, toggleTheme } = useTheme();
   const { user } = useAuth();
 
   return (
@@ -43,15 +39,6 @@ const Navigation = () => {
             </Link>
           </div>
         )}
-        <div className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 rounded-full p-1">
-          <Sun className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-          <Switch
-            checked={isDarkMode}
-            onCheckedChange={toggleTheme}
-            className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
-          />
-          <Moon className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-        </div>
       </div>
     </nav>
   );

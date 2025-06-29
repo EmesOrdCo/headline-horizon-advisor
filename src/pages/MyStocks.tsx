@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardNav from "@/components/DashboardNav";
+import MarketTicker from "@/components/MarketTicker";
 import StockSelection from "@/components/StockSelection";
 import NewsAnalysisDisplay from "@/components/NewsAnalysisDisplay";
+import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { Loader2 } from "lucide-react";
@@ -222,7 +224,13 @@ const MyStocks = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      <div className="pt-32 px-6">
+      
+      {/* Market Ticker */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+      
+      <div className="pt-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
@@ -249,6 +257,8 @@ const MyStocks = () => {
           />
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };

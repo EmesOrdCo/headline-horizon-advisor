@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
+import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,8 +113,8 @@ const BiggestMovers = () => {
         <MarketTicker />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Header */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Page Header - Added more padding top for better spacing */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -199,6 +199,8 @@ const BiggestMovers = () => {
           </>
         )}
       </div>
+      
+      <Footer />
     </div>
   );
 };

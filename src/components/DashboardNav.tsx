@@ -1,12 +1,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Sun, Moon, ChevronDown, Home } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -18,7 +16,6 @@ import {
 const DashboardNav = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { signOut } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,8 +60,7 @@ const DashboardNav = () => {
             
             {/* Navigation Menu */}
             <div className="flex items-center gap-8">
-              <Link to="/dashboard" className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
-                <Home className="w-4 h-4" />
+              <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
                 Home
               </Link>
               
@@ -103,15 +99,6 @@ const DashboardNav = () => {
             >
               Sign Out
             </Button>
-            <div className="flex items-center gap-2 bg-slate-800 rounded-full p-1">
-              <Sun className="h-4 w-4 text-slate-400" />
-              <Switch
-                checked={isDarkMode}
-                onCheckedChange={toggleTheme}
-                className="data-[state=checked]:bg-slate-700 data-[state=unchecked]:bg-white"
-              />
-              <Moon className="h-4 w-4 text-slate-400" />
-            </div>
           </div>
         </div>
       </nav>
