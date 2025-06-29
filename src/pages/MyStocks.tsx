@@ -4,26 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
+import StockSearch from "@/components/StockSearch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { Loader2 } from "lucide-react";
-
-const AVAILABLE_STOCKS = [
-  { symbol: "AAPL", name: "Apple Inc." },
-  { symbol: "MSFT", name: "Microsoft Corporation" },
-  { symbol: "GOOGL", name: "Alphabet Inc." },
-  { symbol: "AMZN", name: "Amazon.com Inc." },
-  { symbol: "TSLA", name: "Tesla Inc." },
-  { symbol: "META", name: "Meta Platforms Inc." },
-  { symbol: "NVDA", name: "NVIDIA Corporation" },
-  { symbol: "NFLX", name: "Netflix Inc." },
-  { symbol: "AMD", name: "Advanced Micro Devices" },
-  { symbol: "CRM", name: "Salesforce Inc." }
-];
 
 const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
@@ -143,7 +130,7 @@ const MyStocks = () => {
 
       toast({
         title: "Success",
-        description: "Stock added successfully",
+        description: `${selectedStock} added successfully`,
       });
 
       setSelectedStock("");
@@ -152,7 +139,7 @@ const MyStocks = () => {
       console.error('Error adding stock:', error);
       toast({
         title: "Error",
-        description: "Failed to add stock",
+        description: "Failed to add stock. Please check if the symbol is valid.",
         variant: "destructive",
       });
     }
@@ -217,10 +204,6 @@ const MyStocks = () => {
     }
   };
 
-  const availableStocks = AVAILABLE_STOCKS.filter(
-    stock => !userStocks.some(userStock => userStock.symbol === stock.symbol)
-  );
-
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(price => price.symbol === symbol);
   };
@@ -256,18 +239,11 @@ const MyStocks = () => {
             <CardContent>
               <div className="flex gap-4 items-end">
                 <div className="flex-1">
-                  <Select value={selectedStock} onValueChange={setSelectedStock}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                      <SelectValue placeholder="Select a stock to add" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
-                      {availableStocks.map((stock) => (
-                        <SelectItem key={stock.symbol} value={stock.symbol} className="text-white hover:bg-slate-700">
-                          {stock.symbol} - {stock.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <StockSearch
+                    value={selectedStock}
+                    onValueChange={setSelectedStock}
+                    excludedSymbols={userStocks.map(stock => stock.symbol)}
+                  />
                 </div>
                 <Button 
                   onClick={addStock} 
@@ -360,7 +336,7 @@ const MyStocks = () => {
             <Card className="bg-slate-800/50 border-slate-700">
               <CardContent className="text-center py-12">
                 <p className="text-slate-400 mb-4">No stocks selected yet</p>
-                <p className="text-sm text-slate-500">Add up to 3 stocks to start tracking and analyzing news</p>
+                <p className="text-sm text-slate-500">Search and add up to 3 stocks to start tracking and analyzing news</p>
               </CardContent>
             </Card>
           )}
