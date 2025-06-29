@@ -12,8 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { Loader2 } from "lucide-react";
 
-const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-
 interface UserStock {
   id: string;
   symbol: string;
@@ -30,7 +28,6 @@ interface NewsArticle {
   ai_sentiment: string;
   ai_confidence: number;
   ai_reasoning: string;
-  category: string;
   source_links: string;
 }
 
@@ -62,7 +59,8 @@ const MyStocks = () => {
       setUserStocks(data || []);
       
       if (data && data.length > 0) {
-        fetchNewsArticles(data.map(stock => stock.symbol));
+        // Automatically fetch articles when stocks are loaded
+        await fetchNewsArticles(data.map(stock => stock.symbol));
       }
     } catch (error) {
       console.error('Error fetching user stocks:', error);
@@ -78,16 +76,7 @@ const MyStocks = () => {
 
   const fetchNewsArticles = async (symbols: string[]) => {
     try {
-      // First, try to get existing articles from news_articles table (for Magnificent 7)
-      const { data: existingArticles, error: existingError } = await supabase
-        .from('news_articles')
-        .select('*')
-        .in('symbol', symbols)
-        .order('created_at', { ascending: false });
-
-      if (existingError) throw existingError;
-
-      // Also get user-specific articles
+      // Get user-specific articles from Marketaux analysis
       const { data: userArticles, error: userError } = await supabase
         .from('user_stock_articles')
         .select('*')
@@ -97,17 +86,13 @@ const MyStocks = () => {
 
       if (userError) throw userError;
 
-      // Combine both sources, converting user articles to match the news_articles structure
-      const combinedArticles = [
-        ...(existingArticles || []),
-        ...(userArticles || []).map(article => ({
-          ...article,
-          category: 'Stock Analysis',
-          source_links: ''
-        }))
-      ];
+      // Convert user articles to match the news_articles structure
+      const formattedArticles = (userArticles || []).map(article => ({
+        ...article,
+        category: 'Marketaux Analysis'
+      }));
 
-      setNewsArticles(combinedArticles);
+      setNewsArticles(formattedArticles);
     } catch (error) {
       console.error('Error fetching news articles:', error);
     }
@@ -186,7 +171,7 @@ const MyStocks = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
+        title: "Success", 
         description: "Stock analysis completed",
       });
 
@@ -228,7 +213,7 @@ const MyStocks = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
-            <p className="text-slate-400">Select up to 3 stocks to track and analyze</p>
+            <p className="text-slate-400">Select up to 3 stocks to track and analyze with Marketaux news</p>
           </div>
 
           {/* Stock Selection */}
@@ -290,7 +275,7 @@ const MyStocks = () => {
           {/* News Analysis Display */}
           {userStocks.length > 0 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Stock Analysis</h2>
+              <h2 className="text-2xl font-bold text-white">Marketaux News Analysis</h2>
               
               {userStocks.map((stock) => {
                 const stockArticles = newsArticles.filter(article => article.symbol === stock.symbol);
@@ -301,7 +286,7 @@ const MyStocks = () => {
                     <Card key={stock.symbol} className="bg-slate-800/50 border-slate-700">
                       <CardContent className="text-center py-12">
                         <p className="text-slate-400 mb-4">No analysis available for {stock.symbol}</p>
-                        <p className="text-sm text-slate-500">Click "Analyze Stocks" to generate analysis</p>
+                        <p className="text-sm text-slate-500">Click "Analyze Stocks" to fetch latest Marketaux news</p>
                       </CardContent>
                     </Card>
                   );
@@ -336,7 +321,7 @@ const MyStocks = () => {
             <Card className="bg-slate-800/50 border-slate-700">
               <CardContent className="text-center py-12">
                 <p className="text-slate-400 mb-4">No stocks selected yet</p>
-                <p className="text-sm text-slate-500">Search and add up to 3 stocks to start tracking and analyzing news</p>
+                <p className="text-sm text-slate-500">Search and add up to 3 stocks to start tracking and analyzing Marketaux news</p>
               </CardContent>
             </Card>
           )}
