@@ -33,10 +33,10 @@ const Features = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <div key={index} className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-colors">
-              <div className="text-emerald-400 text-2xl font-bold mb-4">{feature.number}</div>
-              <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-              <p className="text-slate-300 leading-relaxed">{feature.description}</p>
+            <div key={index} className="bg-theme-card/30 backdrop-blur border border-theme-card rounded-xl p-6 hover:border-theme-accent/30 transition-colors">
+              <div className="text-theme-accent text-2xl font-bold mb-4">{feature.number}</div>
+              <h3 className="text-xl font-semibold text-theme-primary mb-3">{feature.title}</h3>
+              <p className="text-theme-secondary leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
