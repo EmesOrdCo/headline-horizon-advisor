@@ -27,6 +27,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
         console.log('Fetching live stock prices from Finnhub...');
         
         const results: StockPrice[] = [];
+        const errors: Array<{symbol: string, error: string}> = [];
         
         // Fetch with 1 second delays to respect Finnhub limits (60 calls/minute)
         for (const symbol of uniqueSymbols) {
@@ -39,11 +40,13 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
             
             if (error) {
               console.error(`Supabase function error for ${symbol}:`, error);
+              errors.push({ symbol, error: error.message || 'Function error' });
               continue;
             }
             
             if (data?.error) {
               console.error(`API error for ${symbol}:`, data.error);
+              errors.push({ symbol, error: data.error });
               continue;
             }
             
@@ -56,6 +59,9 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
               };
               results.push(stockPrice);
               console.log(`Successfully fetched price for ${symbol}:`, stockPrice);
+            } else {
+              console.warn(`No valid price data for ${symbol}:`, data);
+              errors.push({ symbol, error: 'No price data available' });
             }
             
             // Wait 1.5 seconds between each request (40 calls/minute to be safe)
@@ -66,10 +72,14 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
             
           } catch (error) {
             console.error(`Error fetching price for ${symbol}:`, error);
+            errors.push({ symbol, error: error instanceof Error ? error.message : 'Unknown error' });
           }
         }
 
         console.log(`Final results: Successfully fetched ${results.length}/${uniqueSymbols.length} stock prices`, results);
+        if (errors.length > 0) {
+          console.log(`Errors encountered:`, errors);
+        }
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
