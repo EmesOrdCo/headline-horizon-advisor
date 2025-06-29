@@ -9,13 +9,16 @@ interface StockPrice {
   changePercent: number;
 }
 
-export const useStockPrices = () => {
+export const useStockPrices = (additionalSymbols: string[] = []) => {
   return useQuery({
-    queryKey: ['stock-prices'],
+    queryKey: ['stock-prices', additionalSymbols],
     queryFn: async () => {
       const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
       const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
-      const ALL_SYMBOLS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS];
+      const ALL_SYMBOLS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...additionalSymbols];
+      
+      // Remove duplicates
+      const uniqueSymbols = [...new Set(ALL_SYMBOLS)];
       
       try {
         console.log('Fetching live stock prices from Finnhub...');
@@ -23,7 +26,7 @@ export const useStockPrices = () => {
         const results: StockPrice[] = [];
         
         // Fetch with 1 second delays to respect Finnhub limits (60 calls/minute)
-        for (const symbol of ALL_SYMBOLS) {
+        for (const symbol of uniqueSymbols) {
           try {
             console.log(`Fetching price for ${symbol}...`);
             
@@ -52,7 +55,7 @@ export const useStockPrices = () => {
             }
             
             // Wait 1.5 seconds between each request (40 calls/minute to be safe)
-            if (ALL_SYMBOLS.indexOf(symbol) < ALL_SYMBOLS.length - 1) {
+            if (uniqueSymbols.indexOf(symbol) < uniqueSymbols.length - 1) {
               console.log('Waiting 1.5 seconds before next request...');
               await new Promise(resolve => setTimeout(resolve, 1500));
             }
@@ -66,7 +69,7 @@ export const useStockPrices = () => {
           throw new Error('No valid stock data received from Finnhub');
         }
 
-        console.log(`Successfully fetched ${results.length}/${ALL_SYMBOLS.length} stock prices`);
+        console.log(`Successfully fetched ${results.length}/${uniqueSymbols.length} stock prices`);
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);

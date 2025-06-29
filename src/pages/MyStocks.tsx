@@ -34,12 +34,15 @@ interface NewsArticle {
 const MyStocks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data: stockPrices } = useStockPrices();
   const [userStocks, setUserStocks] = useState<UserStock[]>([]);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("");
+
+  // Pass user stock symbols to the hook
+  const userStockSymbols = userStocks.map(stock => stock.symbol);
+  const { data: stockPrices } = useStockPrices(userStockSymbols);
 
   useEffect(() => {
     if (user) {
