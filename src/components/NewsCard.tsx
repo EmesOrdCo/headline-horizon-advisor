@@ -155,15 +155,17 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         )}
       </div>
       
-      {/* Make the title clickable if there are source links */}
+      {/* Enhanced clickable title */}
       {parsedSourceLinks.length > 0 ? (
         <a
           href={parsedSourceLinks[0].url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xl font-bold text-white mb-3 leading-tight hover:text-emerald-400 transition-colors cursor-pointer block"
+          className="block group mb-3"
         >
-          {title}
+          <h3 className="text-xl font-bold text-white leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-4">
+            {title}
+          </h3>
         </a>
       ) : (
         <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
