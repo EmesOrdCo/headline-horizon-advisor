@@ -150,9 +150,6 @@ const OnboardingDetails = () => {
                   className="h-11"
                   max={new Date().toISOString().split('T')[0]}
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  You must be at least 10 years old to use this service
-                </p>
               </div>
 
               <Button 

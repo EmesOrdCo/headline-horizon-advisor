@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingProgressBar from "@/components/OnboardingProgressBar";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const OnboardingEmail = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +21,18 @@ const OnboardingEmail = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const sendWelcomeEmail = async (email: string) => {
+    try {
+      await supabase.functions.invoke('send-welcome-email', {
+        body: { email }
+      });
+      console.log('Welcome email sent successfully');
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      // Don't block the signup flow if email fails
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +66,12 @@ const OnboardingEmail = () => {
           variant: "destructive",
         });
       } else {
+        // Send welcome email
+        await sendWelcomeEmail(email);
+        
         toast({
           title: "Account created successfully",
-          description: "Welcome! Let's get you set up.",
+          description: "Welcome! Check your email for a welcome message. Let's get you set up.",
         });
         navigate('/onboarding/details');
       }
