@@ -1,18 +1,15 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import DashboardNav from "@/components/DashboardNav";
-import MarketTicker from "@/components/MarketTicker";
-import Footer from "@/components/Footer";
-import StockCard from "@/components/StockCard";
+
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useUserStockPrices } from "@/hooks/useUserStockPrices";
-import { useState } from "react";
+import DashboardNav from "@/components/DashboardNav";
+import MarketTicker from "@/components/MarketTicker";
+import StockSelection from "@/components/StockSelection";
+import NewsAnalysisDisplay from "@/components/NewsAnalysisDisplay";
+import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import StockSearch from "@/components/StockSearch";
+import { useUserStockPrices } from "@/hooks/useUserStockPrices";
+import { Loader2 } from "lucide-react";
 
 interface UserStock {
   id: string;
@@ -226,11 +223,15 @@ const MyStocks = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
+      {/* Market Ticker */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+      
+      <div className="pt-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
@@ -239,7 +240,7 @@ const MyStocks = () => {
             {stockPricesError && <p className="text-red-400 text-sm">Error loading stock prices</p>}
           </div>
 
-          <StockSearch
+          <StockSelection
             userStocks={userStocks}
             selectedStock={selectedStock}
             onSelectedStockChange={setSelectedStock}
@@ -250,21 +251,13 @@ const MyStocks = () => {
             stockPrices={stockPrices}
           />
 
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Stocks</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {userStocks.map(stock => (
-                <StockCard
-                  key={stock.id}
-                  symbol={stock.symbol}
-                  price={stockPrices.find(price => price.symbol === stock.symbol)?.price}
-                  onRemoveStock={() => removeStock(stock.id)}
-                />
-              ))}
-            </div>
-          </div>
+          <NewsAnalysisDisplay
+            userStocks={userStocks}
+            newsArticles={newsArticles}
+            stockPrices={stockPrices}
+          />
         </div>
-      </main>
+      </div>
       
       <Footer />
     </div>

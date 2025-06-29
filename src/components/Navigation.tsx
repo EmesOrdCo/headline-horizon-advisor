@@ -7,13 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const Navigation = () => {
   const { user } = useAuth();
 
-  const scrollToAISection = () => {
-    const aiSection = document.querySelector('#powered-by-ai');
-    if (aiSection) {
-      aiSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <div className="flex items-center gap-3">
@@ -24,12 +17,8 @@ const Navigation = () => {
       </div>
       <div className="hidden md:flex items-center gap-8">
         <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
-        <button 
-          onClick={scrollToAISection}
-          className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium"
-        >
-          How it Works
-        </button>
+        <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
+        <a href="#pricing" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Pricing</a>
         {user ? (
           <Link to="/dashboard">
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">

@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ArrowLeft, ExternalLink, BarChart3, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 
@@ -105,11 +105,15 @@ const BiggestMovers = () => {
   const { data: moversData, isLoading, error, refetch } = useBiggestMovers();
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
+      {/* Market Ticker */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Page Header - Added more padding top for better spacing */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -194,7 +198,7 @@ const BiggestMovers = () => {
             )}
           </>
         )}
-      </main>
+      </div>
       
       <Footer />
     </div>
