@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
+import Footer from "@/components/Footer";
 import PredictionCard from "@/components/PredictionCard";
 
 const Predictions = () => {
@@ -56,6 +57,8 @@ const Predictions = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
