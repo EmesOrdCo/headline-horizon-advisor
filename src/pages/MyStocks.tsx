@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import StockSelection from "@/components/StockSelection";
 import NewsAnalysisDisplay from "@/components/NewsAnalysisDisplay";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { useStockPrices } from "@/hooks/useStockPrices";
+import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { Loader2 } from "lucide-react";
 
 interface UserStock {
@@ -39,9 +40,9 @@ const MyStocks = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("");
 
-  // Always call the hook, but pass empty array when no stocks
+  // Use the dedicated user stock prices hook
   const userStockSymbols = userStocks.map(stock => stock.symbol);
-  const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useStockPrices(userStockSymbols);
+  const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useUserStockPrices(userStockSymbols);
 
   // Add console logs for debugging
   console.log('User stocks:', userStocks);

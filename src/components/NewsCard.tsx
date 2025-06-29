@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
@@ -156,7 +155,19 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         )}
       </div>
       
-      <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
+      {/* Make the title clickable if there are source links */}
+      {parsedSourceLinks.length > 0 ? (
+        <a
+          href={parsedSourceLinks[0].url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xl font-bold text-white mb-3 leading-tight hover:text-emerald-400 transition-colors cursor-pointer block"
+        >
+          {title}
+        </a>
+      ) : (
+        <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
+      )}
       
       {description && (
         <p className="text-slate-300 mb-4 leading-relaxed">{description}</p>
