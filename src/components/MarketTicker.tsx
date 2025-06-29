@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Triangle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
@@ -29,30 +28,30 @@ const MarketTicker = () => {
           { symbol: 'MSFT', name: 'MSFT' },
           { symbol: 'GOOGL', name: 'GOOGL' }
         ];
-        
+
         console.log('Fetching live market data from Finnhub...');
-        
+
         const results: MarketIndex[] = [];
-        
+
         // Fetch with 1.5 second delays
         for (const index of indices) {
           try {
             console.log(`Fetching data for ${index.symbol}...`);
-            
+
             const { data, error } = await supabase.functions.invoke('stock-price', {
               body: { symbol: index.symbol },
             });
-            
+
             if (error) {
               console.error(`Supabase function error for ${index.symbol}:`, error);
               continue;
             }
-            
+
             if (data?.error) {
               console.error(`API error for ${index.symbol}:`, data.error);
               continue;
             }
-            
+
             if (data?.price && data.price > 0) {
               results.push({
                 symbol: index.name,
@@ -63,18 +62,18 @@ const MarketTicker = () => {
               });
               console.log(`Successfully fetched data for ${index.symbol}: $${data.price}`);
             }
-            
+
             // Wait 1.5 seconds between each request
             if (indices.indexOf(index) < indices.length - 1) {
               console.log('Waiting 1.5 seconds before next request...');
               await new Promise(resolve => setTimeout(resolve, 1500));
             }
-            
+
           } catch (error) {
             console.error(`Error fetching data for ${index.symbol}:`, error);
           }
         }
-        
+
         if (results.length > 0) {
           setMarketData(results);
           console.log(`Successfully fetched ${results.length} market indices`);
@@ -100,7 +99,7 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed top-[0px] left-0 right-0 z-40 bg-slate-800 border-none">
+      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-800 border-none">
         <div className="w-[95%] mx-auto py-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -116,7 +115,7 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="fixed top-[72px] left-0 right-0 z-40 bg-slate-800 border-none">
+      <div className="fixed top-0 left-0 right-0 z-40 bg-slate-800 border-none">
         <div className="w-[95%] mx-auto py-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -134,7 +133,7 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="fixed top-[72px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
+    <div className="fixed top-0 left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
       <div className="w-[95%] mx-auto py-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
