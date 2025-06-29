@@ -22,14 +22,14 @@ const OnboardingEmail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const sendWelcomeEmail = async (email: string) => {
+  const sendConfirmationEmail = async (email: string) => {
     try {
       await supabase.functions.invoke('send-welcome-email', {
-        body: { email }
+        body: { email, isConfirmation: true }
       });
-      console.log('Welcome email sent successfully');
+      console.log('Confirmation email sent successfully');
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      console.error('Error sending confirmation email:', error);
       // Don't block the signup flow if email fails
     }
   };
@@ -66,12 +66,12 @@ const OnboardingEmail = () => {
           variant: "destructive",
         });
       } else {
-        // Send welcome email
-        await sendWelcomeEmail(email);
+        // Send confirmation email
+        await sendConfirmationEmail(email);
         
         toast({
           title: "Account created successfully",
-          description: "Welcome! Check your email for a welcome message. Let's get you set up.",
+          description: "Please check your email to confirm your account, then complete your profile setup.",
         });
         navigate('/onboarding/details');
       }
