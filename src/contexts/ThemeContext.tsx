@@ -29,9 +29,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     // Apply theme to document
     if (isDarkMode) {
-      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
     }
     
     // Store preference

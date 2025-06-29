@@ -3,113 +3,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Centralized Theme System - All colors defined as CSS variables */
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 @layer base {
   :root {
-    /* Default Dark Mode Theme */
-    --bg-page: 15 23 42; /* slate-900 */
-    --bg-surface: 30 41 59; /* slate-800 */
-    --bg-border: 51 65 85; /* slate-700 */
-    --bg-input: 30 41 59; /* slate-800 */
-    --bg-muted: 30 41 59; /* slate-800 */
-    
-    --text-primary: 248 250 252; /* slate-50 */
-    --text-secondary: 203 213 225; /* slate-300 */
-    --text-muted: 148 163 184; /* slate-400 */
-    --text-inverse: 15 23 42; /* slate-900 */
-    
-    --accent: 16 185 129; /* emerald-500 */
-    --accent-dark: 5 150 105; /* emerald-600 */
-    --accent-light: 52 211 153; /* emerald-400 */
-    --accent-muted: 16 185 129; /* emerald-500 with opacity */
-    
-    --icon-up: 16 185 129; /* emerald-500 */
-    --icon-down: 239 68 68; /* red-500 */
-    --icon-neutral: 148 163 184; /* slate-400 */
-    
-    --nav-bg: 15 23 42; /* slate-900 */
-    --nav-border: 51 65 85; /* slate-700 */
-    --nav-text: 203 213 225; /* slate-300 */
-    
-    --card-bg: 30 41 59; /* slate-800 with opacity */
-    --card-border: 51 65 85; /* slate-700 */
-    
-    --ticker-bg: 30 41 59; /* slate-800 */
-    
-    /* Shadcn UI variables */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --radius: 0.5rem;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  /* Light Mode Overrides */
-  .light {
-    --bg-page: 255 255 255; /* white */
-    --bg-surface: 255 255 255; /* white */
-    --bg-border: 226 232 240; /* slate-200 */
-    --bg-input: 248 250 252; /* slate-50 */
-    --bg-muted: 248 250 252; /* slate-50 */
-    
-    --text-primary: 15 23 42; /* slate-900 */
-    --text-secondary: 71 85 105; /* slate-600 */
-    --text-muted: 100 116 139; /* slate-500 */
-    --text-inverse: 248 250 252; /* slate-50 */
-    
-    --nav-bg: 255 255 255; /* white */
-    --nav-border: 226 232 240; /* slate-200 */
-    --nav-text: 71 85 105; /* slate-600 */
-    
-    --card-bg: 255 255 255; /* white */
-    --card-border: 226 232 240; /* slate-200 */
-    
-    --ticker-bg: 248 250 252; /* slate-50 */
-    
-    /* Shadcn UI light mode variables */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
+
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
+
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
+
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
+
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -117,6 +44,44 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -127,34 +92,8 @@
   }
 
   body {
-    background-color: rgb(var(--bg-page));
-    color: rgb(var(--text-primary));
+    @apply bg-background text-foreground;
   }
-}
-
-/* Custom utility classes for theme variables */
-@layer utilities {
-  .bg-theme-page { background-color: rgb(var(--bg-page)); }
-  .bg-theme-surface { background-color: rgb(var(--bg-surface)); }
-  .bg-theme-muted { background-color: rgb(var(--bg-muted)); }
-  .bg-theme-nav { background-color: rgb(var(--nav-bg)); }
-  .bg-theme-card { background-color: rgb(var(--card-bg)); }
-  .bg-theme-ticker { background-color: rgb(var(--ticker-bg)); }
-  
-  .text-theme-primary { color: rgb(var(--text-primary)); }
-  .text-theme-secondary { color: rgb(var(--text-secondary)); }
-  .text-theme-muted { color: rgb(var(--text-muted)); }
-  .text-theme-inverse { color: rgb(var(--text-inverse)); }
-  .text-theme-nav { color: rgb(var(--nav-text)); }
-  
-  .border-theme-default { border-color: rgb(var(--bg-border)); }
-  .border-theme-nav { border-color: rgb(var(--nav-border)); }
-  .border-theme-card { border-color: rgb(var(--card-border)); }
-  
-  .text-theme-accent { color: rgb(var(--accent)); }
-  .bg-theme-accent { background-color: rgb(var(--accent)); }
-  .text-theme-up { color: rgb(var(--icon-up)); }
-  .text-theme-down { color: rgb(var(--icon-down)); }
 }
 
 @keyframes scroll {
