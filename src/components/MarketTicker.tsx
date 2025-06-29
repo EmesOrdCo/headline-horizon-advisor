@@ -100,7 +100,7 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed top-[72px] left-0 right-0 z-40 bg-slate-800 border-none">
+      <div className="fixed top-[0px] left-0 right-0 z-40 bg-slate-800 border-none">
         <div className="w-[95%] mx-auto py-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
