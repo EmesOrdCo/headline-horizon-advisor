@@ -1,191 +1,83 @@
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
-import MarketTicker from "@/components/MarketTicker";
-import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useStockPrices } from "@/hooks/useStockPrices";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, Clock, Sparkles } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const Magnificent7 = () => {
-  const { data: newsData, isLoading, refetch } = useNews();
-  const { data: stockPrices } = useStockPrices();
-  const fetchNews = useFetchNews();
-  const [isFetching, setIsFetching] = useState(false);
-  const { toast } = useToast();
-
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
-  const STOCK_NAMES: { [key: string]: string } = {
-    'AAPL': 'Apple Inc.',
-    'MSFT': 'Microsoft Corporation',
-    'GOOGL': 'Alphabet Inc.',
-    'AMZN': 'Amazon.com Inc.',
-    'NVDA': 'NVIDIA Corporation',
-    'TSLA': 'Tesla Inc.',
-    'META': 'Meta Platforms Inc.',
-  };
+  const { data: news, isLoading: newsLoading, error: newsError } = useQuery({
+    queryKey: ['news', { symbols: MAGNIFICENT_7, limit: 50 }],
+    queryFn: async ({ queryKey }) => {
+      const { symbols, limit } = queryKey[1];
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .in('symbol', symbols)
+        .order('published_at', { ascending: false })
+        .limit(limit);
 
-  const getStockPrice = (symbol: string) => {
-    return stockPrices?.find(stock => stock.symbol === symbol);
-  };
-
-  const magnificent7Articles = MAGNIFICENT_7.map(symbol => {
-    return newsData?.find(item => 
-      item.symbol === symbol && 
-      item.ai_confidence && 
-      item.ai_sentiment
-    );
-  }).filter(Boolean);
-
-  const generateCompositeHeadline = (item: any): string => {
-    const symbol = item.symbol;
-    const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
-    
-    let sourceArticles = [];
-    try {
-      sourceArticles = item.source_links ? JSON.parse(item.source_links) : [];
-    } catch (error) {
-      console.error('Error parsing source links:', error);
-    }
-
-    let summary = '';
-    
-    if (sourceArticles.length > 0) {
-      const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
-      
-      if (titles.some(t => t.includes('earnings') || t.includes('revenue') || t.includes('profit'))) {
-        summary = sentiment === 'bullish' ? 'Strong earnings boost confidence' : 'Earnings disappoint investors';
-      } else if (titles.some(t => t.includes('upgrade') || t.includes('analyst') || t.includes('target'))) {
-        summary = sentiment === 'bullish' ? 'Analysts raise price targets' : 'Analysts downgrade stock';
-      } else if (titles.some(t => t.includes('ai') || t.includes('artificial intelligence'))) {
-        summary = sentiment === 'bullish' ? 'AI developments drive growth' : 'AI concerns weigh on stock';
-      } else {
-        summary = sentiment === 'bullish' ? 'Positive developments support growth' : 'Market challenges create headwinds';
+      if (error) {
+        console.error("Error fetching news:", error);
+        throw new Error(error.message);
       }
-    } else {
-      summary = sentiment === 'bullish' ? 'Positive momentum continues' : 'Market pressures weigh on stock';
-    }
+      return data;
+    },
+  });
 
-    return `${symbol}: ${summary}`;
-  };
+  const { data: stockPrices, isLoading: pricesLoading } = useStockPrices(MAGNIFICENT_7);
 
-  const handleRefreshNews = async () => {
-    setIsFetching(true);
-    
-    try {
-      const result = await fetchNews();
-      await refetch();
-      
-      if (result.success) {
-        toast({
-          title: "News Updated",
-          description: result.message,
-        });
-      } else {
-        toast({
-          title: "Partial Success",
-          description: "Some news sources may have failed. Check the results.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch news. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetching(false);
-    }
-  };
+  if (newsError) {
+    return <div className="text-red-500">Error: {newsError.message}</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
-                <p className="text-gray-600 dark:text-slate-400">AI-analyzed news for the seven largest tech companies</p>
-              </div>
+      <main className="pt-20 pb-8">
+        <div className="w-[95%] mx-auto px-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">Magnificent 7</h1>
+              <Badge className="bg-blue-500 text-white text-xs">AI ANALYSIS</Badge>
             </div>
-            <Button 
-              onClick={handleRefreshNews}
-              disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? 'Fetching...' : 'Refresh News'}
-            </Button>
+            <div className="text-slate-400 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Updated every 5 minutes
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          {isLoading ? (
-            <div className="text-center text-gray-600 dark:text-slate-400 py-8">
-              Loading Magnificent 7 analysis...
-            </div>
-          ) : (
-            MAGNIFICENT_7.map((symbol) => {
-              const article = magnificent7Articles.find(item => item.symbol === symbol);
-              const stockPrice = getStockPrice(symbol);
-              
-              if (article) {
-                const compositeHeadline = generateCompositeHeadline(article);
-                
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {newsLoading ? (
+              <div className="text-slate-400">Loading news...</div>
+            ) : (
+              news?.map((item, index) => {
+                const stockPrice = stockPrices?.[item.symbol];
                 return (
-                  <NewsCard 
-                    key={article.id} 
-                    symbol={article.symbol}
-                    title={compositeHeadline}
-                    description={article.description}
-                    confidence={article.ai_confidence}
-                    sentiment={article.ai_sentiment}
-                    category={article.category}
-                    isHistorical={article.ai_reasoning?.includes('Historical')}
-                    sourceLinks={article.source_links || '[]'}
+                  <NewsCard
+                    key={index}
+                    symbol={item.symbol}
+                    title={item.title}
+                    description={item.description}
+                    confidence={item.confidence}
+                    sentiment={item.sentiment}
+                    category={item.category}
+                    sourceLinks={item.source_links}
                     stockPrice={stockPrice}
                   />
                 );
-              } else {
-                return (
-                  <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-blue-500 text-white">{symbol}</Badge>
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
-                          NO RECENT NEWS
-                        </Badge>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                      {symbol}: No recent analysis available
-                    </h3>
-                    <p className="text-gray-500 dark:text-slate-500 text-sm">
-                      Click "Refresh News" to fetch the latest market updates and AI analysis.
-                    </p>
-                  </div>
-                );
-              }
-            })
-          )}
+              })
+            )}
+          </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
