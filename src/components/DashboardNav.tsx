@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Sun, Moon, ChevronDown } from "lucide-react";
+import { Sun, Moon, ChevronDown, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,19 +63,21 @@ const DashboardNav = () => {
             
             {/* Navigation Menu */}
             <div className="flex items-center gap-8">
+              <Link to="/dashboard" className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
+                <Home className="w-4 h-4" />
+                Home
+              </Link>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
                   Live Market News <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-slate-800 border-slate-700">
                   <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <Link to="/dashboard">Magnificent 7</Link>
+                    <Link to="/magnificent-7">Magnificent 7</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <Link to="/dashboard">Funds</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <Link to="/dashboard">Crypto</Link>
+                    <Link to="/index-funds">Funds</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
