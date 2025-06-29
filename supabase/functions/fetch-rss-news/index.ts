@@ -38,6 +38,16 @@ const RSS_SOURCES = [
     name: 'Financial Times',
     url: 'https://www.ft.com/markets?format=rss',
     category: 'Markets'
+  },
+  {
+    name: 'MarketScreener',
+    url: 'https://www.marketscreener.com/rss/news_us.xml',
+    category: 'Markets'
+  },
+  {
+    name: 'MarketScreener World',
+    url: 'https://www.marketscreener.com/rss/news_world.xml',
+    category: 'World Markets'
   }
 ];
 
