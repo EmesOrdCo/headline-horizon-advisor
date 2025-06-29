@@ -20,6 +20,9 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
       // Remove duplicates
       const uniqueSymbols = [...new Set(ALL_SYMBOLS)];
       
+      console.log('useStockPrices called with additionalSymbols:', additionalSymbols);
+      console.log('All unique symbols to fetch:', uniqueSymbols);
+      
       try {
         console.log('Fetching live stock prices from Finnhub...');
         
@@ -45,13 +48,14 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
             }
             
             if (data?.price && data.price > 0) {
-              results.push({
+              const stockPrice = {
                 symbol,
                 price: parseFloat(data.price.toFixed(2)),
                 change: parseFloat(data.change.toFixed(2)),
                 changePercent: parseFloat(data.changePercent.toFixed(2))
-              });
-              console.log(`Successfully fetched price for ${symbol}: $${data.price}`);
+              };
+              results.push(stockPrice);
+              console.log(`Successfully fetched price for ${symbol}:`, stockPrice);
             }
             
             // Wait 1.5 seconds between each request (40 calls/minute to be safe)
@@ -65,11 +69,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
           }
         }
 
-        if (results.length === 0) {
-          throw new Error('No valid stock data received from Finnhub');
-        }
-
-        console.log(`Successfully fetched ${results.length}/${uniqueSymbols.length} stock prices`);
+        console.log(`Final results: Successfully fetched ${results.length}/${uniqueSymbols.length} stock prices`, results);
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
@@ -80,5 +80,6 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
     refetchInterval: 60 * 1000, // Refetch every 1 minute (allows for 10*1.5s = ~15s per cycle)
     retry: 1,
     retryDelay: 30000, // Wait 30 seconds between retries
+    enabled: true, // Always enabled
   });
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,11 +37,16 @@ const MyStocks = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("");
 
-  // Get user stock symbols and fetch prices - only when we have stocks
+  // Always call the hook, but pass empty array when no stocks
   const userStockSymbols = userStocks.map(stock => stock.symbol);
-  const { data: stockPrices, isLoading: stockPricesLoading } = useStockPrices(
-    userStockSymbols.length > 0 ? userStockSymbols : []
-  );
+  const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useStockPrices(userStockSymbols);
+
+  // Add console logs for debugging
+  console.log('User stocks:', userStocks);
+  console.log('User stock symbols:', userStockSymbols);
+  console.log('Stock prices data:', stockPrices);
+  console.log('Stock prices loading:', stockPricesLoading);
+  console.log('Stock prices error:', stockPricesError);
 
   useEffect(() => {
     if (user) {
@@ -59,6 +63,7 @@ const MyStocks = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched user stocks:', data);
       setUserStocks(data || []);
       
       if (data && data.length > 0) {
@@ -222,6 +227,8 @@ const MyStocks = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
             <p className="text-slate-400">Select up to 3 stocks to track and analyze with Marketaux news</p>
+            {stockPricesLoading && <p className="text-yellow-400 text-sm">Loading stock prices...</p>}
+            {stockPricesError && <p className="text-red-400 text-sm">Error loading stock prices</p>}
           </div>
 
           <StockSelection
