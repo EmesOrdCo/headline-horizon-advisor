@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ArrowLeft } from "lucide-react";
@@ -10,6 +9,9 @@ import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import Footer from "@/components/Footer";
 
 const IndexFunds = () => {
   const { data: newsData, isLoading, refetch } = useNews();
@@ -99,87 +101,90 @@ const IndexFunds = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Index Funds</h1>
-                <p className="text-gray-600 dark:text-slate-400">AI-analyzed news for major market index funds</p>
+      <main className="pt-20 pb-8">
+        <div className="w-[95%] mx-auto px-6">
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <Link to="/dashboard">
+                  <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Dashboard
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Index Funds</h1>
+                  <p className="text-gray-600 dark:text-slate-400">AI-analyzed news for major market index funds</p>
+                </div>
               </div>
+              <Button 
+                onClick={handleRefreshNews}
+                disabled={isFetching}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                {isFetching ? 'Fetching...' : 'Refresh News'}
+              </Button>
             </div>
-            <Button 
-              onClick={handleRefreshNews}
-              disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? 'Fetching...' : 'Refresh News'}
-            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            {isLoading ? (
+              <div className="text-center text-gray-600 dark:text-slate-400 py-8">
+                Loading Index Funds analysis...
+              </div>
+            ) : (
+              MAJOR_INDEX_FUNDS.map((symbol) => {
+                const article = indexFundArticles.find(item => item.symbol === symbol);
+                const stockPrice = getStockPrice(symbol);
+                
+                if (article) {
+                  const compositeHeadline = generateCompositeHeadline(article);
+                  
+                  return (
+                    <NewsCard 
+                      key={article.id} 
+                      symbol={article.symbol}
+                      title={compositeHeadline}
+                      description={article.description}
+                      confidence={article.ai_confidence}
+                      sentiment={article.ai_sentiment}
+                      category={article.category}
+                      isHistorical={article.ai_reasoning?.includes('Historical')}
+                      sourceLinks={article.source_links || '[]'}
+                      stockPrice={stockPrice}
+                    />
+                  );
+                } else {
+                  return (
+                    <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-500 text-white">{symbol}</Badge>
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
+                            NO RECENT NEWS
+                          </Badge>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
+                        {symbol}: No recent analysis available
+                      </h3>
+                      <p className="text-gray-500 dark:text-slate-500 text-sm">
+                        Click "Refresh News" to fetch the latest market updates and AI analysis.
+                      </p>
+                    </div>
+                  );
+                }
+              })
+            )}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 gap-6">
-          {isLoading ? (
-            <div className="text-center text-gray-600 dark:text-slate-400 py-8">
-              Loading Index Funds analysis...
-            </div>
-          ) : (
-            MAJOR_INDEX_FUNDS.map((symbol) => {
-              const article = indexFundArticles.find(item => item.symbol === symbol);
-              const stockPrice = getStockPrice(symbol);
-              
-              if (article) {
-                const compositeHeadline = generateCompositeHeadline(article);
-                
-                return (
-                  <NewsCard 
-                    key={article.id} 
-                    symbol={article.symbol}
-                    title={compositeHeadline}
-                    description={article.description}
-                    confidence={article.ai_confidence}
-                    sentiment={article.ai_sentiment}
-                    category={article.category}
-                    isHistorical={article.ai_reasoning?.includes('Historical')}
-                    sourceLinks={article.source_links || '[]'}
-                    stockPrice={stockPrice}
-                  />
-                );
-              } else {
-                return (
-                  <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-purple-500 text-white">{symbol}</Badge>
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
-                          NO RECENT NEWS
-                        </Badge>
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                      {symbol}: No recent analysis available
-                    </h3>
-                    <p className="text-gray-500 dark:text-slate-500 text-sm">
-                      Click "Refresh News" to fetch the latest market updates and AI analysis.
-                    </p>
-                  </div>
-                );
-              }
-            })
-          )}
-        </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
