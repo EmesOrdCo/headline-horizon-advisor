@@ -99,7 +99,7 @@ const MarketTicker = () => {
 
   if (isLoading) {
     return (
-      <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none">
+      <div className="fixed top-[60px] left-0 right-0 z-40 bg-slate-800 border-none">
         <div className="w-[95%] mx-auto py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ const MarketTicker = () => {
 
   if (marketData.length === 0) {
     return (
-      <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none">
+      <div className="fixed top-[60px] left-0 right-0 z-40 bg-slate-800 border-none">
         <div className="w-[95%] mx-auto py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ const MarketTicker = () => {
   const duplicatedData = [...marketData, ...marketData];
 
   return (
-    <div className="fixed top-[55px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
+    <div className="fixed top-[60px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
       <div className="w-[95%] mx-auto py-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 flex-shrink-0">
