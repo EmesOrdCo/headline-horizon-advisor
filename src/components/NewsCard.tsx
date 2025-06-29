@@ -233,7 +233,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         </>
       )}
 
-      {/* Source Articles Section with Weights */}
+      {/* Source Articles Section - Display as individual cards */}
       {parsedSourceLinks.length > 0 && (
         <div className="mt-4 pt-4 border-t border-slate-700">
           <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
@@ -245,37 +245,41 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
               </span>
             )}
           </h4>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {parsedSourceLinks.map((link, index) => {
               const weight = articleWeights?.find(w => w.article_index === index);
               
               return (
-                <a
+                <div
                   key={index}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-2 bg-slate-800/30 border border-slate-700/50 rounded-lg hover:border-slate-600 hover:bg-slate-800/50 transition-all group"
+                  className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 hover:bg-slate-800/70 transition-all"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-300 font-medium group-hover:text-white transition-colors line-clamp-2 leading-tight">
+                      <h5 className="text-white font-medium leading-tight mb-2">
                         {link.title}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      </h5>
+                      <p className="text-xs text-slate-400 mb-2">
                         {formatPublishTime(link.published_at)}
                       </p>
                       {!isHistorical && weight && (
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-400">Weight:</span>
                           <WeightDots weight={weight.weight} />
                           <span className="text-xs text-slate-500">({weight.reasoning})</span>
                         </div>
                       )}
                     </div>
-                    <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-0.5" />
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-700/50 hover:bg-slate-600/50 px-2 py-1 rounded"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
-                </a>
+                </div>
               );
             })}
           </div>
