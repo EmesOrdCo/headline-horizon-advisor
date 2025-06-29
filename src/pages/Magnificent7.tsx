@@ -1,3 +1,4 @@
+
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import { useQuery } from "@tanstack/react-query";
@@ -11,15 +12,14 @@ const Magnificent7 = () => {
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
   const { data: news, isLoading: newsLoading, error: newsError } = useQuery({
-    queryKey: ['news', { symbols: MAGNIFICENT_7, limit: 50 }],
-    queryFn: async ({ queryKey }) => {
-      const { symbols, limit } = queryKey[1];
+    queryKey: ['news', 'magnificent-7'],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from('news')
+        .from('news_articles')
         .select('*')
-        .in('symbol', symbols)
+        .in('symbol', MAGNIFICENT_7)
         .order('published_at', { ascending: false })
-        .limit(limit);
+        .limit(50);
 
       if (error) {
         console.error("Error fetching news:", error);
@@ -64,8 +64,8 @@ const Magnificent7 = () => {
                     symbol={item.symbol}
                     title={item.title}
                     description={item.description}
-                    confidence={item.confidence}
-                    sentiment={item.sentiment}
+                    confidence={item.ai_confidence}
+                    sentiment={item.ai_sentiment}
                     category={item.category}
                     sourceLinks={item.source_links}
                     stockPrice={stockPrice}

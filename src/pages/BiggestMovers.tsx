@@ -1,3 +1,4 @@
+
 import DashboardNav from "@/components/DashboardNav";
 import StockCard from "@/components/StockCard";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
@@ -6,12 +7,14 @@ import { TrendingUp, TrendingDown, Clock, BarChart3 } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const BiggestMovers = () => {
-  const { data: topGainers, isLoading: gainersLoading, error: gainersError } = useBiggestMovers('gainers');
-  const { data: topLosers, isLoading: losersLoading, error: losersError } = useBiggestMovers('losers');
+  const { data: biggestMoversData, isLoading: dataLoading, error: dataError } = useBiggestMovers();
 
-  if (gainersError || losersError) {
+  if (dataError) {
     return <div>Error: Could not load data.</div>;
   }
+
+  const topGainers = biggestMoversData?.gainers || [];
+  const topLosers = biggestMoversData?.losers || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
@@ -39,18 +42,18 @@ const BiggestMovers = () => {
                 <span>Real-time Data</span>
               </div>
             </div>
-            {gainersLoading ? (
+            {dataLoading ? (
               <div className="text-slate-400">Loading top gainers...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {topGainers && topGainers.map((stock) => (
+                {topGainers.map((stock) => (
                   <StockCard
-                    key={stock.ticker}
-                    ticker={stock.ticker}
+                    key={stock.symbol}
+                    symbol={stock.symbol}
                     name={stock.name}
                     price={stock.price}
                     change={stock.change}
-                    changePercent={stock.change_percent}
+                    changePercent={stock.changePercent}
                     trendingIcon={TrendingUp}
                     trendingColor="text-emerald-400"
                   />
@@ -70,18 +73,18 @@ const BiggestMovers = () => {
                 <span>Real-time Data</span>
               </div>
             </div>
-            {losersLoading ? (
+            {dataLoading ? (
               <div className="text-slate-400">Loading top losers...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {topLosers && topLosers.map((stock) => (
+                {topLosers.map((stock) => (
                   <StockCard
-                    key={stock.ticker}
-                    ticker={stock.ticker}
+                    key={stock.symbol}
+                    symbol={stock.symbol}
                     name={stock.name}
                     price={stock.price}
                     change={stock.change}
-                    changePercent={stock.change_percent}
+                    changePercent={stock.changePercent}
                     trendingIcon={TrendingDown}
                     trendingColor="text-red-400"
                   />

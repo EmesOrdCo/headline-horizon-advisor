@@ -1,10 +1,11 @@
+
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Clock, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Zap, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import Footer from "@/components/Footer";
 
@@ -97,10 +98,9 @@ const Dashboard = () => {
                       symbol={newsItem.symbol}
                       title={newsItem.title}
                       description={newsItem.description}
-                      confidence={newsItem.confidence}
-                      sentiment={newsItem.sentiment}
+                      confidence={newsItem.ai_confidence}
+                      sentiment={newsItem.ai_sentiment}
                       category={newsItem.category}
-                      isHistorical={newsItem.is_historical}
                       sourceLinks={newsItem.source_links}
                       stockPrice={stockPrice}
                     />

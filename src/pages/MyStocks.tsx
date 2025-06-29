@@ -1,3 +1,4 @@
+
 import DashboardNav from "@/components/DashboardNav";
 import StockCard from "@/components/StockCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,9 +14,9 @@ import Footer from "@/components/Footer";
 const MyStocks = () => {
   const { user } = useAuth();
 
-  const { data: stocks, isLoading: stocksLoading, refetch: refetchStocks } = useQuery(
-    ['userStocks', user?.id],
-    async () => {
+  const { data: stocks, isLoading: stocksLoading, refetch: refetchStocks } = useQuery({
+    queryKey: ['userStocks', user?.id],
+    queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('user_stocks')
@@ -28,13 +29,11 @@ const MyStocks = () => {
       }
       return data;
     },
-    {
-      enabled: !!user?.id,
-    }
-  );
+    enabled: !!user?.id,
+  });
 
   const stockSymbols = stocks?.map(stock => stock.symbol) || [];
-  const { stockPrices, isLoading: pricesLoading } = useUserStockPrices(stockSymbols);
+  const { data: stockPrices, isLoading: pricesLoading } = useUserStockPrices(stockSymbols);
 
   const handleAddStock = async () => {
     const symbol = prompt("Enter the stock symbol to add:");
@@ -57,24 +56,23 @@ const MyStocks = () => {
     }
   };
 
-  const handleDeleteStock = async (symbol: string) => {
-    if (window.confirm(`Are you sure you want to remove ${symbol} from your watchlist?`)) {
+  const handleRemoveStock = async (stockId: string) => {
+    if (window.confirm("Are you sure you want to remove this stock from your watchlist?")) {
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('user_stocks')
           .delete()
-          .eq('user_id', user?.id)
-          .eq('symbol', symbol);
+          .eq('id', stockId);
 
         if (error) {
-          console.error("Error deleting stock:", error);
-          alert("Failed to delete stock. Please try again.");
+          console.error("Error removing stock:", error);
+          alert("Failed to remove stock. Please try again.");
         } else {
           refetchStocks();
         }
       } catch (error) {
-        console.error("Error deleting stock:", error);
-        alert("Failed to delete stock. Please try again.");
+        console.error("Error removing stock:", error);
+        alert("Failed to remove stock. Please try again.");
       }
     }
   };
@@ -106,12 +104,10 @@ const MyStocks = () => {
                 const stockPrice = stockPrices?.find(price => price.symbol === stock.symbol);
                 return (
                   <StockCard
-                    key={stock.symbol}
-                    symbol={stock.symbol}
-                    price={stockPrice?.price}
-                    change={stockPrice?.change}
-                    changePercent={stockPrice?.changePercent}
-                    onDelete={() => handleDeleteStock(stock.symbol)}
+                    key={stock.id}
+                    stock={stock}
+                    stockPrice={stockPrice}
+                    onRemove={handleRemoveStock}
                   />
                 );
               })}
