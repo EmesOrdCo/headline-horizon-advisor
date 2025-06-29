@@ -155,21 +155,8 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         )}
       </div>
       
-      {/* Enhanced clickable title */}
-      {parsedSourceLinks.length > 0 ? (
-        <a
-          href={parsedSourceLinks[0].url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block group mb-3"
-        >
-          <h3 className="text-xl font-bold text-white leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-4">
-            {title}
-          </h3>
-        </a>
-      ) : (
-        <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
-      )}
+      {/* Non-clickable main title */}
+      <h3 className="text-xl font-bold text-white mb-3 leading-tight">{title}</h3>
       
       {description && (
         <p className="text-slate-300 mb-4 leading-relaxed">{description}</p>
@@ -246,7 +233,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         </>
       )}
 
-      {/* Source Articles Section - Display as individual cards */}
+      {/* Source Articles Section - Make individual article titles clickable */}
       {parsedSourceLinks.length > 0 && (
         <div className="mt-4 pt-4 border-t border-slate-700">
           <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
@@ -269,9 +256,16 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex-1 min-w-0">
-                      <h5 className="text-white font-medium leading-tight mb-2">
-                        {link.title}
-                      </h5>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group mb-2"
+                      >
+                        <h5 className="text-white font-medium leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-2">
+                          {link.title}
+                        </h5>
+                      </a>
                       <p className="text-xs text-slate-400 mb-2">
                         {formatPublishTime(link.published_at)}
                       </p>
