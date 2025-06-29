@@ -79,7 +79,7 @@ const MyStocks = () => {
       // Get user-specific articles from Marketaux analysis
       const { data: userArticles, error: userError } = await supabase
         .from('user_stock_articles')
-        .select('*')
+        .select('id, symbol, title, description, url, published_at, ai_sentiment, ai_confidence, ai_reasoning, source_links')
         .eq('user_id', user?.id)
         .in('symbol', symbols)
         .order('published_at', { ascending: false });
