@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +28,7 @@ interface NewsArticle {
   ai_confidence: number;
   ai_reasoning: string;
   source_links: string;
+  category?: string;
 }
 
 const MyStocks = () => {
@@ -86,9 +86,18 @@ const MyStocks = () => {
 
       if (userError) throw userError;
 
-      // Convert user articles to match the news_articles structure
-      const formattedArticles = (userArticles || []).map(article => ({
-        ...article,
+      // Transform the data to match NewsArticle interface
+      const formattedArticles: NewsArticle[] = (userArticles || []).map(article => ({
+        id: article.id,
+        symbol: article.symbol,
+        title: article.title || '',
+        description: article.description || '',
+        url: article.url || '',
+        published_at: article.published_at || '',
+        ai_sentiment: article.ai_sentiment || 'Neutral',
+        ai_confidence: article.ai_confidence || 50,
+        ai_reasoning: article.ai_reasoning || '',
+        source_links: article.source_links || '[]',
         category: 'Marketaux Analysis'
       }));
 
