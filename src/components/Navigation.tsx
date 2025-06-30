@@ -18,7 +18,6 @@ const Navigation = () => {
       <div className="hidden md:flex items-center gap-8">
         <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
         <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
-        <a href="#pricing" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Pricing</a>
         {user ? (
           <Link to="/dashboard">
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">

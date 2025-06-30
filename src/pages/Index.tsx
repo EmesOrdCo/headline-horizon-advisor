@@ -15,7 +15,7 @@ const Index = () => {
       <Navigation />
       <Hero />
       <Features />
-      <section className="py-20 px-4">
+      <section id="how-it-works" className="py-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-16">Powered by Advanced AI</h2>
           <p className="text-xl text-gray-600 dark:text-slate-300 max-w-3xl mx-auto mb-16">
