@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
@@ -5,21 +6,36 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 
-const MoverCard = ({ stock, isGainer }: { stock: any, isGainer: boolean }) => {
+const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, rank: number }) => {
   const [showHeadlines, setShowHeadlines] = useState(false);
 
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return <Crown className="w-4 h-4 text-yellow-400" />;
+    return <span className="w-4 h-4 text-center text-xs font-bold text-slate-400">#{rank}</span>;
+  };
+
+  const getRankColor = (rank: number) => {
+    if (rank === 1) return "border-yellow-400/50 bg-yellow-400/5";
+    if (rank === 2) return "border-slate-300/50 bg-slate-300/5";
+    if (rank === 3) return "border-amber-600/50 bg-amber-600/5";
+    return "border-slate-700";
+  };
+
   return (
-    <Card className="bg-slate-800/50 backdrop-blur border-slate-700 hover:border-emerald-500/30 transition-all">
+    <Card className={`bg-slate-800/50 backdrop-blur hover:border-emerald-500/30 transition-all ${getRankColor(rank)}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Badge className={`${isGainer ? 'bg-emerald-500' : 'bg-red-500'} text-white`}>
-              {stock.symbol}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {getRankIcon(rank)}
+              <Badge className={`${isGainer ? 'bg-emerald-500' : 'bg-red-500'} text-white`}>
+                {stock.symbol}
+              </Badge>
+            </div>
             <div>
               <h3 className="text-white font-semibold">{stock.name}</h3>
               <p className="text-slate-400 text-sm">Vol: {stock.volume}</p>
@@ -114,12 +130,12 @@ const BiggestMovers = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Page Header - Added more padding top for better spacing */}
+        {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Biggest Movers</h1>
-              <p className="text-slate-400">Stocks with the largest price movements today</p>
+              <p className="text-slate-400">Top 6 stocks with the largest price movements today</p>
             </div>
             <Button
               onClick={() => refetch()}
@@ -145,8 +161,8 @@ const BiggestMovers = () => {
 
         {isLoading && (
           <div className="text-center py-12">
-            <div className="text-white text-lg mb-2">Analyzing market data...</div>
-            <div className="text-slate-400 text-sm">Fetching stock prices and news analysis</div>
+            <div className="text-white text-lg mb-2">Analyzing comprehensive market data...</div>
+            <div className="text-slate-400 text-sm">Processing stock prices using Quickselect algorithm</div>
           </div>
         )}
 
@@ -164,15 +180,15 @@ const BiggestMovers = () => {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-6 h-6 text-emerald-400" />
-                  <h2 className="text-2xl font-bold text-white">Top Gainers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 6 Gainers</h2>
                   <Badge className="bg-emerald-500 text-white">
-                    {moversData.gainers.length} stocks
+                    Ranked by % gain
                   </Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {moversData.gainers.map((stock, index) => (
-                    <MoverCard key={stock.symbol} stock={stock} isGainer={true} />
+                    <MoverCard key={stock.symbol} stock={stock} isGainer={true} rank={index + 1} />
                   ))}
                 </div>
               </div>
@@ -183,15 +199,15 @@ const BiggestMovers = () => {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingDown className="w-6 h-6 text-red-400" />
-                  <h2 className="text-2xl font-bold text-white">Top Losers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 6 Losers</h2>
                   <Badge className="bg-red-500 text-white">
-                    {moversData.losers.length} stocks
+                    Ranked by % loss
                   </Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {moversData.losers.map((stock, index) => (
-                    <MoverCard key={stock.symbol} stock={stock} isGainer={false} />
+                    <MoverCard key={stock.symbol} stock={stock} isGainer={false} rank={index + 1} />
                   ))}
                 </div>
               </div>
