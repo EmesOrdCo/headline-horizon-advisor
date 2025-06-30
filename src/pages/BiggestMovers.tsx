@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown, Globe } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 
@@ -35,11 +35,6 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
               <Badge className={`${isGainer ? 'bg-emerald-500' : 'bg-red-500'} text-white`}>
                 {stock.symbol}
               </Badge>
-              {stock.exchange && (
-                <Badge variant="outline" className="text-xs text-slate-400 border-slate-600">
-                  {stock.exchange}
-                </Badge>
-              )}
             </div>
             <div>
               <h3 className="text-white font-semibold">{stock.name}</h3>
@@ -139,11 +134,8 @@ const BiggestMovers = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Globe className="w-8 h-8 text-emerald-400" />
-                <h1 className="text-4xl font-bold text-white">Global Biggest Movers</h1>
-              </div>
-              <p className="text-slate-400">Top 6 stocks with the largest price movements across all global exchanges</p>
+              <h1 className="text-4xl font-bold text-white mb-2">Biggest Movers</h1>
+              <p className="text-slate-400">Top 6 stocks with the largest price movements today</p>
             </div>
             <Button
               onClick={() => refetch()}
@@ -157,18 +149,8 @@ const BiggestMovers = () => {
           
           <div className="flex items-center gap-2 mt-3">
             <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
-              GLOBAL MARKETS
+              LIVE DATA
             </Badge>
-            {moversData?.totalStocksAnalyzed && (
-              <Badge variant="outline" className="text-slate-400 border-slate-600">
-                {moversData.totalStocksAnalyzed} stocks analyzed
-              </Badge>
-            )}
-            {moversData?.exchangesCovered && (
-              <Badge variant="outline" className="text-slate-400 border-slate-600">
-                {moversData.exchangesCovered} exchanges
-              </Badge>
-            )}
             {moversData?.lastUpdated && (
               <span className="text-slate-500 text-sm">
                 Last updated: {new Date(moversData.lastUpdated).toLocaleTimeString()}
@@ -179,14 +161,14 @@ const BiggestMovers = () => {
 
         {isLoading && (
           <div className="text-center py-12">
-            <div className="text-white text-lg mb-2">Analyzing comprehensive global market data...</div>
-            <div className="text-slate-400 text-sm">Processing stocks from exchanges worldwide using advanced algorithms</div>
+            <div className="text-white text-lg mb-2">Analyzing comprehensive market data...</div>
+            <div className="text-slate-400 text-sm">Processing stock prices using Quickselect algorithm</div>
           </div>
         )}
 
         {error && (
           <div className="text-center py-12">
-            <div className="text-red-400 text-lg mb-2">Error loading global market data</div>
+            <div className="text-red-400 text-lg mb-2">Error loading data</div>
             <div className="text-slate-400 text-sm">{error.message}</div>
           </div>
         )}
@@ -198,7 +180,7 @@ const BiggestMovers = () => {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-6 h-6 text-emerald-400" />
-                  <h2 className="text-2xl font-bold text-white">Top 6 Global Gainers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 6 Gainers</h2>
                   <Badge className="bg-emerald-500 text-white">
                     Ranked by % gain
                   </Badge>
@@ -217,7 +199,7 @@ const BiggestMovers = () => {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingDown className="w-6 h-6 text-red-400" />
-                  <h2 className="text-2xl font-bold text-white">Top 6 Global Losers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 6 Losers</h2>
                   <Badge className="bg-red-500 text-white">
                     Ranked by % loss
                   </Badge>
