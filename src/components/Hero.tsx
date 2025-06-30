@@ -33,28 +33,13 @@ const Hero = () => {
                 </Button>
               </Link>
             ) : (
-              <>
-                <Link to="/onboarding/email">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 text-lg">
-                    Start Free Trial →
-                  </Button>
-                </Link>
-                <Link to="/auth">
-                  <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800 px-8 py-3 text-lg">
-                    Log In
-                  </Button>
-                </Link>
-              </>
+              <Link to="/onboarding/email">
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 text-lg">
+                  Start Free Trial →
+                </Button>
+              </Link>
             )}
           </div>
-          {!user && (
-            <div className="flex items-center gap-2 text-slate-400">
-              <div className="w-4 h-4 border border-slate-400 rounded-sm flex items-center justify-center">
-                <div className="w-2 h-2 bg-slate-400 rounded-sm"></div>
-              </div>
-              <span>Includes 7-day free trial. No credit card required.</span>
-            </div>
-          )}
         </div>
         
         <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6 hover:border-emerald-500/30 transition-all">

@@ -175,7 +175,6 @@ const DetailedAnalysis = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 text-xs">Impact Weight:</span>
                         <ConfidenceDots confidence={headline.weight} />
-                        <span className="text-slate-400 text-xs">({headline.weight}%)</span>
                       </div>
                     </div>
                   </div>
@@ -227,10 +226,7 @@ const DetailedAnalysis = () => {
                       <div className="mb-4">
                         <div className="flex justify-between items-center text-xs mb-2">
                           <span className="text-slate-400">Article Impact Weight</span>
-                          <div className="flex items-center gap-2">
-                            <ConfidenceDots confidence={weight} />
-                            <span className="text-slate-400">({weight}%)</span>
-                          </div>
+                          <ConfidenceDots confidence={weight} />
                         </div>
                       </div>
                       
