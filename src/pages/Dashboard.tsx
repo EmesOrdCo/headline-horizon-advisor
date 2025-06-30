@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
+import Footer from "@/components/Footer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
@@ -439,6 +440,8 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
