@@ -157,14 +157,14 @@ const BiggestMovers = () => {
         </div>
 
         {isLoading && (
-          <div className="text-center py-12">
+          <div className="text-center h-screen flex flex-col items-center justify-center">
             <div className="text-white text-lg mb-2">Analyzing comprehensive market data...</div>
             <div className="text-slate-400 text-sm">Processing stock prices using Quickselect algorithm</div>
           </div>
         )}
 
         {error && (
-          <div className="text-center py-12">
+          <div className="text-center h-screen flex flex-col items-center justify-center">
             <div className="text-red-400 text-lg mb-2">Error loading data</div>
             <div className="text-slate-400 text-sm">{error.message}</div>
           </div>
