@@ -77,6 +77,66 @@ const DetailedAnalysis = () => {
     return 'Neutral';
   };
 
+  // Generate detailed AI analysis for each article
+  const generateDetailedAnalysis = (article: any, sentiment: string, stockPrice: number, changePercent: number) => {
+    const title = article.title;
+    const summary = article.summary || '';
+    const symbol = stockData.symbol;
+    
+    // Create context-aware analysis based on article content and stock performance
+    const isPositive = sentiment === 'Bullish';
+    const isNegative = sentiment === 'Bearish';
+    const currentPrice = stockPrice;
+    const priceChange = changePercent;
+    
+    // Analyze key elements from the title and summary
+    const hasEarnings = title.toLowerCase().includes('earnings') || summary.toLowerCase().includes('earnings');
+    const hasUpgrade = title.toLowerCase().includes('upgrade') || title.toLowerCase().includes('raised');
+    const hasDowngrade = title.toLowerCase().includes('downgrade') || title.toLowerCase().includes('lowered');
+    const hasRevenue = title.toLowerCase().includes('revenue') || summary.toLowerCase().includes('revenue');
+    const hasGuidance = title.toLowerCase().includes('guidance') || summary.toLowerCase().includes('outlook');
+    const hasPartnership = title.toLowerCase().includes('partnership') || title.toLowerCase().includes('deal');
+    const hasRegulation = title.toLowerCase().includes('regulation') || title.toLowerCase().includes('regulatory');
+    
+    // Generate specific analysis based on content
+    if (hasUpgrade && isPositive) {
+      return `Analyst upgrades typically signal strong institutional confidence in ${symbol}'s fundamentals. The upgrade suggests improved earnings outlook, potentially driving institutional buying pressure. With current momentum at ${priceChange.toFixed(1)}%, this catalyst could sustain upward price action as more investors recognize the revised valuation targets and growth prospects.`;
+    }
+    
+    if (hasEarnings && isPositive) {
+      return `Strong earnings performance demonstrates ${symbol}'s operational efficiency and market positioning. Beating expectations often triggers algorithmic buying and analyst revisions. The ${priceChange.toFixed(1)}% move reflects initial investor optimism, but sustained earnings growth could drive further upside as quarterly momentum builds investor confidence in management execution.`;
+    }
+    
+    if (hasRevenue && isPositive) {
+      return `Revenue growth indicates expanding market share and effective business strategy execution for ${symbol}. Top-line growth often translates to improved margins and cash flow generation. The current ${priceChange.toFixed(1)}% appreciation suggests investors are pricing in sustainable revenue trends, potentially leading to multiple expansion and continued price appreciation.`;
+    }
+    
+    if (hasPartnership && isPositive) {
+      return `Strategic partnerships typically unlock new revenue streams and market opportunities for ${symbol}. The collaboration suggests management's ability to create value through external relationships. With the stock up ${priceChange.toFixed(1)}%, investors are recognizing the deal's potential to accelerate growth and competitive positioning in key markets.`;
+    }
+    
+    if (hasDowngrade && isNegative) {
+      return `Analyst downgrades often reflect deteriorating fundamentals or sector headwinds affecting ${symbol}. The revision suggests reduced earnings expectations and potential multiple compression. The ${Math.abs(priceChange).toFixed(1)}% decline indicates investor concern about revised price targets, with continued selling pressure likely until sentiment stabilizes or operational improvements emerge.`;
+    }
+    
+    if (hasRegulation && isNegative) {
+      return `Regulatory challenges create uncertainty around ${symbol}'s operating environment and growth prospects. Compliance costs and operational restrictions could pressure margins and limit expansion opportunities. The ${Math.abs(priceChange).toFixed(1)}% drop reflects investor concern about regulatory overhang, potentially persisting until clarity emerges on implementation timelines and business impact.`;
+    }
+    
+    if (hasGuidance && isNegative) {
+      return `Lowered guidance signals management's reduced confidence in near-term performance for ${symbol}. Forward-looking weakness often indicates market headwinds or operational challenges. The ${Math.abs(priceChange).toFixed(1)}% decline suggests investors are repricing expectations downward, with continued pressure likely until management demonstrates improved execution or market conditions stabilize.`;
+    }
+    
+    // Default analysis based on sentiment and price action
+    if (isPositive) {
+      return `This development appears to strengthen ${symbol}'s market position and investor sentiment. The news suggests positive operational momentum or strategic advantages that could drive sustained performance. With the stock gaining ${priceChange.toFixed(1)}%, investors are likely pricing in improved fundamentals and growth prospects, potentially supporting continued upward price movement.`;
+    } else if (isNegative) {
+      return `This news presents challenges for ${symbol}'s near-term outlook and investor confidence. The development suggests potential headwinds that could impact operational performance or market positioning. The ${Math.abs(priceChange).toFixed(1)}% decline reflects investor concern, with recovery dependent on management's ability to address underlying issues and restore market confidence.`;
+    } else {
+      return `This news presents mixed signals for ${symbol}'s investment outlook. While some factors suggest stability, market uncertainty persists regarding the company's direction. The ${Math.abs(priceChange).toFixed(1)}% price movement reflects investor indecision, with future performance likely dependent on management execution and broader market conditions providing clearer directional catalysts.`;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -241,7 +301,7 @@ const DetailedAnalysis = () => {
                           <span className="text-cyan-400 font-medium text-xs">AI Impact Analysis</span>
                         </div>
                         <p className="text-slate-300 text-xs leading-relaxed">
-                          {stockData.overallImpact || `Analysis of "${article.title}" shows ${articleSentiment.toLowerCase()} indicators for ${stockData.symbol}. The article's content and timing suggest potential ${articleSentiment === 'Bullish' ? 'positive' : articleSentiment === 'Bearish' ? 'negative' : 'neutral'} impact on stock performance based on market sentiment analysis and keyword evaluation.`}
+                          {generateDetailedAnalysis(article, articleSentiment, stockData.price, stockData.changePercent)}
                         </p>
                       </div>
                     </div>
