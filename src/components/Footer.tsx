@@ -1,4 +1,6 @@
 
+import DisclaimerModal from "./DisclaimerModal";
+
 const Footer = () => {
   return (
     <footer className="bg-slate-900 py-12 px-6 border-t border-slate-800">
@@ -14,6 +16,7 @@ const Footer = () => {
           <a href="#" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</a>
           <a href="#" className="text-slate-400 hover:text-white transition-colors">Terms of Service</a>
           <a href="#" className="text-slate-400 hover:text-white transition-colors">Contact</a>
+          <DisclaimerModal />
         </div>
         
         <div className="text-center text-slate-500">
