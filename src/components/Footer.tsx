@@ -1,6 +1,7 @@
 
 import DisclaimerModal from "./DisclaimerModal";
 import PrivacyPolicyModal from "./PrivacyPolicyModal";
+import ContactModal from "./ContactModal";
 
 const Footer = () => {
   return (
@@ -16,7 +17,7 @@ const Footer = () => {
         <div className="flex justify-center gap-8 mb-8">
           <PrivacyPolicyModal />
           <a href="#" className="text-slate-400 hover:text-white transition-colors">Terms of Service</a>
-          <a href="#" className="text-slate-400 hover:text-white transition-colors">Contact</a>
+          <ContactModal />
           <DisclaimerModal />
         </div>
         
