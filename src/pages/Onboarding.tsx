@@ -8,7 +8,7 @@ import OnboardingStocks from "./onboarding/OnboardingStocks";
 import OnboardingLoading from "./onboarding/OnboardingLoading";
 
 const Onboarding = () => {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (

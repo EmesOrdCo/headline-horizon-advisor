@@ -56,26 +56,35 @@ const OnboardingEmail = () => {
     }
 
     setLoading(true);
+    console.log('Starting signup process for email:', email);
+    
     try {
-      const { error } = await signUp(email, password, "");
+      const { error } = await signUp(email, password, ""); // Empty string for fullName since we'll collect it later
       
       if (error) {
+        console.error('Signup error:', error);
         toast({
           title: "Sign up failed",
           description: error.message,
           variant: "destructive",
         });
       } else {
+        console.log('Signup successful, sending confirmation email');
         // Send confirmation email
         await sendConfirmationEmail(email);
         
         toast({
           title: "Account created successfully",
-          description: "Please check your email to confirm your account, then complete your profile setup.",
+          description: "Please check your email to confirm your account before proceeding.",
         });
-        navigate('/onboarding/details');
+        
+        // Wait a moment for the auth state to update, then navigate
+        setTimeout(() => {
+          navigate('/onboarding/details');
+        }, 1000);
       }
     } catch (error) {
+      console.error('Signup catch error:', error);
       toast({
         title: "An error occurred",
         description: "Please try again later.",
@@ -104,7 +113,7 @@ const OnboardingEmail = () => {
         
         <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">StockPredict AI</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">MarketSensorAI</div>
             <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Create your account</CardTitle>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
               Join thousands of investors making smarter decisions

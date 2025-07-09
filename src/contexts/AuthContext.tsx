@@ -28,9 +28,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -39,16 +42,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
+    console.log('SignUp function called for:', email);
+    const redirectUrl = `${window.location.origin}/onboarding/details`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -61,19 +69,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     
+    if (error) {
+      console.error('SignUp error:', error);
+    } else {
+      console.log('SignUp successful');
+    }
+    
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('SignIn function called for:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     
+    if (error) {
+      console.error('SignIn error:', error);
+    } else {
+      console.log('SignIn successful');
+    }
+    
     return { error };
   };
 
   const signOut = async () => {
+    console.log('SignOut function called');
     await supabase.auth.signOut();
   };
 
