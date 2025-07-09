@@ -18,7 +18,7 @@ const Hero = () => {
           </h1>
           <p className="text-xl text-slate-300 mb-6 leading-relaxed">
             We believe smart investing should be powered by AI. That's why{" "}
-            <span className="text-emerald-400 font-semibold">StockPredict AI</span> takes the guesswork out of stock picks by keeping you 
+            <span className="text-emerald-400 font-semibold">MarketPulseAI</span> takes the guesswork out of stock picks by keeping you 
             informed with real-time analysis and predictions.
           </p>
           <p className="text-lg text-slate-400 mb-8">

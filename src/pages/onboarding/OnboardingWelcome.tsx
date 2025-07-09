@@ -52,7 +52,7 @@ const OnboardingWelcome = () => {
               <div className="text-6xl">🎉</div>
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                  Welcome to StockPredict AI
+                  Welcome to MarketPulseAI
                 </h1>
                 {userName && (
                   <h2 className="text-xl text-emerald-600 dark:text-emerald-400 font-semibold">

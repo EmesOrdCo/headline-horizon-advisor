@@ -10,7 +10,7 @@ const Navigation = () => {
   return (
     <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">StockPredict AI</div>
+        <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">MarketPulseAI</div>
         <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
           BETA
         </Badge>
