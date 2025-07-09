@@ -54,7 +54,7 @@ const DashboardNav = () => {
           {/* Left Side - Logo and Navigation Menu */}
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-3">
-              <div className="text-xl font-bold text-emerald-400">MarketPulseAI</div>
+              <div className="text-xl font-bold text-emerald-400">MarketSensorAI</div>
               <Badge className="bg-emerald-500 text-white text-xs">LIVE</Badge>
             </Link>
             

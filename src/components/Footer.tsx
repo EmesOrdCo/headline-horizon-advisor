@@ -9,7 +9,7 @@ const Footer = () => {
     <footer className="bg-slate-900 py-12 px-6 border-t border-slate-800">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
-          <div className="text-2xl font-bold text-emerald-400 mb-4">MarketPulseAI</div>
+          <div className="text-2xl font-bold text-emerald-400 mb-4">MarketSensorAI</div>
           <p className="text-slate-400 max-w-2xl mx-auto">
             Empowering investors with AI-driven market intelligence and real-time predictions.
           </p>
@@ -23,7 +23,7 @@ const Footer = () => {
         </div>
         
         <div className="text-center text-slate-500">
-          © 2024 StockPredict AI. All rights reserved.
+          © 2024 MarketSensorAI. All rights reserved.
         </div>
       </div>
     </footer>
