@@ -39,60 +39,11 @@ const Hero = () => {
               </Link>
             )}
           </div>
-        </div>
-        
-        <div className="space-y-4">
-          {/* Header Options for User to Compare */}
-          <div className="space-y-4 mb-6">
-            <h3 className="text-white font-semibold text-lg mb-4">Header Style Options:</h3>
-            
-            {/* Option 1 - Subtle Gray Banner */}
-            <div className="text-center">
-              <div className="bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 inline-block">
-                <span className="text-slate-300 text-sm font-medium">Live Demo Preview - Sample AAPL Analysis</span>
-              </div>
-            </div>
 
-            {/* Option 2 - Gradient Accent */}
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-blue-500/20 to-emerald-500/20 border border-blue-500/30 rounded-lg px-4 py-2 inline-block">
-                <span className="text-blue-300 text-sm font-medium">Example Analysis Below ↓</span>
-              </div>
-            </div>
-
-            {/* Option 3 - Clean Minimalist */}
-            <div className="text-center">
-              <div className="border-b-2 border-emerald-500/50 pb-1 inline-block">
-                <span className="text-slate-300 text-sm font-medium">Demo: Real AI Analysis Format</span>
-              </div>
-            </div>
-
-            {/* Option 4 - Tech-Focused */}
-            <div className="text-center">
-              <div className="bg-slate-800 border border-emerald-500/30 rounded-md px-3 py-1 inline-block">
-                <span className="text-emerald-400 text-sm font-medium">AI Analysis Preview • Sample Data</span>
-              </div>
-            </div>
-
-            {/* Option 5 - Context-Rich */}
-            <div className="text-center">
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2 inline-block">
-                <span className="text-blue-300 text-sm font-medium">See How Our AI Works - AAPL Demo Analysis</span>
-              </div>
-            </div>
-
-            {/* Option 6 - Badge Alternative */}
-            <div className="text-center">
-              <div className="bg-slate-600/30 border border-slate-500 rounded-full px-3 py-1 inline-block">
-                <span className="text-slate-300 text-xs font-bold tracking-wide">PREVIEW MODE</span>
-              </div>
-            </div>
-
-            {/* Current Style (for comparison) */}
-            <div className="text-center">
-              <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 px-4 py-2 text-sm font-medium">
-                📊 Example Analysis - Demo Data (CURRENT)
-              </Badge>
+          {/* Demo header moved to left side */}
+          <div className="mb-6">
+            <div className="bg-gradient-to-r from-blue-500/20 to-emerald-500/20 border border-blue-500/30 rounded-lg px-4 py-2 inline-block">
+              <span className="text-blue-300 text-sm font-medium">Example Analysis Below ↓</span>
             </div>
           </div>
 
@@ -212,6 +163,10 @@ const Hero = () => {
               </div>
             </div>
           </div>
+        </div>
+        
+        <div className="space-y-4">
+          {/* Right side content can be added here if needed */}
         </div>
       </div>
     </section>
