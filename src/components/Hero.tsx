@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -40,13 +41,10 @@ const Hero = () => {
               </Link>
             )}
           </div>
-
-          {/* Separator with spacing */}
-          <div className="my-12">
-            <Separator className="bg-slate-600/50" />
-          </div>
-
-          {/* Demo header moved to left side */}
+        </div>
+        
+        <div className="space-y-4">
+          {/* Demo header moved to right side */}
           <div className="mb-6">
             <div className="bg-gradient-to-r from-blue-500/20 to-emerald-500/20 border border-blue-500/30 rounded-lg px-4 py-2 inline-block">
               <span className="text-blue-300 text-sm font-medium">Example Analysis Below ↓</span>
@@ -169,10 +167,6 @@ const Hero = () => {
               </div>
             </div>
           </div>
-        </div>
-        
-        <div className="space-y-4">
-          {/* Right side content can be added here if needed */}
         </div>
       </div>
     </section>
