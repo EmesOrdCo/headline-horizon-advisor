@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
@@ -38,6 +39,11 @@ const Hero = () => {
                 </Button>
               </Link>
             )}
+          </div>
+
+          {/* Separator with spacing */}
+          <div className="my-12">
+            <Separator className="bg-slate-600/50" />
           </div>
 
           {/* Demo header moved to left side */}
