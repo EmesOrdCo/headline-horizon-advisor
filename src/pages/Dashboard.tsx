@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
@@ -7,17 +6,18 @@ import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNews, useFetchNews, useRecentHeadlines } from "@/hooks/useNews";
+import RSSHeadlines from "@/components/RSSHeadlines";
+import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useFetchRSSNews } from "@/hooks/useRSSHeadlines";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { data: newsData, isLoading, refetch } = useNews();
-  const { data: recentHeadlines, isLoading: isLoadingHeadlines, error: headlinesError } = useRecentHeadlines();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
+  const fetchRSSNews = useFetchRSSNews();
   const [isFetching, setIsFetching] = useState(false);
   const [fetchingStatus, setFetchingStatus] = useState<string>('');
   const { toast } = useToast();
@@ -127,7 +127,12 @@ const Dashboard = () => {
     
     try {
       console.log('🔄 Starting news refresh...');
-      const result = await fetchNews();
+      
+      // Fetch both stock analysis and RSS headlines
+      const [stockResult, rssResult] = await Promise.allSettled([
+        fetchNews(),
+        fetchRSSNews()
+      ]);
       
       // Wait a moment for the database to update, then refetch
       setTimeout(async () => {
@@ -135,15 +140,19 @@ const Dashboard = () => {
         console.log('🔄 Refetched news data');
       }, 2000);
       
-      if (result.success) {
+      const successCount = 
+        (stockResult.status === 'fulfilled' && stockResult.value.success ? 1 : 0) +
+        (rssResult.status === 'fulfilled' && rssResult.value.success ? 1 : 0);
+      
+      if (successCount > 0) {
         toast({
           title: "News Updated",
-          description: result.message,
+          description: `Successfully fetched from ${successCount} source${successCount > 1 ? 's' : ''}`,
         });
       } else {
         toast({
-          title: "Partial Success",
-          description: "Some news sources may have failed. Check the results.",
+          title: "Error",
+          description: "Failed to fetch news from any source. Please try again.",
           variant: "destructive",
         });
       }
@@ -159,62 +168,6 @@ const Dashboard = () => {
       setFetchingStatus('');
     }
   };
-
-  // Format publish time to show date and time to the minute
-  const formatPublishTime = (publishedAt: string) => {
-    const date = new Date(publishedAt);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  // Generate simple summary for headlines without stock analysis
-  const generateSimpleSummary = (item: any) => {
-    const description = item.description || '';
-    const title = item.title || '';
-    
-    // Return first 120 characters of description if available
-    if (description.length > 120) {
-      return description.substring(0, 120) + '...';
-    }
-    
-    if (description) {
-      return description;
-    }
-    
-    // Fallback to a generic summary if no description
-    return 'Breaking news covering important market developments and business updates.';
-  };
-
-  // Extract source name from URL or use category as fallback
-  const getSourceName = (item: any) => {
-    if (item.url) {
-      try {
-        const domain = new URL(item.url).hostname;
-        if (domain.includes('reuters')) return 'Reuters';
-        if (domain.includes('cnbc')) return 'CNBC';
-        if (domain.includes('marketwatch')) return 'MarketWatch';
-        return domain.replace('www.', '');
-      } catch {
-        // If URL parsing fails, fall back to category
-        return item.category || 'Financial News';
-      }
-    }
-    return item.category || 'Financial News';
-  };
-
-  // Debug logging for headlines
-  console.log('📊 Headlines Debug Info:', {
-    isLoadingHeadlines,
-    headlinesError,
-    headlinesCount: recentHeadlines?.length || 0,
-    headlines: recentHeadlines?.slice(0, 3) // Show first 3 for debugging
-  });
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -258,12 +211,6 @@ const Dashboard = () => {
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
             <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
               ⚠️ Asset prices unavailable - check Finnhub API connection
-            </div>
-          )}
-
-          {headlinesError && (
-            <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
-              ⚠️ Headlines error: {headlinesError.message}
             </div>
           )}
         </div>
@@ -348,67 +295,7 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
-            <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-6 h-[600px] flex flex-col sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Headlines</h3>
-              <div className="text-xs text-gray-500 dark:text-slate-400 mb-3 flex flex-wrap gap-2">
-                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">Reuters</span>
-                <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">CNBC</span>
-                <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded">MarketWatch</span>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="space-y-4 pr-4">
-                  {isLoadingHeadlines ? (
-                    <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      Loading headlines...
-                    </div>
-                  ) : headlinesError ? (
-                    <div className="text-center text-red-600 dark:text-red-400 py-4">
-                      <p>Error loading headlines:</p>
-                      <p className="text-sm mt-2">{headlinesError.message}</p>
-                      <p className="text-sm mt-2">Click "Refresh News" to try again.</p>
-                    </div>
-                  ) : recentHeadlines && recentHeadlines.length > 0 ? (
-                    recentHeadlines.map((item, index) => (
-                      <div key={`headline-${item.id}-${index}`} className="bg-gray-50 border border-gray-200 dark:bg-slate-700/50 dark:border-slate-600 rounded-lg p-4">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <a 
-                            href={item.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-gray-900 dark:text-white text-sm font-medium line-clamp-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer flex-1"
-                          >
-                            {item.title}
-                          </a>
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-600/50 hover:bg-slate-600 px-2 py-1 rounded"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-3 flex items-center gap-2">
-                          <span>{formatPublishTime(item.published_at)}</span>
-                          <span className="text-emerald-400">•</span>
-                          <span>{getSourceName(item)}</span>
-                        </div>
-                        <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
-                          <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
-                            <span className="text-cyan-400 font-medium">Summary:</span> {generateSimpleSummary(item)}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-600 dark:text-slate-400 py-4">
-                      <p>No headlines available.</p>
-                      <p className="text-sm mt-2">Click "Refresh News" to load articles.</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
+            <RSSHeadlines />
           </div>
         </div>
       </main>
