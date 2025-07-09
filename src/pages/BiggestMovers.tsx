@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
@@ -5,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 
@@ -22,6 +23,30 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
     if (rank === 2) return "border-slate-300/50 bg-slate-300/5";
     if (rank === 3) return "border-amber-600/50 bg-amber-600/5";
     return "border-slate-700";
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment?.toLowerCase()) {
+      case 'bullish':
+        return 'text-emerald-400 bg-emerald-500/20';
+      case 'bearish':
+        return 'text-red-400 bg-red-500/20';
+      case 'neutral':
+      default:
+        return 'text-slate-400 bg-slate-500/20';
+    }
+  };
+
+  const getSentimentIcon = (sentiment: string) => {
+    switch (sentiment?.toLowerCase()) {
+      case 'bullish':
+        return <TrendingUp className="w-3 h-3" />;
+      case 'bearish':
+        return <TrendingDown className="w-3 h-3" />;
+      case 'neutral':
+      default:
+        return <Target className="w-3 h-3" />;
+    }
   };
 
   return (
@@ -55,6 +80,22 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
       </CardHeader>
       
       <CardContent className="pt-0">
+        {/* Market Sentiment Section */}
+        {stock.marketSentiment && (
+          <div className="mb-4 p-3 bg-slate-800/30 border border-slate-700/50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-slate-300 font-medium text-sm">Market Sentiment</h4>
+              <Badge className={`${getSentimentColor(stock.marketSentiment)} flex items-center gap-1 text-xs`}>
+                {getSentimentIcon(stock.marketSentiment)}
+                {stock.marketSentiment}
+              </Badge>
+            </div>
+            {stock.sentimentReasoning && (
+              <p className="text-slate-400 text-xs">{stock.sentimentReasoning}</p>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-2 mb-3">
           <Button
             variant="outline"
@@ -86,7 +127,7 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
 
         {showHeadlines && stock.headlines && stock.headlines.length > 0 && (
           <div className="space-y-2 mt-3 pt-3 border-t border-slate-700">
-            <h4 className="text-slate-300 font-medium text-sm">Related Headlines</h4>
+            <h4 className="text-slate-300 font-medium text-sm">Related Headlines ({stock.headlines.length})</h4>
             {stock.headlines.map((headline: any, index: number) => (
               <a
                 key={index}
@@ -132,7 +173,7 @@ const BiggestMovers = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Biggest Movers</h1>
-              <p className="text-slate-400">Top 6 stocks with the largest price movements today</p>
+              <p className="text-slate-400">Top 6 stocks with the largest price movements today, analyzed with AI sentiment</p>
             </div>
             <Button
               onClick={() => refetch()}
@@ -148,6 +189,9 @@ const BiggestMovers = () => {
             <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
               LIVE DATA
             </Badge>
+            <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400">
+              AI SENTIMENT
+            </Badge>
             {moversData?.lastUpdated && (
               <span className="text-slate-500 text-sm">
                 Last updated: {new Date(moversData.lastUpdated).toLocaleTimeString()}
@@ -159,7 +203,7 @@ const BiggestMovers = () => {
         {isLoading && (
           <div className="text-center h-screen flex flex-col items-center justify-center">
             <div className="text-white text-lg mb-2">Analyzing comprehensive market data...</div>
-            <div className="text-slate-400 text-sm">Processing stock prices using Quickselect algorithm</div>
+            <div className="text-slate-400 text-sm">Processing stock prices and sentiment analysis</div>
           </div>
         )}
 
@@ -219,4 +263,3 @@ const BiggestMovers = () => {
 };
 
 export default BiggestMovers;
-

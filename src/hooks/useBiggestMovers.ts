@@ -16,6 +16,8 @@ interface MoverStock {
     publishedAt: string;
   }>;
   overallImpact?: string;
+  marketSentiment?: string;
+  sentimentReasoning?: string;
 }
 
 interface BiggestMoversData {
@@ -66,11 +68,11 @@ const quickselect = (arr: MoverStock[], k: number, compareFn: (a: MoverStock, b:
 
 export const useBiggestMovers = () => {
   return useQuery({
-    queryKey: ['biggest-movers-all'],
+    queryKey: ['biggest-movers-analyzed'],
     queryFn: async (): Promise<BiggestMoversData> => {
-      console.log('Fetching comprehensive biggest movers data...');
+      console.log('Fetching analyzed biggest movers data...');
       
-      const { data, error } = await supabase.functions.invoke('get-biggest-movers-all');
+      const { data, error } = await supabase.functions.invoke('get-biggest-movers');
       
       if (error) {
         console.error('Error fetching biggest movers:', error);
@@ -82,32 +84,11 @@ export const useBiggestMovers = () => {
         throw new Error(data.error);
       }
       
-      const allStocks = data.stocks || [];
-      console.log(`Processing ${allStocks.length} stocks for biggest movers analysis`);
-      
-      // Separate gainers and losers
-      const gainers = allStocks.filter((stock: MoverStock) => stock.changePercent > 0);
-      const losers = allStocks.filter((stock: MoverStock) => stock.changePercent < 0);
-      
-      // Use Quickselect to get top 6 gainers (highest percentage gain)
-      const topGainers = quickselect(
-        gainers, 
-        6, 
-        (a, b) => b.changePercent - a.changePercent
-      );
-      
-      // Use Quickselect to get top 6 losers (lowest percentage change)
-      const topLosers = quickselect(
-        losers, 
-        6, 
-        (a, b) => a.changePercent - b.changePercent
-      );
-      
-      console.log(`Selected top ${topGainers.length} gainers and top ${topLosers.length} losers`);
+      console.log(`Processed biggest movers with ${data.gainers?.length || 0} gainers and ${data.losers?.length || 0} losers`);
       
       return {
-        gainers: topGainers,
-        losers: topLosers,
+        gainers: data.gainers || [],
+        losers: data.losers || [],
         lastUpdated: data.lastUpdated || new Date().toISOString()
       };
     },

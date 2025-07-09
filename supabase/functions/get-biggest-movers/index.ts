@@ -113,12 +113,12 @@ serve(async (req) => {
       try {
         console.log(`Fetching news for ${mover.symbol}...`);
         
-        // Fetch news from Marketaux with timeout
+        // Fetch news from Marketaux with timeout - increased limit to get more articles
         const newsController = new AbortController();
         const newsTimeout = setTimeout(() => newsController.abort(), 10000); // 10 second timeout
         
         const newsResponse = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=2`,
+          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=5`,
           { signal: newsController.signal }
         );
         
@@ -136,8 +136,12 @@ serve(async (req) => {
               ).join('\n\n---\n\n');
 
               const analysisPrompt = `
-Analyze these news articles about ${mover.symbol} and provide a JSON response:
+Analyze these news articles about ${mover.symbol} and provide comprehensive market sentiment analysis.
 
+Stock Info: ${mover.symbol} - ${mover.name}
+Current Price Change: ${mover.changePercent}% (${mover.change >= 0 ? 'gain' : 'loss'})
+
+News Articles:
 ${articlesText}
 
 Provide a JSON response with:
@@ -145,13 +149,17 @@ Provide a JSON response with:
   "headlines": [
     {
       "title": "original article title",
-      "summary": "brief 3-4 word impact summary",
-      "url": "${articles[0]?.url || '#'}",
-      "publishedAt": "time ago format"
+      "summary": "brief 4-6 word impact summary explaining relevance to stock",
+      "url": "article_url",
+      "publishedAt": "formatted_date_time"
     }
   ],
-  "overallImpact": "1-2 sentence explanation of combined effect on stock"
+  "overallImpact": "2-3 sentence comprehensive analysis of combined news effect on stock performance and market position",
+  "marketSentiment": "Bullish|Bearish|Neutral",
+  "sentimentReasoning": "1-2 sentence explanation of why this sentiment was chosen, independent of current price movement"
 }
+
+IMPORTANT: Market sentiment should be based on fundamental analysis of the news content and company prospects, NOT just whether the stock is currently up or down. A stock can be down but have bullish sentiment due to positive news, or up but have bearish sentiment due to concerning developments.
 `;
 
               const chatController = new AbortController();
@@ -168,7 +176,7 @@ Provide a JSON response with:
                   messages: [
                     {
                       role: 'system',
-                      content: 'You are a financial analyst. Provide clear, concise analysis in valid JSON format only.'
+                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements.'
                     },
                     {
                       role: 'user',
@@ -177,7 +185,7 @@ Provide a JSON response with:
                   ],
                   response_format: { type: "json_object" },
                   temperature: 0.7,
-                  max_tokens: 600
+                  max_tokens: 800
                 }),
                 signal: chatController.signal
               });
@@ -188,26 +196,65 @@ Provide a JSON response with:
                 const chatData = await chatResponse.json();
                 const analysis = JSON.parse(chatData.choices[0].message.content);
                 
-                mover.headlines = analysis.headlines || [];
+                // Format the headlines with proper date formatting
+                const formattedHeadlines = articles.map((article, index) => {
+                  const originalHeadline = analysis.headlines?.[index];
+                  const publishedDate = new Date(article.published_at);
+                  const formattedDate = publishedDate.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  }).replace(',', ' at');
+
+                  return {
+                    title: originalHeadline?.title || article.title,
+                    summary: originalHeadline?.summary || 'Market impact',
+                    url: article.url,
+                    publishedAt: formattedDate
+                  };
+                });
+                
+                mover.headlines = formattedHeadlines;
                 mover.overallImpact = analysis.overallImpact || 'Analysis unavailable';
+                mover.marketSentiment = analysis.marketSentiment || 'Neutral';
+                mover.sentimentReasoning = analysis.sentimentReasoning || 'Insufficient data for sentiment analysis';
               } else {
                 throw new Error('ChatGPT analysis failed');
               }
             } catch (analysisError) {
               console.error(`Analysis error for ${mover.symbol}:`, analysisError);
               // Fallback to basic headlines without AI analysis
-              mover.headlines = articles.slice(0, 2).map(article => ({
-                title: article.title,
-                summary: 'Market impact',
-                url: article.url,
-                publishedAt: new Date(article.published_at).toLocaleString()
-              }));
+              mover.headlines = articles.map(article => {
+                const publishedDate = new Date(article.published_at);
+                const formattedDate = publishedDate.toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                }).replace(',', ' at');
+
+                return {
+                  title: article.title,
+                  summary: 'Market impact',
+                  url: article.url,
+                  publishedAt: formattedDate
+                };
+              });
               mover.overallImpact = `Recent news about ${mover.symbol} may influence stock performance based on market sentiment.`;
+              mover.marketSentiment = 'Neutral';
+              mover.sentimentReasoning = 'Unable to determine sentiment due to analysis limitations';
             }
           } else {
             // No articles found
             mover.headlines = [];
             mover.overallImpact = `No recent news found for ${mover.symbol}. Price movement may be due to general market conditions.`;
+            mover.marketSentiment = 'Neutral';
+            mover.sentimentReasoning = 'No news available for sentiment analysis';
           }
         } else {
           throw new Error(`News API error: ${newsResponse.status}`);
@@ -221,6 +268,8 @@ Provide a JSON response with:
         // Provide fallback data
         mover.headlines = [];
         mover.overallImpact = `Unable to fetch recent news for ${mover.symbol}. Price movement may be due to general market conditions or technical factors.`;
+        mover.marketSentiment = 'Neutral';
+        mover.sentimentReasoning = 'Unable to fetch news for sentiment analysis';
       }
     }
 
@@ -250,7 +299,9 @@ Provide a JSON response with:
           changePercent: 2.48, 
           volume: '85M',
           headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.'
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
         },
         { 
           symbol: 'NVDA', 
@@ -260,7 +311,9 @@ Provide a JSON response with:
           changePercent: 2.70, 
           volume: '78M',
           headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.'
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
         }
       ],
       losers: [
@@ -272,7 +325,9 @@ Provide a JSON response with:
           changePercent: -3.33, 
           volume: '92M',
           headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.'
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
         },
         { 
           symbol: 'AMZN', 
@@ -282,7 +337,9 @@ Provide a JSON response with:
           changePercent: -2.61, 
           volume: '70M',
           headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.'
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
         }
       ],
       lastUpdated: new Date().toISOString()
