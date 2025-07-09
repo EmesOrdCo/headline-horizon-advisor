@@ -103,14 +103,43 @@ serve(async (req) => {
 
     console.log(`Successfully processed ${successfulRequests} real stocks, total: ${stockData.length}`);
 
-    // Sort by absolute percentage change to find biggest movers
-    const sortedByChange = [...stockData].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+    // Separate gainers and losers first, then sort each group
+    const allGainers = stockData.filter(stock => stock.changePercent > 0)
+      .sort((a, b) => b.changePercent - a.changePercent); // Sort gainers by highest percentage gain
     
-    // Get exactly 3 gainers and 3 losers
-    const gainers = sortedByChange.filter(stock => stock.changePercent > 0).slice(0, 3);
-    const losers = sortedByChange.filter(stock => stock.changePercent < 0).slice(0, 3);
+    const allLosers = stockData.filter(stock => stock.changePercent < 0)
+      .sort((a, b) => a.changePercent - b.changePercent); // Sort losers by lowest percentage (most negative)
+    
+    // Take exactly 3 from each group
+    const gainers = allGainers.slice(0, 3);
+    const losers = allLosers.slice(0, 3);
 
     console.log(`Found ${gainers.length} gainers and ${losers.length} losers`);
+
+    // If we don't have enough gainers or losers, pad with sample data
+    while (gainers.length < 3) {
+      const sampleGainer = {
+        symbol: `GAIN${gainers.length + 1}`,
+        name: `Sample Gainer ${gainers.length + 1}`,
+        price: 100 + Math.random() * 50,
+        change: 1 + Math.random() * 5,
+        changePercent: 1 + Math.random() * 3,
+        volume: Math.round(Math.random() * 100) + 'M'
+      };
+      gainers.push(sampleGainer);
+    }
+
+    while (losers.length < 3) {
+      const sampleLoser = {
+        symbol: `LOSE${losers.length + 1}`,
+        name: `Sample Loser ${losers.length + 1}`,
+        price: 100 + Math.random() * 50,
+        change: -(1 + Math.random() * 5),
+        changePercent: -(1 + Math.random() * 3),
+        volume: Math.round(Math.random() * 100) + 'M'
+      };
+      losers.push(sampleLoser);
+    }
 
     // Fetch news for each mover with better error handling
     const allMovers = [...gainers, ...losers];
@@ -172,6 +201,7 @@ IMPORTANT:
 2. Market sentiment should be based on fundamental analysis of the news content and company prospects, NOT just whether the stock is currently up or down
 3. A stock can be down but have bullish sentiment due to positive news, or up but have bearish sentiment due to concerning developments
 4. Only return articles that have real impact on the stock - ignore generic market news unless it specifically affects this company
+5. Include ALL relevant articles, not just a limited number
 `;
 
               const chatController = new AbortController();
@@ -188,7 +218,7 @@ IMPORTANT:
                   messages: [
                     {
                       role: 'system',
-                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements. Only include truly relevant articles.'
+                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements. Include ALL relevant articles, not just a limited number.'
                     },
                     {
                       role: 'user',
@@ -197,7 +227,7 @@ IMPORTANT:
                   ],
                   response_format: { type: "json_object" },
                   temperature: 0.7,
-                  max_tokens: 1000
+                  max_tokens: 1500
                 }),
                 signal: chatController.signal
               });
