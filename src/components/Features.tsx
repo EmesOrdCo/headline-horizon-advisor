@@ -18,13 +18,13 @@ const Features = () => {
     },
     {
       number: "04",
-      title: "Multi-timeframe Forecasts",
-      description: "Get predictions for 1 day, 1 week, 1 month, and 1 quarter with detailed confidence levels."
+      title: "Biggest Movers Dashboard",
+      description: "Track the day's top gainers and losers with AI-powered analysis explaining why stocks are moving and what it means for your portfolio."
     },
     {
       number: "05",
-      title: "Portfolio Integration",
-      description: "Seamlessly integrate predictions with your existing portfolio to make informed investment decisions."
+      title: "Personal Stock Watchlist",
+      description: "Monitor your selected stocks with personalized insights, real-time price updates, and AI-generated analysis tailored to your holdings."
     }
   ];
 
