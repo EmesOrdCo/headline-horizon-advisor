@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -28,26 +27,6 @@ const RSS_SOURCES = [
     name: 'CNBC Markets',
     url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',
     category: 'Markets'
-  },
-  {
-    name: 'Bloomberg Markets',
-    url: 'https://feeds.bloomberg.com/markets/news.rss',
-    category: 'Markets'
-  },
-  {
-    name: 'Financial Times',
-    url: 'https://www.ft.com/markets?format=rss',
-    category: 'Markets'
-  },
-  {
-    name: 'MarketScreener',
-    url: 'https://www.marketscreener.com/rss/news_us.xml',
-    category: 'Markets'
-  },
-  {
-    name: 'MarketScreener World',
-    url: 'https://www.marketscreener.com/rss/news_world.xml',
-    category: 'World Markets'
   }
 ];
 
@@ -68,6 +47,7 @@ async function parseRSSFeed(url: string, sourceName: string, category: string) {
     }
 
     const xmlText = await response.text();
+    console.log(`Received XML from ${sourceName}, length: ${xmlText.length}`);
     
     // Simple XML parsing for RSS items
     const items = [];
@@ -95,13 +75,13 @@ async function parseRSSFeed(url: string, sourceName: string, category: string) {
 
       if (title && link) {
         items.push({
-          title: title.substring(0, 500), // Limit title length
-          description: description.substring(0, 1000), // Limit description length
+          title: title.substring(0, 500),
+          description: description.substring(0, 1000),
           url: link,
           published_at: pubDate,
           source: sourceName,
           category: category,
-          symbol: 'RSS', // Mark as RSS source
+          symbol: 'GENERAL',
           ai_confidence: null,
           ai_sentiment: null,
           ai_reasoning: null,
@@ -115,7 +95,7 @@ async function parseRSSFeed(url: string, sourceName: string, category: string) {
     }
 
     console.log(`✅ Parsed ${items.length} articles from ${sourceName}`);
-    return items.slice(0, 10); // Limit to 10 most recent articles per source
+    return items.slice(0, 15);
     
   } catch (error) {
     console.error(`❌ Error parsing RSS from ${sourceName}:`, error);
@@ -130,6 +110,16 @@ serve(async (req) => {
 
   try {
     console.log('🚀 Starting RSS news fetch from multiple sources...');
+    
+    // First, delete old RSS articles (older than 24 hours) to keep the database clean
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await supabase
+      .from('news_articles')
+      .delete()
+      .eq('symbol', 'GENERAL')
+      .lt('created_at', twentyFourHoursAgo);
+
+    console.log('🧹 Cleaned up old RSS articles');
     
     // Fetch from all RSS sources in parallel
     const rssPromises = RSS_SOURCES.map(source => 
@@ -157,7 +147,7 @@ serve(async (req) => {
         .from('news_articles')
         .upsert(allArticles, { 
           onConflict: 'url',
-          ignoreDuplicates: true 
+          ignoreDuplicates: false 
         });
 
       if (error) {
@@ -165,14 +155,15 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log(`💾 Successfully stored RSS news articles in database`);
+      console.log(`💾 Successfully stored ${allArticles.length} RSS news articles in database`);
     }
 
     return new Response(JSON.stringify({
       success: true,
       message: `Successfully fetched ${allArticles.length} RSS articles from ${RSS_SOURCES.length} sources`,
       sources: RSS_SOURCES.map(s => s.name),
-      articleCount: allArticles.length
+      articleCount: allArticles.length,
+      articles: allArticles.slice(0, 5)
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -181,7 +172,8 @@ serve(async (req) => {
     console.error('❌ RSS fetch error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

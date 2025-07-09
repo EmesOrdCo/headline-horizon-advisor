@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
@@ -15,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { data: newsData, isLoading, refetch } = useNews();
-  const { data: recentHeadlines, isLoading: isLoadingHeadlines } = useRecentHeadlines();
+  const { data: recentHeadlines, isLoading: isLoadingHeadlines, error: headlinesError } = useRecentHeadlines();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
   const [isFetching, setIsFetching] = useState(false);
@@ -126,8 +125,14 @@ const Dashboard = () => {
     setFetchingStatus('Fetching news from all sources...');
     
     try {
+      console.log('🔄 Starting news refresh...');
       const result = await fetchNews();
-      await refetch();
+      
+      // Wait a moment for the database to update, then refetch
+      setTimeout(async () => {
+        await refetch();
+        console.log('🔄 Refetched news data');
+      }, 2000);
       
       if (result.success) {
         toast({
@@ -142,6 +147,7 @@ const Dashboard = () => {
         });
       }
     } catch (error) {
+      console.error('❌ Error refreshing news:', error);
       toast({
         title: "Error",
         description: "Failed to fetch news. Please try again.",
@@ -184,6 +190,14 @@ const Dashboard = () => {
     return 'Breaking news covering important market developments and business updates.';
   };
 
+  // Debug logging for headlines
+  console.log('📊 Headlines Debug Info:', {
+    isLoadingHeadlines,
+    headlinesError,
+    headlinesCount: recentHeadlines?.length || 0,
+    headlines: recentHeadlines?.slice(0, 3) // Show first 3 for debugging
+  });
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -209,7 +223,7 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, MarketWatch, Bloomberg, and Financial Times</p>
+          <p className="text-gray-600 dark:text-slate-400">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, and MarketWatch</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
@@ -226,6 +240,12 @@ const Dashboard = () => {
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
             <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
               ⚠️ Asset prices unavailable - check Finnhub API connection
+            </div>
+          )}
+
+          {headlinesError && (
+            <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
+              ⚠️ Headlines error: {headlinesError.message}
             </div>
           )}
         </div>
@@ -316,14 +336,18 @@ const Dashboard = () => {
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">Reuters</span>
                 <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">CNBC</span>
                 <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded">MarketWatch</span>
-                <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 px-2 py-1 rounded">Bloomberg</span>
-                <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded">Financial Times</span>
               </div>
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
                   {isLoadingHeadlines ? (
                     <div className="text-center text-gray-600 dark:text-slate-400 py-4">
                       Loading headlines...
+                    </div>
+                  ) : headlinesError ? (
+                    <div className="text-center text-red-600 dark:text-red-400 py-4">
+                      <p>Error loading headlines:</p>
+                      <p className="text-sm mt-2">{headlinesError.message}</p>
+                      <p className="text-sm mt-2">Click "Refresh News" to try again.</p>
                     </div>
                   ) : recentHeadlines && recentHeadlines.length > 0 ? (
                     recentHeadlines.map((item, index) => (
@@ -346,8 +370,10 @@ const Dashboard = () => {
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-3">
-                          {formatPublishTime(item.published_at)}
+                        <div className="text-xs text-gray-600 dark:text-slate-400 mb-3 flex items-center gap-2">
+                          <span>{formatPublishTime(item.published_at)}</span>
+                          <span className="text-emerald-400">•</span>
+                          <span>{item.source}</span>
                         </div>
                         <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
                           <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
