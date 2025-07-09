@@ -173,7 +173,7 @@ const BiggestMovers = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Biggest Movers</h1>
-              <p className="text-slate-400">Top 6 stocks with the largest price movements today, analyzed with AI sentiment</p>
+              <p className="text-slate-400">Top 3 biggest gainers and losers with the largest price movements today, analyzed with AI sentiment</p>
             </div>
             <Button
               onClick={() => refetch()}
@@ -221,7 +221,7 @@ const BiggestMovers = () => {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-6 h-6 text-emerald-400" />
-                  <h2 className="text-2xl font-bold text-white">Top 6 Gainers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 3 Gainers</h2>
                   <Badge className="bg-emerald-500 text-white">
                     Ranked by % gain
                   </Badge>
@@ -240,7 +240,7 @@ const BiggestMovers = () => {
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingDown className="w-6 h-6 text-red-400" />
-                  <h2 className="text-2xl font-bold text-white">Top 6 Losers</h2>
+                  <h2 className="text-2xl font-bold text-white">Top 3 Losers</h2>
                   <Badge className="bg-red-500 text-white">
                     Ranked by % loss
                   </Badge>

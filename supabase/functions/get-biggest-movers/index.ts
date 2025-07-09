@@ -30,7 +30,11 @@ serve(async (req) => {
       { symbol: 'NVDA', name: 'NVIDIA Corporation' },
       { symbol: 'TSLA', name: 'Tesla Inc' },
       { symbol: 'META', name: 'Meta Platforms Inc' },
-      { symbol: 'NFLX', name: 'Netflix Inc' }
+      { symbol: 'NFLX', name: 'Netflix Inc' },
+      { symbol: 'AMD', name: 'Advanced Micro Devices Inc' },
+      { symbol: 'CRM', name: 'Salesforce Inc' },
+      { symbol: 'UBER', name: 'Uber Technologies Inc' },
+      { symbol: 'SHOP', name: 'Shopify Inc' }
     ];
 
     console.log('Fetching stock prices from Finnhub...');
@@ -80,7 +84,7 @@ serve(async (req) => {
     }
 
     // If we have insufficient data, create some sample data to prevent errors
-    if (stockData.length < 4) {
+    if (stockData.length < 6) {
       console.log('Insufficient real data, creating sample data...');
       
       const sampleData = [
@@ -89,7 +93,9 @@ serve(async (req) => {
         { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 485.20, change: 12.75, changePercent: 2.70, volume: '78M' },
         { symbol: 'MSFT', name: 'Microsoft Corporation', price: 378.90, change: -5.60, changePercent: -1.46, volume: '65M' },
         { symbol: 'GOOGL', name: 'Alphabet Inc', price: 142.30, change: 3.80, changePercent: 2.74, volume: '55M' },
-        { symbol: 'AMZN', name: 'Amazon.com Inc', price: 156.70, change: -4.20, changePercent: -2.61, volume: '70M' }
+        { symbol: 'AMZN', name: 'Amazon.com Inc', price: 156.70, change: -4.20, changePercent: -2.61, volume: '70M' },
+        { symbol: 'META', name: 'Meta Platforms Inc', price: 298.40, change: 6.80, changePercent: 2.39, volume: '45M' },
+        { symbol: 'AMD', name: 'Advanced Micro Devices Inc', price: 132.50, change: -3.85, changePercent: -2.82, volume: '88M' }
       ];
       
       stockData.push(...sampleData);
@@ -100,7 +106,7 @@ serve(async (req) => {
     // Sort by absolute percentage change to find biggest movers
     const sortedByChange = [...stockData].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
     
-    // Get top 3 gainers and top 3 losers
+    // Get exactly 3 gainers and 3 losers
     const gainers = sortedByChange.filter(stock => stock.changePercent > 0).slice(0, 3);
     const losers = sortedByChange.filter(stock => stock.changePercent < 0).slice(0, 3);
 
@@ -113,12 +119,12 @@ serve(async (req) => {
       try {
         console.log(`Fetching news for ${mover.symbol}...`);
         
-        // Fetch news from Marketaux with timeout - increased limit to get more articles
+        // Fetch news from Marketaux with timeout - fetch up to 10 articles initially
         const newsController = new AbortController();
         const newsTimeout = setTimeout(() => newsController.abort(), 10000); // 10 second timeout
         
         const newsResponse = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=5`,
+          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=10`,
           { signal: newsController.signal }
         );
         
@@ -144,8 +150,10 @@ Current Price Change: ${mover.changePercent}% (${mover.change >= 0 ? 'gain' : 'l
 News Articles:
 ${articlesText}
 
-Provide a JSON response with:
+Please analyze each article and determine which ones are actually relevant to the stock's price movement or fundamental business prospects. Then provide a JSON response with:
+
 {
+  "relevantArticleIndices": [0, 2, 4], // Array of indices (0-based) of articles that are actually relevant to this stock
   "headlines": [
     {
       "title": "original article title",
@@ -159,7 +167,11 @@ Provide a JSON response with:
   "sentimentReasoning": "1-2 sentence explanation of why this sentiment was chosen, independent of current price movement"
 }
 
-IMPORTANT: Market sentiment should be based on fundamental analysis of the news content and company prospects, NOT just whether the stock is currently up or down. A stock can be down but have bullish sentiment due to positive news, or up but have bearish sentiment due to concerning developments.
+IMPORTANT: 
+1. Only include articles that are genuinely relevant to this specific company's business, financials, or market position
+2. Market sentiment should be based on fundamental analysis of the news content and company prospects, NOT just whether the stock is currently up or down
+3. A stock can be down but have bullish sentiment due to positive news, or up but have bearish sentiment due to concerning developments
+4. Only return articles that have real impact on the stock - ignore generic market news unless it specifically affects this company
 `;
 
               const chatController = new AbortController();
@@ -176,7 +188,7 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
                   messages: [
                     {
                       role: 'system',
-                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements.'
+                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements. Only include truly relevant articles.'
                     },
                     {
                       role: 'user',
@@ -185,7 +197,7 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
                   ],
                   response_format: { type: "json_object" },
                   temperature: 0.7,
-                  max_tokens: 800
+                  max_tokens: 1000
                 }),
                 signal: chatController.signal
               });
@@ -196,8 +208,12 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
                 const chatData = await chatResponse.json();
                 const analysis = JSON.parse(chatData.choices[0].message.content);
                 
+                // Filter articles based on AI analysis
+                const relevantIndices = analysis.relevantArticleIndices || [];
+                const relevantArticles = relevantIndices.map(index => articles[index]).filter(Boolean);
+                
                 // Format the headlines with proper date formatting
-                const formattedHeadlines = articles.map((article, index) => {
+                const formattedHeadlines = relevantArticles.map((article, index) => {
                   const originalHeadline = analysis.headlines?.[index];
                   const publishedDate = new Date(article.published_at);
                   const formattedDate = publishedDate.toLocaleString('en-US', {
@@ -226,8 +242,9 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
               }
             } catch (analysisError) {
               console.error(`Analysis error for ${mover.symbol}:`, analysisError);
-              // Fallback to basic headlines without AI analysis
-              mover.headlines = articles.map(article => {
+              // Fallback to basic headlines without AI analysis - only include first 3 articles
+              const limitedArticles = articles.slice(0, 3);
+              mover.headlines = limitedArticles.map(article => {
                 const publishedDate = new Date(article.published_at);
                 const formattedDate = publishedDate.toLocaleString('en-US', {
                   month: 'short',
@@ -314,6 +331,18 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
           overallImpact: 'Market data temporarily unavailable. Please try again later.',
           marketSentiment: 'Neutral',
           sentimentReasoning: 'Data temporarily unavailable'
+        },
+        { 
+          symbol: 'META', 
+          name: 'Meta Platforms Inc', 
+          price: 298.40, 
+          change: 6.80, 
+          changePercent: 2.39, 
+          volume: '45M',
+          headlines: [],
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
         }
       ],
       losers: [
@@ -336,6 +365,18 @@ IMPORTANT: Market sentiment should be based on fundamental analysis of the news 
           change: -4.20, 
           changePercent: -2.61, 
           volume: '70M',
+          headlines: [],
+          overallImpact: 'Market data temporarily unavailable. Please try again later.',
+          marketSentiment: 'Neutral',
+          sentimentReasoning: 'Data temporarily unavailable'
+        },
+        { 
+          symbol: 'AMD', 
+          name: 'Advanced Micro Devices Inc', 
+          price: 132.50, 
+          change: -3.85, 
+          changePercent: -2.82, 
+          volume: '88M',
           headlines: [],
           overallImpact: 'Market data temporarily unavailable. Please try again later.',
           marketSentiment: 'Neutral',
