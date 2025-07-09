@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
@@ -190,6 +191,23 @@ const Dashboard = () => {
     return 'Breaking news covering important market developments and business updates.';
   };
 
+  // Extract source name from URL or use category as fallback
+  const getSourceName = (item: any) => {
+    if (item.url) {
+      try {
+        const domain = new URL(item.url).hostname;
+        if (domain.includes('reuters')) return 'Reuters';
+        if (domain.includes('cnbc')) return 'CNBC';
+        if (domain.includes('marketwatch')) return 'MarketWatch';
+        return domain.replace('www.', '');
+      } catch {
+        // If URL parsing fails, fall back to category
+        return item.category || 'Financial News';
+      }
+    }
+    return item.category || 'Financial News';
+  };
+
   // Debug logging for headlines
   console.log('📊 Headlines Debug Info:', {
     isLoadingHeadlines,
@@ -373,7 +391,7 @@ const Dashboard = () => {
                         <div className="text-xs text-gray-600 dark:text-slate-400 mb-3 flex items-center gap-2">
                           <span>{formatPublishTime(item.published_at)}</span>
                           <span className="text-emerald-400">•</span>
-                          <span>{item.source}</span>
+                          <span>{getSourceName(item)}</span>
                         </div>
                         <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
                           <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
