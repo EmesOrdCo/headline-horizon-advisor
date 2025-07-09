@@ -23,6 +23,29 @@ export const useNews = () => {
   });
 };
 
+// New hook specifically for recent general headlines
+export const useRecentHeadlines = () => {
+  return useQuery({
+    queryKey: ['recent-headlines'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('news_articles')
+        .select('*')
+        .eq('symbol', 'RSS') // Only get RSS/general news articles
+        .order('published_at', { ascending: false })
+        .limit(30); // Get latest 30 headlines
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every 1 minute
+  });
+};
+
 export const useFetchNews = () => {
   return async () => {
     console.log('Starting to fetch news from all sources...');
