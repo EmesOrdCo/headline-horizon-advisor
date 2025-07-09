@@ -11,7 +11,7 @@ const Hero = () => {
 
   return (
     <section className="px-6 py-20 max-w-7xl mx-auto">
-      <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="grid lg:grid-cols-2 gap-12 items-start">
         <div>
           <h1 className="text-6xl font-bold text-white mb-8 leading-tight">
             Take the <span className="text-emerald-400">Guesswork</span><br />
@@ -44,7 +44,7 @@ const Hero = () => {
         </div>
         
         <div className="space-y-4">
-          {/* Demo header moved to right side */}
+          {/* Demo header aligned at top */}
           <div className="mb-6">
             <div className="bg-gradient-to-r from-blue-500/20 to-emerald-500/20 border border-blue-500/30 rounded-lg px-4 py-2 inline-block">
               <span className="text-blue-300 text-sm font-medium">Example Analysis Below ↓</span>
