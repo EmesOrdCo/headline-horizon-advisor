@@ -76,7 +76,7 @@ export const SourceArticles = ({
                   </div>
                 )}
                 
-                {/* Description/Reasoning - Show below weight */}
+                {/* Description/Reasoning - Show below weight on its own line */}
                 {!isHistorical && weight && (
                   <p className="text-xs text-slate-500">({weight.reasoning})</p>
                 )}
