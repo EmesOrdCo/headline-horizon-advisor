@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
@@ -258,42 +259,44 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
                   key={index}
                   className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 sm:p-4 hover:border-slate-600 hover:bg-slate-800/70 transition-all"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      {/* Headlines */}
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block group mb-2"
-                      >
-                        <h5 className="text-white font-medium leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-2 text-sm sm:text-base">
-                          {link.title}
-                        </h5>
-                      </a>
-                      
-                      {/* Date */}
-                      <p className="text-xs text-slate-400 mb-2">
-                        {formatPublishTime(link.published_at)}
-                      </p>
-                      
-                      {/* Weight - Mobile: Show after date, Desktop: Show inline */}
-                      {!isHistorical && weight && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs text-slate-400">Weight:</span>
-                          <WeightDots weight={weight.weight} />
-                          <span className="text-xs text-slate-500">({weight.reasoning})</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    {/* Headlines */}
                     <a
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-700/50 hover:bg-slate-600/50 px-2 py-1 rounded"
+                      className="block group"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <h5 className="text-white font-medium leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-2 text-sm sm:text-base">
+                        {link.title}
+                      </h5>
                     </a>
+                    
+                    {/* Date */}
+                    <p className="text-xs text-slate-400">
+                      {formatPublishTime(link.published_at)}
+                    </p>
+                    
+                    {/* Weight - Show below date */}
+                    {!isHistorical && weight && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">Weight:</span>
+                        <WeightDots weight={weight.weight} />
+                        <span className="text-xs text-slate-500">({weight.reasoning})</span>
+                      </div>
+                    )}
+                    
+                    {/* External link button - positioned at the end */}
+                    <div className="flex justify-end">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-700/50 hover:bg-slate-600/50 px-2 py-1 rounded"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               );
