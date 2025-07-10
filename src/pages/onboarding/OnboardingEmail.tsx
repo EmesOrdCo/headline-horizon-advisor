@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingProgressBar from "@/components/OnboardingProgressBar";
 import { Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const OnboardingEmail = () => {
   const [email, setEmail] = useState("");
@@ -30,18 +28,6 @@ const OnboardingEmail = () => {
       navigate('/onboarding/details');
     }
   }, [user, session, navigate]);
-
-  const sendConfirmationEmail = async (email: string) => {
-    try {
-      await supabase.functions.invoke('send-welcome-email', {
-        body: { email, isConfirmation: true }
-      });
-      console.log('Confirmation email sent successfully');
-    } catch (error) {
-      console.error('Error sending confirmation email:', error);
-      // Don't block the signup flow if email fails
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,10 +72,7 @@ const OnboardingEmail = () => {
           });
         }
       } else {
-        console.log('Signup successful, sending confirmation email');
-        // Send confirmation email
-        await sendConfirmationEmail(email);
-        
+        console.log('Signup successful, check your email for confirmation');
         setEmailSent(true);
         toast({
           title: "Check your email",
@@ -127,6 +110,10 @@ const OnboardingEmail = () => {
                 We've sent a confirmation link to <strong>{email}</strong>. 
                 Please check your email and click the link to continue setting up your account.
               </p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm text-yellow-800 dark:text-yellow-200">
+                <p className="font-medium">📧 Email not arriving?</p>
+                <p>Check your spam folder, or try using a different email address.</p>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => setEmailSent(false)}
