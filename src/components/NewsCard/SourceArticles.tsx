@@ -2,16 +2,10 @@
 import { ExternalLink } from "lucide-react";
 import { WeightDots } from "./WeightDots";
 
-interface ArticleWeight {
-  article_index: number;
-  weight: number;
-  reasoning: string;
-}
-
 interface SourceArticlesProps {
   parsedSourceLinks: Array<{title: string, url: string, published_at: string}>;
   isHistorical?: boolean;
-  articleWeights?: ArticleWeight[];
+  articleWeights?: Array<{article_index: number, weight: number, reasoning: string}>;
   weightsLoading: boolean;
 }
 
@@ -74,7 +68,7 @@ export const SourceArticles = ({
                   {formatPublishTime(link.published_at)}
                 </p>
                 
-                {/* Weight - Show below date */}
+                {/* Weight - Show below date and above external link */}
                 {!isHistorical && weight && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">Weight:</span>
