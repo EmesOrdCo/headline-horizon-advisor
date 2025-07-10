@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -23,12 +22,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("Email function called");
+    
+    // Check if API key is available
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error("RESEND_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const { email, firstName, isConfirmation }: WelcomeEmailRequest = await req.json();
+    console.log("Processing email for:", email, "isConfirmation:", isConfirmation);
+    
     const name = firstName || "there";
 
     const subject = isConfirmation 
-      ? "STOCK PREDICT AI: Email Confirmation Required"
-      : "STOCK PREDICT AI: Welcome to the Future of Smart Investing!";
+      ? "MarketSensorAI: Email Confirmation Required"
+      : "MarketSensorAI: Welcome to the Future of Smart Investing!";
 
     const emailContent = isConfirmation ? 
       // Confirmation email content
@@ -38,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Confirm Your Email - StockPredict AI</title>
+          <title>Confirm Your Email - MarketSensorAI</title>
           <style>
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -93,19 +109,6 @@ const handler = async (req: Request): Promise<Response> => {
               margin: 24px 0;
               text-align: center;
             }
-            .cta-button {
-              display: inline-block;
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
-              padding: 16px 32px;
-              text-decoration: none;
-              border-radius: 8px;
-              font-weight: 600;
-              font-size: 18px;
-              text-align: center;
-              margin: 24px 0;
-              box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-            }
             .footer {
               text-align: center;
               margin-top: 40px;
@@ -119,14 +122,14 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">StockPredict AI</div>
+              <div class="logo">MarketSensorAI</div>
               <span class="badge">BETA</span>
             </div>
             
             <h1>Please Confirm Your Email ✅</h1>
             
             <p style="font-size: 18px; text-align: center; color: #64748b; margin-bottom: 30px;">
-              Hi ${name}! You're almost ready to start your journey with <span class="highlight">StockPredict AI</span>.
+              Hi ${name}! You're almost ready to start your journey with <span class="highlight">MarketSensorAI</span>.
             </p>
             
             <div class="confirmation-box">
@@ -144,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p>Questions? We're here to help! Reply to this email anytime.</p>
               <p style="margin-top: 16px;">
                 Welcome to the future of investing,<br>
-                <strong>The StockPredict AI Team</strong>
+                <strong>The MarketSensorAI Team</strong>
               </p>
             </div>
           </div>
@@ -158,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to StockPredict AI</title>
+          <title>Welcome to MarketSensorAI</title>
           <style>
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -261,14 +264,14 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">StockPredict AI</div>
+              <div class="logo">MarketSensorAI</div>
               <span class="badge">BETA</span>
             </div>
             
             <h1>Setup Complete! Welcome ${name}! 🎉</h1>
             
             <p style="font-size: 18px; text-align: center; color: #64748b; margin-bottom: 30px;">
-              Congratulations! You've successfully completed your StockPredict AI setup. You're now ready to start making <span class="highlight">smarter, AI-powered investment decisions</span>!
+              Congratulations! You've successfully completed your MarketSensorAI setup. You're now ready to start making <span class="highlight">smarter, AI-powered investment decisions</span>!
             </p>
             
             <div class="feature-box">
@@ -320,7 +323,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background: #e0f2fe; border: 1px solid #0284c7; border-radius: 8px; padding: 20px; margin: 24px 0;">
               <p style="margin: 0; color: #0c4a6e;">
-                <strong>💡 Pro Tip:</strong> Visit your dashboard regularly to stay updated with the latest AI insights and market movements. The more you use StockPredict AI, the better it gets at understanding your investment style!
+                <strong>💡 Pro Tip:</strong> Visit your dashboard regularly to stay updated with the latest AI insights and market movements. The more you use MarketSensorAI, the better it gets at understanding your investment style!
               </p>
             </div>
             
@@ -328,7 +331,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p>Questions? We're here to help! Reply to this email anytime.</p>
               <p style="margin-top: 16px;">
                 Happy investing,<br>
-                <strong>The StockPredict AI Team</strong>
+                <strong>The MarketSensorAI Team</strong>
               </p>
             </div>
           </div>
@@ -336,8 +339,10 @@ const handler = async (req: Request): Promise<Response> => {
         </html>
       `;
 
+    console.log("Attempting to send email with Resend...");
+    
     const emailResponse = await resend.emails.send({
-      from: "StockPredict AI <onboarding@resend.dev>",
+      from: "MarketSensorAI <onboarding@resend.dev>",
       to: [email],
       subject: subject,
       html: emailContent,
