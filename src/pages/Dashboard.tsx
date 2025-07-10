@@ -171,7 +171,6 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE</span>
-                <span className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">AI Analyzed + RSS Feeds</span>
               </div>
             </div>
             <Button 
@@ -184,7 +183,6 @@ const Dashboard = () => {
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, and MarketWatch</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
