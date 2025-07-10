@@ -68,17 +68,13 @@ export const SourceArticles = ({
                   {formatPublishTime(link.published_at)}
                 </p>
                 
-                {/* Weight - Show above description */}
+                {/* Weight - Show below date and above external link */}
                 {!isHistorical && weight && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">Weight:</span>
                     <WeightDots weight={weight.weight} />
+                    <span className="text-xs text-slate-500">({weight.reasoning})</span>
                   </div>
-                )}
-                
-                {/* Description/Reasoning - Show below weight */}
-                {!isHistorical && weight && (
-                  <p className="text-xs text-slate-500">({weight.reasoning})</p>
                 )}
                 
                 {/* External link button - positioned at the end */}
