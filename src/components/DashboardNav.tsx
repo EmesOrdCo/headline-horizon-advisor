@@ -1,22 +1,32 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const DashboardNav = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,56 +56,88 @@ const DashboardNav = () => {
     }
   };
 
+  const NavigationLinks = () => (
+    <>
+      <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Home
+      </Link>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
+          Live Market News <ChevronDown className="w-4 h-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-slate-800 border-slate-700">
+          <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
+            <Link to="/magnificent-7">Magnificent 7</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
+            <Link to="/index-funds">Funds</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
+        My Stocks
+      </Link>
+      
+      <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Biggest Movers
+      </Link>
+    </>
+  );
+
   return (
     <>
       {/* Top Navigation Bar - Dark Theme */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900 border-b border-slate-700">
-        <div className="w-[95%] mx-auto flex items-center justify-between px-6 py-3">
+        <div className="w-[95%] mx-auto flex items-center justify-between px-3 sm:px-6 py-3">
           {/* Left Side - Logo and Navigation Menu */}
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="text-xl font-bold text-emerald-400">MarketSensorAI</div>
+          <div className="flex items-center gap-2 sm:gap-8">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3">
+              <div className="text-lg sm:text-xl font-bold text-emerald-400">MarketSensorAI</div>
               <Badge className="bg-emerald-500 text-white text-xs">LIVE</Badge>
             </Link>
             
-            {/* Navigation Menu */}
-            <div className="flex items-center gap-8">
-              <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
-                Home
-              </Link>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
-                  Live Market News <ChevronDown className="w-4 h-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-slate-800 border-slate-700">
-                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <Link to="/magnificent-7">Magnificent 7</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-                    <Link to="/index-funds">Funds</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
-                My Stocks
-              </Link>
-              
-              <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
-                Biggest Movers
-              </Link>
-            </div>
+            {/* Desktop Navigation Menu */}
+            {!isMobile && (
+              <div className="flex items-center gap-8">
+                <NavigationLinks />
+              </div>
+            )}
+
+            {/* Mobile Navigation Menu */}
+            {isMobile && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-slate-300 hover:text-white">
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="bg-slate-900 border-slate-700">
+                  <SheetHeader>
+                    <SheetTitle className="text-emerald-400">Navigation</SheetTitle>
+                    <SheetDescription className="text-slate-400">
+                      Access all market sections
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-6 mt-6">
+                    <NavigationLinks />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
 
           {/* Right Side Controls */}
-          <div className="flex items-center gap-4">
-            <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {!isMobile && (
+              <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
+            )}
             <Button 
               onClick={handleSignOut}
               variant="outline" 
               size="sm"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800 text-xs sm:text-sm"
             >
               Sign Out
             </Button>
