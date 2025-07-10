@@ -16,15 +16,66 @@ const OnboardingDetails = () => {
   const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [loading, setLoading] = useState(false);
+  const [creatingProfile, setCreatingProfile] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) {
+      console.log('No user found, redirecting to email signup');
       navigate('/onboarding/email');
+      return;
     }
-  }, [user, navigate]);
+
+    // Check if user just confirmed email and needs profile creation
+    const checkAndCreateProfile = async () => {
+      if (user && user.email_confirmed_at) {
+        try {
+          setCreatingProfile(true);
+          console.log('Checking if profile exists for user:', user.id);
+          
+          const { data: existingProfile, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+
+          if (checkError && checkError.code === 'PGRST116') {
+            // Profile doesn't exist, create it
+            console.log('Creating profile for confirmed user');
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || '',
+                onboarding_completed: false
+              });
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              toast({
+                title: "Setup Error",
+                description: "There was an issue setting up your account. Please try again.",
+                variant: "destructive",
+              });
+            } else {
+              console.log('Profile created successfully');
+            }
+          } else if (!checkError) {
+            console.log('Profile already exists');
+          }
+        } catch (error) {
+          console.error('Error in profile check/creation:', error);
+        } finally {
+          setCreatingProfile(false);
+        }
+      }
+    };
+
+    checkAndCreateProfile();
+  }, [user, navigate, toast]);
 
   const validateAge = (birthDate: string) => {
     const today = new Date();
@@ -86,6 +137,21 @@ const OnboardingDetails = () => {
   };
 
   if (!user) return null;
+
+  if (creatingProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="text-emerald-600 dark:text-emerald-400 text-xl font-semibold mb-2">
+            Setting up your account...
+          </div>
+          <div className="text-slate-600 dark:text-slate-400">
+            Please wait while we prepare your profile.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
