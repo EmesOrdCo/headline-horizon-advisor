@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
@@ -238,7 +237,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
         </>
       )}
 
-      {/* Source Articles Section - Make individual article titles clickable */}
+      {/* Source Articles Section */}
       {parsedSourceLinks.length > 0 && (
         <div className="mt-4 pt-4 border-t border-slate-700">
           <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2 flex-wrap">
@@ -259,17 +258,9 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
                   key={index}
                   className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 sm:p-4 hover:border-slate-600 hover:bg-slate-800/70 transition-all"
                 >
-                  {/* Mobile: Stack weight above content */}
-                  {isMobile && !isHistorical && weight && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs text-slate-400">Weight:</span>
-                      <WeightDots weight={weight.weight} />
-                      <span className="text-xs text-slate-500">({weight.reasoning})</span>
-                    </div>
-                  )}
-                  
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
+                      {/* Headlines */}
                       <a
                         href={link.url}
                         target="_blank"
@@ -280,13 +271,15 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
                           {link.title}
                         </h5>
                       </a>
+                      
+                      {/* Date */}
                       <p className="text-xs text-slate-400 mb-2">
                         {formatPublishTime(link.published_at)}
                       </p>
                       
-                      {/* Desktop: Show weight inline */}
-                      {!isMobile && !isHistorical && weight && (
-                        <div className="flex items-center gap-2">
+                      {/* Weight - Mobile: Show after date, Desktop: Show inline */}
+                      {!isHistorical && weight && (
+                        <div className="flex items-center gap-2 mb-2">
                           <span className="text-xs text-slate-400">Weight:</span>
                           <WeightDots weight={weight.weight} />
                           <span className="text-xs text-slate-500">({weight.reasoning})</span>
