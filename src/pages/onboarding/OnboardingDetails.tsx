@@ -16,34 +16,43 @@ const OnboardingDetails = () => {
   const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [loading, setLoading] = useState(false);
-  const [creatingProfile, setCreatingProfile] = useState(false);
-  const { user } = useAuth();
+  const [initializing, setInitializing] = useState(true);
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) {
-      console.log('No user found, redirecting to email signup');
-      navigate('/onboarding/email');
-      return;
-    }
+    const initializeUser = async () => {
+      console.log('Initializing user, current user:', user?.email, 'session:', !!session);
+      
+      // If no user or session, redirect to email signup
+      if (!user || !session) {
+        console.log('No authenticated user, redirecting to email signup');
+        navigate('/onboarding/email');
+        return;
+      }
 
-    // Check if user just confirmed email and needs profile creation
-    const checkAndCreateProfile = async () => {
+      // If user exists and email is not confirmed, redirect back to email page
+      if (user && !user.email_confirmed_at) {
+        console.log('Email not confirmed, redirecting to email page');
+        navigate('/onboarding/email');
+        return;
+      }
+
+      // If user exists and email is confirmed, check/create profile
       if (user && user.email_confirmed_at) {
         try {
-          setCreatingProfile(true);
-          console.log('Checking if profile exists for user:', user.id);
+          console.log('User email confirmed, checking profile for:', user.id);
           
           const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, onboarding_completed')
             .eq('id', user.id)
             .single();
 
           if (checkError && checkError.code === 'PGRST116') {
             // Profile doesn't exist, create it
-            console.log('Creating profile for confirmed user');
+            console.log('Creating new profile for user');
             const { error: insertError } = await supabase
               .from('profiles')
               .insert({
@@ -65,17 +74,22 @@ const OnboardingDetails = () => {
             }
           } else if (!checkError) {
             console.log('Profile already exists');
+            // If onboarding is already completed, redirect to next step
+            if (existingProfile?.onboarding_completed) {
+              navigate('/dashboard');
+              return;
+            }
           }
         } catch (error) {
-          console.error('Error in profile check/creation:', error);
-        } finally {
-          setCreatingProfile(false);
+          console.error('Error in profile initialization:', error);
         }
       }
+      
+      setInitializing(false);
     };
 
-    checkAndCreateProfile();
-  }, [user, navigate, toast]);
+    initializeUser();
+  }, [user, session, navigate, toast]);
 
   const validateAge = (birthDate: string) => {
     const today = new Date();
@@ -136,9 +150,7 @@ const OnboardingDetails = () => {
     }
   };
 
-  if (!user) return null;
-
-  if (creatingProfile) {
+  if (initializing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
         <div className="text-center">

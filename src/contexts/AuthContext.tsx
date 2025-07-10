@@ -37,15 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-
-        // Handle email confirmation redirect
-        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-          console.log('User confirmed email, should redirect to details');
-          // Use setTimeout to avoid conflicts with navigation
-          setTimeout(() => {
-            window.location.href = '/onboarding/details';
-          }, 100);
-        }
       }
     );
 
@@ -65,9 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     console.log('SignUp function called for:', email);
-    // Use the current domain for the redirect URL
-    const currentDomain = window.location.origin;
-    const redirectUrl = `${currentDomain}/onboarding/details`;
+    // Set redirect URL to the current domain + details page
+    const redirectUrl = `${window.location.origin}/onboarding/details`;
     
     const { error } = await supabase.auth.signUp({
       email,
