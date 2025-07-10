@@ -27,28 +27,49 @@ const Auth = () => {
       let result;
       if (isSignUp) {
         result = await signUp(email, password, fullName);
+        if (!result.error) {
+          toast({
+            title: "Account Created Successfully",
+            description: "Please check your email to confirm your account before proceeding.",
+          });
+          // Don't navigate immediately - let user confirm email first
+          return;
+        }
       } else {
         result = await signIn(email, password);
+        if (!result.error) {
+          toast({
+            title: "Welcome Back",
+            description: "You have successfully signed in.",
+          });
+          navigate('/dashboard');
+          return;
+        }
       }
 
       if (result.error) {
-        toast({
-          title: "Authentication Error",
-          description: result.error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: isSignUp ? "Account Created" : "Welcome Back",
-          description: isSignUp 
-            ? "Please check your email to verify your account." 
-            : "You have successfully signed in.",
-        });
-        if (!isSignUp) {
-          navigate('/dashboard');
+        if (result.error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Invalid Credentials",
+            description: "Please check your email and password and try again.",
+            variant: "destructive",
+          });
+        } else if (result.error.message.includes('already registered')) {
+          toast({
+            title: "Account Already Exists",
+            description: "This email is already registered. Try signing in instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Authentication Error",
+            description: result.error.message,
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
+      console.error('Auth error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -69,7 +90,7 @@ const Auth = () => {
               Back to home
             </Link>
             <div className="flex items-center gap-3 mb-4">
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">StockPredict AI</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">MarketSensorAI</div>
               <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
                 BETA
               </Badge>
@@ -98,6 +119,7 @@ const Auth = () => {
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-400"
                   placeholder="Enter your full name"
                   required
+                  disabled={loading}
                 />
               </div>
             )}
@@ -113,6 +135,7 @@ const Auth = () => {
                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-emerald-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-400"
                 placeholder="Enter your email"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -129,11 +152,13 @@ const Auth = () => {
                   placeholder="Enter your password"
                   required
                   minLength={6}
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white"
+                  disabled={loading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -150,7 +175,7 @@ const Auth = () => {
               disabled={loading}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg"
             >
-              {loading ? 'Processing...' : (isSignUp ? 'Start Free Trial' : 'Sign In')}
+              {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
 
@@ -160,6 +185,7 @@ const Auth = () => {
               <button
                 onClick={() => setIsSignUp(!isSignUp)}
                 className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
+                disabled={loading}
               >
                 {isSignUp ? 'Sign in' : 'Sign up'}
               </button>
@@ -174,6 +200,19 @@ const Auth = () => {
                 </div>
                 <span>7-day free trial. No credit card required.</span>
               </div>
+            </div>
+          )}
+          
+          {!isSignUp && (
+            <div className="mt-4 text-center">
+              <Button
+                variant="link"
+                onClick={() => navigate('/onboarding/email')}
+                className="text-emerald-600 hover:text-emerald-700"
+                disabled={loading}
+              >
+                New user? Start here
+              </Button>
             </div>
           )}
         </div>

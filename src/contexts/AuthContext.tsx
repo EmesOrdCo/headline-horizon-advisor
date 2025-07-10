@@ -56,7 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     console.log('SignUp function called for:', email);
-    const redirectUrl = `${window.location.origin}/onboarding/details`;
+    // Use the main site URL for redirect since users need to complete email confirmation first
+    const redirectUrl = `${window.location.origin}/onboarding/email`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -72,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error('SignUp error:', error);
     } else {
-      console.log('SignUp successful');
+      console.log('SignUp successful - user needs to confirm email');
     }
     
     return { error };

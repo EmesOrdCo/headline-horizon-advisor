@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingProgressBar from "@/components/OnboardingProgressBar";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,9 +18,18 @@ const OnboardingEmail = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const [emailSent, setEmailSent] = useState(false);
+  const { signUp, user, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if user is already authenticated and email is confirmed
+  useEffect(() => {
+    if (user && session) {
+      console.log('User is authenticated, redirecting to details page');
+      navigate('/onboarding/details');
+    }
+  }, [user, session, navigate]);
 
   const sendConfirmationEmail = async (email: string) => {
     try {
@@ -59,29 +68,33 @@ const OnboardingEmail = () => {
     console.log('Starting signup process for email:', email);
     
     try {
-      const { error } = await signUp(email, password, ""); // Empty string for fullName since we'll collect it later
+      const { error } = await signUp(email, password, "");
       
       if (error) {
         console.error('Signup error:', error);
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message.includes('already registered')) {
+          toast({
+            title: "Account already exists",
+            description: "This email is already registered. Try signing in instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         console.log('Signup successful, sending confirmation email');
         // Send confirmation email
         await sendConfirmationEmail(email);
         
+        setEmailSent(true);
         toast({
-          title: "Account created successfully",
-          description: "Please check your email to confirm your account before proceeding.",
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please check your email and click the link to continue.",
         });
-        
-        // Wait a moment for the auth state to update, then navigate
-        setTimeout(() => {
-          navigate('/onboarding/details');
-        }, 1000);
       }
     } catch (error) {
       console.error('Signup catch error:', error);
@@ -94,6 +107,39 @@ const OnboardingEmail = () => {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-2">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">MarketSensorAI</div>
+              <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Check your email</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400">
+                We've sent a confirmation link to <strong>{email}</strong>. 
+                Please check your email and click the link to continue setting up your account.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setEmailSent(false)}
+                className="w-full"
+              >
+                Try different email
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
@@ -131,6 +177,7 @@ const OnboardingEmail = () => {
                   placeholder="Enter your email"
                   required
                   className="h-11"
+                  disabled={loading}
                 />
               </div>
               
@@ -144,12 +191,15 @@ const OnboardingEmail = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a password"
                     required
+                    minLength={6}
                     className="h-11 pr-10"
+                    disabled={loading}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -166,12 +216,15 @@ const OnboardingEmail = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your password"
                     required
+                    minLength={6}
                     className="h-11 pr-10"
+                    disabled={loading}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={loading}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -183,9 +236,22 @@ const OnboardingEmail = () => {
                 className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
                 disabled={loading}
               >
-                {loading ? "Creating account..." : "Continue"}
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
+            
+            <div className="mt-4 text-center">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Already have an account?{' '}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-emerald-600 hover:text-emerald-700"
+                  onClick={() => navigate('/auth')}
+                >
+                  Sign in
+                </Button>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -9,20 +9,33 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const navigate = useNavigate();
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      if (!user) {
-        if (!loading) {
-          navigate('/auth');
-        }
+      // If still loading auth, wait
+      if (loading) {
+        return;
+      }
+
+      // If no user or session, redirect to auth
+      if (!user || !session) {
+        console.log('No authenticated user, redirecting to auth');
+        navigate('/auth');
+        return;
+      }
+
+      // If user exists but email not confirmed, redirect to onboarding email
+      if (user && !user.email_confirmed_at) {
+        console.log('Email not confirmed, redirecting to onboarding email');
+        navigate('/onboarding/email');
         return;
       }
 
       try {
+        // Check if profile exists and onboarding is completed
         const { data, error } = await supabase
           .from('profiles')
           .select('onboarding_completed')
@@ -31,11 +44,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
         if (error) {
           console.error('Error checking onboarding status:', error);
-          setCheckingOnboarding(false);
-          return;
-        }
-
-        if (!data.onboarding_completed) {
+          // If profile doesn't exist, redirect to details page to create it
+          if (error.code === 'PGRST116') {
+            console.log('Profile not found, redirecting to details');
+            navigate('/onboarding/details');
+            return;
+          }
+        } else if (!data.onboarding_completed) {
+          console.log('Onboarding not completed, redirecting to details');
           navigate('/onboarding/details');
           return;
         }
@@ -47,10 +63,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       }
     };
 
-    if (!loading) {
-      checkOnboardingStatus();
-    }
-  }, [user, loading, navigate]);
+    checkOnboardingStatus();
+  }, [user, session, loading, navigate]);
 
   if (loading || checkingOnboarding) {
     return (
@@ -60,7 +74,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!user) {
+  if (!user || !session) {
     return null;
   }
 
