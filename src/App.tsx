@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import EmailConfirmation from "./pages/EmailConfirmation";
 import Dashboard from "./pages/Dashboard";
 import Predictions from "./pages/Predictions";
 import DetailedAnalysis from "./pages/DetailedAnalysis";
@@ -32,6 +33,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/email-confirmation" element={<EmailConfirmation />} />
               <Route path="/onboarding/*" element={<Onboarding />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />

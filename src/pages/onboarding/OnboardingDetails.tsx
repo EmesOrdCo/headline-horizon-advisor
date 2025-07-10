@@ -23,65 +23,65 @@ const OnboardingDetails = () => {
 
   useEffect(() => {
     const initializeUser = async () => {
-      console.log('Initializing user, current user:', user?.email, 'session:', !!session);
+      console.log('OnboardingDetails: Initializing user, current user:', user?.email, 'session:', !!session);
       
       // If no user or session, redirect to email signup
       if (!user || !session) {
-        console.log('No authenticated user, redirecting to email signup');
+        console.log('OnboardingDetails: No authenticated user, redirecting to email signup');
         navigate('/onboarding/email');
         return;
       }
 
       // If user exists and email is not confirmed, redirect back to email page
       if (user && !user.email_confirmed_at) {
-        console.log('Email not confirmed, redirecting to email page');
+        console.log('OnboardingDetails: Email not confirmed, redirecting to email page');
         navigate('/onboarding/email');
         return;
       }
 
-      // If user exists and email is confirmed, check/create profile
+      // If user exists and email is confirmed, check profile status
       if (user && user.email_confirmed_at) {
         try {
-          console.log('User email confirmed, checking profile for:', user.id);
+          console.log('OnboardingDetails: User email confirmed, checking profile for:', user.id);
           
           const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
-            .select('id, onboarding_completed')
+            .select('id, onboarding_completed, first_name, last_name, date_of_birth')
             .eq('id', user.id)
             .single();
 
           if (checkError && checkError.code === 'PGRST116') {
-            // Profile doesn't exist, create it
-            console.log('Creating new profile for user');
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                email: user.email,
-                full_name: user.user_metadata?.full_name || '',
-                onboarding_completed: false
-              });
-
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              toast({
-                title: "Setup Error",
-                description: "There was an issue setting up your account. Please try again.",
-                variant: "destructive",
-              });
-            } else {
-              console.log('Profile created successfully');
-            }
-          } else if (!checkError) {
-            console.log('Profile already exists');
-            // If onboarding is already completed, redirect to next step
-            if (existingProfile?.onboarding_completed) {
+            // Profile doesn't exist, this is unusual but we can handle it
+            console.log('OnboardingDetails: Profile not found, user should have been created during confirmation');
+            toast({
+              title: "Setup Issue",
+              description: "Please try signing up again or contact support.",
+              variant: "destructive",
+            });
+            navigate('/onboarding/email');
+            return;
+          } else if (!checkError && existingProfile) {
+            console.log('OnboardingDetails: Profile exists');
+            
+            // If onboarding is already completed, redirect to dashboard
+            if (existingProfile.onboarding_completed) {
+              console.log('OnboardingDetails: Onboarding already completed, redirecting to dashboard');
               navigate('/dashboard');
               return;
             }
+            
+            // Pre-fill form if data exists
+            if (existingProfile.first_name) setFirstName(existingProfile.first_name);
+            if (existingProfile.last_name) setLastName(existingProfile.last_name);
+            if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
           }
         } catch (error) {
-          console.error('Error in profile initialization:', error);
+          console.error('OnboardingDetails: Error in profile initialization:', error);
+          toast({
+            title: "Setup Error",
+            description: "There was an issue loading your profile. Please try again.",
+            variant: "destructive",
+          });
         }
       }
       
@@ -155,10 +155,10 @@ const OnboardingDetails = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="text-emerald-600 dark:text-emerald-400 text-xl font-semibold mb-2">
-            Setting up your account...
+            Loading your profile...
           </div>
           <div className="text-slate-600 dark:text-slate-400">
-            Please wait while we prepare your profile.
+            Please wait while we prepare your information.
           </div>
         </div>
       </div>
