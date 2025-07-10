@@ -42,7 +42,6 @@ const Dashboard = () => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
 
-  // Get the top story from Magnificent 7 (highest confidence or most bullish/bearish)
   const topMagnificent7Story = MAGNIFICENT_7.map(symbol => {
     return newsData?.find(item => 
       item.symbol === symbol && 
@@ -51,18 +50,15 @@ const Dashboard = () => {
     );
   }).filter(Boolean)
   .sort((a, b) => {
-    // Sort by confidence first, then by sentiment strength
     const confidenceDiff = (b.ai_confidence || 0) - (a.ai_confidence || 0);
     if (confidenceDiff !== 0) return confidenceDiff;
     
-    // Prefer non-neutral sentiments
     if (a.ai_sentiment === 'Neutral' && b.ai_sentiment !== 'Neutral') return 1;
     if (b.ai_sentiment === 'Neutral' && a.ai_sentiment !== 'Neutral') return -1;
     
     return 0;
   })[0];
 
-  // Get the top story from Index Funds
   const topIndexFundStory = MAJOR_INDEX_FUNDS.map(symbol => {
     return newsData?.find(item => 
       item.symbol === symbol && 
@@ -80,12 +76,10 @@ const Dashboard = () => {
     return 0;
   })[0];
 
-  // Generate composite headline based on source articles with uniqueness checking
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
     
-    // Parse source links to get article titles
     let sourceArticles = [];
     try {
       sourceArticles = item.source_links ? JSON.parse(item.source_links) : [];
@@ -93,13 +87,11 @@ const Dashboard = () => {
       console.error('Error parsing source links:', error);
     }
 
-    // Create short, easy-to-understand summary based on sentiment and context
     let summary = '';
     
     if (sourceArticles.length > 0) {
       const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
       
-      // Generate context-aware SHORT summaries
       if (titles.some(t => t.includes('earnings') || t.includes('revenue') || t.includes('profit'))) {
         summary = sentiment === 'bullish' ? 'Strong earnings boost confidence' : 'Earnings disappoint investors';
       } else if (titles.some(t => t.includes('upgrade') || t.includes('analyst') || t.includes('target'))) {
@@ -114,7 +106,6 @@ const Dashboard = () => {
         summary = sentiment === 'bullish' ? 'Positive developments support growth' : 'Market challenges create headwinds';
       }
     } else {
-      // Fallback short summaries
       summary = sentiment === 'bullish' ? 'Positive momentum continues' : 'Market pressures weigh on stock';
     }
 
@@ -128,13 +119,11 @@ const Dashboard = () => {
     try {
       console.log('🔄 Starting news refresh...');
       
-      // Fetch both stock analysis and RSS headlines
       const [stockResult, rssResult] = await Promise.allSettled([
         fetchNews(),
         fetchRSSNews()
       ]);
       
-      // Wait a moment for the database to update, then refetch
       setTimeout(async () => {
         await refetch();
         console.log('🔄 Refetched news data');
@@ -174,27 +163,28 @@ const Dashboard = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
+      <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE</span>
-                <span className="text-gray-600 dark:text-slate-400 text-sm">AI Analyzed + RSS Feeds</span>
+                <span className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">AI Analyzed + RSS Feeds</span>
               </div>
             </div>
             <Button 
               onClick={handleRefreshNews}
               disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+              size="sm"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               {isFetching ? 'Fetching...' : 'Refresh News'}
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-slate-400">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, and MarketWatch</p>
+          <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Top stories from each category with AI analysis + RSS feeds from Reuters, CNBC, and MarketWatch</p>
           
           {isFetching && fetchingStatus && (
             <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
@@ -215,25 +205,26 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             {/* Magnificent 7 Section */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
-                  <Badge className="bg-blue-500 text-white">Top Story</Badge>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
+                  <Badge className="bg-blue-500 text-white w-fit">Top Story</Badge>
                 </div>
-                <Link to="/magnificent-7">
-                  <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                    View All 7 Stocks
+                <Link to="/magnificent-7" className="w-full sm:w-auto">
+                  <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 w-full sm:w-auto">
+                    <span className="hidden sm:inline">View All 7 Stocks</span>
+                    <span className="sm:hidden">View All</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
               
               {isLoading ? (
-                <div className="text-center text-gray-600 dark:text-slate-400 py-8">
+                <div className="text-center text-gray-600 dark:text-slate-400 py-6 sm:py-8">
                   Loading Magnificent 7 analysis...
                 </div>
               ) : topMagnificent7Story ? (
@@ -249,29 +240,30 @@ const Dashboard = () => {
                   stockPrice={getStockPrice(topMagnificent7Story.symbol)}
                 />
               ) : (
-                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                  <p className="text-gray-600 dark:text-slate-400">No Magnificent 7 analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
+                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Magnificent 7 analysis available. Click "Refresh News" to fetch the latest updates.</p>
                 </div>
               )}
             </div>
 
             {/* Index Funds Section */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
-                  <Badge className="bg-purple-500 text-white">Top Story</Badge>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
+                  <Badge className="bg-purple-500 text-white w-fit">Top Story</Badge>
                 </div>
-                <Link to="/index-funds">
-                  <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20">
-                    View All Index Funds
+                <Link to="/index-funds" className="w-full sm:w-auto">
+                  <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 w-full sm:w-auto">
+                    <span className="hidden sm:inline">View All Index Funds</span>
+                    <span className="sm:hidden">View All</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
               
               {isLoading ? (
-                <div className="text-center text-gray-600 dark:text-slate-400 py-8">
+                <div className="text-center text-gray-600 dark:text-slate-400 py-6 sm:py-8">
                   Loading Index Funds analysis...
                 </div>
               ) : topIndexFundStory ? (
@@ -287,14 +279,14 @@ const Dashboard = () => {
                   stockPrice={getStockPrice(topIndexFundStory.symbol)}
                 />
               ) : (
-                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                  <p className="text-gray-600 dark:text-slate-400">No Index Fund analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
+                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Index Fund analysis available. Click "Refresh News" to fetch the latest updates.</p>
                 </div>
               )}
             </div>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <RSSHeadlines />
           </div>
         </div>
