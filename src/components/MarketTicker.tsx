@@ -156,7 +156,7 @@ const MarketTicker = () => {
               ref={tickerRef}
               className={`flex ${isMobile ? 'gap-4' : 'gap-8'}`}
               style={{
-                animation: `scroll ${isMobile ? '12s' : '30s'} linear infinite`,
+                animation: `scroll ${isMobile ? '12s' : '60s'} linear infinite`,
                 width: '1000%',
                 willChange: 'transform',
                 WebkitTransform: 'translateZ(0)',
