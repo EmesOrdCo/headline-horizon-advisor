@@ -158,7 +158,11 @@ const MarketTicker = () => {
               style={{
                 animation: `scroll ${isMobile ? '8s' : '60s'} linear infinite`,
                 width: '300%',
-                willChange: 'transform'
+                willChange: 'transform',
+                WebkitTransform: 'translateZ(0)',
+                transform: 'translateZ(0)',
+                WebkitBackfaceVisibility: 'hidden',
+                backfaceVisibility: 'hidden'
               }}
             >
               {scrollingData.map((item, index) => (
