@@ -101,7 +101,7 @@
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(-20%, 0, 0);
+    transform: translate3d(-10%, 0, 0);
   }
 }
 
@@ -111,8 +111,8 @@
 }
 
 .ticker-scroll {
-  animation: scroll 40s linear infinite;
-  width: 500%;
+  animation: scroll 15s linear infinite;
+  width: 1000%;
   will-change: transform;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
