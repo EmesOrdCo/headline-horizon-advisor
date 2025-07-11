@@ -111,7 +111,7 @@
 }
 
 .ticker-scroll {
-  animation: scroll 60s linear infinite;
+  animation: scroll 120s linear infinite;
   width: 1000%;
   will-change: transform;
   -webkit-transform: translateZ(0);
