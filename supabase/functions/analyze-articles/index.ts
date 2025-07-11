@@ -63,13 +63,22 @@ Based on these articles, provide a JSON response with the following structure:
   "reasoning": "string explaining your analysis in detail (max 500 characters)"
 }
 
+CONFIDENCE LEVEL GUIDELINES (BE CONSERVATIVE):
+- 1-20: Very uncertain, conflicting information, speculative news
+- 21-40: Low confidence, limited information, uncertain market conditions
+- 41-60: Moderate confidence, some clear indicators but mixed signals
+- 61-80: High confidence, clear trends and strong supporting evidence
+- 81-100: Very high confidence, major confirmed events with clear market impact (RARE - use sparingly)
+
 Rules:
-1. Be realistic and conservative with predictions
-2. Make a clear decision on sentiment - avoid neutral unless truly uncertain
-3. Base confidence on the clarity and impact of the news
-4. Consider the stock's recent performance and market context
-5. Factor in multiple articles to provide a comprehensive view
-6. Higher priority for breaking news or significant market events
+1. Be realistic and conservative with predictions AND confidence levels
+2. DEFAULT to lower confidence levels (20-60 range) unless evidence is overwhelming
+3. Confidence above 80 should be RARE and only for major confirmed events
+4. Make a clear decision on sentiment - avoid neutral unless truly uncertain
+5. Base confidence on the clarity, reliability, and impact of the news
+6. Consider the stock's recent performance and market context
+7. Factor in multiple articles to provide a comprehensive view
+8. Higher priority for breaking news or significant market events
 `;
 
     console.log(`Sending ${articlesText.length} characters of article data to OpenAI for ${symbol}...`);

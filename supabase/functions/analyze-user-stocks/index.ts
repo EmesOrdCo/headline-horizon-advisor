@@ -90,6 +90,15 @@ Based on all these articles together, provide a JSON response:
   "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
 }
 
+CONFIDENCE LEVEL GUIDELINES (BE CONSERVATIVE):
+- 1-20: Very uncertain, conflicting information, speculative news
+- 21-40: Low confidence, limited information, uncertain market conditions  
+- 41-60: Moderate confidence, some clear indicators but mixed signals
+- 61-80: High confidence, clear trends and strong supporting evidence
+- 81-100: Very high confidence, major confirmed events with clear market impact (RARE - use sparingly)
+
+IMPORTANT: DEFAULT to lower confidence levels (20-60 range) unless evidence is overwhelming. Confidence above 80 should be RARE and only for major confirmed events.
+
 Focus on the overall sentiment and impact on ${symbol} stock price.`;
 
         const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
