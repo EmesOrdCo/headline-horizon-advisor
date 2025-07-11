@@ -167,22 +167,24 @@ const BiggestMovers = () => {
         <MarketTicker />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Biggest Movers</h1>
-              <p className="text-slate-400">Top 3 biggest gainers and losers with the largest price movements today, analyzed with AI sentiment</p>
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex items-center justify-between">
+              <Button
+                onClick={() => refetch()}
+                disabled={isLoading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh Data
+              </Button>
             </div>
-            <Button
-              onClick={() => refetch()}
-              disabled={isLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh Data
-            </Button>
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Biggest Movers</h1>
+              <p className="text-slate-400 text-sm sm:text-base">Top 3 biggest gainers and losers with the largest price movements today, analyzed with AI sentiment</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 mt-3">
