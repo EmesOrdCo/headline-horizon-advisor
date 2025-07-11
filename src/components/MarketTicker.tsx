@@ -141,16 +141,16 @@ const MarketTicker = () => {
             <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            <div className="animate-scroll flex gap-8">
+            <div key="ticker-scroll" className="animate-scroll flex gap-8">
               {duplicatedData.map((item, index) => (
-                <div key={`${item.symbol}-${index}`} className="flex items-center gap-4 whitespace-nowrap">
+                <div key={`ticker-item-${index}`} className="flex items-center gap-4 whitespace-nowrap">
                   <span className="text-white font-semibold text-sm">{item.symbol}</span>
                   <span className="text-slate-300 text-sm">${item.price.toFixed(2)}</span>
-                  <span className={`text-sm flex items-center gap-1 ${
+                  <span className={`text-sm flex items-center gap-1 transition-colors duration-300 ${
                     item.change >= 0 ? 'text-emerald-400' : 'text-red-400'
                   }`}>
                     <Triangle 
-                      className={`w-3 h-3 ${
+                      className={`w-3 h-3 transition-colors duration-300 ${
                         item.change >= 0 
                           ? 'text-emerald-400 fill-emerald-400' 
                           : 'text-red-400 fill-red-400 rotate-180'
