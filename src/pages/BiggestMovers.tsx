@@ -96,21 +96,21 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
           </div>
         )}
 
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-col gap-2 mb-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowHeadlines(!showHeadlines)}
-            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 w-full"
           >
             <ExternalLink className="w-4 h-4 mr-1" />
             {showHeadlines ? 'Hide' : 'Show'} Headlines ({stock.headlines?.length || 0})
           </Button>
-          <Link to={`/analysis/${stock.symbol}`}>
+          <Link to={`/analysis/${stock.symbol}`} className="w-full">
             <Button
               variant="outline"
               size="sm"
-              className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+              className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 w-full"
             >
               <BarChart3 className="w-4 h-4 mr-1" />
               Detailed Analysis
