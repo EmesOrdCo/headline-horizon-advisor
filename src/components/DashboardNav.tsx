@@ -63,10 +63,15 @@ const DashboardNav = () => {
       </Link>
       
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
-          Live Market News <ChevronDown className="w-4 h-4" />
+        <DropdownMenuTrigger asChild>
+          <button className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium focus:outline-none focus:text-white">
+            Live Market News <ChevronDown className="w-4 h-4" />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-slate-800 border-slate-700 z-50">
+        <DropdownMenuContent 
+          className="bg-slate-800 border-slate-700 z-50" 
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DropdownMenuItem asChild>
             <Link to="/magnificent-7" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
               Magnificent 7
