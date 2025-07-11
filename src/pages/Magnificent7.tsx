@@ -108,33 +108,38 @@ const Magnificent7 = () => {
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-44 p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex items-center justify-between">
-              <Link to="/dashboard">
-                <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+      {/* Market Ticker */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+      
+      <div className="pt-16 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex items-center justify-between">
+                <Link to="/dashboard">
+                  <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Dashboard
+                  </Button>
+                </Link>
+                <Button 
+                  onClick={handleRefreshNews}
+                  disabled={isFetching}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                  {isFetching ? 'Fetching...' : 'Refresh News'}
                 </Button>
-              </Link>
-              <Button 
-                onClick={handleRefreshNews}
-                disabled={isFetching}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-                {isFetching ? 'Fetching...' : 'Refresh News'}
-              </Button>
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
-              <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies</p>
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies</p>
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="grid grid-cols-1 gap-6">
           {isLoading ? (
@@ -186,7 +191,8 @@ const Magnificent7 = () => {
             })
           )}
         </div>
-      </main>
+        </div>
+      </div>
       
       <Footer />
     </div>
