@@ -106,6 +106,6 @@
 }
 
 .animate-scroll {
-  animation: scroll 60s linear infinite;
+  animation: scroll 30s linear infinite;
   width: 200%; /* Ensure enough width for seamless scrolling */
 }
