@@ -90,15 +90,6 @@ Based on all these articles together, provide a JSON response:
   "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
 }
 
-CONFIDENCE LEVEL GUIDELINES (BE VERY CONSERVATIVE - DEFAULT TO LOW CONFIDENCE):
-- 1-25: Very uncertain, conflicting information, speculative rumors, unverified claims
-- 26-45: Low confidence, limited reliable information, uncertain market conditions, general news
-- 46-65: Moderate confidence, some clear indicators but mixed signals, typical earnings reports
-- 66-80: High confidence, clear trends with strong supporting evidence, major partnerships/acquisitions
-- 81-100: EXTREMELY RARE - only for massive confirmed events like CEO resignations, major disasters, regulatory bans
-
-IMPORTANT: Most news should fall in the 20-50 range. Default to 35-45 for typical market news. BE EXTREMELY CONSERVATIVE.
-
 Focus on the overall sentiment and impact on ${symbol} stock price.`;
 
         const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
