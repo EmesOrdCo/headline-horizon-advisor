@@ -190,11 +190,6 @@ const Dashboard = () => {
             </div>
           )}
           
-          {isPricesLoading && (
-            <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
-              Loading asset prices from Finnhub...
-            </div>
-          )}
           
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
             <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
