@@ -4,8 +4,9 @@ interface ConfidenceDotsProps {
 }
 
 export const ConfidenceDots = ({ confidence }: ConfidenceDotsProps) => {
-  // Convert percentage to dots (0-100% -> 0-5 dots)
-  const dots = Math.round((confidence / 100) * 5);
+  // Convert percentage to dots with better granularity (0-100% -> 0-5 dots)
+  // Use Math.floor to be more conservative and show clearer differences
+  const dots = Math.max(0, Math.min(5, Math.floor((confidence / 20) + 0.5)));
   
   return (
     <div className="flex items-center gap-1">
