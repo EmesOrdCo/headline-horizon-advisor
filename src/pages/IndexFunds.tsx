@@ -104,29 +104,29 @@ const IndexFunds = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-36 p-6 max-w-7xl mx-auto">
+      <main className="pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex items-center justify-between">
               <Link to="/dashboard">
                 <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Index Funds</h1>
-                <p className="text-gray-600 dark:text-slate-400">AI-analyzed news for major market index funds</p>
-              </div>
+              <Button 
+                onClick={handleRefreshNews}
+                disabled={isFetching}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                {isFetching ? 'Fetching...' : 'Refresh News'}
+              </Button>
             </div>
-            <Button 
-              onClick={handleRefreshNews}
-              disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? 'Fetching...' : 'Refresh News'}
-            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Index Funds</h1>
+              <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for major market index funds</p>
+            </div>
           </div>
         </div>
 
