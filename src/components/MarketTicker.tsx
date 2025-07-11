@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Triangle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MarketIndex {
   symbol: string;
@@ -14,6 +15,7 @@ const MarketTicker = () => {
   const [marketData, setMarketData] = useState<MarketIndex[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const tickerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchMarketData = async () => {
@@ -154,7 +156,7 @@ const MarketTicker = () => {
               ref={tickerRef}
               className="ticker-scroll flex gap-8"
               style={{
-                animation: 'scroll 60s linear infinite',
+                animation: `scroll ${isMobile ? '30s' : '60s'} linear infinite`,
                 width: '300%',
                 willChange: 'transform'
               }}
