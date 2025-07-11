@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OnboardingProgressBar from "@/components/OnboardingProgressBar";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const OnboardingEmail = () => {
@@ -17,7 +17,7 @@ const OnboardingEmail = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+  const [emailSent, setEmailSent] = useState(false);
   const { signUp, user, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -73,14 +73,28 @@ const OnboardingEmail = () => {
           });
         }
       } else {
-        console.log('Signup successful, redirecting to details');
-        toast({
-          title: "Account created!",
-          description: "Welcome to MarketSensorAI. Let's complete your profile.",
-        });
+        console.log('Signup successful, sending welcome email');
         
-        // Redirect directly to details page after successful signup
-        navigate('/onboarding/details');
+        // Send welcome email for email confirmation
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: email,
+              firstName: "",
+              isConfirmation: true
+            }
+          });
+          console.log('Welcome email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't block the flow if email fails
+        }
+        
+        setEmailSent(true);
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please check your email and click the link to continue.",
+        });
       }
     } catch (error) {
       console.error('Signup catch error:', error);
@@ -94,6 +108,42 @@ const OnboardingEmail = () => {
     }
   };
 
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-2">
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">MarketSensorAI</div>
+              <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Check your email</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400">
+                We've sent a confirmation link to <strong>{email}</strong>. 
+                Please check your email and click the link to continue setting up your account.
+              </p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm text-yellow-800 dark:text-yellow-200">
+                <p className="font-medium">📧 Email not arriving?</p>
+                <p>Check your spam folder, or try using a different email address.</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setEmailSent(false)}
+                className="w-full"
+              >
+                Try different email
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
