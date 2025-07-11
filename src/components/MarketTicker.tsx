@@ -156,7 +156,7 @@ const MarketTicker = () => {
               ref={tickerRef}
               className="ticker-scroll flex gap-8"
               style={{
-                animation: `scroll ${isMobile ? '30s' : '60s'} linear infinite`,
+                animation: `scroll ${isMobile ? '8s' : '60s'} linear infinite`,
                 width: '300%',
                 willChange: 'transform'
               }}
