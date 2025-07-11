@@ -63,38 +63,17 @@ const DashboardNav = () => {
       </Link>
       
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium h-auto p-0"
-          >
-            Live Market News <ChevronDown className="w-4 h-4" />
-          </Button>
+        <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
+          Live Market News <ChevronDown className="w-4 h-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          className="bg-slate-800 border-slate-700 min-w-[160px]" 
-          sideOffset={8}
-          style={{ zIndex: 9999 }}
-        >
-          <DropdownMenuItem 
-            asChild
-            className="cursor-pointer"
-          >
-            <Link 
-              to="/magnificent-7" 
-              className="w-full text-slate-300 hover:text-white focus:text-white"
-            >
+        <DropdownMenuContent className="bg-slate-800 border-slate-700 z-50">
+          <DropdownMenuItem asChild>
+            <Link to="/magnificent-7" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
               Magnificent 7
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            asChild
-            className="cursor-pointer"
-          >
-            <Link 
-              to="/index-funds" 
-              className="w-full text-slate-300 hover:text-white focus:text-white"
-            >
+          <DropdownMenuItem asChild>
+            <Link to="/index-funds" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
               Index Funds
             </Link>
           </DropdownMenuItem>
