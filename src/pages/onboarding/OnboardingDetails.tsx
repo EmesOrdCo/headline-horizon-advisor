@@ -35,52 +35,56 @@ const OnboardingDetails = () => {
       // Check profile status directly since email confirmation is disabled
       try {
         console.log('OnboardingDetails: Checking profile for:', user.id);
-          
-          const { data: existingProfile, error: checkError } = await supabase
-            .from('profiles')
-            .select('id, onboarding_completed, first_name, last_name, date_of_birth')
-            .eq('id', user.id)
-            .single();
+        
+        const { data: existingProfile, error: checkError } = await supabase
+          .from('profiles')
+          .select('id, onboarding_completed, first_name, last_name, date_of_birth')
+          .eq('id', user.id)
+          .single();
 
-          if (checkError && checkError.code === 'PGRST116') {
-            // Profile doesn't exist, this is unusual but we can handle it
-            console.log('OnboardingDetails: Profile not found, user should have been created during confirmation');
-            toast({
-              title: "Setup Issue",
-              description: "Please try signing up again or contact support.",
-              variant: "destructive",
+        if (checkError && checkError.code === 'PGRST116') {
+          // Profile doesn't exist, create it
+          console.log('OnboardingDetails: Profile not found, creating new profile');
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email,
+              onboarding_completed: false
             });
-            navigate('/onboarding/email');
-            return;
-          } else if (!checkError && existingProfile) {
-            console.log('OnboardingDetails: Profile exists');
-            
-            // If onboarding is already completed, redirect to dashboard
-            if (existingProfile.onboarding_completed) {
-              console.log('OnboardingDetails: Onboarding already completed, redirecting to dashboard');
-              navigate('/dashboard');
-              return;
-            }
-            
-            // Pre-fill form if data exists
-            if (existingProfile.first_name) setFirstName(existingProfile.first_name);
-            if (existingProfile.last_name) setLastName(existingProfile.last_name);
-            if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
+          
+          if (createError) {
+            console.error('Error creating profile:', createError);
           }
+        } else if (checkError) {
+          console.error('Database error:', checkError);
+        } else if (existingProfile) {
+          console.log('OnboardingDetails: Profile exists');
+          
+          // If onboarding is already completed, redirect to dashboard
+          if (existingProfile.onboarding_completed) {
+            console.log('OnboardingDetails: Onboarding already completed, redirecting to dashboard');
+            navigate('/dashboard');
+            return;
+          }
+          
+          // Pre-fill form if data exists
+          if (existingProfile.first_name) setFirstName(existingProfile.first_name);
+          if (existingProfile.last_name) setLastName(existingProfile.last_name);
+          if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
+        }
       } catch (error) {
         console.error('OnboardingDetails: Error in profile initialization:', error);
-        toast({
-          title: "Setup Error",
-          description: "There was an issue loading your profile. Please try again.",
-          variant: "destructive",
-        });
       }
       
       setInitializing(false);
     };
 
-    initializeUser();
-  }, [user, session, navigate, toast]);
+    // Only run once when user/session changes, not on every render
+    if (user && session && initializing) {
+      initializeUser();
+    }
+  }, [user, session, initializing, navigate]);
 
   const validateAge = (birthDate: string) => {
     const today = new Date();
