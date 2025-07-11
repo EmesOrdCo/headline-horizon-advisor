@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,7 +73,23 @@ const OnboardingEmail = () => {
           });
         }
       } else {
-        console.log('Signup successful, check your email for confirmation');
+        console.log('Signup successful, sending welcome email');
+        
+        // Send welcome email for email confirmation
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: email,
+              firstName: "",
+              isConfirmation: true
+            }
+          });
+          console.log('Welcome email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't block the flow if email fails
+        }
+        
         setEmailSent(true);
         toast({
           title: "Check your email",
