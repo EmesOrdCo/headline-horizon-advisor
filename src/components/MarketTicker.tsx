@@ -154,9 +154,9 @@ const MarketTicker = () => {
           <div className="flex-1 overflow-hidden">
             <div 
               ref={tickerRef}
-              className="ticker-scroll flex gap-8"
+              className={`flex ${isMobile ? 'gap-4' : 'gap-8'}`}
               style={{
-                animation: `scroll ${isMobile ? '8s' : '60s'} linear infinite`,
+                animation: `scroll ${isMobile ? '25s' : '60s'} linear infinite`,
                 width: '300%',
                 willChange: 'transform',
                 WebkitTransform: 'translateZ(0)',
@@ -166,10 +166,10 @@ const MarketTicker = () => {
               }}
             >
               {scrollingData.map((item, index) => (
-                <div key={`${item.symbol}-${index}`} className="flex items-center gap-4 whitespace-nowrap flex-shrink-0">
-                  <span className="text-white font-semibold text-sm">{item.symbol}</span>
-                  <span className="text-slate-300 text-sm">${item.price.toFixed(2)}</span>
-                  <span className={`text-sm flex items-center gap-1 transition-colors duration-300 ${
+                <div key={`${item.symbol}-${index}`} className={`flex items-center ${isMobile ? 'gap-2' : 'gap-4'} whitespace-nowrap flex-shrink-0`}>
+                  <span className={`text-white font-semibold ${isMobile ? 'text-xs' : 'text-sm'}`}>{item.symbol}</span>
+                  <span className={`text-slate-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>${item.price.toFixed(2)}</span>
+                  <span className={`${isMobile ? 'text-xs' : 'text-sm'} flex items-center gap-1 transition-colors duration-300 ${
                     item.change >= 0 ? 'text-emerald-400' : 'text-red-400'
                   }`}>
                     <Triangle 
