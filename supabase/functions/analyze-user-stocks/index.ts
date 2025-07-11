@@ -90,14 +90,14 @@ Based on all these articles together, provide a JSON response:
   "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
 }
 
-CONFIDENCE LEVEL GUIDELINES (BE CONSERVATIVE):
-- 1-20: Very uncertain, conflicting information, speculative news
-- 21-40: Low confidence, limited information, uncertain market conditions  
-- 41-60: Moderate confidence, some clear indicators but mixed signals
-- 61-80: High confidence, clear trends and strong supporting evidence
-- 81-100: Very high confidence, major confirmed events with clear market impact (RARE - use sparingly)
+CONFIDENCE LEVEL GUIDELINES (BE VERY CONSERVATIVE - DEFAULT TO LOW CONFIDENCE):
+- 1-25: Very uncertain, conflicting information, speculative rumors, unverified claims
+- 26-45: Low confidence, limited reliable information, uncertain market conditions, general news
+- 46-65: Moderate confidence, some clear indicators but mixed signals, typical earnings reports
+- 66-80: High confidence, clear trends with strong supporting evidence, major partnerships/acquisitions
+- 81-100: EXTREMELY RARE - only for massive confirmed events like CEO resignations, major disasters, regulatory bans
 
-IMPORTANT: DEFAULT to lower confidence levels (20-60 range) unless evidence is overwhelming. Confidence above 80 should be RARE and only for major confirmed events.
+IMPORTANT: Most news should fall in the 20-50 range. Default to 35-45 for typical market news. BE EXTREMELY CONSERVATIVE.
 
 Focus on the overall sentiment and impact on ${symbol} stock price.`;
 
