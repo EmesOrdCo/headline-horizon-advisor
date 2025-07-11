@@ -32,17 +32,9 @@ const OnboardingDetails = () => {
         return;
       }
 
-      // If user exists and email is not confirmed, redirect back to email page
-      if (user && !user.email_confirmed_at) {
-        console.log('OnboardingDetails: Email not confirmed, redirecting to email page');
-        navigate('/onboarding/email');
-        return;
-      }
-
-      // If user exists and email is confirmed, check profile status
-      if (user && user.email_confirmed_at) {
-        try {
-          console.log('OnboardingDetails: User email confirmed, checking profile for:', user.id);
+      // Check profile status directly since email confirmation is disabled
+      try {
+        console.log('OnboardingDetails: Checking profile for:', user.id);
           
           const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
@@ -75,14 +67,13 @@ const OnboardingDetails = () => {
             if (existingProfile.last_name) setLastName(existingProfile.last_name);
             if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
           }
-        } catch (error) {
-          console.error('OnboardingDetails: Error in profile initialization:', error);
-          toast({
-            title: "Setup Error",
-            description: "There was an issue loading your profile. Please try again.",
-            variant: "destructive",
-          });
-        }
+      } catch (error) {
+        console.error('OnboardingDetails: Error in profile initialization:', error);
+        toast({
+          title: "Setup Error",
+          description: "There was an issue loading your profile. Please try again.",
+          variant: "destructive",
+        });
       }
       
       setInitializing(false);
