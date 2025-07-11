@@ -104,7 +104,7 @@ const IndexFunds = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
+      <main className="pt-44 p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex items-center justify-between">
