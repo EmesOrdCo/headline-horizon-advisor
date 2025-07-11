@@ -101,11 +101,17 @@
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-33.333%);
   }
 }
 
 .animate-scroll {
   animation: scroll 8s linear infinite;
   width: 200%; /* Ensure enough width for seamless scrolling */
+}
+
+.ticker-scroll {
+  animation: scroll 60s linear infinite;
+  width: 300%;
+  will-change: transform;
 }

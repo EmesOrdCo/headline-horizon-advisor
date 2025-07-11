@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, Triangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Triangle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 
 interface MarketIndex {
@@ -13,20 +13,28 @@ interface MarketIndex {
 const MarketTicker = () => {
   const [marketData, setMarketData] = useState<MarketIndex[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const tickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        // Major market indices - using fewer symbols to respect rate limits
+        // Major market indices and prominent stocks
         const indices = [
           { symbol: 'SPY', name: 'S&P 500' },
           { symbol: 'QQQ', name: 'NASDAQ' },
           { symbol: 'DIA', name: 'Dow Jones' },
           { symbol: 'AAPL', name: 'AAPL' },
-          { symbol: 'TSLA', name: 'TSLA' },
-          { symbol: 'NVDA', name: 'NVDA' },
           { symbol: 'MSFT', name: 'MSFT' },
-          { symbol: 'GOOGL', name: 'GOOGL' }
+          { symbol: 'GOOGL', name: 'GOOGL' },
+          { symbol: 'AMZN', name: 'AMZN' },
+          { symbol: 'NVDA', name: 'NVDA' },
+          { symbol: 'TSLA', name: 'TSLA' },
+          { symbol: 'META', name: 'META' },
+          { symbol: 'BRK.B', name: 'BRK.B' },
+          { symbol: 'JPM', name: 'JPM' },
+          { symbol: 'V', name: 'VISA' },
+          { symbol: 'JNJ', name: 'J&J' },
+          { symbol: 'WMT', name: 'WMT' }
         ];
 
         console.log('Fetching live market data from Finnhub...');
@@ -75,13 +83,14 @@ const MarketTicker = () => {
         }
 
         if (results.length > 0) {
-          setMarketData(results);
+          setMarketData(prevData => {
+            // Only update if data has actually changed to prevent unnecessary re-renders
+            const hasChanged = JSON.stringify(prevData) !== JSON.stringify(results);
+            return hasChanged ? results : prevData;
+          });
           console.log(`Successfully fetched ${results.length} market indices`);
         } else {
           console.error('No valid market data received');
-          if (marketData.length === 0) {
-            setMarketData([]);
-          }
         }
       } catch (error) {
         console.error('Error fetching market data:', error);
@@ -91,8 +100,8 @@ const MarketTicker = () => {
     };
 
     fetchMarketData();
-    // Refetch every 2 minutes (allows time for all API calls to complete)
-    const interval = setInterval(fetchMarketData, 120000);
+    // Refetch every 3 minutes to reduce jarring updates
+    const interval = setInterval(fetchMarketData, 180000);
 
     return () => clearInterval(interval);
   }, []);
@@ -129,8 +138,8 @@ const MarketTicker = () => {
     );
   }
 
-  // Duplicate the data to create seamless scrolling
-  const duplicatedData = [...marketData, ...marketData];
+  // Create seamless scrolling by triplicating the data for smooth transitions
+  const scrollingData = marketData.length > 0 ? [...marketData, ...marketData, ...marketData] : [];
 
   return (
     <div className="fixed top-[58px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
@@ -141,9 +150,17 @@ const MarketTicker = () => {
             <span className="text-emerald-400 text-sm font-medium">LIVE MARKETS</span>
           </div>
           <div className="flex-1 overflow-hidden">
-            <div key="ticker-scroll" className="animate-scroll flex gap-8">
-              {duplicatedData.map((item, index) => (
-                <div key={`ticker-item-${index}`} className="flex items-center gap-4 whitespace-nowrap">
+            <div 
+              ref={tickerRef}
+              className="ticker-scroll flex gap-8"
+              style={{
+                animation: 'scroll 60s linear infinite',
+                width: '300%',
+                willChange: 'transform'
+              }}
+            >
+              {scrollingData.map((item, index) => (
+                <div key={`${item.symbol}-${index}`} className="flex items-center gap-4 whitespace-nowrap flex-shrink-0">
                   <span className="text-white font-semibold text-sm">{item.symbol}</span>
                   <span className="text-slate-300 text-sm">${item.price.toFixed(2)}</span>
                   <span className={`text-sm flex items-center gap-1 transition-colors duration-300 ${
