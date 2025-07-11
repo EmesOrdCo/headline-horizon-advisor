@@ -179,18 +179,24 @@ ${articleSummaries}
 
 Based on all these articles together, provide a JSON response:
 {
-  "confidence": "number between 1-100 representing your confidence level in this analysis. Use this precise scale: 60-65: very low confidence (1 dot), 66-75: low confidence (2 dots), 76-85: moderate confidence (3 dots), 86-95: high confidence (4 dots), 95-100: very high confidence (5 dots). Be realistic and vary your confidence based on article quality, consistency, and strength of evidence. Don't default to high confidence.",
+  "confidence": "number between 60-100 representing the STRENGTH and CONVICTION of your directional prediction for ${symbol}",
   "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral' based on the collective impact",
   "category": "string describing the dominant news category across articles",
   "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
 }
 
-IMPORTANT: Vary your confidence level realistically based on:
-- Article quality and credibility
-- Consistency of sentiment across articles  
-- Strength and clarity of the market signals
-- Recency and relevance of the news
-Use the full range of 60-100, don't cluster around 75-85.
+CRITICAL CONFIDENCE DEFINITION:
+Confidence represents how STRONGLY and DECISIVELY the news supports your directional prediction (bullish/bearish).
+You should be as confident as possible given the available evidence. This is about prediction strength, not analysis uncertainty.
+
+CONFIDENCE SCALE (use FULL range 60-100):
+- 95-100: (5 dots) Overwhelming directional evidence - major breaking news, clear market-moving events
+- 86-94: (4 dots) Strong directional signals - significant developments with clear market implications  
+- 76-85: (3 dots) Solid directional evidence - meaningful news with moderate market impact
+- 66-75: (2 dots) Weak directional signals - minor news with limited market relevance
+- 60-65: (1 dot) Very weak signals - minimal news or highly contradictory information
+
+Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push toward higher confidence levels when the news clearly supports a direction.
 
 Focus on the overall trend and sentiment across all articles for ${symbol}.`;
 
