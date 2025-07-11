@@ -27,6 +27,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
+      // If user exists but email not confirmed, redirect to onboarding email
+      if (user && !user.email_confirmed_at) {
+        console.log('Email not confirmed, redirecting to onboarding email');
+        navigate('/onboarding/email');
+        return;
+      }
+
       try {
         // Check if profile exists and onboarding is completed
         const { data, error } = await supabase

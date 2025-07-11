@@ -32,59 +32,64 @@ const OnboardingDetails = () => {
         return;
       }
 
-      // Check profile status directly since email confirmation is disabled
-      try {
-        console.log('OnboardingDetails: Checking profile for:', user.id);
-        
-        const { data: existingProfile, error: checkError } = await supabase
-          .from('profiles')
-          .select('id, onboarding_completed, first_name, last_name, date_of_birth')
-          .eq('id', user.id)
-          .single();
+      // If user exists and email is not confirmed, redirect back to email page
+      if (user && !user.email_confirmed_at) {
+        console.log('OnboardingDetails: Email not confirmed, redirecting to email page');
+        navigate('/onboarding/email');
+        return;
+      }
 
-        if (checkError && checkError.code === 'PGRST116') {
-          // Profile doesn't exist, create it
-          console.log('OnboardingDetails: Profile not found, creating new profile');
-          const { error: createError } = await supabase
+      // If user exists and email is confirmed, check profile status
+      if (user && user.email_confirmed_at) {
+        try {
+          console.log('OnboardingDetails: User email confirmed, checking profile for:', user.id);
+          
+          const { data: existingProfile, error: checkError } = await supabase
             .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              onboarding_completed: false
+            .select('id, onboarding_completed, first_name, last_name, date_of_birth')
+            .eq('id', user.id)
+            .single();
+
+          if (checkError && checkError.code === 'PGRST116') {
+            // Profile doesn't exist, this is unusual but we can handle it
+            console.log('OnboardingDetails: Profile not found, user should have been created during confirmation');
+            toast({
+              title: "Setup Issue",
+              description: "Please try signing up again or contact support.",
+              variant: "destructive",
             });
-          
-          if (createError) {
-            console.error('Error creating profile:', createError);
-          }
-        } else if (checkError) {
-          console.error('Database error:', checkError);
-        } else if (existingProfile) {
-          console.log('OnboardingDetails: Profile exists');
-          
-          // If onboarding is already completed, redirect to dashboard
-          if (existingProfile.onboarding_completed) {
-            console.log('OnboardingDetails: Onboarding already completed, redirecting to dashboard');
-            navigate('/dashboard');
+            navigate('/onboarding/email');
             return;
+          } else if (!checkError && existingProfile) {
+            console.log('OnboardingDetails: Profile exists');
+            
+            // If onboarding is already completed, redirect to dashboard
+            if (existingProfile.onboarding_completed) {
+              console.log('OnboardingDetails: Onboarding already completed, redirecting to dashboard');
+              navigate('/dashboard');
+              return;
+            }
+            
+            // Pre-fill form if data exists
+            if (existingProfile.first_name) setFirstName(existingProfile.first_name);
+            if (existingProfile.last_name) setLastName(existingProfile.last_name);
+            if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
           }
-          
-          // Pre-fill form if data exists
-          if (existingProfile.first_name) setFirstName(existingProfile.first_name);
-          if (existingProfile.last_name) setLastName(existingProfile.last_name);
-          if (existingProfile.date_of_birth) setDateOfBirth(existingProfile.date_of_birth);
+        } catch (error) {
+          console.error('OnboardingDetails: Error in profile initialization:', error);
+          toast({
+            title: "Setup Error",
+            description: "There was an issue loading your profile. Please try again.",
+            variant: "destructive",
+          });
         }
-      } catch (error) {
-        console.error('OnboardingDetails: Error in profile initialization:', error);
       }
       
       setInitializing(false);
     };
 
-    // Only run once when user/session changes, not on every render
-    if (user && session && initializing) {
-      initializeUser();
-    }
-  }, [user, session, initializing, navigate]);
+    initializeUser();
+  }, [user, session, navigate, toast]);
 
   const validateAge = (birthDate: string) => {
     const today = new Date();

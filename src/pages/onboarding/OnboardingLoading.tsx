@@ -36,23 +36,6 @@ const OnboardingLoading = () => {
   };
 
   useEffect(() => {
-    // Mark onboarding as completed when this page loads
-    const markOnboardingComplete = async () => {
-      if (!user) return;
-      
-      try {
-        await supabase
-          .from('profiles')
-          .update({ onboarding_completed: true })
-          .eq('id', user.id);
-        console.log('Onboarding marked as completed');
-      } catch (error) {
-        console.error('Error marking onboarding complete:', error);
-      }
-    };
-
-    markOnboardingComplete();
-
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
