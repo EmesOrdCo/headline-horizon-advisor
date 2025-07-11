@@ -140,8 +140,8 @@ const MarketTicker = () => {
     );
   }
 
-  // Create seamless scrolling by triplicating the data for smooth transitions
-  const scrollingData = marketData.length > 0 ? [...marketData, ...marketData, ...marketData] : [];
+  // Create seamless scrolling by quintupling the data for longer cycles before reset
+  const scrollingData = marketData.length > 0 ? [...marketData, ...marketData, ...marketData, ...marketData, ...marketData] : [];
 
   return (
     <div className="fixed top-[58px] left-0 right-0 z-40 bg-slate-800 border-none overflow-hidden">
@@ -156,8 +156,8 @@ const MarketTicker = () => {
               ref={tickerRef}
               className={`flex ${isMobile ? 'gap-4' : 'gap-8'}`}
               style={{
-                animation: `scroll ${isMobile ? '45s' : '60s'} linear infinite`,
-                width: '300%',
+                animation: `scroll ${isMobile ? '20s' : '40s'} linear infinite`,
+                width: '500%',
                 willChange: 'transform',
                 WebkitTransform: 'translateZ(0)',
                 transform: 'translateZ(0)',
