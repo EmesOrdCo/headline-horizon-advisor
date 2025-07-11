@@ -12,7 +12,7 @@ const Hero = () => {
   return (
     <section className="px-4 sm:px-6 py-12 sm:py-20 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-        <div className="order-2 lg:order-1">
+        <div className="order-1 lg:order-1">
           <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-6 sm:mb-8 leading-tight">
             Take the <span className="text-emerald-400">Guesswork</span><br />
             out of <span className="text-blue-400">Investing</span>
@@ -43,7 +43,7 @@ const Hero = () => {
           </div>
         </div>
         
-        <div className="space-y-4 order-1 lg:order-2">
+        <div className="space-y-4 order-2 lg:order-2">
           {/* Demo header aligned at top */}
           <div className="mb-4 sm:mb-6">
             <div className="bg-gradient-to-r from-blue-500/20 to-emerald-500/20 border border-blue-500/30 rounded-lg px-3 sm:px-4 py-2 inline-block">
