@@ -114,7 +114,7 @@ const Dashboard = () => {
 
   const handleRefreshNews = async () => {
     setIsFetching(true);
-    setFetchingStatus('Fetching news from all sources...');
+    setFetchingStatus('');
     
     try {
       console.log('🔄 Starting news refresh...');
