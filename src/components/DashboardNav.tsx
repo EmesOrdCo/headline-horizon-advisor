@@ -66,12 +66,16 @@ const DashboardNav = () => {
         <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium">
           Live Market News <ChevronDown className="w-4 h-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-slate-800 border-slate-700">
-          <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-            <Link to="/magnificent-7">Magnificent 7</Link>
+        <DropdownMenuContent className="bg-slate-800 border-slate-700 z-50">
+          <DropdownMenuItem asChild>
+            <Link to="/magnificent-7" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
+              Magnificent 7
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="text-slate-300 hover:text-white hover:bg-slate-700">
-            <Link to="/index-funds">Funds</Link>
+          <DropdownMenuItem asChild>
+            <Link to="/index-funds" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
+              Index Funds
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
