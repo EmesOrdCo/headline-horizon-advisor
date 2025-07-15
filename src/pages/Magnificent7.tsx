@@ -5,7 +5,6 @@ import { RefreshCw, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
-import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
@@ -109,12 +108,7 @@ const Magnificent7 = () => {
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      {/* Market Ticker */}
-      <div className="pt-16">
-        <MarketTicker />
-      </div>
-      
-      <div className="pt-16 px-4 sm:px-6">
+      <div className="pt-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <div className="flex flex-col gap-4 mb-4">

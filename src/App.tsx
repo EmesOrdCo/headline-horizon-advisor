@@ -3,10 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import MarketTicker from "@/components/MarketTicker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -22,6 +23,32 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppRoutes = () => {
+  const location = useLocation();
+  const showTicker = !['/', '/auth', '/email-confirmation'].includes(location.pathname) && 
+                     !location.pathname.startsWith('/onboarding');
+
+  return (
+    <>
+      {showTicker && <MarketTicker />}
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="/onboarding/*" element={<Onboarding />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
+        <Route path="/analysis/:symbol" element={<ProtectedRoute><DetailedAnalysis /></ProtectedRoute>} />
+        <Route path="/biggest-movers" element={<ProtectedRoute><BiggestMovers /></ProtectedRoute>} />
+        <Route path="/magnificent-7" element={<ProtectedRoute><Magnificent7 /></ProtectedRoute>} />
+        <Route path="/index-funds" element={<ProtectedRoute><IndexFunds /></ProtectedRoute>} />
+        <Route path="/my-stocks" element={<ProtectedRoute><MyStocks /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -30,20 +57,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/email-confirmation" element={<EmailConfirmation />} />
-              <Route path="/onboarding/*" element={<Onboarding />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
-              <Route path="/analysis/:symbol" element={<ProtectedRoute><DetailedAnalysis /></ProtectedRoute>} />
-              <Route path="/biggest-movers" element={<ProtectedRoute><BiggestMovers /></ProtectedRoute>} />
-              <Route path="/magnificent-7" element={<ProtectedRoute><Magnificent7 /></ProtectedRoute>} />
-              <Route path="/index-funds" element={<ProtectedRoute><IndexFunds /></ProtectedRoute>} />
-              <Route path="/my-stocks" element={<ProtectedRoute><MyStocks /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -4,7 +4,6 @@ import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "l
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
-import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RSSHeadlines from "@/components/RSSHeadlines";
 import { useNews, useFetchNews } from "@/hooks/useNews";
@@ -161,9 +160,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
+      <main className="pt-32 p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
