@@ -39,7 +39,22 @@ const MyStocks = () => {
   useSEO({
     title: "My Stock Portfolio",
     description: "Track and analyze your personal stock portfolio with AI-powered insights. Get customized news analysis and market sentiment for your selected stocks.",
-    canonical: "https://yourdomain.com/my-stocks"
+    canonical: "https://yourdomain.com/my-stocks",
+    ogType: "website",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "My Stock Portfolio",
+      "description": "Personal stock portfolio tracking with AI analysis",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    }
   });
   
   const [userStocks, setUserStocks] = useState<UserStock[]>([]);

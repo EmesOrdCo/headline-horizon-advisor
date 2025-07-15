@@ -14,7 +14,38 @@ const Index = () => {
   useSEO({
     title: "AI-Powered Market Intelligence & Real-Time Predictions",
     description: "Empowering investors with AI-driven market intelligence and real-time predictions. Get comprehensive stock analysis, sentiment insights, and data-driven investment decisions.",
-    canonical: "https://yourdomain.com/"
+    canonical: "https://yourdomain.com/",
+    ogType: "website",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "FinancialService",
+      "name": "MarketSensorAI",
+      "description": "AI-powered market intelligence and real-time stock predictions",
+      "url": "https://yourdomain.com",
+      "serviceType": "Financial Analysis",
+      "provider": {
+        "@type": "Organization",
+        "name": "MarketSensorAI",
+        "url": "https://yourdomain.com"
+      },
+      "areaServed": "US",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Market Intelligence Services",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "name": "AI Stock Analysis",
+            "description": "Real-time AI-powered stock sentiment analysis"
+          },
+          {
+            "@type": "Offer",
+            "name": "Market Predictions",
+            "description": "AI-generated market forecasts and predictions"
+          }
+        ]
+      }
+    }
   });
 
   return (

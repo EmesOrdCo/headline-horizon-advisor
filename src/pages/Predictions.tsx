@@ -11,7 +11,29 @@ const Predictions = () => {
   useSEO({
     title: "AI Stock Predictions & Market Forecasts",
     description: "Get AI-generated stock predictions and market forecasts with confidence scores. Advanced machine learning models provide 24-hour price predictions for major stocks.",
-    canonical: "https://yourdomain.com/predictions"
+    canonical: "https://yourdomain.com/predictions",
+    ogType: "article",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "AI Stock Predictions & Market Forecasts",
+      "description": "AI-generated stock predictions with confidence scores",
+      "author": {
+        "@type": "Organization",
+        "name": "MarketSensorAI"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MarketSensorAI",
+        "url": "https://yourdomain.com"
+      },
+      "datePublished": new Date().toISOString(),
+      "dateModified": new Date().toISOString(),
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yourdomain.com/predictions"
+      }
+    }
   });
   const predictions = [
     {

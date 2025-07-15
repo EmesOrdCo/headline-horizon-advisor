@@ -1,8 +1,20 @@
 User-agent: Googlebot
 Allow: /
+Allow: /dashboard
+Allow: /magnificent-7
+Allow: /index-funds
+Allow: /biggest-movers
+Allow: /predictions
+Allow: /my-stocks
 
 User-agent: Bingbot
 Allow: /
+Allow: /dashboard
+Allow: /magnificent-7
+Allow: /index-funds
+Allow: /biggest-movers
+Allow: /predictions
+Allow: /my-stocks
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +24,23 @@ Allow: /
 
 User-agent: *
 Allow: /
+Allow: /dashboard
+Allow: /magnificent-7
+Allow: /index-funds
+Allow: /biggest-movers
+Allow: /predictions
+Allow: /my-stocks
+
+# Disallow private/auth pages from all crawlers
+Disallow: /auth
+Disallow: /email-confirmation
+Disallow: /onboarding/
+
+# Disallow dynamic analysis pages (prevent crawling individual stock analysis)
+Disallow: /analysis/
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl delay to be respectful
+Crawl-delay: 1

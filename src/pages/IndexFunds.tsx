@@ -17,7 +17,34 @@ const IndexFunds = () => {
   useSEO({
     title: "Index Funds Analysis & Market Insights",
     description: "AI-powered analysis of major market index funds including SPY, QQQ, and DIA. Get comprehensive insights into market trends and index fund performance.",
-    canonical: "https://yourdomain.com/index-funds"
+    canonical: "https://yourdomain.com/index-funds",
+    ogType: "article",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Index Funds Analysis & Market Insights",
+      "description": "AI-powered analysis of major market index funds",
+      "author": {
+        "@type": "Organization",
+        "name": "MarketSensorAI"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MarketSensorAI",
+        "url": "https://yourdomain.com"
+      },
+      "datePublished": new Date().toISOString(),
+      "dateModified": new Date().toISOString(),
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yourdomain.com/index-funds"
+      },
+      "about": [
+        { "@type": "InvestmentFund", "name": "SPDR S&P 500 ETF Trust", "tickerSymbol": "SPY" },
+        { "@type": "InvestmentFund", "name": "Invesco QQQ Trust", "tickerSymbol": "QQQ" },
+        { "@type": "InvestmentFund", "name": "SPDR Dow Jones Industrial Average ETF Trust", "tickerSymbol": "DIA" }
+      ]
+    }
   });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices } = useStockPrices();

@@ -18,7 +18,22 @@ const Dashboard = () => {
   useSEO({
     title: "Live Market News Dashboard",
     description: "Stay updated with real-time market news, AI-powered analysis of Magnificent 7 stocks, index funds, and comprehensive market insights.",
-    canonical: "https://yourdomain.com/dashboard"
+    canonical: "https://yourdomain.com/dashboard",
+    ogType: "website",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "MarketSensorAI Dashboard",
+      "description": "Real-time market news and AI analysis dashboard",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    }
   });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();

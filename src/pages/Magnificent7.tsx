@@ -17,7 +17,38 @@ const Magnificent7 = () => {
   useSEO({
     title: "Magnificent 7 Stocks Analysis",
     description: "Comprehensive AI-powered analysis of the Magnificent 7 tech stocks: Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, and Meta. Get real-time insights and market sentiment.",
-    canonical: "https://yourdomain.com/magnificent-7"
+    canonical: "https://yourdomain.com/magnificent-7",
+    ogType: "article",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Magnificent 7 Stocks Analysis",
+      "description": "AI-powered analysis of top 7 tech stocks",
+      "author": {
+        "@type": "Organization",
+        "name": "MarketSensorAI"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MarketSensorAI",
+        "url": "https://yourdomain.com"
+      },
+      "datePublished": new Date().toISOString(),
+      "dateModified": new Date().toISOString(),
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yourdomain.com/magnificent-7"
+      },
+      "about": [
+        { "@type": "Corporation", "name": "Apple Inc.", "tickerSymbol": "AAPL" },
+        { "@type": "Corporation", "name": "Microsoft Corporation", "tickerSymbol": "MSFT" },
+        { "@type": "Corporation", "name": "Alphabet Inc.", "tickerSymbol": "GOOGL" },
+        { "@type": "Corporation", "name": "Amazon.com Inc.", "tickerSymbol": "AMZN" },
+        { "@type": "Corporation", "name": "NVIDIA Corporation", "tickerSymbol": "NVDA" },
+        { "@type": "Corporation", "name": "Tesla Inc.", "tickerSymbol": "TSLA" },
+        { "@type": "Corporation", "name": "Meta Platforms Inc.", "tickerSymbol": "META" }
+      ]
+    }
   });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices } = useStockPrices();

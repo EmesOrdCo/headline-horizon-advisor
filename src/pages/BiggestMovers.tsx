@@ -162,7 +162,29 @@ const BiggestMovers = () => {
   useSEO({
     title: "Biggest Stock Movers Today",
     description: "Track the biggest stock gainers and losers with AI-powered sentiment analysis. Get real-time market data and detailed analysis of top performing stocks.",
-    canonical: "https://yourdomain.com/biggest-movers"
+    canonical: "https://yourdomain.com/biggest-movers",
+    ogType: "article",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Biggest Stock Movers Today",
+      "description": "Real-time tracking of biggest stock gainers and losers",
+      "author": {
+        "@type": "Organization",
+        "name": "MarketSensorAI"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "MarketSensorAI",
+        "url": "https://yourdomain.com"
+      },
+      "datePublished": new Date().toISOString(),
+      "dateModified": new Date().toISOString(),
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://yourdomain.com/biggest-movers"
+      }
+    }
   });
 
   return (
