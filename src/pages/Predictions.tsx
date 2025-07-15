@@ -38,7 +38,7 @@ const Predictions = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <DashboardNav />
       
-      <main className="pt-32 p-4 sm:p-6 max-w-7xl mx-auto">
+      <main className="p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Predictions</h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400">Keep up with the latest AI-generated market forecasts</p>

@@ -39,7 +39,7 @@ const DetailedAnalysis = () => {
     return (
       <div className="min-h-screen bg-slate-900">
         <DashboardNav />
-        <main className="pt-32 p-6 max-w-7xl mx-auto">
+        <main className="p-6 max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-white">Loading analysis...</div>
           </div>
@@ -52,7 +52,7 @@ const DetailedAnalysis = () => {
     return (
       <div className="min-h-screen bg-slate-900">
         <DashboardNav />
-        <main className="pt-32 p-6 max-w-7xl mx-auto">
+        <main className="p-6 max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-white">No data available for {upperSymbol}</div>
           </div>
@@ -164,7 +164,7 @@ const DetailedAnalysis = () => {
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      <main className="pt-32 p-6 max-w-7xl mx-auto">
+      <main className="p-6 max-w-7xl mx-auto">
         <div className="mb-8">
           <Link 
             to="/biggest-movers" 

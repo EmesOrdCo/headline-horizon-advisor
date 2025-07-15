@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import DashboardNav from "@/components/DashboardNav";
+import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -160,8 +161,13 @@ const BiggestMovers = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
+      
+      {/* Market Ticker */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex flex-col gap-4 mb-4">
