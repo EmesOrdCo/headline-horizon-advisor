@@ -171,7 +171,11 @@ const BiggestMovers = () => {
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex flex-col gap-4 mb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Biggest Movers</h1>
+                <p className="text-slate-400 text-sm sm:text-base">Top 3 biggest gainers and losers with the largest price movements today, analyzed with AI sentiment</p>
+              </div>
               <Button
                 onClick={() => refetch()}
                 disabled={isLoading}
@@ -180,10 +184,6 @@ const BiggestMovers = () => {
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh Data
               </Button>
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Biggest Movers</h1>
-              <p className="text-slate-400 text-sm sm:text-base">Top 3 biggest gainers and losers with the largest price movements today, analyzed with AI sentiment</p>
             </div>
           </div>
           
