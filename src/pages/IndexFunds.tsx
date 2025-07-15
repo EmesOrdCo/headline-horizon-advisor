@@ -11,8 +11,14 @@ import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useSEO } from "@/hooks/useSEO";
 
 const IndexFunds = () => {
+  useSEO({
+    title: "Index Funds Analysis & Market Insights",
+    description: "AI-powered analysis of major market index funds including SPY, QQQ, and DIA. Get comprehensive insights into market trends and index fund performance.",
+    canonical: "https://yourdomain.com/index-funds"
+  });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices } = useStockPrices();
   const fetchNews = useFetchNews();

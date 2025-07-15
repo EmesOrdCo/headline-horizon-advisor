@@ -5,8 +5,14 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import PredictionCard from "@/components/PredictionCard";
+import { useSEO } from "@/hooks/useSEO";
 
 const Predictions = () => {
+  useSEO({
+    title: "AI Stock Predictions & Market Forecasts",
+    description: "Get AI-generated stock predictions and market forecasts with confidence scores. Advanced machine learning models provide 24-hour price predictions for major stocks.",
+    canonical: "https://yourdomain.com/predictions"
+  });
   const predictions = [
     {
       symbol: "AAPL",

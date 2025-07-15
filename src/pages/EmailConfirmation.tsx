@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSEO } from "@/hooks/useSEO";
 
 const EmailConfirmation = () => {
   const [loading, setLoading] = useState(true);
@@ -10,6 +11,13 @@ const EmailConfirmation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  useSEO({
+    title: "Email Confirmation",
+    description: "Confirm your email address to complete your MarketSensorAI account setup and access AI-powered market insights.",
+    canonical: "https://yourdomain.com/email-confirmation",
+    noindex: true
+  });
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {

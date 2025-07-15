@@ -11,8 +11,14 @@ import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useSEO } from "@/hooks/useSEO";
 
 const Magnificent7 = () => {
+  useSEO({
+    title: "Magnificent 7 Stocks Analysis",
+    description: "Comprehensive AI-powered analysis of the Magnificent 7 tech stocks: Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, and Meta. Get real-time insights and market sentiment.",
+    canonical: "https://yourdomain.com/magnificent-7"
+  });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices } = useStockPrices();
   const fetchNews = useFetchNews();

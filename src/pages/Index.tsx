@@ -8,8 +8,15 @@ import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import AnalysisPipeline from "@/components/AnalysisPipeline";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 
 const Index = () => {
+  useSEO({
+    title: "AI-Powered Market Intelligence & Real-Time Predictions",
+    description: "Empowering investors with AI-driven market intelligence and real-time predictions. Get comprehensive stock analysis, sentiment insights, and data-driven investment decisions.",
+    canonical: "https://yourdomain.com/"
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <Navigation />

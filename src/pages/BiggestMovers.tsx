@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, ExternalLink, BarChart3, RefreshCw, Crown, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
+import { useSEO } from "@/hooks/useSEO";
 
 const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, rank: number }) => {
   const [showHeadlines, setShowHeadlines] = useState(false);
@@ -157,6 +158,12 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
 
 const BiggestMovers = () => {
   const { data: moversData, isLoading, error, refetch } = useBiggestMovers();
+  
+  useSEO({
+    title: "Biggest Stock Movers Today",
+    description: "Track the biggest stock gainers and losers with AI-powered sentiment analysis. Get real-time market data and detailed analysis of top performing stocks.",
+    canonical: "https://yourdomain.com/biggest-movers"
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { Loader2 } from "lucide-react";
+import { useSEO } from "@/hooks/useSEO";
 
 interface UserStock {
   id: string;
@@ -34,6 +35,13 @@ interface NewsArticle {
 const MyStocks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  useSEO({
+    title: "My Stock Portfolio",
+    description: "Track and analyze your personal stock portfolio with AI-powered insights. Get customized news analysis and market sentiment for your selected stocks.",
+    canonical: "https://yourdomain.com/my-stocks"
+  });
+  
   const [userStocks, setUserStocks] = useState<UserStock[]>([]);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);

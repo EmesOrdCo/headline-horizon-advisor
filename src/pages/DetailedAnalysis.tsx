@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
+import { useSEO } from "@/hooks/useSEO";
 
 const ConfidenceDots = ({ confidence }: { confidence: number }) => {
   // Convert percentage to dots (0-100% -> 0-5 dots)
@@ -29,6 +30,12 @@ const DetailedAnalysis = () => {
   const { symbol } = useParams();
   const upperSymbol = symbol?.toUpperCase() || 'AAPL';
   const { data: biggestMovers, isLoading, error } = useBiggestMovers();
+  
+  useSEO({
+    title: `${upperSymbol} Stock Analysis`,
+    description: `Comprehensive AI-powered analysis of ${upperSymbol} stock with sentiment analysis, price predictions, and detailed market insights.`,
+    canonical: `https://yourdomain.com/analysis/${upperSymbol?.toLowerCase()}`
+  });
 
   // Find the stock data for the requested symbol
   const stockData = biggestMovers ? 

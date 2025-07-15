@@ -6,8 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
 
 const Auth = () => {
+  useSEO({
+    title: "Sign In or Create Account",
+    description: "Access your MarketSensorAI account to get AI-powered market insights and predictions. Sign in or create a new account to start your free trial.",
+    canonical: "https://yourdomain.com/auth",
+    noindex: true
+  });
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -12,8 +12,14 @@ import { useFetchRSSNews } from "@/hooks/useRSSHeadlines";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useSEO } from "@/hooks/useSEO";
 
 const Dashboard = () => {
+  useSEO({
+    title: "Live Market News Dashboard",
+    description: "Stay updated with real-time market news, AI-powered analysis of Magnificent 7 stocks, index funds, and comprehensive market insights.",
+    canonical: "https://yourdomain.com/dashboard"
+  });
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
