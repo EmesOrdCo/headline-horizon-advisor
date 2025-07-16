@@ -61,6 +61,12 @@ async function fetchRecentHeadlines() {
     // Sort by published date (most recent first) and ensure we have exactly 15
     const sortedArticles = articles
       .filter(article => article.title && article.url && article.published_at) // Filter out invalid articles
+      .filter(article => {
+        // Blacklist Guru Focus articles
+        const url = article.url?.toLowerCase() || '';
+        const source = article.source?.toLowerCase() || '';
+        return !url.includes('gurufocus') && !source.includes('guru focus') && !source.includes('gurufocus');
+      })
       .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
       .slice(0, 15);
 
