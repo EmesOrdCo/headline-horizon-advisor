@@ -7,9 +7,11 @@ import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RSSHeadlines from "@/components/RSSHeadlines";
-import { useNews } from "@/hooks/useNews";
+import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Dashboard = () => {
   useSEO({
@@ -34,6 +36,35 @@ const Dashboard = () => {
   });
   const { data: newsData, isLoading } = useNews();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
+  const fetchNews = useFetchNews();
+  const queryClient = useQueryClient();
+
+  // Auto-fetch Magnificent 7 and Index Funds data on component mount
+  useEffect(() => {
+    const fetchDataAndRefresh = async () => {
+      console.log('🚀 Auto-fetching Magnificent 7 and Index Funds data...');
+      try {
+        const result = await fetchNews();
+        if (result.success) {
+          // Invalidate and refetch news data to get the latest updates
+          await queryClient.invalidateQueries({ queryKey: ['news'] });
+          console.log('✅ Data fetched and refreshed successfully');
+        } else {
+          console.error('❌ Failed to fetch data:', result.message);
+        }
+      } catch (error) {
+        console.error('❌ Error during data fetch:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchDataAndRefresh();
+
+    // Set up interval to fetch every 5 minutes
+    const interval = setInterval(fetchDataAndRefresh, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [fetchNews, queryClient]);
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
