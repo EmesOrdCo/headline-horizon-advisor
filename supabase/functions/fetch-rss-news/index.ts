@@ -123,19 +123,32 @@ serve(async (req) => {
       // Store headlines in database
       console.log(`💾 Storing ${headlines.length} headlines in database...`);
       
-      const { data, error } = await supabase
+      // Check for existing URLs to avoid duplicates
+      const existingUrls = await supabase
         .from('news_articles')
-        .upsert(headlines, { 
-          onConflict: 'url',
-          ignoreDuplicates: false 
-        });
+        .select('url')
+        .eq('symbol', 'GENERAL')
+        .in('url', headlines.map(h => h.url));
+      
+      const existingUrlSet = new Set(existingUrls.data?.map(row => row.url) || []);
+      const newHeadlines = headlines.filter(h => !existingUrlSet.has(h.url));
+      
+      console.log(`📊 Found ${existingUrlSet.size} existing URLs, inserting ${newHeadlines.length} new headlines`);
+      
+      if (newHeadlines.length > 0) {
+        const { data, error } = await supabase
+          .from('news_articles')
+          .insert(newHeadlines);
 
-      if (error) {
-        console.error('❌ Database error:', error);
-        throw error;
+        if (error) {
+          console.error('❌ Database error:', error);
+          throw error;
+        }
+
+        console.log(`✅ Successfully stored ${newHeadlines.length} new headlines in database`);
+      } else {
+        console.log('ℹ️ No new headlines to store (all URLs already exist)');
       }
-
-      console.log(`✅ Successfully stored ${headlines.length} recent headlines in database`);
     } else {
       console.log('⚠️ No headlines to store');
     }
