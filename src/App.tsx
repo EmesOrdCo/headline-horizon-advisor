@@ -11,6 +11,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Home1 from "./pages/Home1";
+import HomeOption1 from "./pages/HomeOption1";
+import HomeOption2 from "./pages/HomeOption2";
+import HomeOption3 from "./pages/HomeOption3";
 import MyStocks from "./pages/MyStocks";
 import Onboarding from "./pages/Onboarding";
 import Magnificent7 from "./pages/Magnificent7";
@@ -49,6 +52,21 @@ function App() {
                 <Route path="/home1" element={
                   <ProtectedRoute>
                     <Home1 />
+                  </ProtectedRoute>
+                } />
+                <Route path="/home-option1" element={
+                  <ProtectedRoute>
+                    <HomeOption1 />
+                  </ProtectedRoute>
+                } />
+                <Route path="/home-option2" element={
+                  <ProtectedRoute>
+                    <HomeOption2 />
+                  </ProtectedRoute>
+                } />
+                <Route path="/home-option3" element={
+                  <ProtectedRoute>
+                    <HomeOption3 />
                   </ProtectedRoute>
                 } />
                 <Route path="/my-stocks" element={
