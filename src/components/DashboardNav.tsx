@@ -1,18 +1,12 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -62,28 +56,13 @@ const DashboardNav = () => {
         Home
       </Link>
       
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors font-medium focus:outline-none focus:text-white">
-            Live Market News <ChevronDown className="w-4 h-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          className="bg-slate-800 border-slate-700 z-50" 
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
-          <DropdownMenuItem asChild>
-            <Link to="/magnificent-7" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
-              Magnificent 7
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/index-funds" className="text-slate-300 hover:text-white hover:bg-slate-700 w-full cursor-pointer">
-              Index Funds
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Link to="/magnificent-7" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Magnificent 7
+      </Link>
+      
+      <Link to="/index-funds" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Index Funds
+      </Link>
       
       <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
         My Stocks
