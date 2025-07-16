@@ -46,7 +46,7 @@ const StockSelection = ({
   return (
     <Card className="mb-8 bg-slate-800/50 border-slate-700">
       <CardHeader>
-        <CardTitle className="text-white">Stock Selection ({userStocks.length}/3)</CardTitle>
+        <CardTitle className="text-white">Stock Selection ({userStocks.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex gap-4 items-end">
@@ -59,7 +59,7 @@ const StockSelection = ({
           </div>
           <Button 
             onClick={onAddStock} 
-            disabled={!selectedStock || userStocks.length >= 3}
+            disabled={!selectedStock}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
             Add Stock

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import OnboardingProgressBar from "@/components/OnboardingProgressBar";
-import { ArrowLeft } from "lucide-react";
+import StockSearch from "@/components/StockSearch";
+import StockCard from "@/components/StockCard";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,6 +41,7 @@ const POPULAR_STOCKS = [
 
 const OnboardingStocks = () => {
   const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
+  const [selectedStock, setSelectedStock] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -50,12 +53,15 @@ const OnboardingStocks = () => {
     }
   }, [user, navigate]);
 
-  const handleStockToggle = (symbol: string) => {
-    setSelectedStocks(prev => 
-      prev.includes(symbol) 
-        ? prev.filter(s => s !== symbol)
-        : [...prev, symbol]
-    );
+  const addStock = () => {
+    if (selectedStock && !selectedStocks.includes(selectedStock)) {
+      setSelectedStocks(prev => [...prev, selectedStock]);
+      setSelectedStock("");
+    }
+  };
+
+  const removeStock = (symbol: string) => {
+    setSelectedStocks(prev => prev.filter(s => s !== symbol));
   };
 
   const handleContinue = async () => {
@@ -121,59 +127,101 @@ const OnboardingStocks = () => {
         <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-2xl text-slate-800 dark:text-slate-200 mb-2">
-              Which stocks do you have positions in?
+              Which stocks are you interested in?
             </CardTitle>
             <p className="text-slate-600 dark:text-slate-400">
-              Help us personalize your account by selecting the stocks you're currently invested in. 
-              This will help us provide more relevant insights and analysis.
+              Search and select the stocks you want to track and analyze. You can add as many as you'd like 
+              and modify your selection anytime later.
             </p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-              {POPULAR_STOCKS.map((stock) => (
-                <Card 
-                  key={stock.symbol}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    selectedStocks.includes(stock.symbol)
-                      ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-950'
-                      : 'hover:bg-gray-50 dark:hover:bg-slate-700'
-                  }`}
-                  onClick={() => handleStockToggle(stock.symbol)}
+            {/* Stock Search Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
+                Search for stocks
+              </h3>
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <StockSearch
+                    value={selectedStock}
+                    onValueChange={setSelectedStock}
+                    excludedSymbols={selectedStocks}
+                  />
+                </div>
+                <Button 
+                  onClick={addStock} 
+                  disabled={!selectedStock}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        checked={selectedStocks.includes(stock.symbol)}
-                        onChange={() => handleStockToggle(stock.symbol)}
-                        className="pointer-events-none"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">
-                          {stock.symbol}
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                          {stock.name}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Stock
+                </Button>
+              </div>
             </div>
 
+            {/* Popular Stocks Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
+                Or choose from popular stocks
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {POPULAR_STOCKS.map((stock) => (
+                  <Card 
+                    key={stock.symbol}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedStocks.includes(stock.symbol)
+                        ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-950'
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-700'
+                    }`}
+                    onClick={() => {
+                      if (selectedStocks.includes(stock.symbol)) {
+                        removeStock(stock.symbol);
+                      } else {
+                        setSelectedStocks(prev => [...prev, stock.symbol]);
+                      }
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedStocks.includes(stock.symbol)}
+                          className="pointer-events-none"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+                            {stock.symbol}
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                            {stock.name}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Selected Stocks Display */}
             {selectedStocks.length > 0 && (
               <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg">
-                <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-2">
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
                   <strong>{selectedStocks.length}</strong> stocks selected:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedStocks.map((symbol) => (
-                    <span
+                    <div
                       key={symbol}
-                      className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs rounded-full"
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-sm rounded-full"
                     >
-                      {symbol}
-                    </span>
+                      <span>{symbol}</span>
+                      <button
+                        onClick={() => removeStock(symbol)}
+                        className="hover:bg-emerald-200 dark:hover:bg-emerald-800 rounded-full p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

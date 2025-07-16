@@ -142,7 +142,7 @@ const MyStocks = () => {
   };
 
   const addStock = async () => {
-    if (!selectedStock || userStocks.length >= 3) return;
+    if (!selectedStock) return;
 
     try {
       const { error } = await supabase
@@ -258,7 +258,7 @@ const MyStocks = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
-            <p className="text-slate-400">Select up to 3 stocks to track and analyze with Marketaux news</p>
+            <p className="text-slate-400">Track and analyze your stocks with AI-powered insights from Marketaux</p>
             {stockPricesLoading && <p className="text-yellow-400 text-sm">Loading stock prices...</p>}
             {stockPricesError && <p className="text-red-400 text-sm">Error loading stock prices</p>}
           </div>
