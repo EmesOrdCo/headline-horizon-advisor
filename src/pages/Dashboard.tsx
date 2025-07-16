@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, ExternalLink, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -10,8 +10,10 @@ import RSSHeadlines from "@/components/RSSHeadlines";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   useSEO({
@@ -38,6 +40,82 @@ const Dashboard = () => {
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
   const fetchNews = useFetchNews();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isRefreshingMag7, setIsRefreshingMag7] = useState(false);
+  const [isRefreshingIndex, setIsRefreshingIndex] = useState(false);
+
+  // Manual refresh functions
+  const refreshMagnificent7 = async () => {
+    setIsRefreshingMag7(true);
+    try {
+      console.log('🔄 Manual refresh for Magnificent 7...');
+      const { data, error } = await supabase.functions.invoke('fetch-magnificent-7');
+      
+      if (error) {
+        console.error('❌ Magnificent 7 refresh failed:', error);
+        toast({
+          title: "Refresh Failed",
+          description: "Failed to refresh Magnificent 7 data. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Invalidate and refetch news data
+      await queryClient.invalidateQueries({ queryKey: ['news'] });
+      console.log('✅ Magnificent 7 refreshed successfully');
+      
+      toast({
+        title: "Refreshed Successfully",
+        description: "Magnificent 7 data has been updated.",
+      });
+    } catch (error) {
+      console.error('❌ Error refreshing Magnificent 7:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "An error occurred while refreshing Magnificent 7 data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshingMag7(false);
+    }
+  };
+
+  const refreshIndexFunds = async () => {
+    setIsRefreshingIndex(true);
+    try {
+      console.log('🔄 Manual refresh for Index Funds...');
+      const { data, error } = await supabase.functions.invoke('fetch-index-funds');
+      
+      if (error) {
+        console.error('❌ Index Funds refresh failed:', error);
+        toast({
+          title: "Refresh Failed",
+          description: "Failed to refresh Index Funds data. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Invalidate and refetch news data
+      await queryClient.invalidateQueries({ queryKey: ['news'] });
+      console.log('✅ Index Funds refreshed successfully');
+      
+      toast({
+        title: "Refreshed Successfully",
+        description: "Index Funds data has been updated.",
+      });
+    } catch (error) {
+      console.error('❌ Error refreshing Index Funds:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "An error occurred while refreshing Index Funds data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshingIndex(false);
+    }
+  };
 
   // Auto-fetch Magnificent 7 and Index Funds data on component mount
   useEffect(() => {
@@ -188,13 +266,24 @@ const Dashboard = () => {
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
                   <Badge className="bg-blue-500 text-white w-fit">Top Story</Badge>
                 </div>
-                <Link to="/magnificent-7" className="w-full sm:w-auto">
-                  <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 w-full sm:w-auto">
-                    <span className="hidden sm:inline">View All 7 Stocks</span>
-                    <span className="sm:hidden">View All</span>
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshMagnificent7}
+                    disabled={isRefreshingMag7}
+                    className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshingMag7 ? 'animate-spin' : ''}`} />
                   </Button>
-                </Link>
+                  <Link to="/magnificent-7" className="w-full sm:w-auto">
+                    <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 w-full sm:w-auto">
+                      <span className="hidden sm:inline">View All 7 Stocks</span>
+                      <span className="sm:hidden">View All</span>
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
               
               {isLoading ? (
@@ -227,13 +316,24 @@ const Dashboard = () => {
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
                   <Badge className="bg-purple-500 text-white w-fit">Top Story</Badge>
                 </div>
-                <Link to="/index-funds" className="w-full sm:w-auto">
-                  <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 w-full sm:w-auto">
-                    <span className="hidden sm:inline">View All Index Funds</span>
-                    <span className="sm:hidden">View All</span>
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshIndexFunds}
+                    disabled={isRefreshingIndex}
+                    className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshingIndex ? 'animate-spin' : ''}`} />
                   </Button>
-                </Link>
+                  <Link to="/index-funds" className="w-full sm:w-auto">
+                    <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 w-full sm:w-auto">
+                      <span className="hidden sm:inline">View All Index Funds</span>
+                      <span className="sm:hidden">View All</span>
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
               
               {isLoading ? (
