@@ -25,12 +25,9 @@ async function fetchRecentHeadlines() {
   try {
     console.log('🔍 Fetching recent headlines from MarketAux...');
     
-    // Get current time for recent news filtering (last 2 hours)
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    
-    // Fetch recent general market news from MarketAux with published_after filter for recent news
-    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=20&published_after=${twoHoursAgo}&api_token=${marketauxApiKey}`;
-    console.log('📡 Making API request to MarketAux for news published after:', twoHoursAgo);
+    // Fetch recent general market news from MarketAux (remove problematic published_after parameter)
+    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}`;
+    console.log('📡 Making API request to MarketAux without date filter...');
     
     const response = await fetch(apiUrl);
     
@@ -58,8 +55,26 @@ async function fetchRecentHeadlines() {
       return [];
     }
     
-    // Sort by published date (most recent first) and ensure we have exactly 15
-    const sortedArticles = articles
+    // Filter for recent articles (last 4 hours) and sort by published date
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    console.log('🕒 Filtering for articles published after:', fourHoursAgo.toISOString());
+    
+    const recentArticles = articles.filter(article => {
+      if (!article.published_at) return false;
+      
+      const publishedDate = new Date(article.published_at);
+      const isRecent = publishedDate > fourHoursAgo;
+      
+      if (!isRecent) {
+        console.log(`⏰ Skipping older article: ${article.title} (published: ${article.published_at})`);
+      }
+      
+      return isRecent;
+    });
+    
+    console.log(`📅 Found ${recentArticles.length} recent articles (last 4 hours)`);
+    
+    const sortedArticles = recentArticles
       .filter(article => article.title && article.url && article.published_at) // Filter out invalid articles
       .filter(article => {
         // Blacklist Guru Focus articles
