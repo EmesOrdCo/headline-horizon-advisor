@@ -11,95 +11,61 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// RSS Feed sources for financial news
-const RSS_SOURCES = [
-  {
-    name: 'Reuters Business',
-    url: 'https://feeds.reuters.com/reuters/businessNews',
-    category: 'Business'
-  },
-  {
-    name: 'MarketWatch',
-    url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/',
-    category: 'Markets'
-  },
-  {
-    name: 'CNBC Markets',
-    url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',
-    category: 'Markets'
+async function fetchRecentHeadlines() {
+  const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
+  
+  if (!marketauxApiKey) {
+    throw new Error('Missing MarketAux API key');
   }
-];
 
-async function parseRSSFeed(url: string, sourceName: string, category: string) {
   try {
-    console.log(`Fetching RSS feed from ${sourceName}: ${url}`);
+    console.log('🔍 Fetching recent headlines from MarketAux...');
     
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)',
-        'Accept': 'application/rss+xml, application/xml, text/xml'
-      }
-    });
+    // Fetch recent general market news from MarketAux
+    const response = await fetch(
+      `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}&sort=published_desc`
+    );
 
     if (!response.ok) {
-      console.error(`Failed to fetch RSS from ${sourceName}: ${response.status}`);
-      return [];
+      console.error(`MarketAux API error: ${response.status}`);
+      throw new Error(`MarketAux API error: ${response.status}`);
     }
 
-    const xmlText = await response.text();
-    console.log(`Received XML from ${sourceName}, length: ${xmlText.length}`);
+    const data = await response.json();
+    const articles = data.data || [];
     
-    // Simple XML parsing for RSS items
-    const items = [];
-    const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/gi;
-    let match;
+    console.log(`📰 Fetched ${articles.length} articles from MarketAux`);
+    
+    // Sort by published date (most recent first) and take top 15
+    const sortedArticles = articles
+      .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+      .slice(0, 15);
 
-    while ((match = itemRegex.exec(xmlText)) !== null) {
-      const itemContent = match[1];
-      
-      // Extract title
-      const titleMatch = itemContent.match(/<title[^>]*><!\[CDATA\[(.*?)\]\]><\/title>|<title[^>]*>(.*?)<\/title>/i);
-      const title = titleMatch ? (titleMatch[1] || titleMatch[2] || '').trim() : '';
-      
-      // Extract description
-      const descMatch = itemContent.match(/<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/i);
-      const description = descMatch ? (descMatch[1] || descMatch[2] || '').replace(/<[^>]*>/g, '').trim() : '';
-      
-      // Extract link
-      const linkMatch = itemContent.match(/<link[^>]*>(.*?)<\/link>|<guid[^>]*>(https?:\/\/[^<]+)<\/guid>/i);
-      const link = linkMatch ? (linkMatch[1] || linkMatch[2] || '').trim() : '';
-      
-      // Extract publication date
-      const pubDateMatch = itemContent.match(/<pubDate[^>]*>(.*?)<\/pubDate>/i);
-      const pubDate = pubDateMatch ? new Date(pubDateMatch[1].trim()).toISOString() : new Date().toISOString();
+    // Format for database storage
+    const processedArticles = sortedArticles.map(article => ({
+      title: article.title?.substring(0, 500) || 'No title',
+      description: article.description?.substring(0, 1000) || '',
+      url: article.url || '',
+      published_at: article.published_at || new Date().toISOString(),
+      category: 'Recent Headlines',
+      symbol: 'GENERAL',
+      ai_confidence: null,
+      ai_sentiment: null,
+      ai_reasoning: null,
+      source_links: JSON.stringify([{
+        title: article.title,
+        url: article.url,
+        published_at: article.published_at,
+        source: article.source || 'MarketAux'
+      }])
+    }));
 
-      if (title && link) {
-        items.push({
-          title: title.substring(0, 500),
-          description: description.substring(0, 1000),
-          url: link,
-          published_at: pubDate,
-          source: sourceName,
-          category: category,
-          symbol: 'GENERAL',
-          ai_confidence: null,
-          ai_sentiment: null,
-          ai_reasoning: null,
-          source_links: JSON.stringify([{
-            title: title,
-            url: link,
-            published_at: pubDate
-          }])
-        });
-      }
-    }
-
-    console.log(`✅ Parsed ${items.length} articles from ${sourceName}`);
-    return items.slice(0, 15);
+    console.log(`✅ Processed ${processedArticles.length} recent headlines`);
+    return processedArticles;
     
   } catch (error) {
-    console.error(`❌ Error parsing RSS from ${sourceName}:`, error);
-    return [];
+    console.error('❌ Error fetching recent headlines:', error);
+    throw error;
   }
 }
 
@@ -109,43 +75,26 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting RSS news fetch from multiple sources...');
+    console.log('🚀 Starting recent headlines fetch from MarketAux...');
     
-    // First, delete old RSS articles (older than 24 hours) to keep the database clean
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Delete old headlines (older than 6 hours) to keep database fresh
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
     await supabase
       .from('news_articles')
       .delete()
       .eq('symbol', 'GENERAL')
-      .lt('created_at', twentyFourHoursAgo);
+      .lt('created_at', sixHoursAgo);
 
-    console.log('🧹 Cleaned up old RSS articles');
+    console.log('🧹 Cleaned up old headlines');
     
-    // Fetch from all RSS sources in parallel
-    const rssPromises = RSS_SOURCES.map(source => 
-      parseRSSFeed(source.url, source.name, source.category)
-    );
-    
-    const results = await Promise.allSettled(rssPromises);
-    
-    // Combine all successful results
-    const allArticles = [];
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        allArticles.push(...result.value);
-        console.log(`✅ ${RSS_SOURCES[index].name}: ${result.value.length} articles`);
-      } else {
-        console.error(`❌ ${RSS_SOURCES[index].name}: ${result.reason}`);
-      }
-    });
+    // Fetch recent headlines from MarketAux
+    const headlines = await fetchRecentHeadlines();
 
-    console.log(`📰 Total articles collected: ${allArticles.length}`);
-
-    if (allArticles.length > 0) {
-      // Store articles in database
+    if (headlines.length > 0) {
+      // Store headlines in database
       const { data, error } = await supabase
         .from('news_articles')
-        .upsert(allArticles, { 
+        .upsert(headlines, { 
           onConflict: 'url',
           ignoreDuplicates: false 
         });
@@ -155,21 +104,20 @@ serve(async (req) => {
         throw error;
       }
 
-      console.log(`💾 Successfully stored ${allArticles.length} RSS news articles in database`);
+      console.log(`💾 Successfully stored ${headlines.length} recent headlines in database`);
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Successfully fetched ${allArticles.length} RSS articles from ${RSS_SOURCES.length} sources`,
-      sources: RSS_SOURCES.map(s => s.name),
-      articleCount: allArticles.length,
-      articles: allArticles.slice(0, 5)
+      message: `Successfully fetched ${headlines.length} recent headlines from MarketAux`,
+      headlineCount: headlines.length,
+      headlines: headlines.slice(0, 5) // Return first 5 as preview
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('❌ RSS fetch error:', error);
+    console.error('❌ Recent headlines fetch error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message,
