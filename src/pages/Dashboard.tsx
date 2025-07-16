@@ -10,6 +10,7 @@ import RSSHeadlines from "@/components/RSSHeadlines";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
+import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +44,21 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [isRefreshingMag7, setIsRefreshingMag7] = useState(false);
   const [isRefreshingIndex, setIsRefreshingIndex] = useState(false);
+
+  const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+
+  // Use the new consistent top stories hook (must be before useEffect)
+  const {
+    topMagnificent7Story,
+    topIndexFundStory,
+    magnificent7HasRecentNews,
+    indexFundsHasRecentNews
+  } = useConsistentTopStories({
+    newsData,
+    magnificent7Symbols: MAGNIFICENT_7,
+    indexFundSymbols: MAJOR_INDEX_FUNDS
+  });
 
   // Manual refresh functions
   const refreshMagnificent7 = async () => {
@@ -117,35 +133,40 @@ const Dashboard = () => {
     }
   };
 
-  // Auto-fetch Magnificent 7 and Index Funds data on component mount
+  // Smart auto-fetch logic - only refresh when news is stale
   useEffect(() => {
-    const fetchDataAndRefresh = async () => {
-      console.log('🚀 Auto-fetching Magnificent 7 and Index Funds data...');
-      try {
-        const result = await fetchNews();
-        if (result.success) {
-          // Invalidate and refetch news data to get the latest updates
-          await queryClient.invalidateQueries({ queryKey: ['news'] });
-          console.log('✅ Data fetched and refreshed successfully');
-        } else {
-          console.error('❌ Failed to fetch data:', result.message);
+    const checkAndRefreshIfNeeded = async () => {
+      console.log('🔍 Checking if refresh is needed...');
+      
+      // Only refresh if we don't have recent news (older than 2 hours)
+      const needsRefresh = !magnificent7HasRecentNews || !indexFundsHasRecentNews;
+      
+      if (needsRefresh) {
+        console.log('🚀 Auto-refreshing due to stale news...');
+        try {
+          const result = await fetchNews();
+          if (result.success) {
+            await queryClient.invalidateQueries({ queryKey: ['news'] });
+            console.log('✅ Auto-refresh completed successfully');
+          } else {
+            console.error('❌ Auto-refresh failed:', result.message);
+          }
+        } catch (error) {
+          console.error('❌ Error during auto-refresh:', error);
         }
-      } catch (error) {
-        console.error('❌ Error during data fetch:', error);
+      } else {
+        console.log('ℹ️ News is still fresh, skipping refresh');
       }
     };
 
-    // Fetch immediately on mount
-    fetchDataAndRefresh();
+    // Check immediately on mount
+    checkAndRefreshIfNeeded();
 
-    // Set up interval to fetch every 5 minutes
-    const interval = setInterval(fetchDataAndRefresh, 5 * 60 * 1000);
+    // Set up interval to check every 10 minutes (but only refresh if needed)
+    const interval = setInterval(checkAndRefreshIfNeeded, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [fetchNews, queryClient]);
-
-  const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-  const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+  }, [fetchNews, queryClient, magnificent7HasRecentNews, indexFundsHasRecentNews]);
 
   const STOCK_NAMES: { [key: string]: string } = {
     'AAPL': 'Apple Inc.',
@@ -163,40 +184,6 @@ const Dashboard = () => {
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
-
-  const topMagnificent7Story = MAGNIFICENT_7.map(symbol => {
-    return newsData?.find(item => 
-      item.symbol === symbol && 
-      item.ai_confidence && 
-      item.ai_sentiment
-    );
-  }).filter(Boolean)
-  .sort((a, b) => {
-    const confidenceDiff = (b.ai_confidence || 0) - (a.ai_confidence || 0);
-    if (confidenceDiff !== 0) return confidenceDiff;
-    
-    if (a.ai_sentiment === 'Neutral' && b.ai_sentiment !== 'Neutral') return 1;
-    if (b.ai_sentiment === 'Neutral' && a.ai_sentiment !== 'Neutral') return -1;
-    
-    return 0;
-  })[0];
-
-  const topIndexFundStory = MAJOR_INDEX_FUNDS.map(symbol => {
-    return newsData?.find(item => 
-      item.symbol === symbol && 
-      item.ai_confidence && 
-      item.ai_sentiment
-    );
-  }).filter(Boolean)
-  .sort((a, b) => {
-    const confidenceDiff = (b.ai_confidence || 0) - (a.ai_confidence || 0);
-    if (confidenceDiff !== 0) return confidenceDiff;
-    
-    if (a.ai_sentiment === 'Neutral' && b.ai_sentiment !== 'Neutral') return 1;
-    if (b.ai_sentiment === 'Neutral' && a.ai_sentiment !== 'Neutral') return -1;
-    
-    return 0;
-  })[0];
 
   const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
     const symbol = item.symbol;
@@ -264,7 +251,18 @@ const Dashboard = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
-                  <Badge className="bg-blue-500 text-white w-fit">Top Story</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-500 text-white w-fit">Top Story</Badge>
+                    {magnificent7HasRecentNews ? (
+                      <Badge variant="outline" className="text-emerald-600 border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 w-fit">
+                        Fresh
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-600 bg-amber-50 dark:bg-amber-900/20 w-fit">
+                        Using Latest
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -314,7 +312,18 @@ const Dashboard = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
-                  <Badge className="bg-purple-500 text-white w-fit">Top Story</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-purple-500 text-white w-fit">Top Story</Badge>
+                    {indexFundsHasRecentNews ? (
+                      <Badge variant="outline" className="text-emerald-600 border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 w-fit">
+                        Fresh
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-600 bg-amber-50 dark:bg-amber-900/20 w-fit">
+                        Using Latest
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
