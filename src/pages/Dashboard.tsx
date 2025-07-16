@@ -137,7 +137,7 @@ const Dashboard = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE • Auto-updating</span>
+              <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE • Auto-updating every minute</span>
             </div>
           </div>
           

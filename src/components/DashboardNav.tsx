@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -52,23 +53,7 @@ const DashboardNav = () => {
   const NavigationLinks = () => (
     <>
       <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Dashboard
-      </Link>
-      
-      <Link to="/home1" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Home1
-      </Link>
-      
-      <Link to="/home-option1" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Home Option 1
-      </Link>
-      
-      <Link to="/home-option2" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Home Option 2
-      </Link>
-      
-      <Link to="/home-option3" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Home Option 3
+        Home
       </Link>
       
       <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
