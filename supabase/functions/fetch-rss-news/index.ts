@@ -25,9 +25,12 @@ async function fetchRecentHeadlines() {
   try {
     console.log('🔍 Fetching recent headlines from MarketAux...');
     
-    // Fetch recent general market news from MarketAux - remove sort parameter as it might not be supported
-    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=15&api_token=${marketauxApiKey}`;
-    console.log('📡 Making API request to MarketAux...');
+    // Get current time for recent news filtering (last 2 hours)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    
+    // Fetch recent general market news from MarketAux with published_after filter for recent news
+    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=20&published_after=${twoHoursAgo}&api_token=${marketauxApiKey}`;
+    console.log('📡 Making API request to MarketAux for news published after:', twoHoursAgo);
     
     const response = await fetch(apiUrl);
     
@@ -99,19 +102,18 @@ serve(async (req) => {
   try {
     console.log('🚀 Starting recent headlines fetch from MarketAux...');
     
-    // Delete old headlines (older than 6 hours) to keep database fresh
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
-    console.log('🧹 Cleaning up old headlines...');
+    // Delete old headlines (older than 4 hours) to keep database fresh
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    console.log('🧹 Cleaning up old headlines older than:', fourHoursAgo);
     
     const { error: deleteError } = await supabase
       .from('news_articles')
       .delete()
       .eq('symbol', 'GENERAL')
-      .lt('created_at', sixHoursAgo);
+      .lt('published_at', fourHoursAgo);
 
     if (deleteError) {
       console.error('⚠️ Error cleaning up old headlines:', deleteError);
-      // Don't throw error here, just log it
     } else {
       console.log('✅ Cleaned up old headlines');
     }
@@ -120,34 +122,58 @@ serve(async (req) => {
     const headlines = await fetchRecentHeadlines();
 
     if (headlines.length > 0) {
-      // Store headlines in database
-      console.log(`💾 Storing ${headlines.length} headlines in database...`);
+      console.log(`💾 Processing ${headlines.length} headlines for storage...`);
       
-      // Check for existing URLs to avoid duplicates
-      const existingUrls = await supabase
+      // Get existing articles from the last 24 hours to prevent duplicates
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: existingArticles, error: fetchError } = await supabase
         .from('news_articles')
-        .select('url')
+        .select('url, title')
         .eq('symbol', 'GENERAL')
-        .in('url', headlines.map(h => h.url));
+        .gt('published_at', twentyFourHoursAgo);
       
-      const existingUrlSet = new Set(existingUrls.data?.map(row => row.url) || []);
-      const newHeadlines = headlines.filter(h => !existingUrlSet.has(h.url));
+      if (fetchError) {
+        console.error('⚠️ Error fetching existing articles:', fetchError);
+      }
       
-      console.log(`📊 Found ${existingUrlSet.size} existing URLs, inserting ${newHeadlines.length} new headlines`);
+      // Create sets for efficient duplicate checking
+      const existingUrls = new Set(existingArticles?.map(a => a.url) || []);
+      const existingTitles = new Set(existingArticles?.map(a => a.title.toLowerCase()) || []);
+      
+      // Filter out duplicates by URL and similar titles
+      const newHeadlines = headlines.filter(headline => {
+        // Check URL duplicates
+        if (existingUrls.has(headline.url)) {
+          console.log(`🔄 Skipping duplicate URL: ${headline.url}`);
+          return false;
+        }
+        
+        // Check title duplicates (case-insensitive)
+        const titleLower = headline.title.toLowerCase();
+        if (existingTitles.has(titleLower)) {
+          console.log(`🔄 Skipping duplicate title: ${headline.title}`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      console.log(`📊 Found ${existingUrls.size} existing URLs and ${existingTitles.size} existing titles`);
+      console.log(`📝 Filtered to ${newHeadlines.length} truly new headlines`);
       
       if (newHeadlines.length > 0) {
-        const { data, error } = await supabase
+        const { error: insertError } = await supabase
           .from('news_articles')
           .insert(newHeadlines);
 
-        if (error) {
-          console.error('❌ Database error:', error);
-          throw error;
+        if (insertError) {
+          console.error('❌ Database insert error:', insertError);
+          throw insertError;
         }
 
-        console.log(`✅ Successfully stored ${newHeadlines.length} new headlines in database`);
+        console.log(`✅ Successfully stored ${newHeadlines.length} new headlines`);
       } else {
-        console.log('ℹ️ No new headlines to store (all URLs already exist)');
+        console.log('ℹ️ No new headlines to store (all filtered as duplicates)');
       }
     } else {
       console.log('⚠️ No headlines to store');

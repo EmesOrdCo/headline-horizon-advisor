@@ -38,19 +38,44 @@ const RSSHeadlines = () => {
   }, [fetchRSSNews, queryClient]);
 
   const formatTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const published = new Date(dateString);
-    const diffInMinutes = Math.floor((now.getTime() - published.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
+    try {
+      const now = new Date();
+      const published = new Date(dateString);
+      
+      // Handle invalid dates
+      if (isNaN(published.getTime())) {
+        return 'Invalid date';
+      }
+      
+      const diffInMilliseconds = now.getTime() - published.getTime();
+      
+      // Handle future dates or very small differences (less than 1 minute)
+      if (diffInMilliseconds < 60000) {
+        return 'Just now';
+      }
+      
+      const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+      
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes}m ago`;
+      }
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours}h ago`;
+      }
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays}d ago`;
+      }
+      
+      // For anything older than a week, show the actual date
+      return published.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return 'Unknown time';
     }
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    }
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
   };
 
   return (
