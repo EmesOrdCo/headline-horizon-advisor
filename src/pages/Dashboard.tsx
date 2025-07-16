@@ -1,17 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RSSHeadlines from "@/components/RSSHeadlines";
-import { useNews, useFetchNews } from "@/hooks/useNews";
-import { useFetchRSSNews } from "@/hooks/useRSSHeadlines";
+import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
 
 const Dashboard = () => {
@@ -35,13 +32,8 @@ const Dashboard = () => {
       }
     }
   });
-  const { data: newsData, isLoading, refetch } = useNews();
+  const { data: newsData, isLoading } = useNews();
   const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
-  const fetchNews = useFetchNews();
-  const fetchRSSNews = useFetchRSSNews();
-  const [isFetching, setIsFetching] = useState(false);
-  const [fetchingStatus, setFetchingStatus] = useState<string>('');
-  const { toast } = useToast();
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
@@ -133,51 +125,6 @@ const Dashboard = () => {
     return `${symbol}: ${summary}`;
   };
 
-  const handleRefreshNews = async () => {
-    setIsFetching(true);
-    setFetchingStatus('');
-    
-    try {
-      console.log('🔄 Starting news refresh...');
-      
-      const [stockResult, rssResult] = await Promise.allSettled([
-        fetchNews(),
-        fetchRSSNews()
-      ]);
-      
-      setTimeout(async () => {
-        await refetch();
-        console.log('🔄 Refetched news data');
-      }, 2000);
-      
-      const successCount = 
-        (stockResult.status === 'fulfilled' && stockResult.value.success ? 1 : 0) +
-        (rssResult.status === 'fulfilled' && rssResult.value.success ? 1 : 0);
-      
-      if (successCount > 0) {
-        toast({
-          title: "News Updated",
-          description: `Successfully fetched from ${successCount} source${successCount > 1 ? 's' : ''}`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to fetch news from any source. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing news:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch news. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetching(false);
-      setFetchingStatus('');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -186,31 +133,13 @@ const Dashboard = () => {
       
       <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE</span>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE • Auto-updating every minute</span>
             </div>
-            <Button 
-              onClick={handleRefreshNews}
-              disabled={isFetching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
-              size="sm"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              {isFetching ? 'Fetching...' : 'Refresh News'}
-            </Button>
           </div>
-          
-          {isFetching && fetchingStatus && (
-            <div className="text-amber-600 dark:text-yellow-400 text-sm mt-2 font-medium">
-              {fetchingStatus}
-            </div>
-          )}
-          
           
           {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
             <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
@@ -255,7 +184,7 @@ const Dashboard = () => {
                 />
               ) : (
                 <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
-                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Magnificent 7 analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Magnificent 7 analysis available. Updates will appear automatically.</p>
                 </div>
               )}
             </div>
@@ -294,7 +223,7 @@ const Dashboard = () => {
                 />
               ) : (
                 <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
-                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Index Fund analysis available. Click "Refresh News" to fetch the latest updates.</p>
+                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Index Fund analysis available. Updates will appear automatically.</p>
                 </div>
               )}
             </div>

@@ -1,36 +1,10 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ExternalLink, Clock, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useRSSHeadlines, useFetchRSSNews } from "@/hooks/useRSSHeadlines";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { ExternalLink, Clock } from "lucide-react";
+import { useRSSHeadlines } from "@/hooks/useRSSHeadlines";
 
 const RSSHeadlines = () => {
   const { data: headlines, isLoading, error } = useRSSHeadlines();
-  const fetchRSSNews = useFetchRSSNews();
-  const { toast } = useToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const result = await fetchRSSNews();
-      toast({
-        title: result.success ? "Headlines Updated" : "Update Failed",
-        description: result.message,
-        variant: result.success ? "default" : "destructive",
-      });
-    } catch (error) {
-      toast({
-        title: "Update Failed",
-        description: "Failed to fetch recent headlines",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -52,27 +26,18 @@ const RSSHeadlines = () => {
     <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-4 sm:p-6 h-[400px] sm:h-[600px] flex flex-col sticky top-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Headlines</h3>
-        <Button 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          variant="outline"
-          size="sm"
-          className="text-xs"
-        >
-          <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Updating...' : 'Refresh'}
-        </Button>
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
+          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+          <span>Auto-updating</span>
+        </div>
       </div>
       
       {error && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center px-4">
-            <p className="text-red-600 dark:text-red-400 text-sm mb-2">
-              Failed to load headlines
+            <p className="text-red-600 dark:text-red-400 text-sm">
+              Failed to load headlines. Retrying automatically...
             </p>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              Try Again
-            </Button>
           </div>
         </div>
       )}
@@ -80,7 +45,7 @@ const RSSHeadlines = () => {
       {isLoading && !headlines && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center px-4">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400 dark:text-slate-500" />
+            <div className="w-8 h-8 border-2 border-gray-300 dark:border-slate-600 border-t-blue-500 rounded-full animate-spin mx-auto mb-2"></div>
             <p className="text-gray-600 dark:text-slate-400 text-sm">Loading headlines...</p>
           </div>
         </div>
@@ -134,12 +99,9 @@ const RSSHeadlines = () => {
       {headlines && headlines.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center px-4">
-            <p className="text-gray-600 dark:text-slate-400 text-sm mb-2">
-              No recent headlines available
+            <p className="text-gray-600 dark:text-slate-400 text-sm">
+              No recent headlines available. New headlines will appear automatically.
             </p>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              Refresh Headlines
-            </Button>
           </div>
         </div>
       )}
