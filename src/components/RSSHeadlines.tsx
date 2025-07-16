@@ -1,10 +1,41 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink, Clock } from "lucide-react";
-import { useRSSHeadlines } from "@/hooks/useRSSHeadlines";
+import { useRSSHeadlines, useFetchRSSNews } from "@/hooks/useRSSHeadlines";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 const RSSHeadlines = () => {
   const { data: headlines, isLoading, error } = useRSSHeadlines();
+  const fetchRSSNews = useFetchRSSNews();
+  const queryClient = useQueryClient();
+
+  // Set up automatic refresh every minute
+  useEffect(() => {
+    const fetchAndRefresh = async () => {
+      console.log('🔄 Auto-refreshing RSS headlines...');
+      try {
+        const result = await fetchRSSNews();
+        if (result.success) {
+          // Invalidate the query to refetch from database
+          await queryClient.invalidateQueries({ queryKey: ['rss-headlines'] });
+          console.log('✅ RSS headlines refreshed successfully');
+        } else {
+          console.error('❌ Failed to refresh RSS headlines:', result.message);
+        }
+      } catch (error) {
+        console.error('❌ Error during RSS refresh:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchAndRefresh();
+
+    // Set up interval to fetch every minute
+    const interval = setInterval(fetchAndRefresh, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [fetchRSSNews, queryClient]);
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
