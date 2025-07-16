@@ -25,8 +25,8 @@ async function fetchRecentHeadlines() {
   try {
     console.log('🔍 Fetching recent headlines from MarketAux...');
     
-    // Fetch recent general market news from MarketAux
-    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}&sort=published_desc`;
+    // Fetch recent general market news from MarketAux - remove sort parameter as it might not be supported
+    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=15&api_token=${marketauxApiKey}`;
     console.log('📡 Making API request to MarketAux...');
     
     const response = await fetch(apiUrl);
@@ -55,9 +55,9 @@ async function fetchRecentHeadlines() {
       return [];
     }
     
-    // Sort by published date (most recent first) and take top 15
+    // Sort by published date (most recent first) and ensure we have exactly 15
     const sortedArticles = articles
-      .filter(article => article.title && article.url) // Filter out articles without title or url
+      .filter(article => article.title && article.url && article.published_at) // Filter out invalid articles
       .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
       .slice(0, 15);
 
