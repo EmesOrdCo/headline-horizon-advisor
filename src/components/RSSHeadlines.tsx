@@ -1,14 +1,16 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ExternalLink, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Clock, RefreshCw } from "lucide-react";
 import { useRSSHeadlines, useFetchRSSNews } from "@/hooks/useRSSHeadlines";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const RSSHeadlines = () => {
   const { data: headlines, isLoading, error } = useRSSHeadlines();
   const fetchRSSNews = useFetchRSSNews();
   const queryClient = useQueryClient();
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   // Set up automatic refresh every minute
   useEffect(() => {
@@ -36,6 +38,25 @@ const RSSHeadlines = () => {
 
     return () => clearInterval(interval);
   }, [fetchRSSNews, queryClient]);
+
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    console.log('🔄 Manual refresh triggered...');
+    try {
+      const result = await fetchRSSNews();
+      if (result.success) {
+        // Invalidate the query to refetch from database
+        await queryClient.invalidateQueries({ queryKey: ['rss-headlines'] });
+        console.log('✅ Manual refresh successful');
+      } else {
+        console.error('❌ Manual refresh failed:', result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error during manual refresh:', error);
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  };
 
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -82,9 +103,20 @@ const RSSHeadlines = () => {
     <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-4 sm:p-6 h-[400px] sm:h-[600px] flex flex-col sticky top-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Headlines</h3>
-        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-          <span>Auto-updating</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+            <span>Auto-updating</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isManualRefreshing}
+            className="h-8 px-3 text-xs"
+          >
+            <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
       
