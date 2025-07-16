@@ -14,32 +14,54 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function fetchRecentHeadlines() {
   const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
   
+  console.log('🔑 Checking MarketAux API key...');
   if (!marketauxApiKey) {
+    console.error('❌ MarketAux API key not found in environment variables');
     throw new Error('Missing MarketAux API key');
   }
+  
+  console.log('✅ MarketAux API key found');
 
   try {
     console.log('🔍 Fetching recent headlines from MarketAux...');
     
     // Fetch recent general market news from MarketAux
-    const response = await fetch(
-      `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}&sort=published_desc`
-    );
-
+    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}&sort=published_desc`;
+    console.log('📡 Making API request to MarketAux...');
+    
+    const response = await fetch(apiUrl);
+    
+    console.log(`📊 MarketAux API response status: ${response.status}`);
+    
     if (!response.ok) {
-      console.error(`MarketAux API error: ${response.status}`);
-      throw new Error(`MarketAux API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ MarketAux API error: ${response.status} - ${errorText}`);
+      throw new Error(`MarketAux API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    const articles = data.data || [];
+    console.log('📦 MarketAux API response received');
     
+    if (!data || !data.data) {
+      console.error('❌ Invalid API response format:', data);
+      throw new Error('Invalid API response format');
+    }
+    
+    const articles = data.data || [];
     console.log(`📰 Fetched ${articles.length} articles from MarketAux`);
+    
+    if (articles.length === 0) {
+      console.log('⚠️ No articles returned from MarketAux');
+      return [];
+    }
     
     // Sort by published date (most recent first) and take top 15
     const sortedArticles = articles
+      .filter(article => article.title && article.url) // Filter out articles without title or url
       .sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
       .slice(0, 15);
+
+    console.log(`🔄 Filtered and sorted to ${sortedArticles.length} articles`);
 
     // Format for database storage
     const processedArticles = sortedArticles.map(article => ({
@@ -79,19 +101,28 @@ serve(async (req) => {
     
     // Delete old headlines (older than 6 hours) to keep database fresh
     const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
-    await supabase
+    console.log('🧹 Cleaning up old headlines...');
+    
+    const { error: deleteError } = await supabase
       .from('news_articles')
       .delete()
       .eq('symbol', 'GENERAL')
       .lt('created_at', sixHoursAgo);
 
-    console.log('🧹 Cleaned up old headlines');
+    if (deleteError) {
+      console.error('⚠️ Error cleaning up old headlines:', deleteError);
+      // Don't throw error here, just log it
+    } else {
+      console.log('✅ Cleaned up old headlines');
+    }
     
     // Fetch recent headlines from MarketAux
     const headlines = await fetchRecentHeadlines();
 
     if (headlines.length > 0) {
       // Store headlines in database
+      console.log(`💾 Storing ${headlines.length} headlines in database...`);
+      
       const { data, error } = await supabase
         .from('news_articles')
         .upsert(headlines, { 
@@ -100,11 +131,13 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('❌ Database error:', error);
         throw error;
       }
 
-      console.log(`💾 Successfully stored ${headlines.length} recent headlines in database`);
+      console.log(`✅ Successfully stored ${headlines.length} recent headlines in database`);
+    } else {
+      console.log('⚠️ No headlines to store');
     }
 
     return new Response(JSON.stringify({
