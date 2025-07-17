@@ -8,10 +8,12 @@ import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
+import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
 import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
+import { useArticleWeights } from "@/hooks/useArticleWeights";
 
 const DashboardVariant2 = () => {
   useSEO({
@@ -110,6 +112,26 @@ const DashboardVariant2 = () => {
   };
 
   const mostPressingHeadline = getMostPressingHeadline();
+
+  // Get article weights for Magnificent 7 story
+  const magnificent7SourceArticles = getSourceArticles(topMagnificent7Story);
+  const { data: magnificent7ArticleWeights, isLoading: magnificent7WeightsLoading } = useArticleWeights({
+    articles: magnificent7SourceArticles,
+    overallSentiment: topMagnificent7Story?.ai_sentiment || 'Neutral',
+    overallConfidence: topMagnificent7Story?.ai_confidence || 50,
+    symbol: topMagnificent7Story?.symbol || '',
+    enabled: magnificent7SourceArticles.length > 0 && !topMagnificent7Story?.ai_reasoning?.includes('Historical')
+  });
+
+  // Get article weights for Index Fund story
+  const indexFundSourceArticles = getSourceArticles(topIndexFundStory);
+  const { data: indexFundArticleWeights, isLoading: indexFundWeightsLoading } = useArticleWeights({
+    articles: indexFundSourceArticles,
+    overallSentiment: topIndexFundStory?.ai_sentiment || 'Neutral',
+    overallConfidence: topIndexFundStory?.ai_confidence || 50,
+    symbol: topIndexFundStory?.symbol || '',
+    enabled: indexFundSourceArticles.length > 0 && !topIndexFundStory?.ai_reasoning?.includes('Historical')
+  });
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -298,31 +320,12 @@ const DashboardVariant2 = () => {
                     
                     {/* Source Articles - Right Side */}
                     <div className="lg:col-span-1">
-                      <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
-                      <div className="space-y-3">
-                        {getSourceArticles(topMagnificent7Story).slice(0, 4).map((article: any, index: number) => (
-                          <div key={index} className="group cursor-pointer">
-                            <a 
-                              href={article.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
-                            >
-                              <div className="flex items-start gap-2">
-                                <div className="flex-1">
-                                  <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
-                                    {article.title}
-                                  </h4>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
-                                  </div>
-                                </div>
-                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-blue-400 transition-colors flex-shrink-0" />
-                              </div>
-                            </a>
-                          </div>
-                        ))}
-                      </div>
+                      <SourceArticles 
+                        parsedSourceLinks={magnificent7SourceArticles}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        articleWeights={magnificent7ArticleWeights}
+                        weightsLoading={magnificent7WeightsLoading}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -367,31 +370,12 @@ const DashboardVariant2 = () => {
                     
                     {/* Source Articles - Right Side */}
                     <div className="lg:col-span-1">
-                      <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
-                      <div className="space-y-3">
-                        {getSourceArticles(topIndexFundStory).slice(0, 4).map((article: any, index: number) => (
-                          <div key={index} className="group cursor-pointer">
-                            <a 
-                              href={article.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
-                            >
-                              <div className="flex items-start gap-2">
-                                <div className="flex-1">
-                                  <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-purple-400 transition-colors">
-                                    {article.title}
-                                  </h4>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
-                                  </div>
-                                </div>
-                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-purple-400 transition-colors flex-shrink-0" />
-                              </div>
-                            </a>
-                          </div>
-                        ))}
-                      </div>
+                      <SourceArticles 
+                        parsedSourceLinks={indexFundSourceArticles}
+                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                        articleWeights={indexFundArticleWeights}
+                        weightsLoading={indexFundWeightsLoading}
+                      />
                     </div>
                   </div>
                 </CardContent>
