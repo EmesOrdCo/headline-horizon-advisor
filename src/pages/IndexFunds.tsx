@@ -1,13 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ArrowLeft, Coins } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { RefreshCw, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
+import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
+import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
@@ -52,12 +55,6 @@ const IndexFunds = () => {
   const { toast } = useToast();
 
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
-
-  const STOCK_NAMES: { [key: string]: string } = {
-    'SPY': 'SPDR S&P 500 ETF Trust',
-    'QQQ': 'Invesco QQQ Trust',
-    'DIA': 'SPDR Dow Jones Industrial Average ETF Trust'
-  };
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -131,6 +128,17 @@ const IndexFunds = () => {
     }
   };
 
+  // Get source articles for a story
+  const getSourceArticles = (story: any) => {
+    if (!story?.source_links) return [];
+    
+    try {
+      return JSON.parse(story.source_links);
+    } catch {
+      return [];
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -167,56 +175,85 @@ const IndexFunds = () => {
             </div>
           </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          {isLoading ? (
-            <div className="text-center text-gray-600 dark:text-slate-400 py-8">
-              Loading Index Funds analysis...
-            </div>
-          ) : (
-            MAJOR_INDEX_FUNDS.map((symbol) => {
-              const article = indexFundArticles.find(item => item.symbol === symbol);
-              const stockPrice = getStockPrice(symbol);
-              
-              if (article) {
-                const compositeHeadline = generateCompositeHeadline(article);
+          <div className="space-y-8">
+            {isLoading ? (
+              <div className="text-center text-gray-600 dark:text-slate-400 py-8">
+                Loading Index Funds analysis...
+              </div>
+            ) : (
+              MAJOR_INDEX_FUNDS.map((symbol) => {
+                const article = indexFundArticles.find(item => item.symbol === symbol);
+                const stockPrice = getStockPrice(symbol);
                 
-                return (
-                  <NewsCard 
-                    key={article.id} 
-                    symbol={article.symbol}
-                    title={compositeHeadline}
-                    description={article.description}
-                    confidence={article.ai_confidence}
-                    sentiment={article.ai_sentiment}
-                    category={article.category}
-                    isHistorical={article.ai_reasoning?.includes('Historical')}
-                    sourceLinks={article.source_links || '[]'}
-                    stockPrice={stockPrice}
-                  />
-                );
-              } else {
-                return (
-                  <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-purple-500 text-white">{symbol}</Badge>
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
-                          NO RECENT NEWS
-                        </Badge>
-                      </div>
+                if (article) {
+                  const compositeHeadline = generateCompositeHeadline(article);
+                  const sourceArticles = getSourceArticles(article);
+                  
+                  // Get article weights for each fund
+                  const { data: articleWeights, isLoading: weightsLoading } = useArticleWeights({
+                    articles: sourceArticles,
+                    overallSentiment: article.ai_sentiment || 'Neutral',
+                    overallConfidence: article.ai_confidence || 50,
+                    symbol: article.symbol,
+                    enabled: sourceArticles.length > 0 && !article.ai_reasoning?.includes('Historical')
+                  });
+                  
+                  return (
+                    <div key={article.id} className="w-full">
+                      <Card className="bg-slate-800/50 border-slate-700 h-full">
+                        <CardContent className="p-6 h-full">
+                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                            {/* Main Analysis - Left Side (narrower) */}
+                            <div className="lg:col-span-2">
+                              <NewsCard 
+                                symbol={article.symbol}
+                                title={compositeHeadline}
+                                description={article.description}
+                                confidence={article.ai_confidence}
+                                sentiment={article.ai_sentiment}
+                                category={article.category}
+                                isHistorical={article.ai_reasoning?.includes('Historical')}
+                                sourceLinks="[]"
+                                stockPrice={stockPrice}
+                              />
+                            </div>
+                            {/* Source Articles - Right Side (wider) */}
+                            <div className="lg:col-span-3">
+                              <SourceArticles 
+                                parsedSourceLinks={sourceArticles}
+                                isHistorical={article.ai_reasoning?.includes('Historical')}
+                                articleWeights={articleWeights}
+                                weightsLoading={weightsLoading}
+                              />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
-                      {symbol}: No recent analysis available
-                    </h3>
-                    <p className="text-gray-500 dark:text-slate-500 text-sm">
-                      Click "Refresh News" to fetch the latest market updates and AI analysis.
-                    </p>
-                  </div>
-                );
-              }
-            })
-          )}
-        </div>
+                  );
+                } else {
+                  return (
+                    <div key={symbol} className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-6">
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-500 text-white">{symbol}</Badge>
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 text-xs">
+                            NO RECENT NEWS
+                          </Badge>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-400 mb-2">
+                        {symbol}: No recent analysis available
+                      </h3>
+                      <p className="text-gray-500 dark:text-slate-500 text-sm">
+                        Click "Refresh News" to fetch the latest market updates and AI analysis.
+                      </p>
+                    </div>
+                  );
+                }
+              })
+            )}
+          </div>
         </div>
       </div>
       
