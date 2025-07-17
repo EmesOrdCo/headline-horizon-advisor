@@ -42,17 +42,19 @@ const NewsAnalysisDisplay = ({ userStocks, newsArticles, stockPrices }: NewsAnal
 
   if (userStocks.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardContent className="text-center py-12">
-          <p className="text-slate-400 mb-4">No stocks selected yet</p>
-          <p className="text-sm text-slate-500">Search and add up to 3 stocks to start tracking and analyzing Marketaux news</p>
-        </CardContent>
-      </Card>
+      <div className="w-[95%] mx-auto">
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="text-center py-12">
+            <p className="text-slate-400 mb-4">No stocks selected yet</p>
+            <p className="text-sm text-slate-500">Search and add up to 3 stocks to start tracking and analyzing Marketaux news</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-[95%] mx-auto">
       <h2 className="text-2xl font-bold text-white">Marketaux News Analysis</h2>
       
       {userStocks.map((stock) => {

@@ -138,7 +138,7 @@ const DashboardVariant2 = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
+      <main className="pt-32 sm:pt-36 p-4 sm:p-6 w-[95%] mx-auto">
         {/* TOP SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
           {/* Main Content */}
@@ -298,42 +298,41 @@ const DashboardVariant2 = () => {
             </Link>
           </div>
           
-              {topMagnificent7Story && (
-        <div className="w-full flex justify-center">
-          <div className="w-[95%] min-h-[600px]">
-            <Card className="bg-slate-800/50 border-slate-700 h-full">
-              <CardContent className="p-6 h-full">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                  {/* Main Analysis - Left Side (narrower) */}
-                  <div className="lg:col-span-2">
-                    <NewsCard 
-                      symbol={topMagnificent7Story.symbol}
-                      title={generateCompositeHeadline(topMagnificent7Story)}
-                      description={topMagnificent7Story.description}
-                      confidence={topMagnificent7Story.ai_confidence}
-                      sentiment={topMagnificent7Story.ai_sentiment}
-                      category={topMagnificent7Story.category}
-                      isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                      sourceLinks="[]"
-                      stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                    />
+          {topMagnificent7Story && (
+            <div className="w-full">
+              <Card className="bg-slate-800/50 border-slate-700 h-full">
+                <CardContent className="p-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                    {/* Main Analysis - Left Side (wider now) */}
+                    <div className="lg:col-span-3">
+                      <NewsCard 
+                        symbol={topMagnificent7Story.symbol}
+                        title={generateCompositeHeadline(topMagnificent7Story)}
+                        description={topMagnificent7Story.description}
+                        confidence={topMagnificent7Story.ai_confidence}
+                        sentiment={topMagnificent7Story.ai_sentiment}
+                        category={topMagnificent7Story.category}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        sourceLinks="[]"
+                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                      />
+                    </div>
+                    {/* Source Articles - Right Side (narrower now) */}
+                    <div className="lg:col-span-2">
+                      <SourceArticles 
+                        parsedSourceLinks={magnificent7SourceArticles}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        articleWeights={magnificent7ArticleWeights}
+                        weightsLoading={magnificent7WeightsLoading}
+                      />
+                    </div>
                   </div>
-                  {/* Source Articles - Right Side (wider) */}
-                  <div className="lg:col-span-3">
-                    <SourceArticles 
-                      parsedSourceLinks={magnificent7SourceArticles}
-                      isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                      articleWeights={magnificent7ArticleWeights}
-                      weightsLoading={magnificent7WeightsLoading}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-    </section>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </section>
+
         {/* INDEX FUNDS SECTION */}
         <section className="border-t border-slate-700 pt-8">
           <div className="flex items-center justify-between mb-6">
@@ -349,12 +348,12 @@ const DashboardVariant2 = () => {
           </div>
           
           {topIndexFundStory && (
-            <div className="w-full max-w-[95%] mx-auto min-h-[600px]">
+            <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower) */}
-                    <div className="lg:col-span-2">
+                    {/* Main Analysis - Left Side (wider now) */}
+                    <div className="lg:col-span-3">
                       <NewsCard 
                         symbol={topIndexFundStory.symbol}
                         title={generateCompositeHeadline(topIndexFundStory)}
@@ -368,8 +367,8 @@ const DashboardVariant2 = () => {
                       />
                     </div>
                     
-                    {/* Source Articles - Right Side (wider) */}
-                    <div className="lg:col-span-3">
+                    {/* Source Articles - Right Side (narrower now) */}
+                    <div className="lg:col-span-2">
                       <SourceArticles 
                         parsedSourceLinks={indexFundSourceArticles}
                         isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
