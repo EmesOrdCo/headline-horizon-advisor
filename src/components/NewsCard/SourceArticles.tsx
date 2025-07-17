@@ -43,24 +43,26 @@ export const SourceArticles = ({
         )}
       </h4>
       
-      {/* Scrollable container that matches left side height */}
-      <ScrollArea className="h-[580px] w-full">
-        <style jsx global>{`
-          .scroll-area-viewport::-webkit-scrollbar {
-            width: 8px;
-          }
-          .scroll-area-viewport::-webkit-scrollbar-track {
-            background: rgba(30, 41, 59, 0.3);
-            border-radius: 4px;
-          }
-          .scroll-area-viewport::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-          }
-          .scroll-area-viewport::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-          }
-        `}</style>
+      {/* Scrollable container that matches left side height - reduced to match analysis section */}
+      <ScrollArea className="h-[420px] w-full">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .scroll-area-viewport::-webkit-scrollbar {
+              width: 8px;
+            }
+            .scroll-area-viewport::-webkit-scrollbar-track {
+              background: rgba(30, 41, 59, 0.3);
+              border-radius: 4px;
+            }
+            .scroll-area-viewport::-webkit-scrollbar-thumb {
+              background: rgba(255, 255, 255, 0.3);
+              border-radius: 4px;
+            }
+            .scroll-area-viewport::-webkit-scrollbar-thumb:hover {
+              background: rgba(255, 255, 255, 0.5);
+            }
+          `
+        }} />
         <div className="space-y-3 pr-4">
           {parsedSourceLinks.map((link, index) => {
             const weight = articleWeights?.find(w => w.article_index === index);
