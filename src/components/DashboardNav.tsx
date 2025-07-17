@@ -61,53 +61,8 @@ const DashboardNav = () => {
         Home
       </Link>
       
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="text-slate-300 hover:text-white transition-colors font-medium">
-            Layouts
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-slate-800 border-slate-700">
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard" className="text-slate-300 hover:text-white w-full">
-              Current Dashboard
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-variant-1" className="text-slate-300 hover:text-white w-full">
-              Hero-Driven Layout
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-variant-2" className="text-slate-300 hover:text-white w-full">
-              News-First Design
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-variant-3" className="text-slate-300 hover:text-white w-full">
-              Widget Dashboard
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-variant-4" className="text-slate-300 hover:text-white w-full">
-              Category Sections
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-variant-5" className="text-slate-300 hover:text-white w-full">
-              Mixed Visual Emphasis
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard-showcase" className="text-slate-300 hover:text-white w-full">
-              Layout Showcase
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
       <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
-        My Stocks
+        Watchlist
       </Link>
       
       <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
@@ -147,35 +102,11 @@ const DashboardNav = () => {
                   <SheetHeader>
                     <SheetTitle className="text-emerald-400">Navigation</SheetTitle>
                     <SheetDescription className="text-slate-400">
-                      Access all market sections and dashboard layouts
+                      Access all market sections
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex flex-col gap-6 mt-6">
                     <DashboardLinks />
-                    
-                    <div className="border-t border-slate-700 pt-4">
-                      <p className="text-slate-400 text-sm mb-3">Dashboard Layouts:</p>
-                      <div className="flex flex-col gap-3 ml-4">
-                        <Link to="/dashboard-variant-1" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          Hero-Driven Layout
-                        </Link>
-                        <Link to="/dashboard-variant-2" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          News-First Design
-                        </Link>
-                        <Link to="/dashboard-variant-3" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          Widget Dashboard
-                        </Link>
-                        <Link to="/dashboard-variant-4" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          Category Sections
-                        </Link>
-                        <Link to="/dashboard-variant-5" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          Mixed Visual Emphasis
-                        </Link>
-                        <Link to="/dashboard-showcase" className="text-slate-300 hover:text-white transition-colors text-sm">
-                          Layout Showcase
-                        </Link>
-                      </div>
-                    </div>
                   </div>
                 </SheetContent>
               </Sheet>
