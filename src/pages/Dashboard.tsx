@@ -1,8 +1,7 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -152,61 +151,71 @@ const Dashboard = () => {
       <MarketTicker />
       
       <main className="pt-32 sm:pt-36 p-4 sm:p-6 w-[95%] mx-auto">
-        {/* TOP SECTION */}
+        {/* TOP SECTION - Modified to include breaking news */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
-          {/* Main Content */}
+          {/* Main Content - Breaking News Section */}
           <div className="lg:col-span-4 space-y-8">
-            {/* Breaking News Header */}
-            <div className="border-l-4 border-red-500 pl-4 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <Badge className="bg-red-500 text-white text-xs">BREAKING</Badge>
-                <span className="text-slate-400 text-sm">Market Alert</span>
-              </div>
-              <h1 className="text-2xl font-bold text-white">
-                Live Market Intelligence Dashboard
-              </h1>
-            </div>
+            {/* 
+              BREAKING NEWS SECTION
+              Purpose: Display the biggest global headline affecting stocks
+              This could include major geopolitical events, significant tech announcements, 
+              economic developments, or other world events that impact financial markets.
+              Updated daily with the most market-moving news.
+            */}
+            <Card className="bg-gradient-to-br from-red-950/30 to-slate-800/50 border-red-500/30 h-full">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6 text-red-400 animate-pulse" />
+                    <Badge className="bg-red-600 text-white text-sm font-bold">BREAKING</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">Updated 12 minutes ago</span>
+                  </div>
+                </div>
 
-            {/* Featured Analysis Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-400" />
-                Featured AI Analysis
-              </h2>
-              
-              {topIndexFundStory && (
-                <Card className="bg-gradient-to-r from-purple-900/20 to-slate-800/50 border-purple-500/30">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <Badge className="bg-purple-500 text-white">{topIndexFundStory.symbol}</Badge>
-                      <div className="flex items-center gap-2 text-slate-400 text-sm">
-                        <Clock className="w-4 h-4" />
-                        <span>Updated moments ago</span>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-3">
-                      {generateCompositeHeadline(topIndexFundStory)}
-                    </h3>
-                    <p className="text-slate-300 mb-4 leading-relaxed">
-                      {topIndexFundStory.description}
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <Badge className={`${
-                        topIndexFundStory.ai_sentiment === 'Bullish' 
-                          ? 'bg-emerald-500/20 text-emerald-400' 
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {topIndexFundStory.ai_sentiment}
-                      </Badge>
-                      <span className="text-slate-400 text-sm">
-                        AI Confidence: {topIndexFundStory.ai_confidence}%
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                  S&P 500 Hits Record on Signs Economy in Good Shape
+                </h1>
+
+                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                  Economically sensitive shares outperformed after solid retail sales and a drop in jobless claims, 
+                  signaling continued economic resilience despite recent market volatility and geopolitical tensions.
+                </p>
+
+                <div className="flex items-center gap-4 mb-6">
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Market Positive
+                  </Badge>
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    Economic Data
+                  </Badge>
+                  <span className="text-slate-400 text-sm">
+                    Impact: High • Confidence: 94%
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                    <div className="text-emerald-400 text-2xl font-bold">+0.54%</div>
+                    <div className="text-slate-300 text-sm">S&P 500 Gain</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                    <div className="text-blue-400 text-2xl font-bold">6,297</div>
+                    <div className="text-slate-300 text-sm">New Record High</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                    <div className="text-orange-400 text-2xl font-bold">$2.1T</div>
+                    <div className="text-slate-300 text-sm">Market Cap Added</div>
+                  </div>
+                </div>
+
+                <Button className="bg-red-600 hover:bg-red-700 text-white text-lg px-8 py-3">
+                  Read Full Analysis <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
           </div>
           
           {/* Sidebar */}
