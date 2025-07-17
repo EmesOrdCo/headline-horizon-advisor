@@ -299,11 +299,11 @@ const DashboardVariant2 = () => {
           </div>
           
           {topMagnificent7Story && (
-            <div className="w-full max-w-[95%] mx-auto">
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Main Analysis - Left Side */}
+            <div className="w-full max-w-[95%] mx-auto min-h-[600px]">
+              <Card className="bg-slate-800/50 border-slate-700 h-full">
+                <CardContent className="p-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                    {/* Main Analysis - Left Side (narrower) */}
                     <div className="lg:col-span-2">
                       <NewsCard 
                         symbol={topMagnificent7Story.symbol}
@@ -318,8 +318,8 @@ const DashboardVariant2 = () => {
                       />
                     </div>
                     
-                    {/* Source Articles - Right Side */}
-                    <div className="lg:col-span-1">
+                    {/* Source Articles - Right Side (wider) */}
+                    <div className="lg:col-span-3">
                       <SourceArticles 
                         parsedSourceLinks={magnificent7SourceArticles}
                         isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
@@ -349,11 +349,11 @@ const DashboardVariant2 = () => {
           </div>
           
           {topIndexFundStory && (
-            <div className="w-full max-w-[95%] mx-auto">
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Main Analysis - Left Side */}
+            <div className="w-full max-w-[95%] mx-auto min-h-[600px]">
+              <Card className="bg-slate-800/50 border-slate-700 h-full">
+                <CardContent className="p-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                    {/* Main Analysis - Left Side (narrower) */}
                     <div className="lg:col-span-2">
                       <NewsCard 
                         symbol={topIndexFundStory.symbol}
@@ -368,8 +368,8 @@ const DashboardVariant2 = () => {
                       />
                     </div>
                     
-                    {/* Source Articles - Right Side */}
-                    <div className="lg:col-span-1">
+                    {/* Source Articles - Right Side (wider) */}
+                    <div className="lg:col-span-3">
                       <SourceArticles 
                         parsedSourceLinks={indexFundSourceArticles}
                         isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
