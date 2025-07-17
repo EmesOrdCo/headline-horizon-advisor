@@ -298,42 +298,42 @@ const DashboardVariant2 = () => {
             </Link>
           </div>
           
-          {topMagnificent7Story && (
-            <div className="w-full max-w-[95%] mx-auto min-h-[600px]">
-              <Card className="bg-slate-800/50 border-slate-700 h-full">
-                <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower) */}
-                    <div className="lg:col-span-2">
-                      <NewsCard 
-                        symbol={topMagnificent7Story.symbol}
-                        title={generateCompositeHeadline(topMagnificent7Story)}
-                        description={topMagnificent7Story.description}
-                        confidence={topMagnificent7Story.ai_confidence}
-                        sentiment={topMagnificent7Story.ai_sentiment}
-                        category={topMagnificent7Story.category}
-                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        sourceLinks="[]"
-                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                      />
-                    </div>
-                    
-                    {/* Source Articles - Right Side (wider) */}
-                    <div className="lg:col-span-3">
-                      <SourceArticles 
-                        parsedSourceLinks={magnificent7SourceArticles}
-                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        articleWeights={magnificent7ArticleWeights}
-                        weightsLoading={magnificent7WeightsLoading}
-                      />
-                    </div>
+              {topMagnificent7Story && (
+        <div className="w-full flex justify-center">
+          <div className="w-[95%] min-h-[600px]">
+            <Card className="bg-slate-800/50 border-slate-700 h-full">
+              <CardContent className="p-6 h-full">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                  {/* Main Analysis - Left Side (narrower) */}
+                  <div className="lg:col-span-2">
+                    <NewsCard 
+                      symbol={topMagnificent7Story.symbol}
+                      title={generateCompositeHeadline(topMagnificent7Story)}
+                      description={topMagnificent7Story.description}
+                      confidence={topMagnificent7Story.ai_confidence}
+                      sentiment={topMagnificent7Story.ai_sentiment}
+                      category={topMagnificent7Story.category}
+                      isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                      sourceLinks="[]"
+                      stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </section>
-
+                  {/* Source Articles - Right Side (wider) */}
+                  <div className="lg:col-span-3">
+                    <SourceArticles 
+                      parsedSourceLinks={magnificent7SourceArticles}
+                      isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                      articleWeights={magnificent7ArticleWeights}
+                      weightsLoading={magnificent7WeightsLoading}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+    </section>
         {/* INDEX FUNDS SECTION */}
         <section className="border-t border-slate-700 pt-8">
           <div className="flex items-center justify-between mb-6">
