@@ -8,6 +8,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Homepage1 from "./pages/Homepage1";
+import Homepage2 from "./pages/Homepage2";
+import Homepage3 from "./pages/Homepage3";
+import Homepage4 from "./pages/Homepage4";
+import Homepage5 from "./pages/Homepage5";
+import HomepageShowcase from "./pages/HomepageShowcase";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -32,6 +38,12 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/homepage1" element={<Homepage1 />} />
+              <Route path="/homepage2" element={<Homepage2 />} />
+              <Route path="/homepage3" element={<Homepage3 />} />
+              <Route path="/homepage4" element={<Homepage4 />} />
+              <Route path="/homepage5" element={<Homepage5 />} />
+              <Route path="/homepage-showcase" element={<HomepageShowcase />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/email-confirmation" element={<EmailConfirmation />} />
               <Route path="/onboarding/*" element={<Onboarding />} />
