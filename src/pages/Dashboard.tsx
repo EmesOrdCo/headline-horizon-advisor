@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,16 +156,81 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
           {/* Main Content */}
           <div className="lg:col-span-4 space-y-8">
-            {/* Breaking News Header */}
-            <div className="border-l-4 border-red-500 pl-4 mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <Badge className="bg-red-500 text-white text-xs">BREAKING</Badge>
-                <span className="text-slate-400 text-sm">Market Alert</span>
+            {/* Big Movers Section */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-blue-400" />
+                <h2 className="text-xl font-bold text-white">Big Movers</h2>
+                <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Live
+                </Badge>
               </div>
-              <h1 className="text-2xl font-bold text-white">
-                Live Market Intelligence Dashboard
-              </h1>
+              
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Top Gainers */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                        <h3 className="text-lg font-semibold text-white">Top Gainers</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {biggestMovers.gainers.map((stock, index) => (
+                          <div key={stock.symbol} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-emerald-500/20 rounded text-emerald-400 text-xs flex items-center justify-center font-bold">
+                                {index + 1}
+                              </div>
+                              <div>
+                                <div className="text-white font-medium">{stock.symbol}</div>
+                                <div className="text-xs text-slate-400">${stock.price.toFixed(2)}</div>
+                              </div>
+                            </div>
+                            <div className="text-emerald-400 font-medium">
+                              +{stock.change.toFixed(2)}%
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Top Losers */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingDown className="w-4 h-4 text-red-400" />
+                        <h3 className="text-lg font-semibold text-white">Top Losers</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {biggestMovers.losers.map((stock, index) => (
+                          <div key={stock.symbol} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-red-500/20 rounded text-red-400 text-xs flex items-center justify-center font-bold">
+                                {index + 1}
+                              </div>
+                              <div>
+                                <div className="text-white font-medium">{stock.symbol}</div>
+                                <div className="text-xs text-slate-400">${stock.price.toFixed(2)}</div>
+                              </div>
+                            </div>
+                            <div className="text-red-400 font-medium">
+                              {stock.change.toFixed(2)}%
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-slate-700">
+                    <Link to="/biggest-movers">
+                      <Button variant="outline" className="w-full text-blue-400 border-blue-400 hover:bg-blue-400/10">
+                        View All Movers <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Featured Analysis Section */}
