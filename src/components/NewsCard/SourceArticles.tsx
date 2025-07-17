@@ -1,6 +1,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { WeightDots } from "./WeightDots";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SourceArticlesProps {
   parsedSourceLinks: Array<{title: string, url: string, published_at: string}>;
@@ -41,60 +42,64 @@ export const SourceArticles = ({
           </span>
         )}
       </h4>
-      <div className="space-y-3">
-        {parsedSourceLinks.map((link, index) => {
-          const weight = articleWeights?.find(w => w.article_index === index);
-          
-          return (
-            <div
-              key={index}
-              className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 sm:p-4 hover:border-slate-600 hover:bg-slate-800/70 transition-all"
-            >
-              <div className="flex flex-col gap-2">
-                {/* Headlines */}
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block group"
-                >
-                  <h5 className="text-white font-medium leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-2 text-sm sm:text-base">
-                    {link.title}
-                  </h5>
-                </a>
-                
-                {/* Date */}
-                <p className="text-xs text-slate-400">
-                  {formatPublishTime(link.published_at)}
-                </p>
-                
-                {/* Weight and Description - stacked vertically */}
-                {!isHistorical && weight && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">Weight:</span>
-                      <WeightDots weight={weight.weight} />
-                    </div>
-                    <p className="text-xs text-slate-500">({weight.reasoning})</p>
-                  </div>
-                )}
-                
-                {/* External link button - positioned at the end */}
-                <div className="flex justify-end">
+      
+      {/* Scrollable container with max height */}
+      <ScrollArea className="h-[400px] w-full">
+        <div className="space-y-3 pr-4">
+          {parsedSourceLinks.map((link, index) => {
+            const weight = articleWeights?.find(w => w.article_index === index);
+            
+            return (
+              <div
+                key={index}
+                className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 sm:p-4 hover:border-slate-600 hover:bg-slate-800/70 transition-all"
+              >
+                <div className="flex flex-col gap-2">
+                  {/* Headlines */}
                   <a
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-700/50 hover:bg-slate-600/50 px-2 py-1 rounded"
+                    className="block group"
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <h5 className="text-white font-medium leading-tight group-hover:text-emerald-400 transition-colors duration-200 cursor-pointer underline decoration-transparent group-hover:decoration-emerald-400 underline-offset-2 text-sm sm:text-base">
+                      {link.title}
+                    </h5>
                   </a>
+                  
+                  {/* Date */}
+                  <p className="text-xs text-slate-400">
+                    {formatPublishTime(link.published_at)}
+                  </p>
+                  
+                  {/* Weight and Description - stacked vertically */}
+                  {!isHistorical && weight && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">Weight:</span>
+                        <WeightDots weight={weight.weight} />
+                      </div>
+                      <p className="text-xs text-slate-500">({weight.reasoning})</p>
+                    </div>
+                  )}
+                  
+                  {/* External link button - positioned at the end */}
+                  <div className="flex justify-end">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors flex-shrink-0 bg-slate-700/50 hover:bg-slate-600/50 px-2 py-1 rounded"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
