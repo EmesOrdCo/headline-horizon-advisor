@@ -56,32 +56,33 @@ serve(async (req) => {
 
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
-    const finnhubApiKey = Deno.env.get('FINNHUB_API_KEY');
+    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
 
-    console.log(`=== DEBUGGING FINNHUB API FOR ${cleanSymbol} ===`);
-    console.log('Finnhub API Key exists:', !!finnhubApiKey);
-    console.log('Finnhub API Key length:', finnhubApiKey?.length || 0);
+    console.log(`=== DEBUGGING ALPACA API FOR ${cleanSymbol} ===`);
+    console.log('Alpaca API Key exists:', !!alpacaApiKey);
+    console.log('Alpaca API Key length:', alpacaApiKey?.length || 0);
 
-    if (!finnhubApiKey) {
-      console.error('FINNHUB_API_KEY not configured in environment');
-      throw new Error('FINNHUB_API_KEY not configured');
+    if (!alpacaApiKey) {
+      console.error('ALPACA_API_KEY not configured in environment');
+      throw new Error('ALPACA_API_KEY not configured');
     }
 
-    if (finnhubApiKey.length < 10) {
-      console.error('FINNHUB_API_KEY appears to be invalid (too short)');
-      throw new Error('FINNHUB_API_KEY appears to be invalid');
+    if (alpacaApiKey.length < 10) {
+      console.error('ALPACA_API_KEY appears to be invalid (too short)');
+      throw new Error('ALPACA_API_KEY appears to be invalid');
     }
 
-    const apiUrl = `https://finnhub.io/api/v1/quote?symbol=${cleanSymbol}&token=${finnhubApiKey}`;
-    console.log(`Making request to: ${apiUrl.replace(finnhubApiKey, 'API_KEY_HIDDEN')}`);
+    // First get the latest quote
+    const quoteUrl = `https://data.alpaca.markets/v2/stocks/${cleanSymbol}/quotes/latest`;
+    console.log(`Making quote request to: ${quoteUrl}`);
     
-    // Add minimum 2-second delay between requests to respect 30 calls/second limit
-    // This is conservative to ensure we stay well under the limit
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Add minimum 1-second delay between requests to respect API limits
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const quoteResponse = await fetch(apiUrl, {
+    const quoteResponse = await fetch(quoteUrl, {
       method: 'GET',
       headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
         'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
@@ -92,14 +93,14 @@ serve(async (req) => {
     
     if (!quoteResponse.ok) {
       const errorText = await quoteResponse.text();
-      console.error(`Finnhub API error for ${cleanSymbol}: ${quoteResponse.status} - ${errorText}`);
+      console.error(`Alpaca API error for ${cleanSymbol}: ${quoteResponse.status} - ${errorText}`);
       
       // Handle specific rate limiting responses
       if (quoteResponse.status === 429) {
-        throw new Error(`Rate limit exceeded from Finnhub API`);
+        throw new Error(`Rate limit exceeded from Alpaca API`);
       }
       
-      throw new Error(`Finnhub API error: ${quoteResponse.status} - ${errorText}`);
+      throw new Error(`Alpaca API error: ${quoteResponse.status} - ${errorText}`);
     }
     
     const responseText = await quoteResponse.text();
@@ -117,18 +118,51 @@ serve(async (req) => {
     console.log(`Parsed data for ${cleanSymbol}:`, quoteData);
     
     if (quoteData.error) {
-      console.error(`Finnhub API returned error for ${cleanSymbol}:`, quoteData.error);
-      throw new Error(`Finnhub API error: ${quoteData.error}`);
+      console.error(`Alpaca API returned error for ${cleanSymbol}:`, quoteData.error);
+      throw new Error(`Alpaca API error: ${quoteData.error}`);
     }
     
-    if (!quoteData.c || quoteData.c <= 0) {
+    // Check if we have valid quote data
+    if (!quoteData.quote || !quoteData.quote.ap) {
       console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
       throw new Error(`Invalid or missing price data for ${cleanSymbol}`);
     }
     
-    const price = quoteData.c;
-    const change = quoteData.d || 0;
-    const changePercent = quoteData.dp || 0;
+    // Get the current price from the ask price
+    const currentPrice = quoteData.quote.ap;
+    
+    // Also get previous close to calculate change
+    const previousCloseUrl = `https://data.alpaca.markets/v2/stocks/${cleanSymbol}/bars/latest?timeframe=1Day`;
+    console.log(`Making previous close request to: ${previousCloseUrl}`);
+    
+    const previousCloseResponse = await fetch(previousCloseUrl, {
+      method: 'GET',
+      headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
+        'Accept': 'application/json',
+      },
+    });
+    
+    let previousClose = currentPrice; // Default to current price if we can't get previous close
+    
+    if (previousCloseResponse.ok) {
+      const previousCloseText = await previousCloseResponse.text();
+      console.log(`Previous close response for ${cleanSymbol}:`, previousCloseText);
+      
+      try {
+        const previousCloseData = JSON.parse(previousCloseText);
+        if (previousCloseData.bar && previousCloseData.bar.c) {
+          previousClose = previousCloseData.bar.c;
+        }
+      } catch (e) {
+        console.warn(`Could not parse previous close for ${cleanSymbol}:`, e);
+      }
+    }
+    
+    const price = currentPrice;
+    const change = price - previousClose;
+    const changePercent = previousClose !== 0 ? ((change / previousClose) * 100) : 0;
     
     const result = {
       symbol: cleanSymbol,
