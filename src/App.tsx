@@ -16,6 +16,7 @@ import Homepage4 from "./pages/Homepage4";
 import Homepage5 from "./pages/Homepage5";
 import HomepageShowcase from "./pages/HomepageShowcase";
 import MyStocks from "./pages/MyStocks";
+import Watchlist from "./pages/Watchlist";
 import BiggestMovers from "./pages/BiggestMovers";
 import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
@@ -47,6 +48,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <MyStocks />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/watchlist"
+                element={
+                  <ProtectedRoute>
+                    <Watchlist />
                   </ProtectedRoute>
                 }
               />
