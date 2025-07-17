@@ -217,27 +217,6 @@ const IndexFunds = () => {
             })
           )}
         </div>
-
-        {/* Crypto Coming Soon Section */}
-        <div className="mt-12 mb-8">
-          <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-xl p-6 text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Coins className="w-8 h-8 text-orange-400" />
-              <h2 className="text-2xl font-bold text-white">Cryptocurrency Analysis</h2>
-            </div>
-            <p className="text-slate-300 text-lg mb-4">
-              AI-powered crypto market insights coming soon
-            </p>
-            <div className="flex items-center justify-center gap-2">
-              <Badge className="bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                Coming Soon
-              </Badge>
-              <span className="text-slate-400 text-sm">
-                Bitcoin, Ethereum, and major altcoins analysis
-              </span>
-            </div>
-          </div>
-        </div>
         </div>
       </div>
       
