@@ -8,6 +8,9 @@ import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
+import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
+import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
+import { DetailedAnalysis } from "@/components/NewsCard/DetailedAnalysis";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
@@ -211,9 +214,25 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <Button className="bg-red-600 hover:bg-red-700 text-white text-lg px-8 py-3">
-                  Read Full Analysis <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                {/* AI Analysis Section */}
+                <AIAnalysisSection 
+                  symbol="SPY"
+                  sentiment="Bullish"
+                  confidence={94}
+                  isHistorical={false}
+                  sourceLinksCount={5}
+                />
+
+                <SentimentIndicator 
+                  sentiment="Bullish"
+                  category="Market Positive"
+                />
+
+                <DetailedAnalysis 
+                  symbol="SPY"
+                  sentiment="Bullish"
+                  confidence={94}
+                />
               </CardContent>
             </Card>
           </div>
