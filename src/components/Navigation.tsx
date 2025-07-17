@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -43,28 +42,6 @@ const Navigation = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">
-                  Layouts
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid w-48 gap-1 p-2">
-                    {homepageOptions.map((option) => (
-                      <Link
-                        key={option.path}
-                        to={option.path}
-                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                      >
-                        <div className="text-sm font-medium leading-none">{option.label}</div>
-                      </Link>
-                    ))}
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
           
           <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
@@ -127,21 +104,7 @@ const Navigation = () => {
 
             {/* Mobile Menu Content */}
             <div className="flex flex-col flex-1 p-6 space-y-6">
-              {/* Homepage Options */}
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Layouts</div>
-                {homepageOptions.map((option) => (
-                  <Link
-                    key={option.path}
-                    to={option.path}
-                    className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {option.label}
-                  </Link>
-                ))}
-              </div>
-
+              
               <div className="border-t dark:border-slate-800 pt-4 space-y-4">
                 <a 
                   href="#features" 
