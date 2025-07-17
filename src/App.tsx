@@ -8,11 +8,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import DashboardVariant1 from "./pages/DashboardVariant1";
-import DashboardVariant2 from "./pages/DashboardVariant2";
-import DashboardVariant3 from "./pages/DashboardVariant3";
-import DashboardVariant4 from "./pages/DashboardVariant4";
-import DashboardVariant5 from "./pages/DashboardVariant5";
 import DashboardShowcase from "./pages/DashboardShowcase";
 import Homepage1 from "./pages/Homepage1";
 import Homepage2 from "./pages/Homepage2";
@@ -92,46 +87,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-variant-1"
-                element={
-                  <ProtectedRoute>
-                    <DashboardVariant1 />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-variant-2"
-                element={
-                  <ProtectedRoute>
-                    <DashboardVariant2 />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-variant-3"
-                element={
-                  <ProtectedRoute>
-                    <DashboardVariant3 />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-variant-4"
-                element={
-                  <ProtectedRoute>
-                    <DashboardVariant4 />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard-variant-5"
-                element={
-                  <ProtectedRoute>
-                    <DashboardVariant5 />
                   </ProtectedRoute>
                 }
               />
