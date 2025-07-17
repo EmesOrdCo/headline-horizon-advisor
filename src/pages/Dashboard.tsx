@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +35,19 @@ const Dashboard = () => {
     magnificent7Symbols: MAGNIFICENT_7,
     indexFundSymbols: MAJOR_INDEX_FUNDS
   });
+
+  // Dummy data for biggest movers
+  const dummyGainers = [
+    { symbol: "NVDA", name: "NVIDIA Corp", price: 124.36, changePercent: 8.42 },
+    { symbol: "TSLA", name: "Tesla Inc", price: 215.89, changePercent: 6.73 },
+    { symbol: "AMD", name: "Advanced Micro Devices", price: 98.76, changePercent: 5.21 }
+  ];
+
+  const dummyLosers = [
+    { symbol: "INTC", name: "Intel Corp", price: 34.29, changePercent: -7.82 },
+    { symbol: "MU", name: "Micron Technology", price: 76.34, changePercent: -5.42 },
+    { symbol: "PYPL", name: "PayPal Holdings", price: 62.18, changePercent: -4.68 }
+  ];
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -225,62 +237,62 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Most Pressing Headlines */}
-            {mostPressingHeadline && (
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-orange-400" />
-                    Breaking Alert
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-slate-700/50 rounded-lg border border-orange-500/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className="bg-orange-500 text-white text-xs">{mostPressingHeadline.symbol}</Badge>
-                        <Badge className={`text-xs ${
-                          mostPressingHeadline.ai_sentiment === 'Bullish' 
-                            ? 'bg-emerald-500/20 text-emerald-400' 
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {mostPressingHeadline.ai_sentiment}
-                        </Badge>
-                      </div>
-                      <h4 className="text-sm font-medium text-white mb-2 line-clamp-2">
-                        {mostPressingHeadline.title}
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">
-                          {formatTimeAgo(mostPressingHeadline.created_at)}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-400">Conf:</span>
-                          <span className="text-xs text-orange-400 font-medium">
-                            {mostPressingHeadline.ai_confidence}%
-                          </span>
+            {/* Biggest Movers */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-orange-400" />
+                  Big Movers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Gainers Column */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <TrendingUp className="w-3 h-3 text-emerald-400 mr-1" />
+                      <span className="text-xs font-medium text-slate-300">Top Gainers</span>
+                    </div>
+                    <div className="space-y-2">
+                      {dummyGainers.map((stock) => (
+                        <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-emerald-500/10">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-white text-xs">{stock.symbol}</span>
+                            <span className="text-xs text-emerald-400">+{stock.changePercent.toFixed(2)}%</span>
+                          </div>
+                          <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
                         </div>
-                      </div>
-                      {mostPressingHeadline.url && (
-                        <a 
-                          href={mostPressingHeadline.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 mt-2"
-                        >
-                          Read More <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
+                      ))}
                     </div>
                   </div>
-                  <Link to="/biggest-movers" className="block mt-4">
-                    <Button variant="outline" size="sm" className="w-full text-xs">
-                      View All Breaking News
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
+                  
+                  {/* Losers Column */}
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <TrendingDown className="w-3 h-3 text-red-400 mr-1" />
+                      <span className="text-xs font-medium text-slate-300">Top Losers</span>
+                    </div>
+                    <div className="space-y-2">
+                      {dummyLosers.map((stock) => (
+                        <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-red-500/10">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-white text-xs">{stock.symbol}</span>
+                            <span className="text-xs text-red-400">{stock.changePercent.toFixed(2)}%</span>
+                          </div>
+                          <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <Link to="/biggest-movers" className="block mt-4">
+                  <Button variant="outline" size="sm" className="w-full text-xs">
+                    View All Market Movers
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
