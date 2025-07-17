@@ -165,7 +165,7 @@ const Dashboard = () => {
               economic developments, or other world events that impact financial markets.
               Updated daily with the most market-moving news.
             */}
-            <Card className="bg-gradient-to-br from-red-950/30 to-slate-800/50 border-red-500/30 h-full">
+            <Card className="bg-gradient-to-br from-red-950/30 to-slate-800/50 border-red-500/30">
               <CardContent className="p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex items-center gap-2">
@@ -197,21 +197,6 @@ const Dashboard = () => {
                   <span className="text-slate-400 text-sm">
                     Impact: High • Confidence: 94%
                   </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                    <div className="text-emerald-400 text-2xl font-bold">+0.54%</div>
-                    <div className="text-slate-300 text-sm">S&P 500 Gain</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                    <div className="text-blue-400 text-2xl font-bold">6,297</div>
-                    <div className="text-slate-300 text-sm">New Record High</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                    <div className="text-orange-400 text-2xl font-bold">$2.1T</div>
-                    <div className="text-slate-300 text-sm">Market Cap Added</div>
-                  </div>
                 </div>
 
                 {/* AI Analysis Section */}
