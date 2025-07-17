@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -239,26 +240,26 @@ const Dashboard = () => {
 
             {/* Biggest Movers */}
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-white text-sm flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-orange-400" />
-                  Big Movers
-                </CardTitle>
+                  <CardTitle className="text-white text-lg">Big Movers</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   {/* Gainers Column */}
                   <div>
                     <div className="flex items-center mb-2">
-                      <TrendingUp className="w-3 h-3 text-emerald-400 mr-1" />
-                      <span className="text-xs font-medium text-slate-300">Top Gainers</span>
+                      <TrendingUp className="w-4 h-4 text-emerald-400 mr-1" />
+                      <span className="text-slate-300 font-medium text-lg">Top Gainers</span>
                     </div>
                     <div className="space-y-2">
                       {dummyGainers.map((stock) => (
                         <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-emerald-500/10">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium text-white text-xs">{stock.symbol}</span>
-                            <span className="text-xs text-emerald-400">+{stock.changePercent.toFixed(2)}%</span>
+                            <span className="font-medium text-white text-sm">{stock.symbol}</span>
+                            <span className="text-sm text-emerald-400">+{stock.changePercent.toFixed(2)}%</span>
                           </div>
                           <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
                         </div>
@@ -269,15 +270,15 @@ const Dashboard = () => {
                   {/* Losers Column */}
                   <div>
                     <div className="flex items-center mb-2">
-                      <TrendingDown className="w-3 h-3 text-red-400 mr-1" />
-                      <span className="text-xs font-medium text-slate-300">Top Losers</span>
+                      <TrendingDown className="w-4 h-4 text-red-400 mr-1" />
+                      <span className="text-slate-300 font-medium text-lg">Top Losers</span>
                     </div>
                     <div className="space-y-2">
                       {dummyLosers.map((stock) => (
                         <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-red-500/10">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium text-white text-xs">{stock.symbol}</span>
-                            <span className="text-xs text-red-400">{stock.changePercent.toFixed(2)}%</span>
+                            <span className="font-medium text-white text-sm">{stock.symbol}</span>
+                            <span className="text-sm text-red-400">{stock.changePercent.toFixed(2)}%</span>
                           </div>
                           <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
                         </div>
