@@ -133,6 +133,20 @@ const Dashboard = () => {
     enabled: indexFundSourceArticles.length > 0 && !topIndexFundStory?.ai_reasoning?.includes('Historical')
   });
 
+  // Dummy data for biggest movers
+  const biggestMovers = {
+    gainers: [
+      { symbol: 'PLTR', change: 2.04, price: 42.50 },
+      { symbol: 'NVDA', change: 1.87, price: 485.20 },
+      { symbol: 'TSLA', change: 1.07, price: 245.80 }
+    ],
+    losers: [
+      { symbol: 'META', change: -1.45, price: 298.40 },
+      { symbol: 'AAPL', change: -0.87, price: 175.50 },
+      { symbol: 'AMZN', change: -0.62, price: 156.70 }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -225,62 +239,76 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Most Pressing Headlines */}
-            {mostPressingHeadline && (
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-orange-400" />
-                    Breaking Alert
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-slate-700/50 rounded-lg border border-orange-500/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className="bg-orange-500 text-white text-xs">{mostPressingHeadline.symbol}</Badge>
-                        <Badge className={`text-xs ${
-                          mostPressingHeadline.ai_sentiment === 'Bullish' 
-                            ? 'bg-emerald-500/20 text-emerald-400' 
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {mostPressingHeadline.ai_sentiment}
-                        </Badge>
-                      </div>
-                      <h4 className="text-sm font-medium text-white mb-2 line-clamp-2">
-                        {mostPressingHeadline.title}
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">
-                          {formatTimeAgo(mostPressingHeadline.created_at)}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-400">Conf:</span>
-                          <span className="text-xs text-orange-400 font-medium">
-                            {mostPressingHeadline.ai_confidence}%
-                          </span>
+            {/* Biggest Movers */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  Big Movers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Top Gainers */}
+                  <div>
+                    <h4 className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      Top Gainers
+                    </h4>
+                    <div className="space-y-2">
+                      {biggestMovers.gainers.map((stock, index) => (
+                        <div key={stock.symbol} className="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-emerald-500/20 rounded text-emerald-400 text-xs flex items-center justify-center font-medium">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="text-white text-sm font-medium">{stock.symbol}</div>
+                              <div className="text-xs text-slate-400">${stock.price.toFixed(2)}</div>
+                            </div>
+                          </div>
+                          <div className="text-emerald-400 text-sm font-medium">
+                            +{stock.change.toFixed(2)}%
+                          </div>
                         </div>
-                      </div>
-                      {mostPressingHeadline.url && (
-                        <a 
-                          href={mostPressingHeadline.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 mt-2"
-                        >
-                          Read More <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
+                      ))}
                     </div>
                   </div>
-                  <Link to="/biggest-movers" className="block mt-4">
-                    <Button variant="outline" size="sm" className="w-full text-xs">
-                      View All Breaking News
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
+
+                  {/* Top Losers */}
+                  <div>
+                    <h4 className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                      <TrendingDown className="w-3 h-3" />
+                      Top Losers
+                    </h4>
+                    <div className="space-y-2">
+                      {biggestMovers.losers.map((stock, index) => (
+                        <div key={stock.symbol} className="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-red-500/20 rounded text-red-400 text-xs flex items-center justify-center font-medium">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="text-white text-sm font-medium">{stock.symbol}</div>
+                              <div className="text-xs text-slate-400">${stock.price.toFixed(2)}</div>
+                            </div>
+                          </div>
+                          <div className="text-red-400 text-sm font-medium">
+                            {stock.change.toFixed(2)}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <Link to="/biggest-movers" className="block mt-4">
+                  <Button variant="outline" size="sm" className="w-full text-xs">
+                    View All Movers
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
