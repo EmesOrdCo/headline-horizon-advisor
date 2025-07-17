@@ -72,8 +72,8 @@ serve(async (req) => {
       throw new Error('ALPACA_API_KEY appears to be invalid');
     }
 
-    // First get the latest quote
-    const quoteUrl = `https://data.alpaca.markets/v2/stocks/${cleanSymbol}/quotes/latest`;
+    // First get the latest quote - correct endpoint structure
+    const quoteUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
     // Add minimum 1-second delay between requests to respect API limits
@@ -83,6 +83,7 @@ serve(async (req) => {
       method: 'GET',
       headers: {
         'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaApiKey,
         'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
@@ -122,23 +123,31 @@ serve(async (req) => {
       throw new Error(`Alpaca API error: ${quoteData.error}`);
     }
     
-    // Check if we have valid quote data
-    if (!quoteData.quote || !quoteData.quote.ap) {
+    // Check if we have valid quote data (new API format)
+    if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
       console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
       throw new Error(`Invalid or missing price data for ${cleanSymbol}`);
     }
     
-    // Get the current price from the ask price
-    const currentPrice = quoteData.quote.ap;
+    const symbolQuote = quoteData.quotes[cleanSymbol];
+    
+    // Get the current price from the ask price (ap) or bid price (bp) as fallback
+    const currentPrice = symbolQuote.ap || symbolQuote.bp;
+    
+    if (!currentPrice) {
+      console.error(`No price data available for ${cleanSymbol}:`, symbolQuote);
+      throw new Error(`No price data available for ${cleanSymbol}`);
+    }
     
     // Also get previous close to calculate change
-    const previousCloseUrl = `https://data.alpaca.markets/v2/stocks/${cleanSymbol}/bars/latest?timeframe=1Day`;
+    const previousCloseUrl = `https://data.alpaca.markets/v2/stocks/bars/latest?symbols=${cleanSymbol}&timeframe=1Day`;
     console.log(`Making previous close request to: ${previousCloseUrl}`);
     
     const previousCloseResponse = await fetch(previousCloseUrl, {
       method: 'GET',
       headers: {
         'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaApiKey,
         'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
@@ -152,8 +161,8 @@ serve(async (req) => {
       
       try {
         const previousCloseData = JSON.parse(previousCloseText);
-        if (previousCloseData.bar && previousCloseData.bar.c) {
-          previousClose = previousCloseData.bar.c;
+        if (previousCloseData.bars && previousCloseData.bars[cleanSymbol] && previousCloseData.bars[cleanSymbol].c) {
+          previousClose = previousCloseData.bars[cleanSymbol].c;
         }
       } catch (e) {
         console.warn(`Could not parse previous close for ${cleanSymbol}:`, e);
