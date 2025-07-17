@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -303,8 +302,8 @@ const DashboardVariant2 = () => {
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (wider now) */}
-                    <div className="lg:col-span-3">
+                    {/* Main Analysis - Left Side (narrower now) */}
+                    <div className="lg:col-span-2">
                       <NewsCard 
                         symbol={topMagnificent7Story.symbol}
                         title={generateCompositeHeadline(topMagnificent7Story)}
@@ -317,8 +316,8 @@ const DashboardVariant2 = () => {
                         stockPrice={getStockPrice(topMagnificent7Story.symbol)}
                       />
                     </div>
-                    {/* Source Articles - Right Side (narrower now) */}
-                    <div className="lg:col-span-2">
+                    {/* Source Articles - Right Side (wider now) */}
+                    <div className="lg:col-span-3">
                       <SourceArticles 
                         parsedSourceLinks={magnificent7SourceArticles}
                         isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
@@ -352,8 +351,8 @@ const DashboardVariant2 = () => {
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (wider now) */}
-                    <div className="lg:col-span-3">
+                    {/* Main Analysis - Left Side (narrower now) */}
+                    <div className="lg:col-span-2">
                       <NewsCard 
                         symbol={topIndexFundStory.symbol}
                         title={generateCompositeHeadline(topIndexFundStory)}
@@ -367,8 +366,8 @@ const DashboardVariant2 = () => {
                       />
                     </div>
                     
-                    {/* Source Articles - Right Side (narrower now) */}
-                    <div className="lg:col-span-2">
+                    {/* Source Articles - Right Side (wider now) */}
+                    <div className="lg:col-span-3">
                       <SourceArticles 
                         parsedSourceLinks={indexFundSourceArticles}
                         isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
