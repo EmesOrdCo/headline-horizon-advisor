@@ -82,21 +82,6 @@ const DashboardVariant2 = () => {
       })[0];
   };
 
-  // Get related headlines for a specific symbol
-  const getRelatedHeadlines = (targetSymbol: string) => {
-    if (!newsData) return [];
-    
-    return newsData
-      .filter(item => item.symbol === targetSymbol && item.title && item.title.length > 0)
-      .slice(0, 4)
-      .map(item => ({
-        title: item.title,
-        published_at: item.published_at || item.created_at,
-        category: item.category || 'Market News',
-        url: item.url || '#'
-      }));
-  };
-
   // Get source articles for a story
   const getSourceArticles = (story: any) => {
     if (!story?.source_links) return [];
@@ -292,50 +277,56 @@ const DashboardVariant2 = () => {
           </div>
           
           {topMagnificent7Story && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Analysis */}
-              <div className="lg:col-span-2">
-                <NewsCard 
-                  symbol={topMagnificent7Story.symbol}
-                  title={generateCompositeHeadline(topMagnificent7Story)}
-                  description={topMagnificent7Story.description}
-                  confidence={topMagnificent7Story.ai_confidence}
-                  sentiment={topMagnificent7Story.ai_sentiment}
-                  category={topMagnificent7Story.category}
-                  isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                  sourceLinks={topMagnificent7Story.source_links || '[]'}
-                  stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                />
-              </div>
-              
-              {/* Source Articles */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
-                <div className="space-y-3">
-                  {getSourceArticles(topMagnificent7Story).slice(0, 4).map((article: any, index: number) => (
-                    <div key={index} className="group cursor-pointer">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
-                              {article.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
-                            </div>
-                          </div>
-                          <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-blue-400 transition-colors flex-shrink-0" />
-                        </div>
-                      </a>
+            <div className="w-full max-w-[95%] mx-auto">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Analysis - Left Side */}
+                    <div className="lg:col-span-2">
+                      <NewsCard 
+                        symbol={topMagnificent7Story.symbol}
+                        title={generateCompositeHeadline(topMagnificent7Story)}
+                        description={topMagnificent7Story.description}
+                        confidence={topMagnificent7Story.ai_confidence}
+                        sentiment={topMagnificent7Story.ai_sentiment}
+                        category={topMagnificent7Story.category}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        sourceLinks="[]"
+                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
+                    
+                    {/* Source Articles - Right Side */}
+                    <div className="lg:col-span-1">
+                      <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
+                      <div className="space-y-3">
+                        {getSourceArticles(topMagnificent7Story).slice(0, 4).map((article: any, index: number) => (
+                          <div key={index} className="group cursor-pointer">
+                            <a 
+                              href={article.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
+                                    {article.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
+                                  </div>
+                                </div>
+                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                              </div>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </section>
@@ -355,50 +346,56 @@ const DashboardVariant2 = () => {
           </div>
           
           {topIndexFundStory && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Analysis */}
-              <div className="lg:col-span-2">
-                <NewsCard 
-                  symbol={topIndexFundStory.symbol}
-                  title={generateCompositeHeadline(topIndexFundStory)}
-                  description={topIndexFundStory.description}
-                  confidence={topIndexFundStory.ai_confidence}
-                  sentiment={topIndexFundStory.ai_sentiment}
-                  category={topIndexFundStory.category}
-                  isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                  sourceLinks={topIndexFundStory.source_links || '[]'}
-                  stockPrice={getStockPrice(topIndexFundStory.symbol)}
-                />
-              </div>
-              
-              {/* Source Articles */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
-                <div className="space-y-3">
-                  {getSourceArticles(topIndexFundStory).slice(0, 4).map((article: any, index: number) => (
-                    <div key={index} className="group cursor-pointer">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-purple-400 transition-colors">
-                              {article.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
-                            </div>
-                          </div>
-                          <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-purple-400 transition-colors flex-shrink-0" />
-                        </div>
-                      </a>
+            <div className="w-full max-w-[95%] mx-auto">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Analysis - Left Side */}
+                    <div className="lg:col-span-2">
+                      <NewsCard 
+                        symbol={topIndexFundStory.symbol}
+                        title={generateCompositeHeadline(topIndexFundStory)}
+                        description={topIndexFundStory.description}
+                        confidence={topIndexFundStory.ai_confidence}
+                        sentiment={topIndexFundStory.ai_sentiment}
+                        category={topIndexFundStory.category}
+                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                        sourceLinks="[]"
+                        stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
+                    
+                    {/* Source Articles - Right Side */}
+                    <div className="lg:col-span-1">
+                      <h3 className="text-lg font-semibold text-white mb-4">Source Articles</h3>
+                      <div className="space-y-3">
+                        {getSourceArticles(topIndexFundStory).slice(0, 4).map((article: any, index: number) => (
+                          <div key={index} className="group cursor-pointer">
+                            <a 
+                              href={article.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors border border-slate-700/50"
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-purple-400 transition-colors">
+                                    {article.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-xs text-slate-500">{formatTimeAgo(article.published_at)}</span>
+                                  </div>
+                                </div>
+                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-purple-400 transition-colors flex-shrink-0" />
+                              </div>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </section>
