@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -59,7 +58,7 @@ const DashboardNav = () => {
   const DashboardLinks = () => (
     <>
       <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Dashboard
+        Home
       </Link>
       
       <DropdownMenu>
