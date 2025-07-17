@@ -1,378 +1,408 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, ArrowRight, ExternalLink, RefreshCw } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
-import RSSHeadlines from "@/components/RSSHeadlines";
-import { useNews, useFetchNews } from "@/hooks/useNews";
+import { SourceArticles } from "@/components/NewsCard/SourceArticles";
+import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
 import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
-import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useArticleWeights } from "@/hooks/useArticleWeights";
 
 const Dashboard = () => {
   useSEO({
     title: "Live Market News Dashboard",
-    description: "Stay updated with real-time market news, AI-powered analysis of Magnificent 7 stocks, index funds, and comprehensive market insights.",
-    canonical: "https://yourdomain.com/dashboard",
-    ogType: "website",
-    structuredData: {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "MarketSensorAI Dashboard",
-      "description": "Real-time market news and AI analysis dashboard",
-      "applicationCategory": "FinanceApplication",
-      "operatingSystem": "Web Browser",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    }
+    description: "News-first layout with comprehensive sidebar navigation and real-time market updates.",
+    canonical: "https://yourdomain.com/dashboard"
   });
+
   const { data: newsData, isLoading } = useNews();
-  const { data: stockPrices, isLoading: isPricesLoading } = useStockPrices();
-  const fetchNews = useFetchNews();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [isRefreshingMag7, setIsRefreshingMag7] = useState(false);
-  const [isRefreshingIndex, setIsRefreshingIndex] = useState(false);
+  const { data: stockPrices } = useStockPrices();
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 
-  // Use the new consistent top stories hook (must be before useEffect)
   const {
     topMagnificent7Story,
-    topIndexFundStory,
-    magnificent7HasRecentNews,
-    indexFundsHasRecentNews
+    topIndexFundStory
   } = useConsistentTopStories({
     newsData,
     magnificent7Symbols: MAGNIFICENT_7,
     indexFundSymbols: MAJOR_INDEX_FUNDS
   });
 
-  // Manual refresh functions
-  const refreshMagnificent7 = async () => {
-    setIsRefreshingMag7(true);
-    try {
-      console.log('🔄 Manual refresh for Magnificent 7...');
-      const { data, error } = await supabase.functions.invoke('fetch-magnificent-7');
-      
-      if (error) {
-        console.error('❌ Magnificent 7 refresh failed:', error);
-        toast({
-          title: "Refresh Failed",
-          description: "Failed to refresh Magnificent 7 data. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Invalidate and refetch news data
-      await queryClient.invalidateQueries({ queryKey: ['news'] });
-      console.log('✅ Magnificent 7 refreshed successfully');
-      
-      toast({
-        title: "Refreshed Successfully",
-        description: "Magnificent 7 data has been updated.",
-      });
-    } catch (error) {
-      console.error('❌ Error refreshing Magnificent 7:', error);
-      toast({
-        title: "Refresh Failed",
-        description: "An error occurred while refreshing Magnificent 7 data.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshingMag7(false);
-    }
-  };
-
-  const refreshIndexFunds = async () => {
-    setIsRefreshingIndex(true);
-    try {
-      console.log('🔄 Manual refresh for Index Funds...');
-      const { data, error } = await supabase.functions.invoke('fetch-index-funds');
-      
-      if (error) {
-        console.error('❌ Index Funds refresh failed:', error);
-        toast({
-          title: "Refresh Failed",
-          description: "Failed to refresh Index Funds data. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Invalidate and refetch news data
-      await queryClient.invalidateQueries({ queryKey: ['news'] });
-      console.log('✅ Index Funds refreshed successfully');
-      
-      toast({
-        title: "Refreshed Successfully",
-        description: "Index Funds data has been updated.",
-      });
-    } catch (error) {
-      console.error('❌ Error refreshing Index Funds:', error);
-      toast({
-        title: "Refresh Failed",
-        description: "An error occurred while refreshing Index Funds data.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshingIndex(false);
-    }
-  };
-
-  // Smart auto-fetch logic - only refresh when news is stale
-  useEffect(() => {
-    const checkAndRefreshIfNeeded = async () => {
-      console.log('🔍 Checking if refresh is needed...');
-      
-      // Only refresh if we don't have recent news (older than 2 hours)
-      const needsRefresh = !magnificent7HasRecentNews || !indexFundsHasRecentNews;
-      
-      if (needsRefresh) {
-        console.log('🚀 Auto-refreshing due to stale news...');
-        try {
-          const result = await fetchNews();
-          if (result.success) {
-            await queryClient.invalidateQueries({ queryKey: ['news'] });
-            console.log('✅ Auto-refresh completed successfully');
-          } else {
-            console.error('❌ Auto-refresh failed:', result.message);
-          }
-        } catch (error) {
-          console.error('❌ Error during auto-refresh:', error);
-        }
-      } else {
-        console.log('ℹ️ News is still fresh, skipping refresh');
-      }
-    };
-
-    // Check immediately on mount
-    checkAndRefreshIfNeeded();
-
-    // Set up interval to check every 10 minutes (but only refresh if needed)
-    const interval = setInterval(checkAndRefreshIfNeeded, 10 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [fetchNews, queryClient, magnificent7HasRecentNews, indexFundsHasRecentNews]);
-
-  const STOCK_NAMES: { [key: string]: string } = {
-    'AAPL': 'Apple Inc.',
-    'MSFT': 'Microsoft Corporation',
-    'GOOGL': 'Alphabet Inc.',
-    'AMZN': 'Amazon.com Inc.',
-    'NVDA': 'NVIDIA Corporation',
-    'TSLA': 'Tesla Inc.',
-    'META': 'Meta Platforms Inc.',
-    'SPY': 'SPDR S&P 500 ETF Trust',
-    'QQQ': 'Invesco QQQ Trust',
-    'DIA': 'SPDR Dow Jones Industrial Average ETF Trust'
-  };
-
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
 
-  const generateCompositeHeadline = (item: any, existingHeadlines: string[] = []): string => {
+  const generateCompositeHeadline = (item: any): string => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
     
-    let sourceArticles = [];
-    try {
-      sourceArticles = item.source_links ? JSON.parse(item.source_links) : [];
-    } catch (error) {
-      console.error('Error parsing source links:', error);
-    }
-
     let summary = '';
-    
-    if (sourceArticles.length > 0) {
-      const titles = sourceArticles.map((article: any) => article.title.toLowerCase());
-      
-      if (titles.some(t => t.includes('earnings') || t.includes('revenue') || t.includes('profit'))) {
-        summary = sentiment === 'bullish' ? 'Strong earnings boost confidence' : 'Earnings disappoint investors';
-      } else if (titles.some(t => t.includes('upgrade') || t.includes('analyst') || t.includes('target'))) {
-        summary = sentiment === 'bullish' ? 'Analysts raise price targets' : 'Analysts downgrade stock';
-      } else if (titles.some(t => t.includes('ai') || t.includes('artificial intelligence'))) {
-        summary = sentiment === 'bullish' ? 'AI developments drive growth' : 'AI concerns weigh on stock';
-      } else if (titles.some(t => t.includes('chip') || t.includes('semiconductor'))) {
-        summary = sentiment === 'bullish' ? 'Chip demand supports outlook' : 'Semiconductor headwinds emerge';
-      } else if (titles.some(t => t.includes('cloud') || t.includes('enterprise'))) {
-        summary = sentiment === 'bullish' ? 'Cloud growth accelerates' : 'Enterprise spending slows';
-      } else {
-        summary = sentiment === 'bullish' ? 'Positive developments support growth' : 'Market challenges create headwinds';
-      }
+    if (sentiment === 'bullish') {
+      summary = 'Positive developments support growth';
+    } else if (sentiment === 'bearish') {
+      summary = 'Market challenges create headwinds';
     } else {
-      summary = sentiment === 'bullish' ? 'Positive momentum continues' : 'Market pressures weigh on stock';
+      summary = 'Mixed signals in current market';
     }
 
     return `${symbol}: ${summary}`;
   };
 
+  // Get the most pressing stock-related headline that doesn't appear elsewhere
+  const getMostPressingHeadline = () => {
+    if (!newsData) return null;
+    
+    // Filter out stories that are already featured
+    const excludedSymbols = new Set([
+      topMagnificent7Story?.symbol,
+      topIndexFundStory?.symbol
+    ].filter(Boolean));
+    
+    return newsData
+      .filter(item => 
+        item.symbol && 
+        item.symbol !== 'GENERAL' &&
+        !excludedSymbols.has(item.symbol) &&
+        item.title && 
+        item.title.length > 0 &&
+        item.ai_confidence &&
+        item.ai_confidence > 60
+      )
+      .sort((a, b) => {
+        const aTime = new Date(a.created_at).getTime();
+        const bTime = new Date(b.created_at).getTime();
+        return bTime - aTime;
+      })[0];
+  };
+
+  // Get source articles for a story
+  const getSourceArticles = (story: any) => {
+    if (!story?.source_links) return [];
+    
+    try {
+      return JSON.parse(story.source_links);
+    } catch {
+      return [];
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      const now = new Date();
+      const published = new Date(dateString);
+      const diffInMinutes = Math.floor((now.getTime() - published.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    } catch {
+      return 'Unknown time';
+    }
+  };
+
+  const mostPressingHeadline = getMostPressingHeadline();
+
+  // Get article weights for Magnificent 7 story
+  const magnificent7SourceArticles = getSourceArticles(topMagnificent7Story);
+  const { data: magnificent7ArticleWeights, isLoading: magnificent7WeightsLoading } = useArticleWeights({
+    articles: magnificent7SourceArticles,
+    overallSentiment: topMagnificent7Story?.ai_sentiment || 'Neutral',
+    overallConfidence: topMagnificent7Story?.ai_confidence || 50,
+    symbol: topMagnificent7Story?.symbol || '',
+    enabled: magnificent7SourceArticles.length > 0 && !topMagnificent7Story?.ai_reasoning?.includes('Historical')
+  });
+
+  // Get article weights for Index Fund story
+  const indexFundSourceArticles = getSourceArticles(topIndexFundStory);
+  const { data: indexFundArticleWeights, isLoading: indexFundWeightsLoading } = useArticleWeights({
+    articles: indexFundSourceArticles,
+    overallSentiment: topIndexFundStory?.ai_sentiment || 'Neutral',
+    overallConfidence: topIndexFundStory?.ai_confidence || 50,
+    symbol: topIndexFundStory?.symbol || '',
+    enabled: indexFundSourceArticles.length > 0 && !topIndexFundStory?.ai_reasoning?.includes('Historical')
+  });
 
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Live Market News</h1>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">LIVE • Auto-updating every minute</span>
+      <main className="pt-32 sm:pt-36 p-4 sm:p-6 w-[95%] mx-auto">
+        {/* TOP SECTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
+          {/* Main Content */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Breaking News Header */}
+            <div className="border-l-4 border-red-500 pl-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <Badge className="bg-red-500 text-white text-xs">BREAKING</Badge>
+                <span className="text-slate-400 text-sm">Market Alert</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white">
+                Live Market Intelligence Dashboard
+              </h1>
+            </div>
+
+            {/* Featured Analysis Section */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-blue-400" />
+                Featured AI Analysis
+              </h2>
+              
+              {topIndexFundStory && (
+                <Card className="bg-gradient-to-r from-purple-900/20 to-slate-800/50 border-purple-500/30">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <Badge className="bg-purple-500 text-white">{topIndexFundStory.symbol}</Badge>
+                      <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <Clock className="w-4 h-4" />
+                        <span>Updated moments ago</span>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">
+                      {generateCompositeHeadline(topIndexFundStory)}
+                    </h3>
+                    <p className="text-slate-300 mb-4 leading-relaxed">
+                      {topIndexFundStory.description}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <Badge className={`${
+                        topIndexFundStory.ai_sentiment === 'Bullish' 
+                          ? 'bg-emerald-500/20 text-emerald-400' 
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {topIndexFundStory.ai_sentiment}
+                      </Badge>
+                      <span className="text-slate-400 text-sm">
+                        AI Confidence: {topIndexFundStory.ai_confidence}%
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
           
-          {!isPricesLoading && (!stockPrices || stockPrices.length === 0) && (
-            <div className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
-              ⚠️ Asset prices unavailable - check Finnhub API connection
+          {/* Sidebar */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Market Overview */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white text-sm">Market Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  {['SPY', 'QQQ', 'DIA'].map((symbol) => {
+                    const price = getStockPrice(symbol);
+                    return (
+                      <div key={symbol} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
+                        <div>
+                          <div className="font-medium text-white">{symbol}</div>
+                          <div className="text-xs text-slate-400">${price?.price.toFixed(2) || '--'}</div>
+                        </div>
+                        <div className={`text-sm font-medium ${
+                          (price?.changePercent || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {(price?.changePercent || 0) >= 0 ? '+' : ''}{price?.changePercent?.toFixed(2) || '0.00'}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Most Pressing Headlines */}
+            {mostPressingHeadline && (
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-orange-400" />
+                    Breaking Alert
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-slate-700/50 rounded-lg border border-orange-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-orange-500 text-white text-xs">{mostPressingHeadline.symbol}</Badge>
+                        <Badge className={`text-xs ${
+                          mostPressingHeadline.ai_sentiment === 'Bullish' 
+                            ? 'bg-emerald-500/20 text-emerald-400' 
+                            : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {mostPressingHeadline.ai_sentiment}
+                        </Badge>
+                      </div>
+                      <h4 className="text-sm font-medium text-white mb-2 line-clamp-2">
+                        {mostPressingHeadline.title}
+                      </h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-400">
+                          {formatTimeAgo(mostPressingHeadline.created_at)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-slate-400">Conf:</span>
+                          <span className="text-xs text-orange-400 font-medium">
+                            {mostPressingHeadline.ai_confidence}%
+                          </span>
+                        </div>
+                      </div>
+                      {mostPressingHeadline.url && (
+                        <a 
+                          href={mostPressingHeadline.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 mt-2"
+                        >
+                          Read More <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <Link to="/biggest-movers" className="block mt-4">
+                    <Button variant="outline" size="sm" className="w-full text-xs">
+                      View All Breaking News
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* MAGNIFICENT 7 SECTION */}
+        <section className="border-t border-slate-700 pt-8 mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Magnificent 7</h2>
+              <p className="text-slate-400 text-sm">AI-powered analysis of tech giants</p>
+            </div>
+            <Link to="/magnificent-7">
+              <Button variant="outline" className="text-blue-400 border-blue-400 hover:bg-blue-400/10">
+                View All 7 Stocks <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+          
+          {topMagnificent7Story && (
+            <div className="w-full">
+              <Card className="bg-slate-800/50 border-slate-700 h-full">
+                <CardContent className="p-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                    {/* Main Analysis - Left Side (narrower now) */}
+                    <div className="lg:col-span-2">
+                      <NewsCard 
+                        symbol={topMagnificent7Story.symbol}
+                        title={generateCompositeHeadline(topMagnificent7Story)}
+                        description={topMagnificent7Story.description}
+                        confidence={topMagnificent7Story.ai_confidence}
+                        sentiment={topMagnificent7Story.ai_sentiment}
+                        category={topMagnificent7Story.category}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        sourceLinks="[]"
+                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                      />
+                    </div>
+                    {/* Source Articles - Right Side (wider now) */}
+                    <div className="lg:col-span-3">
+                      <SourceArticles 
+                        parsedSourceLinks={magnificent7SourceArticles}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        articleWeights={magnificent7ArticleWeights}
+                        weightsLoading={magnificent7WeightsLoading}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            {/* Magnificent 7 Section */}
+        {/* INDEX FUNDS SECTION */}
+        <section className="border-t border-slate-700 pt-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Magnificent 7</h2>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-500 text-white w-fit">Top Story</Badge>
-                    {magnificent7HasRecentNews ? (
-                      <Badge variant="outline" className="text-emerald-600 border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 w-fit">
-                        Fresh
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-amber-600 border-amber-600 bg-amber-50 dark:bg-amber-900/20 w-fit">
-                        Using Latest
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={refreshMagnificent7}
-                    disabled={isRefreshingMag7}
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshingMag7 ? 'animate-spin' : ''}`} />
-                  </Button>
-                  <Link to="/magnificent-7" className="w-full sm:w-auto">
-                    <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 w-full sm:w-auto">
-                      <span className="hidden sm:inline">View All 7 Stocks</span>
-                      <span className="sm:hidden">View All</span>
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-              
-              {isLoading ? (
-                <div className="text-center text-gray-600 dark:text-slate-400 py-6 sm:py-8">
-                  Loading Magnificent 7 analysis...
-                </div>
-              ) : topMagnificent7Story ? (
-                <NewsCard 
-                  symbol={topMagnificent7Story.symbol}
-                  title={generateCompositeHeadline(topMagnificent7Story)}
-                  description={topMagnificent7Story.description}
-                  confidence={topMagnificent7Story.ai_confidence}
-                  sentiment={topMagnificent7Story.ai_sentiment}
-                  category={topMagnificent7Story.category}
-                  isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                  sourceLinks={topMagnificent7Story.source_links || '[]'}
-                  stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                />
-              ) : (
-                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
-                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Magnificent 7 analysis available. Updates will appear automatically.</p>
-                </div>
-              )}
+              <h2 className="text-2xl font-bold text-white">Index Funds</h2>
+              <p className="text-slate-400 text-sm">Market index performance and insights</p>
             </div>
-
-            {/* Index Funds Section */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Index Funds</h2>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-purple-500 text-white w-fit">Top Story</Badge>
-                    {indexFundsHasRecentNews ? (
-                      <Badge variant="outline" className="text-emerald-600 border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 w-fit">
-                        Fresh
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-amber-600 border-amber-600 bg-amber-50 dark:bg-amber-900/20 w-fit">
-                        Using Latest
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={refreshIndexFunds}
-                    disabled={isRefreshingIndex}
-                    className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshingIndex ? 'animate-spin' : ''}`} />
-                  </Button>
-                  <Link to="/index-funds" className="w-full sm:w-auto">
-                    <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 w-full sm:w-auto">
-                      <span className="hidden sm:inline">View All Index Funds</span>
-                      <span className="sm:hidden">View All</span>
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-              
-              {isLoading ? (
-                <div className="text-center text-gray-600 dark:text-slate-400 py-6 sm:py-8">
-                  Loading Index Funds analysis...
-                </div>
-              ) : topIndexFundStory ? (
-                <NewsCard 
-                  symbol={topIndexFundStory.symbol}
-                  title={generateCompositeHeadline(topIndexFundStory)}
-                  description={topIndexFundStory.description}
-                  confidence={topIndexFundStory.ai_confidence}
-                  sentiment={topIndexFundStory.ai_sentiment}
-                  category={topIndexFundStory.category}
-                  isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                  sourceLinks={topIndexFundStory.source_links || '[]'}
-                  stockPrice={getStockPrice(topIndexFundStory.symbol)}
-                />
-              ) : (
-                <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl p-4 sm:p-6">
-                  <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">No Index Fund analysis available. Updates will appear automatically.</p>
-                </div>
-              )}
-            </div>
+            <Link to="/index-funds">
+              <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400/10">
+                View All Funds <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
           
-          <div className="space-y-4 sm:space-y-6">
-            <RSSHeadlines />
+          {topIndexFundStory && (
+            <div className="w-full">
+              <Card className="bg-slate-800/50 border-slate-700 h-full">
+                <CardContent className="p-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                    {/* Main Analysis - Left Side (narrower now) */}
+                    <div className="lg:col-span-2">
+                      <NewsCard 
+                        symbol={topIndexFundStory.symbol}
+                        title={generateCompositeHeadline(topIndexFundStory)}
+                        description={topIndexFundStory.description}
+                        confidence={topIndexFundStory.ai_confidence}
+                        sentiment={topIndexFundStory.ai_sentiment}
+                        category={topIndexFundStory.category}
+                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                        sourceLinks="[]"
+                        stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                      />
+                    </div>
+                    
+                    {/* Source Articles - Right Side (wider now) */}
+                    <div className="lg:col-span-3">
+                      <SourceArticles 
+                        parsedSourceLinks={indexFundSourceArticles}
+                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                        articleWeights={indexFundArticleWeights}
+                        weightsLoading={indexFundWeightsLoading}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </section>
+
+        {/* CRYPTO COMING SOON SECTION */}
+        <section className="border-t border-slate-700 pt-8 mt-12">
+          <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-xl p-6 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Coins className="w-8 h-8 text-orange-400" />
+              <h2 className="text-2xl font-bold text-white">Cryptocurrency Analysis</h2>
+            </div>
+            <p className="text-slate-300 text-lg mb-4">
+              AI-powered crypto market insights coming soon
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Badge className="bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                Coming Soon
+              </Badge>
+              <span className="text-slate-400 text-sm">
+                Bitcoin, Ethereum, and major altcoins analysis
+              </span>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
       
       <Footer />
