@@ -2,13 +2,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowRight, Clock, Eye, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Eye, Activity, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
-import RSSHeadlines from "@/components/RSSHeadlines";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
@@ -56,6 +55,37 @@ const DashboardVariant2 = () => {
     return `${symbol}: ${summary}`;
   };
 
+  // Get related headlines for a specific symbol
+  const getRelatedHeadlines = (targetSymbol: string) => {
+    if (!newsData) return [];
+    
+    return newsData
+      .filter(item => item.symbol === targetSymbol && item.title && item.title.length > 0)
+      .slice(0, 4)
+      .map(item => ({
+        title: item.title,
+        published_at: item.published_at || item.created_at,
+        category: item.category || 'Market News',
+        url: item.url || '#'
+      }));
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      const now = new Date();
+      const published = new Date(dateString);
+      const diffInMinutes = Math.floor((now.getTime() - published.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    } catch {
+      return 'Unknown time';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -63,8 +93,8 @@ const DashboardVariant2 = () => {
       
       <main className="pt-32 sm:pt-36 p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
-          {/* Main Content - News First */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Main Content */}
+          <div className="lg:col-span-4 space-y-8">
             {/* Breaking News Header */}
             <div className="border-l-4 border-red-500 pl-4 mb-6">
               <div className="flex items-center gap-2 mb-2">
@@ -77,39 +107,39 @@ const DashboardVariant2 = () => {
               </h1>
             </div>
 
-            {/* Featured Analysis */}
+            {/* Featured Analysis Section */}
             <div className="mb-8">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-blue-400" />
                 Featured AI Analysis
               </h2>
               
-              {topMagnificent7Story && (
-                <Card className="bg-gradient-to-r from-blue-900/20 to-slate-800/50 border-blue-500/30">
+              {topIndexFundStory && (
+                <Card className="bg-gradient-to-r from-purple-900/20 to-slate-800/50 border-purple-500/30">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <Badge className="bg-blue-500 text-white">{topMagnificent7Story.symbol}</Badge>
+                      <Badge className="bg-purple-500 text-white">{topIndexFundStory.symbol}</Badge>
                       <div className="flex items-center gap-2 text-slate-400 text-sm">
                         <Clock className="w-4 h-4" />
                         <span>Updated moments ago</span>
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-white mb-3">
-                      {generateCompositeHeadline(topMagnificent7Story)}
+                      {generateCompositeHeadline(topIndexFundStory)}
                     </h3>
                     <p className="text-slate-300 mb-4 leading-relaxed">
-                      {topMagnificent7Story.description}
+                      {topIndexFundStory.description}
                     </p>
                     <div className="flex items-center gap-4">
                       <Badge className={`${
-                        topMagnificent7Story.ai_sentiment === 'Bullish' 
+                        topIndexFundStory.ai_sentiment === 'Bullish' 
                           ? 'bg-emerald-500/20 text-emerald-400' 
                           : 'bg-red-500/20 text-red-400'
                       }`}>
-                        {topMagnificent7Story.ai_sentiment}
+                        {topIndexFundStory.ai_sentiment}
                       </Badge>
                       <span className="text-slate-400 text-sm">
-                        AI Confidence: {topMagnificent7Story.ai_confidence}%
+                        AI Confidence: {topIndexFundStory.ai_confidence}%
                       </span>
                     </div>
                   </CardContent>
@@ -117,62 +147,133 @@ const DashboardVariant2 = () => {
               )}
             </div>
 
-            {/* News Categories */}
-            <div className="space-y-6">
-              {/* Magnificent 7 Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Magnificent 7 Analysis</h3>
-                  <Link to="/magnificent-7">
-                    <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
-                      View All <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </Link>
+            {/* Magnificent 7 Section */}
+            <section className="border-t border-slate-700 pt-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Magnificent 7</h2>
+                  <p className="text-slate-400 text-sm">AI-powered analysis of tech giants</p>
+                </div>
+                <Link to="/magnificent-7">
+                  <Button variant="outline" className="text-blue-400 border-blue-400 hover:bg-blue-400/10">
+                    View All 7 Stocks <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Analysis */}
+                <div className="lg:col-span-2">
+                  {topMagnificent7Story && (
+                    <NewsCard 
+                      symbol={topMagnificent7Story.symbol}
+                      title={generateCompositeHeadline(topMagnificent7Story)}
+                      description={topMagnificent7Story.description}
+                      confidence={topMagnificent7Story.ai_confidence}
+                      sentiment={topMagnificent7Story.ai_sentiment}
+                      category={topMagnificent7Story.category}
+                      isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                      sourceLinks={topMagnificent7Story.source_links || '[]'}
+                      stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                    />
+                  )}
                 </div>
                 
-                {topMagnificent7Story && (
-                  <NewsCard 
-                    symbol={topMagnificent7Story.symbol}
-                    title={generateCompositeHeadline(topMagnificent7Story)}
-                    description={topMagnificent7Story.description}
-                    confidence={topMagnificent7Story.ai_confidence}
-                    sentiment={topMagnificent7Story.ai_sentiment}
-                    category={topMagnificent7Story.category}
-                    isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                    sourceLinks={topMagnificent7Story.source_links || '[]'}
-                    stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                  />
-                )}
+                {/* Related Headlines */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Related Headlines</h3>
+                  <div className="space-y-3">
+                    {topMagnificent7Story && getRelatedHeadlines(topMagnificent7Story.symbol).map((headline, index) => (
+                      <div key={index} className="group cursor-pointer">
+                        <a 
+                          href={headline.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
+                                {headline.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-slate-500">{formatTimeAgo(headline.published_at)}</span>
+                                <span className="text-xs text-slate-500">• {headline.category}</span>
+                              </div>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                          </div>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
+            </section>
 
-              <hr className="border-slate-700" />
-
-              {/* Index Funds Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Index Fund Insights</h3>
-                  <Link to="/index-funds">
-                    <Button variant="ghost" size="sm" className="text-purple-400 hover:text-purple-300">
-                      View All <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </Link>
+            {/* Index Funds Section */}
+            <section className="border-t border-slate-700 pt-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Index Funds</h2>
+                  <p className="text-slate-400 text-sm">Market index performance and insights</p>
+                </div>
+                <Link to="/index-funds">
+                  <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400/10">
+                    View All Funds <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Analysis */}
+                <div className="lg:col-span-2">
+                  {topIndexFundStory && (
+                    <NewsCard 
+                      symbol={topIndexFundStory.symbol}
+                      title={generateCompositeHeadline(topIndexFundStory)}
+                      description={topIndexFundStory.description}
+                      confidence={topIndexFundStory.ai_confidence}
+                      sentiment={topIndexFundStory.ai_sentiment}
+                      category={topIndexFundStory.category}
+                      isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                      sourceLinks={topIndexFundStory.source_links || '[]'}
+                      stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                    />
+                  )}
                 </div>
                 
-                {topIndexFundStory && (
-                  <NewsCard 
-                    symbol={topIndexFundStory.symbol}
-                    title={generateCompositeHeadline(topIndexFundStory)}
-                    description={topIndexFundStory.description}
-                    confidence={topIndexFundStory.ai_confidence}
-                    sentiment={topIndexFundStory.ai_sentiment}
-                    category={topIndexFundStory.category}
-                    isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                    sourceLinks={topIndexFundStory.source_links || '[]'}
-                    stockPrice={getStockPrice(topIndexFundStory.symbol)}
-                  />
-                )}
+                {/* Related Headlines */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Related Headlines</h3>
+                  <div className="space-y-3">
+                    {topIndexFundStory && getRelatedHeadlines(topIndexFundStory.symbol).map((headline, index) => (
+                      <div key={index} className="group cursor-pointer">
+                        <a 
+                          href={headline.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block p-3 bg-slate-800/50 rounded-lg hover:bg-slate-700/50 transition-colors"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-white line-clamp-2 group-hover:text-purple-400 transition-colors">
+                                {headline.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-slate-500">{formatTimeAgo(headline.published_at)}</span>
+                                <span className="text-xs text-slate-500">• {headline.category}</span>
+                              </div>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-purple-400 transition-colors flex-shrink-0" />
+                          </div>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
           </div>
           
           {/* Sidebar - Market Data & Navigation */}
@@ -268,9 +369,6 @@ const DashboardVariant2 = () => {
                 </Link>
               </CardContent>
             </Card>
-
-            {/* RSS Headlines */}
-            <RSSHeadlines />
           </div>
         </div>
       </main>
