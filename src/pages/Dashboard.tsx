@@ -182,7 +182,7 @@ const Dashboard = () => {
                   S&P 500 Hits Record on Signs Economy in Good Shape
                 </h1>
 
-                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                <p className="text-xl text-slate-300 mb-6 leading-relaxed">
                   Economically sensitive shares outperformed after solid retail sales and a drop in jobless claims, 
                   signaling continued economic resilience despite recent market volatility and geopolitical tensions.
                 </p>
