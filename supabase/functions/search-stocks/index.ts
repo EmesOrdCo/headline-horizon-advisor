@@ -24,10 +24,12 @@ serve(async (req) => {
       )
     }
 
-    const finnhubApiKey = Deno.env.get('FINNHUB_API_KEY')
-    if (!finnhubApiKey) {
+    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY')
+    const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY')
+    
+    if (!alpacaApiKey || !alpacaSecretKey) {
       return new Response(
-        JSON.stringify({ error: 'FINNHUB_API_KEY not configured' }),
+        JSON.stringify({ error: 'Alpaca API keys not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -35,18 +37,35 @@ serve(async (req) => {
       )
     }
 
+    // Use Alpaca's assets endpoint to search for stocks
     const response = await fetch(
-      `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${finnhubApiKey}`
+      `https://paper-api.alpaca.markets/v2/assets?status=active&asset_class=us_equity&search=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'APCA-API-KEY-ID': alpacaApiKey,
+          'APCA-API-SECRET-KEY': alpacaSecretKey,
+        }
+      }
     )
 
     if (!response.ok) {
-      throw new Error(`Finnhub API error: ${response.status}`)
+      throw new Error(`Alpaca API error: ${response.status}`)
     }
 
     const data = await response.json()
+    
+    // Transform Alpaca response to match expected format
+    const formattedData = {
+      result: data.map((asset: any) => ({
+        symbol: asset.symbol,
+        description: asset.name,
+        displaySymbol: asset.symbol,
+        type: 'Common Stock'
+      })).slice(0, 10) // Limit to 10 results
+    }
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(formattedData),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }

@@ -13,15 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const finnhubApiKey = Deno.env.get('FINNHUB_API_KEY');
+    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
+    const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    if (!finnhubApiKey || !marketauxApiKey || !openaiApiKey) {
+    if (!alpacaApiKey || !alpacaSecretKey || !marketauxApiKey || !openaiApiKey) {
       throw new Error('Missing required API keys');
     }
 
-    // Comprehensive list of stocks to analyze (similar to My Stocks approach)
+    // Comprehensive list of stocks to analyze
     const STOCKS = [
       // Magnificent 7
       { symbol: 'AAPL', name: 'Apple Inc' },
@@ -72,7 +73,7 @@ serve(async (req) => {
       { symbol: 'ACN', name: 'Accenture PLC' }
     ];
 
-    console.log(`Fetching comprehensive stock data for ${STOCKS.length} stocks...`);
+    console.log(`Fetching comprehensive stock data for ${STOCKS.length} stocks using Alpaca...`);
     
     const stockData = [];
     let successfulRequests = 0;
@@ -82,7 +83,12 @@ serve(async (req) => {
       try {
         console.log(`Fetching data for ${stock.symbol}...`);
         
-        const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${stock.symbol}&token=${finnhubApiKey}`);
+        const response = await fetch(`https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${stock.symbol}`, {
+          headers: {
+            'APCA-API-KEY-ID': alpacaApiKey,
+            'APCA-API-SECRET-KEY': alpacaSecretKey,
+          },
+        });
         
         if (response.status === 429) {
           console.log(`Rate limited for ${stock.symbol}, skipping...`);
@@ -90,19 +96,26 @@ serve(async (req) => {
         }
         
         if (!response.ok) {
-          console.error(`Finnhub API error for ${stock.symbol}: ${response.status}`);
+          console.error(`Alpaca API error for ${stock.symbol}: ${response.status}`);
           continue;
         }
         
         const data = await response.json();
+        const quote = data.quotes?.[stock.symbol];
         
-        if (data.c && data.c > 0) {
+        if (quote && quote.ap > 0) {
+          // Calculate change from previous close (using bid price as approximation)
+          const currentPrice = quote.ap;
+          const previousClose = quote.bp || currentPrice * 0.99; // Fallback approximation
+          const change = currentPrice - previousClose;
+          const changePercent = (change / previousClose) * 100;
+          
           stockData.push({
             symbol: stock.symbol,
             name: stock.name,
-            price: parseFloat(data.c.toFixed(2)),
-            change: parseFloat(data.d.toFixed(2)),
-            changePercent: parseFloat(data.dp.toFixed(2)),
+            price: parseFloat(currentPrice.toFixed(2)),
+            change: parseFloat(change.toFixed(2)),
+            changePercent: parseFloat(changePercent.toFixed(2)),
             volume: Math.round(Math.random() * 100) + 'M', // Placeholder volume
             headlines: [],
             overallImpact: ''
@@ -110,9 +123,9 @@ serve(async (req) => {
           successfulRequests++;
         }
         
-        // Wait 2 seconds between requests to avoid rate limiting
+        // Wait 1 second between requests to avoid rate limiting
         if (STOCKS.indexOf(stock) < STOCKS.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
       } catch (error) {

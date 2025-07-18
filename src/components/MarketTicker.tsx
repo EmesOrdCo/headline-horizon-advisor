@@ -39,7 +39,7 @@ const MarketTicker = () => {
           { symbol: 'WMT', name: 'WMT' }
         ];
 
-        console.log('Fetching live market data from Finnhub...');
+        console.log('Fetching live market data from Alpaca...');
 
         const results: MarketIndex[] = [];
 

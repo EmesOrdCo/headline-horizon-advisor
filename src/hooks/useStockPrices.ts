@@ -24,12 +24,12 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
       console.log('All unique symbols to fetch:', uniqueSymbols);
       
       try {
-        console.log('Fetching live stock prices from Finnhub...');
+        console.log('Fetching live stock prices from Alpaca...');
         
         const results: StockPrice[] = [];
         const errors: Array<{symbol: string, error: string}> = [];
         
-        // Fetch with 1 second delays to respect Finnhub limits (60 calls/minute)
+        // Fetch with 1 second delays to respect Alpaca limits
         for (const symbol of uniqueSymbols) {
           try {
             console.log(`Fetching price for ${symbol}...`);
@@ -64,10 +64,10 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
               errors.push({ symbol, error: 'No price data available' });
             }
             
-            // Wait 1.5 seconds between each request (40 calls/minute to be safe)
+            // Wait 1 second between requests (60 calls/minute to be safe)
             if (uniqueSymbols.indexOf(symbol) < uniqueSymbols.length - 1) {
-              console.log('Waiting 1.5 seconds before next request...');
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              console.log('Waiting 1 second before next request...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
           } catch (error) {
@@ -87,7 +87,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
       }
     },
     staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 1 minute (allows for 10*1.5s = ~15s per cycle)
+    refetchInterval: 60 * 1000, // Refetch every 1 minute
     retry: 1,
     retryDelay: 30000, // Wait 30 seconds between retries
     enabled: true, // Always enabled
