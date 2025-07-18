@@ -104,7 +104,7 @@ const Watchlist = () => {
     }
   ];
 
-  const filters = ["All", "Market Open", "Stocks", "ETFs", "Crypto", "People", "Smart Portfolios"];
+  const filters = ["All", "Market Open", "Stocks", "People"];
 
   const getConsensusColor = (consensus: string) => {
     switch (consensus) {
@@ -134,7 +134,7 @@ const Watchlist = () => {
       points.push(`${i * 5},${100 - value}`);
     }
     return (
-      <svg width="80" height="40" className="inline-block">
+      <svg width="120" height="50" className="inline-block">
         <polyline
           points={points.join(' ')}
           fill="none"
@@ -204,11 +204,11 @@ const Watchlist = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-slate-200 dark:border-slate-700">
-                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4">Markets</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-right">Change 1D</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center">Chart</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center">Risk Score</TableHead>
-                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center">Consensus</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 w-1/4">Markets</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-right w-1/6">Change 1D</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/4">Chart</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/6">Risk Score</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/6">Consensus</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -230,7 +230,7 @@ const Watchlist = () => {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 text-right">
-                          <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                          <div className="text-xl font-bold text-slate-900 dark:text-white mb-1">
                             {stock.price.toFixed(2)}
                           </div>
                           <div className={`flex items-center justify-end gap-1 text-sm font-medium ${
