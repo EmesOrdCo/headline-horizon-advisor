@@ -24,12 +24,14 @@ serve(async (req) => {
       throw new Error('Alpaca API credentials not configured');
     }
 
-    // Calculate start date (30 days ago by default)
+    // For 1-week mini charts (7 days), we want exactly 7 trading days
+    // For other cases, add buffer for weekends
+    const bufferDays = (limit === 7 && timeframe === '1Day') ? 10 : (limit + 5);
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (limit + 5)); // Add buffer for weekends
+    startDate.setDate(startDate.getDate() - bufferDays);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${limit}`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
     console.log(`Making historical bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
@@ -54,7 +56,12 @@ serve(async (req) => {
       throw new Error(`No historical data available for symbol: ${symbol}`);
     }
     
-    const bars = barsData.bars[symbol];
+    let bars = barsData.bars[symbol];
+    
+    // For 1-week mini charts, take only the last 7 data points
+    if (limit === 7 && timeframe === '1Day') {
+      bars = bars.slice(-7);
+    }
     
     // Transform the data for charting
     const historicalData = bars.map((bar: any) => ({

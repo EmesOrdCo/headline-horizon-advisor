@@ -22,7 +22,7 @@ export const useHistoricalPrices = (symbol: string, timeframe: string = '1Day', 
   return useQuery({
     queryKey: ['historical-prices', symbol, timeframe, limit],
     queryFn: async (): Promise<HistoricalPricesResponse> => {
-      console.log(`Fetching historical prices for ${symbol}`);
+      console.log(`Fetching historical prices for ${symbol} with timeframe ${timeframe} and limit ${limit}`);
       
       const { data, error } = await supabase.functions.invoke('historical-prices', {
         body: { symbol, timeframe, limit },
