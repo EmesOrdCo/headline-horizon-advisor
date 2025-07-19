@@ -418,6 +418,7 @@ const Magnificent7 = () => {
                               <SourceArticles 
                                 parsedSourceLinks={sourceArticles}
                                 isHistorical={article.ai_reasoning?.includes('Historical')}
+                                weightsLoading={false}
                               />
                             </div>
                           </div>
