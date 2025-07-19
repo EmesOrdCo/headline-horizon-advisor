@@ -166,12 +166,27 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   const totalChange = lastPrice - firstPrice;
   const totalChangePercent = firstPrice !== 0 ? ((totalChange / firstPrice) * 100) : 0;
 
-  // If this is a mini chart, render simplified version
+  // If this is a mini chart, render simplified version with proper scaling
   if (showMiniChart) {
+    // Calculate the price range for proper Y-axis scaling
+    const prices = chartData.map(d => d.close);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+    
+    // Add some padding to the range (5% on each side) to make variations more visible
+    const padding = priceRange * 0.05;
+    const yAxisMin = minPrice - padding;
+    const yAxisMax = maxPrice + padding;
+
     return (
       <div className="w-full" style={{ height: height || 48 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
+            <YAxis 
+              domain={[yAxisMin, yAxisMax]}
+              hide={true}
+            />
             <Line 
               type="monotone" 
               dataKey="close" 
