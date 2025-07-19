@@ -30,10 +30,28 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
     },
   };
 
+  // Check if market is likely closed based on current time
+  const isMarketClosed = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay();
+    
+    // Weekend or outside market hours (9:30 AM - 4 PM ET, roughly 14:30 - 21:00 UTC)
+    const isWeekend = currentDay === 0 || currentDay === 6;
+    const isAfterHours = currentHour < 14 || currentHour > 21;
+    
+    return isWeekend || isAfterHours;
+  }, []);
+
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-slate-400">
-        <p>No price data available for {symbol}</p>
+        <div className="text-center">
+          <p className="mb-2">No price data available for {symbol}</p>
+          {isMarketClosed && (
+            <p className="text-sm text-slate-500">Market is currently closed</p>
+          )}
+        </div>
       </div>
     );
   }
@@ -41,8 +59,12 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
   return (
     <div className="w-full">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-white">{symbol} Live Price Chart</h3>
-        <p className="text-sm text-slate-400">{data.length} data points</p>
+        <h3 className="text-lg font-semibold text-white">
+          {symbol} {isMarketClosed ? 'Close Price Chart' : 'Live Price Chart'}
+        </h3>
+        <p className="text-sm text-slate-400">
+          {data.length} data points {isMarketClosed && '(until market close)'}
+        </p>
       </div>
       
       <ChartContainer config={chartConfig} className="h-64 w-full">

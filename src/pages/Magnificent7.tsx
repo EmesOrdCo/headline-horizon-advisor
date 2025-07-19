@@ -1,8 +1,7 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -80,6 +79,19 @@ const Magnificent7 = () => {
   
   const { isConnected, isAuthenticated, connectionStatus, streamData } = streamResult;
 
+  // Check if market is closed based on connection errors and current time
+  const isMarketClosed = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay();
+    
+    // Weekend or outside market hours (9:30 AM - 4 PM ET, roughly 14:30 - 21:00 UTC)
+    const isWeekend = currentDay === 0 || currentDay === 6;
+    const isAfterHours = currentHour < 14 || currentHour > 21;
+    
+    return isWeekend || isAfterHours || connectionStatus === 'error';
+  }, [connectionStatus]);
+
   // Store price history for charts
   useEffect(() => {
     Object.entries(streamData).forEach(([symbol, data]) => {
@@ -132,57 +144,16 @@ const Magnificent7 = () => {
   }, [newsData]);
 
   // ALWAYS call useArticleWeights for all 7 stocks to maintain hook consistency
-  const articleWeightsResults = [
-    useArticleWeights({
-      articles: magnificent7ArticlesData[0]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[0]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[0]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[0],
-      enabled: (magnificent7ArticlesData[0]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[0]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[1]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[1]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[1]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[1],
-      enabled: (magnificent7ArticlesData[1]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[1]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[2]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[2]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[2]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[2],
-      enabled: (magnificent7ArticlesData[2]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[2]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[3]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[3]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[3]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[3],
-      enabled: (magnificent7ArticlesData[3]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[3]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[4]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[4]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[4]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[4],
-      enabled: (magnificent7ArticlesData[4]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[4]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[5]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[5]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[5]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[5],
-      enabled: (magnificent7ArticlesData[5]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[5]?.article?.ai_reasoning?.includes('Historical')
-    }),
-    useArticleWeights({
-      articles: magnificent7ArticlesData[6]?.sourceArticles || [],
-      overallSentiment: magnificent7ArticlesData[6]?.article?.ai_sentiment || 'Neutral',
-      overallConfidence: magnificent7ArticlesData[6]?.article?.ai_confidence || 50,
-      symbol: MAGNIFICENT_7[6],
-      enabled: (magnificent7ArticlesData[6]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[6]?.article?.ai_reasoning?.includes('Historical')
-    })
-  ];
+  const articleWeightsResults = MAGNIFICENT_7.map((symbol, index) => {
+    const articleData = magnificent7ArticlesData[index];
+    return useArticleWeights({
+      articles: articleData?.sourceArticles || [],
+      overallSentiment: articleData?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: articleData?.article?.ai_confidence || 50,
+      symbol: symbol,
+      enabled: (articleData?.sourceArticles?.length || 0) > 0 && !articleData?.article?.ai_reasoning?.includes('Historical')
+    });
+  });
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -310,17 +281,23 @@ const Magnificent7 = () => {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies with live market data</p>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies with {isMarketClosed ? 'close' : 'live'} market data</p>
                 
-                {/* Connection Status */}
+                {/* Connection/Market Status */}
                 <div className="flex items-center gap-2 mt-2">
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                    isMarketClosed ? 'bg-orange-900/20 text-orange-400 border border-orange-500/20' :
                     connectionStatus === 'connected' && isAuthenticated ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-500/20' :
                     connectionStatus === 'connecting' ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-500/20' :
                     connectionStatus === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/20' :
                     'bg-slate-700/50 text-slate-400 border border-slate-600'
                   }`}>
-                    {connectionStatus === 'connected' && isAuthenticated ? (
+                    {isMarketClosed ? (
+                      <>
+                        <Clock className="w-3 h-3" />
+                        Market Closed - Showing Close Prices
+                      </>
+                    ) : connectionStatus === 'connected' && isAuthenticated ? (
                       <>
                         <Wifi className="w-3 h-3" />
                         Live Data Connected
@@ -351,9 +328,12 @@ const Magnificent7 = () => {
           <Card className="mb-8 bg-slate-800/50 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                Live Magnificent 7 Prices
-                {isConnected && isAuthenticated && (
+                {isMarketClosed ? 'Magnificent 7 Close Prices' : 'Live Magnificent 7 Prices'}
+                {!isMarketClosed && isConnected && isAuthenticated && (
                   <span className="text-emerald-400 text-sm">● LIVE</span>
+                )}
+                {isMarketClosed && (
+                  <span className="text-orange-400 text-sm">● CLOSED</span>
                 )}
               </CardTitle>
             </CardHeader>
@@ -370,7 +350,9 @@ const Magnificent7 = () => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <Badge className="bg-emerald-600 text-white">{symbol}</Badge>
-                        {isConnected && isAuthenticated ? (
+                        {isMarketClosed ? (
+                          <Clock className="w-3 h-3 text-orange-400" />
+                        ) : isConnected && isAuthenticated ? (
                           <Wifi className="w-3 h-3 text-emerald-400" />
                         ) : (
                           <WifiOff className="w-3 h-3 text-slate-400" />
@@ -378,7 +360,7 @@ const Magnificent7 = () => {
                       </div>
                       
                       <div className="text-right">
-                        {liveData?.price ? (
+                        {!isMarketClosed && liveData?.price ? (
                           <>
                             <div className="text-lg font-bold text-white">
                               ${formatPrice(liveData.price)}
@@ -400,8 +382,13 @@ const Magnificent7 = () => {
                               ${fallbackPrice.price.toFixed(2)}
                             </div>
                             <div className="text-xs text-slate-400">
-                              Static Price
+                              {isMarketClosed ? 'Close Price' : 'Last Price'}
                             </div>
+                            {fallbackPrice.change !== undefined && (
+                              <div className={`text-xs ${fallbackPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {fallbackPrice.change >= 0 ? '+' : ''}{fallbackPrice.change.toFixed(2)} ({fallbackPrice.changePercent?.toFixed(2)}%)
+                              </div>
+                            )}
                           </>
                         ) : (
                           <div className="text-slate-400 text-sm">
@@ -420,7 +407,9 @@ const Magnificent7 = () => {
           {showCharts && (
             <Card className="mb-8 bg-slate-800/50 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white">Live Price Charts</CardTitle>
+                <CardTitle className="text-white">
+                  {isMarketClosed ? 'Price Charts (Until Close)' : 'Live Price Charts'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
