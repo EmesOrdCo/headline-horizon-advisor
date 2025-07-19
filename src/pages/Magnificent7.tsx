@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock, AlertCircle } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff, Clock, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -75,7 +75,7 @@ const Magnificent7 = () => {
   // Real-time streaming for just AAPL using singleton
   const streamResult = useAlpacaStreamSingleton({
     symbols: [FOCUS_SYMBOL],
-    enabled: true
+    enabled: false // Disable streaming, use API data instead
   });
   
   const { isConnected, isAuthenticated, connectionStatus, streamData, errorMessage } = streamResult;
@@ -91,7 +91,6 @@ const Magnificent7 = () => {
     return isWeekend || isAfterHours;
   }, []);
 
-  // Store price history for charts
   useEffect(() => {
     const liveData = streamData[FOCUS_SYMBOL];
     if (liveData?.price && liveData?.timestamp) {
@@ -225,6 +224,9 @@ const Magnificent7 = () => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
+  // Get AAPL stock data from API
+  const aaplStock = getStockPrice(FOCUS_SYMBOL);
+
   const getConnectionStatusDisplay = () => {
     if (connectionStatus === 'connected' && isAuthenticated) {
       return (
@@ -297,8 +299,8 @@ const Magnificent7 = () => {
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Live Data Test (Singleton)</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Testing singleton WebSocket connection for Apple Inc. - avoids connection limits!</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Stock Data from API</h1>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Real stock price data for Apple Inc. from Alpaca API</p>
                 
                 <div className="flex items-center gap-2 mt-2">
                   {getConnectionStatusDisplay()}
@@ -307,71 +309,70 @@ const Magnificent7 = () => {
             </div>
           </div>
 
-          {/* Live Price Dashboard for AAPL only */}
+          {/* AAPL Stock Price Card */}
           <Card className="mb-8 bg-slate-800/50 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                {FOCUS_SYMBOL} Live Price Data
-                {isConnected && isAuthenticated && (
-                  <span className="text-emerald-400 text-sm">● LIVE</span>
-                )}
-                {connectionStatus === 'error' && (
-                  <span className="text-red-400 text-sm">● ERROR</span>
-                )}
+                {FOCUS_SYMBOL} - Apple Inc.
+                {stockPricesLoading && <span className="text-yellow-400 text-sm">Loading...</span>}
+                {stockPricesError && <span className="text-red-400 text-sm">Error</span>}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-emerald-600 text-white">{FOCUS_SYMBOL}</Badge>
-                  <div className="flex items-center gap-2">
-                    {isConnected && isAuthenticated ? (
-                      <Wifi className="w-4 h-4 text-emerald-400" />
-                    ) : (
-                      <WifiOff className="w-4 h-4 text-slate-400" />
-                    )}
+              {stockPricesLoading ? (
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
+                  <div className="text-center text-slate-400">
+                    <div className="text-xl font-bold">Loading AAPL data...</div>
                   </div>
                 </div>
-                
-                <div className="text-center">
-                  {streamData[FOCUS_SYMBOL]?.price ? (
-                    <>
-                      <div className="text-3xl font-bold text-white mb-2">
-                        ${formatPrice(streamData[FOCUS_SYMBOL].price)}
-                      </div>
-                      {streamData[FOCUS_SYMBOL].timestamp && (
-                        <div className="text-sm text-slate-400 mb-2">
-                          Last updated: {formatTime(streamData[FOCUS_SYMBOL].timestamp)}
-                        </div>
-                      )}
-                      {streamData[FOCUS_SYMBOL].volume && (
-                        <div className="text-sm text-slate-400">
-                          Volume: {streamData[FOCUS_SYMBOL].volume.toLocaleString()}
-                        </div>
-                      )}
-                    </>
-                  ) : connectionStatus === 'error' ? (
-                    <div className="text-red-400 text-center">
-                      <div className="text-xl font-bold">Connection Error</div>
-                      <div className="text-sm text-slate-500 mt-2">
-                        {errorMessage || 'Unable to connect to real-time data stream'}
-                      </div>
-                    </div>
-                  ) : connectionStatus === 'connecting' ? (
-                    <div className="text-yellow-400 text-center">
-                      <div className="text-xl font-bold">Connecting...</div>
-                      <div className="text-sm text-slate-500 mt-2">
-                        {errorMessage || 'Establishing connection to data stream'}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-slate-400 text-center">
-                      <div className="text-xl font-bold">Disconnected</div>
-                      <div className="text-sm text-slate-500 mt-2">No connection to data stream</div>
-                    </div>
-                  )}
+              ) : stockPricesError ? (
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
+                  <div className="text-center text-red-400">
+                    <div className="text-xl font-bold">Failed to load data</div>
+                    <div className="text-sm text-slate-500 mt-2">API Error: {stockPricesError.message}</div>
+                  </div>
                 </div>
-              </div>
+              ) : aaplStock && !aaplStock.error ? (
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge className="bg-blue-600 text-white">{FOCUS_SYMBOL}</Badge>
+                    <div className="text-sm text-slate-400">
+                      Live from Alpaca API
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-white mb-2">
+                      ${aaplStock.price.toFixed(2)}
+                    </div>
+                    
+                    <div className={`flex items-center justify-center gap-2 text-lg ${
+                      aaplStock.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      {aaplStock.change >= 0 ? (
+                        <TrendingUp className="w-5 h-5" />
+                      ) : (
+                        <TrendingDown className="w-5 h-5" />
+                      )}
+                      <span>
+                        {aaplStock.change >= 0 ? '+' : ''}{aaplStock.change.toFixed(2)} 
+                        ({aaplStock.changePercent >= 0 ? '+' : ''}{aaplStock.changePercent.toFixed(2)}%)
+                      </span>
+                    </div>
+                    
+                    <div className="text-sm text-slate-400 mt-2">
+                      Daily Change
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
+                  <div className="text-center text-slate-400">
+                    <div className="text-xl font-bold">No data available</div>
+                    <div className="text-sm text-slate-500 mt-2">Unable to fetch AAPL stock price</div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
