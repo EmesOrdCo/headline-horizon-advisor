@@ -2,7 +2,7 @@ const TWELVE_DATA_API_KEY = 'd12c5dda6916467db5e217091213d315';
 const BASE_URL = 'https://api.twelvedata.com';
 
 export interface TwelveDataMetrics {
-  // Valuation metrics
+  // Valuation metrics (Pro/Ultra/Enterprise plans only)
   marketCap?: number;
   peRatio?: number;
   pegRatio?: number;
@@ -12,7 +12,7 @@ export interface TwelveDataMetrics {
   evToRevenue?: number;
   evToEbitda?: number;
   
-  // Financial health
+  // Financial health (Pro/Ultra/Enterprise plans only)
   debtToEquity?: number;
   currentRatio?: number;
   quickRatio?: number;
@@ -22,51 +22,132 @@ export interface TwelveDataMetrics {
   operatingMargin?: number;
   netMargin?: number;
   
-  // Dividends
+  // Dividends (Grow/Pro/Ultra/Enterprise plans only)
   dividendYield?: number;
   dividendPerShare?: number;
   payoutRatio?: number;
   
-  // Growth metrics
+  // Growth metrics (Pro/Ultra/Enterprise plans only)
   revenueGrowth?: number;
   earningsGrowth?: number;
   
-  // Additional metrics
+  // Additional metrics (Pro/Ultra/Enterprise plans only)
   beta?: number;
   eps?: number;
   bookValuePerShare?: number;
+  
+  // Basic price data (Available in FREE plan via /quote endpoint)
+  currentPrice?: number;
+  openPrice?: number;
+  highPrice?: number;
+  lowPrice?: number;
+  previousClose?: number;
+  volume?: number;
+  averageVolume?: number;
+  change?: number;
+  percentChange?: number;
+  fiftyTwoWeekHigh?: number;
+  fiftyTwoWeekLow?: number;
+  fiftyTwoWeekRange?: string;
+  exchange?: string;
+  currency?: string;
+  isMarketOpen?: boolean;
 }
 
 export const fetchTwelveDataMetrics = async (symbol: string): Promise<TwelveDataMetrics> => {
-  console.log('TwelveData API: Fetching metrics for', symbol);
+  console.log('TwelveData API: Testing free plan endpoints for', symbol);
   try {
-    // Only use the quote endpoint since it's the only one available on free plan
-    const quoteUrl = `${BASE_URL}/quote?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`;
+    // Test multiple endpoints to see what's available on free plan
+    const testEndpoints = [
+      `${BASE_URL}/quote?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/price?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/eod?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/logo?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/earnings?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/dividends?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/splits?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/insider_transactions?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/income_statement?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/balance_sheet?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/cash_flow?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/statistics?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/profile?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`
+    ];
+
+    console.log('TwelveData API: Testing', testEndpoints.length, 'endpoints');
+
+    const responses = await Promise.allSettled(
+      testEndpoints.map(async (url, index) => {
+        try {
+          console.log(`Testing endpoint ${index + 1}: ${url.split('?')[0].split('/').pop()}`);
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          const endpointName = url.split('?')[0].split('/').pop();
+          console.log(`Endpoint ${endpointName}:`, {
+            status: response.status,
+            hasError: data.status === 'error' || data.code,
+            errorCode: data.code,
+            errorMessage: data.message,
+            dataKeys: Object.keys(data),
+            sampleData: data.status === 'error' ? null : data
+          });
+          
+          return { endpointName, data, error: data.status === 'error' || data.code };
+        } catch (error) {
+          console.error(`Error testing endpoint ${index + 1}:`, error);
+          return { endpointName: 'unknown', data: {}, error: true };
+        }
+      })
+    );
+
+    // Process working endpoints
+    const workingEndpoints = responses
+      .filter((res): res is PromiseFulfilledResult<{ endpointName: string; data: any; error: any; }> => 
+        res.status === 'fulfilled' && !res.value.error)
+      .map(res => res.value);
     
-    console.log('TwelveData API: Fetching from quote endpoint:', quoteUrl);
+    console.log('Working endpoints:', workingEndpoints.map(ep => ep.endpointName));
     
-    const response = await fetch(quoteUrl);
-    const data = await response.json();
+    // Extract data from the quote endpoint (we know this works)
+    const quoteResponse = responses.find((res): res is PromiseFulfilledResult<{ endpointName: string; data: any; error: any; }> => 
+      res.status === 'fulfilled' && 
+      res.value.endpointName === 'quote' && 
+      !res.value.error
+    );
     
-    console.log('TwelveData API: Quote response:', data);
-    
-    // Check if there's an error in the response
-    if (data.status === 'error' || data.code) {
-      console.error('TwelveData API Error:', data.message || data);
+    if (!quoteResponse) {
+      console.log('No working quote endpoint found');
       return {};
     }
     
-    // Extract metrics from the quote response
-    const result = {
-      // Basic price metrics (available in quote)
-      marketCap: parseFloat(data.volume) * parseFloat(data.close), // Rough market cap estimation
+    const quote = quoteResponse.value.data;
+    
+    // Return what we can extract from available free endpoints
+    return {
+      // Basic quote data (confirmed available)
+      currentPrice: parseFloat(quote.close),
+      openPrice: parseFloat(quote.open),
+      highPrice: parseFloat(quote.high), 
+      lowPrice: parseFloat(quote.low),
+      previousClose: parseFloat(quote.previous_close),
+      volume: parseFloat(quote.volume),
+      averageVolume: parseFloat(quote.average_volume),
+      change: parseFloat(quote.change),
+      percentChange: parseFloat(quote.percent_change),
       
-      // From 52-week data we can calculate some basic metrics
-      beta: undefined, // Not available in quote endpoint
-      eps: undefined, // Not available in quote endpoint
+      // 52-week data
+      fiftyTwoWeekHigh: parseFloat(quote.fifty_two_week?.high),
+      fiftyTwoWeekLow: parseFloat(quote.fifty_two_week?.low),
+      fiftyTwoWeekRange: quote.fifty_two_week?.range,
       
-      // We can calculate some basic ratios if we had more fundamental data
-      // but these aren't available in the free quote endpoint
+      // Market info
+      exchange: quote.exchange,
+      currency: quote.currency,
+      isMarketOpen: quote.is_market_open,
+      
+      // Fields not available in free plan (will be undefined)
+      marketCap: undefined,
       peRatio: undefined,
       pegRatio: undefined,
       priceToBook: undefined,
@@ -82,26 +163,17 @@ export const fetchTwelveDataMetrics = async (symbol: string): Promise<TwelveData
       grossMargin: undefined,
       operatingMargin: undefined,
       netMargin: undefined,
+      beta: undefined,
+      eps: undefined,
       bookValuePerShare: undefined,
       dividendYield: undefined,
       dividendPerShare: undefined,
       payoutRatio: undefined,
       revenueGrowth: undefined,
       earningsGrowth: undefined,
-      
-      // What we can get from quote endpoint:
-      currentPrice: parseFloat(data.close),
-      volume: parseFloat(data.volume),
-      averageVolume: parseFloat(data.average_volume),
-      fiftyTwoWeekHigh: parseFloat(data.fifty_two_week?.high),
-      fiftyTwoWeekLow: parseFloat(data.fifty_two_week?.low),
-      percentChange: parseFloat(data.percent_change),
     };
-    
-    console.log('TwelveData API: Processed result:', result);
-    return result;
   } catch (error) {
-    console.error('Error fetching Twelve Data metrics:', error);
+    console.error('Error testing Twelve Data endpoints:', error);
     return {};
   }
 };
