@@ -22,85 +22,48 @@ serve(async (req) => {
       throw new Error('Missing required API keys');
     }
 
-    // Define stocks to analyze
-    const STOCKS = [
-      { symbol: 'AAPL', name: 'Apple Inc' },
-      { symbol: 'MSFT', name: 'Microsoft Corporation' },
-      { symbol: 'GOOGL', name: 'Alphabet Inc' },
-      { symbol: 'AMZN', name: 'Amazon.com Inc' },
-      { symbol: 'NVDA', name: 'NVIDIA Corporation' },
-      { symbol: 'TSLA', name: 'Tesla Inc' },
-      { symbol: 'META', name: 'Meta Platforms Inc' },
-      { symbol: 'NFLX', name: 'Netflix Inc' },
-      { symbol: 'AMD', name: 'Advanced Micro Devices Inc' },
-      { symbol: 'CRM', name: 'Salesforce Inc' },
-      { symbol: 'UBER', name: 'Uber Technologies Inc' },
-      { symbol: 'SHOP', name: 'Shopify Inc' }
-    ];
+    console.log('Fetching biggest gainers and losers from Alpaca screener...');
 
-    console.log('Fetching stock prices from Alpaca...');
-    
-    const stockData = [];
-    let successfulRequests = 0;
-    
-    // Fetch stock data with longer delays and better error handling
-    for (const stock of STOCKS) {
-      try {
-        console.log(`Fetching data for ${stock.symbol}...`);
-        
-        const response = await fetch(`https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${stock.symbol}`, {
-          headers: {
-            'APCA-API-KEY-ID': alpacaApiKey,
-            'APCA-API-SECRET-KEY': alpacaSecretKey,
-          },
-        });
-        
-        if (response.status === 429) {
-          console.log(`Rate limited for ${stock.symbol}, skipping...`);
-          continue;
-        }
-        
-        if (!response.ok) {
-          console.error(`Alpaca API error for ${stock.symbol}: ${response.status}`);
-          continue;
-        }
-        
-        const data = await response.json();
-        const quote = data.quotes?.[stock.symbol];
-        
-        if (quote && quote.ap > 0) {
-          // Calculate change from previous close (using bid price as approximation)
-          const currentPrice = quote.ap;
-          const previousClose = quote.bp || currentPrice * 0.99; // Fallback approximation
-          const change = currentPrice - previousClose;
-          const changePercent = (change / previousClose) * 100;
-          
-          stockData.push({
-            symbol: stock.symbol,
-            name: stock.name,
-            price: parseFloat(currentPrice.toFixed(2)),
-            change: parseFloat(change.toFixed(2)),
-            changePercent: parseFloat(changePercent.toFixed(2)),
-            volume: Math.round(Math.random() * 100) + 'M' // Placeholder volume
-          });
-          successfulRequests++;
-        }
-        
-        // Wait 2 seconds between requests to avoid rate limiting
-        if (STOCKS.indexOf(stock) < STOCKS.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-        
-      } catch (error) {
-        console.error(`Error fetching data for ${stock.symbol}:`, error);
-      }
+    // Fetch biggest gainers
+    const gainersResponse = await fetch('https://data.alpaca.markets/v1beta1/screener/stocks/gainers?top=10', {
+      headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
+      },
+    });
+
+    // Fetch biggest losers
+    const losersResponse = await fetch('https://data.alpaca.markets/v1beta1/screener/stocks/losers?top=10', {
+      headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
+      },
+    });
+
+    let gainersData = [];
+    let losersData = [];
+
+    if (gainersResponse.ok) {
+      const gainersResult = await gainersResponse.json();
+      console.log(`Fetched ${gainersResult.stocks?.length || 0} gainers from screener`);
+      gainersData = gainersResult.stocks || [];
+    } else {
+      console.error('Failed to fetch gainers:', gainersResponse.status);
     }
 
-    // If we have insufficient data, create some sample data to prevent errors
-    if (stockData.length < 6) {
-      console.log('Insufficient real data, creating sample data...');
+    if (losersResponse.ok) {
+      const losersResult = await losersResponse.json();
+      console.log(`Fetched ${losersResult.stocks?.length || 0} losers from screener`);
+      losersData = losersResult.stocks || [];
+    } else {
+      console.error('Failed to fetch losers:', losersResponse.status);
+    }
+
+    // If we don't have enough data from screener API, fall back to sample data
+    if (gainersData.length === 0 && losersData.length === 0) {
+      console.log('No screener data available, using fallback data...');
       
-      const sampleData = [
+      const fallbackData = [
         { symbol: 'AAPL', name: 'Apple Inc', price: 175.50, change: 4.25, changePercent: 2.48, volume: '85M' },
         { symbol: 'TSLA', name: 'Tesla Inc', price: 245.80, change: -8.45, changePercent: -3.33, volume: '92M' },
         { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 485.20, change: 12.75, changePercent: 2.70, volume: '78M' },
@@ -111,59 +74,36 @@ serve(async (req) => {
         { symbol: 'AMD', name: 'Advanced Micro Devices Inc', price: 132.50, change: -3.85, changePercent: -2.82, volume: '88M' }
       ];
       
-      stockData.push(...sampleData);
+      gainersData = fallbackData.filter(s => s.changePercent > 0).slice(0, 3);
+      losersData = fallbackData.filter(s => s.changePercent < 0).slice(0, 3);
     }
 
-    console.log(`Successfully processed ${successfulRequests} real stocks, total: ${stockData.length}`);
+    // Process screener data to match our expected format
+    const processScreenerStock = (stock: any) => ({
+      symbol: stock.symbol,
+      name: stock.name || stock.symbol,
+      price: parseFloat(stock.price?.toFixed(2) || '0'),
+      change: parseFloat(stock.change?.toFixed(2) || '0'),
+      changePercent: parseFloat(stock.percent_change?.toFixed(2) || '0'),
+      volume: stock.volume ? `${Math.round(stock.volume / 1000000)}M` : 'N/A'
+    });
 
-    // Separate gainers and losers first, then sort each group
-    const allGainers = stockData.filter(stock => stock.changePercent > 0)
-      .sort((a, b) => b.changePercent - a.changePercent); // Sort gainers by highest percentage gain
-    
-    const allLosers = stockData.filter(stock => stock.changePercent < 0)
-      .sort((a, b) => a.changePercent - b.changePercent); // Sort losers by lowest percentage (most negative)
-    
-    // Take exactly 3 from each group
-    const gainers = allGainers.slice(0, 3);
-    const losers = allLosers.slice(0, 3);
+    // Take top 3 from each category and process them
+    const topGainers = gainersData.slice(0, 3).map(processScreenerStock);
+    const topLosers = losersData.slice(0, 3).map(processScreenerStock);
 
-    console.log(`Found ${gainers.length} gainers and ${losers.length} losers`);
+    console.log(`Processing ${topGainers.length} gainers and ${topLosers.length} losers for news analysis`);
 
-    // If we don't have enough gainers or losers, pad with sample data
-    while (gainers.length < 3) {
-      const sampleGainer = {
-        symbol: `GAIN${gainers.length + 1}`,
-        name: `Sample Gainer ${gainers.length + 1}`,
-        price: 100 + Math.random() * 50,
-        change: 1 + Math.random() * 5,
-        changePercent: 1 + Math.random() * 3,
-        volume: Math.round(Math.random() * 100) + 'M'
-      };
-      gainers.push(sampleGainer);
-    }
-
-    while (losers.length < 3) {
-      const sampleLoser = {
-        symbol: `LOSE${losers.length + 1}`,
-        name: `Sample Loser ${losers.length + 1}`,
-        price: 100 + Math.random() * 50,
-        change: -(1 + Math.random() * 5),
-        changePercent: -(1 + Math.random() * 3),
-        volume: Math.round(Math.random() * 100) + 'M'
-      };
-      losers.push(sampleLoser);
-    }
-
-    // Fetch news for each mover with better error handling
-    const allMovers = [...gainers, ...losers];
+    // Fetch news and AI analysis for each stock
+    const allMovers = [...topGainers, ...topLosers];
     
     for (const mover of allMovers) {
       try {
         console.log(`Fetching news for ${mover.symbol}...`);
         
-        // Fetch news from Marketaux with timeout - fetch up to 10 articles initially
+        // Fetch news from Marketaux with timeout
         const newsController = new AbortController();
-        const newsTimeout = setTimeout(() => newsController.abort(), 10000); // 10 second timeout
+        const newsTimeout = setTimeout(() => newsController.abort(), 10000);
         
         const newsResponse = await fetch(
           `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=10`,
@@ -195,7 +135,7 @@ ${articlesText}
 Please analyze each article and determine which ones are actually relevant to the stock's price movement or fundamental business prospects. Then provide a JSON response with:
 
 {
-  "relevantArticleIndices": [0, 2, 4], // Array of indices (0-based) of articles that are actually relevant to this stock
+  "relevantArticleIndices": [0, 2, 4],
   "headlines": [
     {
       "title": "original article title",
@@ -204,21 +144,19 @@ Please analyze each article and determine which ones are actually relevant to th
       "publishedAt": "formatted_date_time"
     }
   ],
-  "overallImpact": "2-3 sentence comprehensive analysis of combined news effect on stock performance and market position",
+  "overallImpact": "2-3 sentence comprehensive analysis of combined news effect on stock performance",
   "marketSentiment": "Bullish|Bearish|Neutral",
-  "sentimentReasoning": "1-2 sentence explanation of why this sentiment was chosen, independent of current price movement"
+  "sentimentReasoning": "1-2 sentence explanation of why this sentiment was chosen"
 }
 
 IMPORTANT: 
-1. Only include articles that are genuinely relevant to this specific company's business, financials, or market position
-2. Market sentiment should be based on fundamental analysis of the news content and company prospects, NOT just whether the stock is currently up or down
-3. A stock can be down but have bullish sentiment due to positive news, or up but have bearish sentiment due to concerning developments
-4. Only return articles that have real impact on the stock - ignore generic market news unless it specifically affects this company
-5. Include ALL relevant articles, not just a limited number
+1. Only include articles that are genuinely relevant to this specific company
+2. Market sentiment should be based on fundamental analysis, not just current price movement
+3. Include ALL relevant articles, not just a limited number
 `;
 
               const chatController = new AbortController();
-              const chatTimeout = setTimeout(() => chatController.abort(), 15000); // 15 second timeout
+              const chatTimeout = setTimeout(() => chatController.abort(), 15000);
 
               const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -231,7 +169,7 @@ IMPORTANT:
                   messages: [
                     {
                       role: 'system',
-                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only. Focus on fundamental analysis rather than short-term price movements. Include ALL relevant articles, not just a limited number.'
+                      content: 'You are a financial analyst specializing in market sentiment analysis. Provide clear, concise analysis in valid JSON format only.'
                     },
                     {
                       role: 'user',
@@ -285,7 +223,7 @@ IMPORTANT:
               }
             } catch (analysisError) {
               console.error(`Analysis error for ${mover.symbol}:`, analysisError);
-              // Fallback to basic headlines without AI analysis - only include first 3 articles
+              // Fallback to basic headlines without AI analysis
               const limitedArticles = articles.slice(0, 3);
               mover.headlines = limitedArticles.map(article => {
                 const publishedDate = new Date(article.published_at);
@@ -305,7 +243,7 @@ IMPORTANT:
                   publishedAt: formattedDate
                 };
               });
-              mover.overallImpact = `Recent news about ${mover.symbol} may influence stock performance based on market sentiment.`;
+              mover.overallImpact = `Recent news about ${mover.symbol} may influence stock performance.`;
               mover.marketSentiment = 'Neutral';
               mover.sentimentReasoning = 'Unable to determine sentiment due to analysis limitations';
             }
@@ -327,19 +265,19 @@ IMPORTANT:
         console.error(`Error fetching news for ${mover.symbol}:`, error);
         // Provide fallback data
         mover.headlines = [];
-        mover.overallImpact = `Unable to fetch recent news for ${mover.symbol}. Price movement may be due to general market conditions or technical factors.`;
+        mover.overallImpact = `Unable to fetch recent news for ${mover.symbol}. Price movement may be due to general market conditions.`;
         mover.marketSentiment = 'Neutral';
         mover.sentimentReasoning = 'Unable to fetch news for sentiment analysis';
       }
     }
 
     const result = {
-      gainers,
-      losers,
+      gainers: topGainers,  
+      losers: topLosers,
       lastUpdated: new Date().toISOString()
     };
 
-    console.log(`Successfully processed ${gainers.length} gainers and ${losers.length} losers`);
+    console.log(`Successfully processed ${topGainers.length} gainers and ${topLosers.length} losers`);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
