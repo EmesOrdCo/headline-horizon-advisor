@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, ExternalLink, Loader2 } from "lucide-react";
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
@@ -113,6 +114,10 @@ const Watchlist = () => {
   };
 
   const filteredData = () => {
+    if (!stockPrices && pricesLoading) {
+      return watchlistData; // Show mock data structure while loading
+    }
+
     if (!stockPrices) {
       return [];
     }
@@ -148,7 +153,15 @@ const Watchlist = () => {
       <div className="pt-16 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
+              {pricesLoading && (
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading real-time prices...</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
@@ -185,16 +198,20 @@ const Watchlist = () => {
                       </TableCell>
                       <TableCell className="text-white font-semibold">
                         {pricesLoading ? (
-                          <div className="animate-pulse bg-slate-700 w-16 h-4 rounded"></div>
+                          <Skeleton className="w-16 h-4 bg-slate-700" />
                         ) : (
                           `$${getRealPrice(stock.symbol).toFixed(2)}`
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className={`flex items-center gap-1 ${getRealChange(stock.symbol) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {getRealChange(stock.symbol) >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          <span>{getRealChange(stock.symbol) >= 0 ? '+' : ''}{getRealChangePercent(stock.symbol).toFixed(2)}%</span>
-                        </div>
+                        {pricesLoading ? (
+                          <Skeleton className="w-20 h-4 bg-slate-700" />
+                        ) : (
+                          <div className={`flex items-center gap-1 ${getRealChange(stock.symbol) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {getRealChange(stock.symbol) >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                            <span>{getRealChange(stock.symbol) >= 0 ? '+' : ''}{getRealChangePercent(stock.symbol).toFixed(2)}%</span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div 
@@ -224,6 +241,16 @@ const Watchlist = () => {
                   ))}
                 </TableBody>
               </Table>
+
+              {pricesLoading && (
+                <div className="p-6 text-center border-t border-slate-700">
+                  <div className="flex items-center justify-center gap-2 text-slate-400">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Fetching real-time stock prices from Alpaca API...</span>
+                  </div>
+                  <p className="text-slate-500 text-sm mt-2">This may take up to 10 seconds</p>
+                </div>
+              )}
             </div>
           </Tabs>
         </div>
