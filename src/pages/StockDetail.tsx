@@ -13,6 +13,7 @@ import AIForecast from "@/components/StockDetail/AIForecast";
 import PriceAlerts from "@/components/StockDetail/PriceAlerts";
 import AIAnalysisTab from "@/components/StockDetail/AIAnalysisTab";
 import AllDataTab from "@/components/StockDetail/AllDataTab";
+import { useFinnhubMetrics } from "@/hooks/useFinnhubMetrics";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
 import { useSEO } from "@/hooks/useSEO";
@@ -33,6 +34,10 @@ const StockDetail = () => {
   });
 
   const [activeTab, setActiveTab] = useState("analysis");
+
+  // Debug: Load Finnhub data immediately to see what's happening
+  const { metrics: debugFinnhubMetrics, loading: debugFinnhubLoading, error: debugFinnhubError } = useFinnhubMetrics(stockSymbol);
+  console.log('StockDetail: Debug Finnhub metrics:', { debugFinnhubMetrics, debugFinnhubLoading, debugFinnhubError });
 
   // Fetch stock prices with real-time data
   const { data: stockPrices, isLoading: stockPricesLoading, refetch: refetchStockPrices } = useStockPrices([stockSymbol]);

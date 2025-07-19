@@ -6,6 +6,8 @@ export const useFinnhubMetrics = (symbol: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('useFinnhubMetrics: Hook initialized with symbol:', symbol);
+
   useEffect(() => {
     console.log('useFinnhubMetrics: useEffect triggered with symbol:', symbol);
     
@@ -36,5 +38,6 @@ export const useFinnhubMetrics = (symbol: string) => {
     loadMetrics();
   }, [symbol]);
 
+  console.log('useFinnhubMetrics: Returning:', { metrics, loading, error });
   return { metrics, loading, error };
 };

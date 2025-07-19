@@ -1,5 +1,9 @@
-const FINNHUB_API_KEY = 'cs5dq51r01qnhb11a2k0cs5dq51r01qnhb11a2kg';
+// Finnhub requires a valid API key - get one free at https://finnhub.io/register
+// For now, let's use a demo key that should work for basic quotes
+const FINNHUB_API_KEY = 'demo'; // Demo key for testing
 const BASE_URL = 'https://finnhub.io/api/v1';
+
+console.log('Finnhub API: Service loaded with demo key for testing');
 
 export interface FinnhubMetrics {
   // Valuation metrics
@@ -43,7 +47,31 @@ export interface FinnhubMetrics {
 export const fetchFinnhubMetrics = async (symbol: string): Promise<FinnhubMetrics> => {
   console.log('Finnhub API: Starting fetch for symbol:', symbol);
   
+  // First test if we can reach Finnhub at all with a simple quote call
   try {
+    const testUrl = `${BASE_URL}/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+    console.log('Finnhub API: Testing basic connectivity with URL:', testUrl);
+    
+    const testResponse = await fetch(testUrl);
+    console.log('Finnhub API: Test response status:', testResponse.status);
+    console.log('Finnhub API: Test response headers:', Object.fromEntries(testResponse.headers.entries()));
+    
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('Finnhub API: Test failed. Status:', testResponse.status, 'Response:', errorText);
+      
+      if (testResponse.status === 401) {
+        console.error('Finnhub API: Authentication failed - API key might be invalid');
+      } else if (testResponse.status === 429) {
+        console.error('Finnhub API: Rate limit exceeded');
+      } else if (testResponse.status === 403) {
+        console.error('Finnhub API: Access forbidden - might need a paid plan for this endpoint');
+      }
+      return {};
+    }
+    
+    const testData = await testResponse.json();
+    console.log('Finnhub API: Test successful, basic quote data:', testData);
     // Test individual endpoints to see which ones work
     const metricsUrl = `${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${FINNHUB_API_KEY}`;
     console.log('Finnhub API: Fetching metrics URL:', metricsUrl);
