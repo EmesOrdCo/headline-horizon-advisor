@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -78,7 +78,7 @@ const Magnificent7 = () => {
     enabled: true
   });
   
-  const { isConnected, isAuthenticated, connectionStatus, streamData } = streamResult;
+  const { isConnected, isAuthenticated, connectionStatus, streamData, errorMessage } = streamResult;
 
   const isMarketClosed = useMemo(() => {
     const now = new Date();
@@ -225,6 +225,38 @@ const Magnificent7 = () => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
+  const getConnectionStatusDisplay = () => {
+    if (connectionStatus === 'connected' && isAuthenticated) {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-emerald-900/20 text-emerald-400 border border-emerald-500/20">
+          <Wifi className="w-3 h-3" />
+          Connected & Authenticated
+        </div>
+      );
+    } else if (connectionStatus === 'connecting') {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-yellow-900/20 text-yellow-400 border border-yellow-500/20">
+          <Clock className="w-3 h-3 animate-spin" />
+          {errorMessage || 'Connecting...'}
+        </div>
+      );
+    } else if (connectionStatus === 'error') {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-red-900/20 text-red-400 border border-red-500/20">
+          <AlertCircle className="w-3 h-3" />
+          {errorMessage || 'Connection Failed'}
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-slate-700/50 text-slate-400 border border-slate-600">
+          <WifiOff className="w-3 h-3" />
+          Disconnected
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -269,34 +301,7 @@ const Magnificent7 = () => {
                 <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Testing real-time data connection for Apple Inc.</p>
                 
                 <div className="flex items-center gap-2 mt-2">
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                    connectionStatus === 'connected' && isAuthenticated ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-500/20' :
-                    connectionStatus === 'connecting' ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-500/20' :
-                    connectionStatus === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/20' :
-                    'bg-slate-700/50 text-slate-400 border border-slate-600'
-                  }`}>
-                    {connectionStatus === 'connected' && isAuthenticated ? (
-                      <>
-                        <Wifi className="w-3 h-3" />
-                        WebSocket Connected
-                      </>
-                    ) : connectionStatus === 'connecting' ? (
-                      <>
-                        <WifiOff className="w-3 h-3" />
-                        Connecting...
-                      </>
-                    ) : connectionStatus === 'error' ? (
-                      <>
-                        <WifiOff className="w-3 h-3" />
-                        Connection Failed
-                      </>
-                    ) : (
-                      <>
-                        <WifiOff className="w-3 h-3" />
-                        Disconnected
-                      </>
-                    )}
-                  </div>
+                  {getConnectionStatusDisplay()}
                 </div>
               </div>
             </div>
@@ -308,7 +313,7 @@ const Magnificent7 = () => {
               <CardTitle className="text-white flex items-center gap-2">
                 {FOCUS_SYMBOL} Live Price Data
                 {isConnected && isAuthenticated && (
-                  <span className="text-emerald-400 text-sm">● CONNECTED</span>
+                  <span className="text-emerald-400 text-sm">● LIVE</span>
                 )}
                 {connectionStatus === 'error' && (
                   <span className="text-red-400 text-sm">● ERROR</span>
@@ -348,12 +353,21 @@ const Magnificent7 = () => {
                   ) : connectionStatus === 'error' ? (
                     <div className="text-red-400 text-center">
                       <div className="text-xl font-bold">Connection Error</div>
-                      <div className="text-sm text-slate-500 mt-2">Unable to connect to real-time data stream</div>
+                      <div className="text-sm text-slate-500 mt-2">
+                        {errorMessage || 'Unable to connect to real-time data stream'}
+                      </div>
+                    </div>
+                  ) : connectionStatus === 'connecting' ? (
+                    <div className="text-yellow-400 text-center">
+                      <div className="text-xl font-bold">Connecting...</div>
+                      <div className="text-sm text-slate-500 mt-2">
+                        {errorMessage || 'Establishing connection to data stream'}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-slate-400 text-center">
-                      <div className="text-xl font-bold">Connecting...</div>
-                      <div className="text-sm text-slate-500 mt-2">Establishing connection to data stream</div>
+                      <div className="text-xl font-bold">Disconnected</div>
+                      <div className="text-sm text-slate-500 mt-2">No connection to data stream</div>
                     </div>
                   )}
                 </div>
