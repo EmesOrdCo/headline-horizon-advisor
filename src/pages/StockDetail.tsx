@@ -98,79 +98,107 @@ const StockDetail = () => {
         <MarketTicker />
       </div>
       
-      {/* Main Content - Tightly packed layout */}
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      {/* Main Content - Clean header layout like second image */}
+      <div className="bg-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Stock Header - Minimal spacing */}
-          <div className="py-4">
-            <StockHeader 
-              symbol={stockSymbol}
-              stockInfo={stockInfo}
-              cameFromWatchlist={cameFromWatchlist}
-            />
+          {/* Clean Stock Header Section - No cards or borders */}
+          <div className="py-6 border-b border-slate-700/50">
+            <div className="flex items-center justify-between">
+              {/* Left side - Stock info */}
+              <div className="flex items-center space-x-4">
+                {/* Stock Icon */}
+                <div className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
+                </div>
+                
+                {/* Stock Details */}
+                <div>
+                  <div className="flex items-center space-x-3 mb-1">
+                    <h1 className="text-2xl font-bold text-white">{stockSymbol}</h1>
+                    <span className="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium">
+                      {stockInfo.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-3xl font-bold text-white">
+                      ${stockInfo.price.toFixed(2)}
+                    </span>
+                    <span className={`flex items-center text-lg font-medium ${
+                      stockInfo.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      {stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)}
+                      ({stockInfo.changePercent >= 0 ? '+' : ''}{stockInfo.changePercent.toFixed(2)}%)
+                    </span>
+                    <span className="text-slate-400 text-sm">At Close</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - Tabs */}
+              <div className="flex items-center space-x-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="bg-slate-800/50 border-slate-700">
+                    <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                      AI Qualitative Analysis
+                    </TabsTrigger>
+                    <TabsTrigger value="data" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                      All Data
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
           </div>
 
-          {/* Tabs positioned right below header */}
-          <div className="flex justify-end mb-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-slate-800/50 border-slate-700">
-                <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                  AI Qualitative Analysis
-                </TabsTrigger>
-                <TabsTrigger value="data" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                  All Data
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Main Content Grid - Tight spacing */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-6">
-            
-            {/* Left Column - Chart and Price Alerts */}
-            <div className="xl:col-span-3 space-y-4">
+          {/* Main Content Grid - Better spacing */}
+          <div className="py-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               
-              {/* Price Chart Card - Compact design */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white flex items-center gap-2 text-lg">
-                    <BarChart3 className="w-5 h-5" />
-                    Live Price Movement
-                  </CardTitle>
-                  <div className="text-sm text-slate-400">
-                    {stockSymbol} Close Performance - 30 data points (until market close)
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-80">
-                    <HistoricalPriceChart
-                      symbol={stockSymbol}
-                      timeframe="1Day"
-                      limit={30}
-                      height={320}
-                      showMiniChart={false}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Left Column - Chart and Price Alerts */}
+              <div className="xl:col-span-3 space-y-6">
+                
+                {/* Price Chart Card */}
+                <Card className="bg-slate-800/50 border-slate-700">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-white flex items-center gap-2 text-lg">
+                      <BarChart3 className="w-5 h-5" />
+                      Live Price Movement
+                    </CardTitle>
+                    <div className="text-sm text-slate-400">
+                      {stockSymbol} Close Performance - 30 data points (until market close)
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-80">
+                      <HistoricalPriceChart
+                        symbol={stockSymbol}
+                        timeframe="1Day"
+                        limit={30}
+                        height={320}
+                        showMiniChart={false}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Price Alert Section - Compact */}
-              <PriceAlerts 
-                symbol={stockSymbol}
-                currentPrice={stockInfo.price}
-              />
-            </div>
+                {/* Price Alert Section */}
+                <PriceAlerts 
+                  symbol={stockSymbol}
+                  currentPrice={stockInfo.price}
+                />
+              </div>
 
-            {/* Right Column - Side Panel with tight spacing */}
-            <div className="xl:col-span-1 space-y-4">
-              <UpcomingEvents />
-              <AIForecast stockPrice={stockInfo.price} />
+              {/* Right Column - Side Panel */}
+              <div className="xl:col-span-1 space-y-6">
+                <UpcomingEvents />
+                <AIForecast stockPrice={stockInfo.price} />
+              </div>
             </div>
           </div>
 
-          {/* Tab Content - Positioned directly below main grid */}
-          <div className="mb-6">
+          {/* Tab Content */}
+          <div className="pb-8">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsContent value="analysis" className="mt-0">
                 <AIAnalysisTab symbol={stockSymbol} stockInfo={stockInfo} />
