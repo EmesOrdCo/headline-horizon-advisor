@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,15 +23,6 @@ const StockDetail = () => {
   const location = useLocation();
   const stockSymbol = symbol?.toUpperCase() || '';
   
-  // Debug logging for layout debugging
-  useEffect(() => {
-    console.log('StockDetail Layout Debug:', {
-      symbol: stockSymbol,
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      route: location.pathname
-    });
-  }, [stockSymbol, location.pathname]);
-
   // Check if user came from watchlist
   const cameFromWatchlist = location.state?.from === 'watchlist' || document.referrer.includes('/watchlist');
   
@@ -100,23 +90,20 @@ const StockDetail = () => {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Debug: Add visual indicator for layout debugging */}
-      <div className="fixed top-0 right-0 z-50 bg-red-500 text-white text-xs p-2 opacity-75">
-        Layout Debug: {window.innerWidth}x{window.innerHeight}
-      </div>
-      
+      {/* Fixed Navigation */}
       <DashboardNav />
       
-      {/* Market Ticker - Debug spacing */}
-      <div className="pt-16 border-2 border-yellow-500/20">
+      {/* Market Ticker - Positioned directly below nav with no gap */}
+      <div className="pt-16">
         <MarketTicker />
       </div>
       
-      {/* Main content wrapper - Debug spacing */}
-      <div className="pt-8 px-4 sm:px-6 lg:px-8 border-2 border-blue-500/20">
-        <div className="max-w-7xl mx-auto border-2 border-green-500/20">
-          {/* Header - Debug spacing */}
-          <div className="border-2 border-purple-500/20">
+      {/* Main Content - Tightly packed layout */}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Stock Header - Minimal spacing */}
+          <div className="py-4">
             <StockHeader 
               symbol={stockSymbol}
               stockInfo={stockInfo}
@@ -124,8 +111,8 @@ const StockDetail = () => {
             />
           </div>
 
-          {/* Tabs - Debug spacing */}
-          <div className="flex justify-end mb-6 border-2 border-orange-500/20">
+          {/* Tabs positioned right below header */}
+          <div className="flex justify-end mb-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-slate-800/50 border-slate-700">
                 <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
@@ -138,14 +125,16 @@ const StockDetail = () => {
             </Tabs>
           </div>
 
-          {/* Main Content Grid - Debug grid layout */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8 border-2 border-red-500/20">
-            {/* Chart Section - Debug grid column span */}
-            <div className="xl:col-span-3 space-y-6 border-2 border-cyan-500/20">
-              {/* Price Chart */}
+          {/* Main Content Grid - Tight spacing */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-6">
+            
+            {/* Left Column - Chart and Price Alerts */}
+            <div className="xl:col-span-3 space-y-4">
+              
+              {/* Price Chart Card - Compact design */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white flex items-center gap-2 text-lg">
                     <BarChart3 className="w-5 h-5" />
                     Live Price Movement
                   </CardTitle>
@@ -153,7 +142,7 @@ const StockDetail = () => {
                     {stockSymbol} Close Performance - 30 data points (until market close)
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="h-80">
                     <HistoricalPriceChart
                       symbol={stockSymbol}
@@ -166,36 +155,39 @@ const StockDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Price Alert Section */}
+              {/* Price Alert Section - Compact */}
               <PriceAlerts 
                 symbol={stockSymbol}
                 currentPrice={stockInfo.price}
               />
             </div>
 
-            {/* Side Panel - Debug grid column span */}
-            <div className="xl:col-span-1 space-y-6 border-2 border-pink-500/20">
+            {/* Right Column - Side Panel with tight spacing */}
+            <div className="xl:col-span-1 space-y-4">
               <UpcomingEvents />
               <AIForecast stockPrice={stockInfo.price} />
             </div>
           </div>
 
-          {/* Tab Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-            <TabsContent value="analysis" className="space-y-6">
-              <AIAnalysisTab symbol={stockSymbol} stockInfo={stockInfo} />
-            </TabsContent>
+          {/* Tab Content - Positioned directly below main grid */}
+          <div className="mb-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsContent value="analysis" className="mt-0">
+                <AIAnalysisTab symbol={stockSymbol} stockInfo={stockInfo} />
+              </TabsContent>
 
-            <TabsContent value="data" className="space-y-6">
-              <AllDataTab 
-                symbol={stockSymbol} 
-                stockInfo={stockInfo}
-              />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="data" className="mt-0">
+                <AllDataTab 
+                  symbol={stockSymbol} 
+                  stockInfo={stockInfo}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
       
+      {/* Footer */}
       <Footer />
     </div>
   );
