@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUp, TrendingUp, Clock, FileText } from "lucide-react";
@@ -52,9 +51,15 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <Navigation />
-      <MarketTicker />
+      
+      {/* Market Ticker - Positioned directly below nav with no gap */}
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+      
       <Hero />
       <Features />
+      
       <section id="how-it-works" className="py-8 sm:py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-8 sm:mb-16">Powered by Advanced AI</h2>
@@ -67,6 +72,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      
       <Footer />
     </div>
   );
