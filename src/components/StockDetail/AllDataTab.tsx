@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTwelveDataMetrics } from "@/hooks/useTwelveDataMetrics";
+import { useFinnhubMetrics } from "@/hooks/useFinnhubMetrics";
 
 interface AllDataTabProps {
   symbol: string;
@@ -18,8 +17,8 @@ interface AllDataTabProps {
 }
 
 const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
-  // Fetch Twelve Data metrics
-  const { metrics: twelveDataMetrics, loading: twelveDataLoading } = useTwelveDataMetrics(symbol);
+  // Fetch Finnhub metrics
+  const { metrics: finnhubMetrics, loading: finnhubLoading } = useFinnhubMetrics(symbol);
   
   // Calculate available metrics from Alpaca data
   const bidAskSpread = stockInfo.askPrice && stockInfo.bidPrice 
@@ -30,25 +29,33 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
     ? `${Math.min(stockInfo.price, stockInfo.previousClose).toFixed(2)} - ${Math.max(stockInfo.price, stockInfo.previousClose).toFixed(2)}`
     : "TBC";
 
-  // Helper function to format values with Twelve Data styling
-  const formatTwelveDataValue = (value: number | undefined, format: 'currency' | 'percentage' | 'number' = 'number', fallback = "TBC") => {
-    if (value === undefined || value === null) {
+  // Helper function to format Finnhub values
+  const formatFinnhubValue = (value: number | undefined, format: 'currency' | 'percentage' | 'number' | 'ratio' = 'number', fallback = "TBC") => {
+    if (value === undefined || value === null || isNaN(value)) {
       return <span className="text-slate-400 text-sm italic">{fallback}</span>;
     }
     
     let formattedValue = '';
     if (format === 'currency') {
-      formattedValue = `$${value.toFixed(2)}`;
+      if (value > 1000000000) {
+        formattedValue = `$${(value / 1000000000).toFixed(2)}B`;
+      } else if (value > 1000000) {
+        formattedValue = `$${(value / 1000000).toFixed(2)}M`;
+      } else {
+        formattedValue = `$${value.toFixed(2)}`;
+      }
     } else if (format === 'percentage') {
-      formattedValue = `${value.toFixed(2)}%`;
-    } else {
+      formattedValue = `${(value * 100).toFixed(2)}%`;
+    } else if (format === 'ratio') {
       formattedValue = value.toFixed(2);
+    } else {
+      formattedValue = value.toLocaleString();
     }
     
     return (
-      <span className="text-blue-300 font-medium">
+      <span className="text-emerald-300 font-medium">
         {formattedValue}
-        <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+        <Badge variant="outline" className="ml-2 text-xs border-emerald-400 text-emerald-300">FH</Badge>
       </span>
     );
   };
@@ -62,30 +69,30 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           <CardHeader>
             <CardTitle className="text-white">Valuation Metrics</CardTitle>
             <p className="text-slate-400 text-sm">
-              Twelve Data Free Plan - Limited metrics available
-              <Badge variant="outline" className="ml-2 text-xs border-orange-400 text-orange-300">Free Plan</Badge>
+              Enhanced with Finnhub API 
+              <Badge variant="outline" className="ml-2 text-xs border-emerald-400 text-emerald-300">FH</Badge>
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Earnings</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.peRatio, 'ratio')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Book</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.priceToBook, 'ratio')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Sales</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.priceToSales, 'ratio')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">EV/EBITDA</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.evToEbitda, 'ratio')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
               <span className="text-slate-400">PEG Ratio</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.pegRatio, 'ratio')}
             </div>
           </CardContent>
         </Card>
@@ -95,30 +102,30 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           <CardHeader>
             <CardTitle className="text-white">Financial Health</CardTitle>
             <p className="text-slate-400 text-sm">
-              Twelve Data Free Plan - Limited metrics available
-              <Badge variant="outline" className="ml-2 text-xs border-orange-400 text-orange-300">Free Plan</Badge>
+              Enhanced with Finnhub API 
+              <Badge variant="outline" className="ml-2 text-xs border-emerald-400 text-emerald-300">FH</Badge>
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Revenue Growth (YoY)</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.revenueGrowth, 'percentage')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Gross Margin</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.grossMargin, 'percentage')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Operating Margin</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.operatingMargin, 'percentage')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Net Margin</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.netMargin, 'percentage')}
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
               <span className="text-slate-400">ROE</span>
-              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
+              {formatFinnhubValue(finnhubMetrics.returnOnEquity, 'percentage')}
             </div>
           </CardContent>
         </Card>
@@ -222,8 +229,8 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         <CardHeader>
           <CardTitle className="text-white">Additional Metrics</CardTitle>
           <p className="text-slate-400 text-sm">
-            Enhanced with Twelve Data API 
-            <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+            Enhanced with Finnhub API 
+            <Badge variant="outline" className="ml-2 text-xs border-emerald-400 text-emerald-300">FH</Badge>
           </p>
         </CardHeader>
         <CardContent>
@@ -231,25 +238,25 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Market Cap</div>
               <div className="text-white font-bold text-lg">
-                {twelveDataMetrics.marketCap ? formatTwelveDataValue(twelveDataMetrics.marketCap, 'currency') : <span className="text-slate-400 italic">TBC</span>}
+                {formatFinnhubValue(finnhubMetrics.marketCap, 'currency')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">EPS</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.eps, 'currency')}
+                {formatFinnhubValue(finnhubMetrics.eps, 'currency')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Beta</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.beta)}
+                {formatFinnhubValue(finnhubMetrics.beta, 'ratio')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Dividend Yield</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.dividendYield, 'percentage')}
+                {formatFinnhubValue(finnhubMetrics.dividendYield, 'percentage')}
               </div>
             </div>
           </div>
@@ -258,25 +265,25 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Current Ratio</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.currentRatio)}
+                {formatFinnhubValue(finnhubMetrics.currentRatio, 'ratio')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Debt to Equity</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.debtToEquity)}
+                {formatFinnhubValue(finnhubMetrics.debtToEquity, 'ratio')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">ROA</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.returnOnAssets, 'percentage')}
+                {formatFinnhubValue(finnhubMetrics.returnOnAssets, 'percentage')}
               </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Book Value/Share</div>
               <div className="text-white font-bold text-lg">
-                {formatTwelveDataValue(twelveDataMetrics.bookValuePerShare, 'currency')}
+                {formatFinnhubValue(finnhubMetrics.bookValuePerShare, 'currency')}
               </div>
             </div>
           </div>
