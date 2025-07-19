@@ -119,20 +119,22 @@ const StockDetail = () => {
           
           {/* Clean Stock Header Section - No cards or borders */}
           <div className="py-6 border-b border-slate-700/50">
+            {/* Back Button - Above everything */}
+            <div className="mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackClick}
+                className="text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </div>
+            
             <div className="flex items-center justify-between">
-              {/* Left side - Back button and Stock info */}
+              {/* Left side - Stock info */}
               <div className="flex items-center space-x-4">
-                {/* Back Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackClick}
-                  className="text-slate-400 hover:text-white hover:bg-slate-800"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                
                 {/* Stock Icon */}
                 <div className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
