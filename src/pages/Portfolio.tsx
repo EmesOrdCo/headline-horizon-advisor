@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
@@ -208,7 +209,8 @@ const Portfolio = () => {
               </div>
               <div>
                 <div className="text-slate-400">Gain/Loss</div>
-                <div className={`font-semibold ${holding.gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <div className={`font-semibold flex items-center gap-1 ${holding.gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {holding.gain >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {formatCurrency(holding.gain)} ({formatPercent(holding.gainPercent)})
                 </div>
               </div>
@@ -249,7 +251,10 @@ const Portfolio = () => {
                   <td className="p-4 text-white font-semibold">{formatCurrency(holding.currentPrice)}</td>
                   <td className="p-4 text-white font-semibold">{formatCurrency(holding.totalValue)}</td>
                   <td className={`p-4 font-semibold ${holding.gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    <div>{formatCurrency(holding.gain)}</div>
+                    <div className="flex items-center gap-1">
+                      {holding.gain >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      {formatCurrency(holding.gain)}
+                    </div>
                     <div className="text-sm">({formatPercent(holding.gainPercent)})</div>
                   </td>
                   <td className={`p-4 ${holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -270,13 +275,29 @@ const Portfolio = () => {
 
   // Chart View with Pie Chart
   const ChartView = () => {
+    // Calculate percentages that add up to exactly 100%
+    const totalValue = dummyPortfolioData.totalValue;
+    let runningTotal = 0;
+    
     const chartData = dummyPortfolioData.holdings.map((holding, index) => {
-      const percentage = (holding.totalValue / dummyPortfolioData.totalValue) * 100;
+      const isLast = index === dummyPortfolioData.holdings.length - 1;
+      let percentage;
+      
+      if (isLast) {
+        // Last item gets the remainder to ensure total is exactly 100%
+        percentage = 100 - runningTotal;
+      } else {
+        percentage = (holding.totalValue / totalValue) * 100;
+        runningTotal += percentage;
+      }
+      
       return {
         name: holding.symbol,
         value: holding.totalValue,
         percentage: percentage,
         fullName: holding.name,
+        dayChange: holding.dayChange,
+        dayChangePercent: holding.dayChangePercent,
         color: `hsl(${(index * 60) % 360}, 70%, 60%)`, // Generate different colors
       };
     });
@@ -296,6 +317,12 @@ const Portfolio = () => {
             <p className="text-slate-300 text-sm">{data.fullName}</p>
             <p className="text-emerald-400 font-semibold">
               {formatCurrency(data.value)} ({data.percentage.toFixed(1)}%)
+            </p>
+            <p className={`text-sm flex items-center gap-1 ${
+              data.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+            }`}>
+              {data.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              Day: {formatCurrency(data.dayChange)} ({formatPercent(data.dayChangePercent)})
             </p>
           </div>
         );
@@ -350,6 +377,12 @@ const Portfolio = () => {
                         {holding.name}
                       </Badge>
                       <p className="text-slate-300 text-sm">{holding.fullName}</p>
+                      <div className={`text-xs flex items-center gap-1 ${
+                        holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {holding.dayChange >= 0 ? <TrendingUp className="w-2 h-2" /> : <TrendingDown className="w-2 h-2" />}
+                        {formatPercent(holding.dayChangePercent)}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
