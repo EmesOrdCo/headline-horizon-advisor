@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -73,6 +73,64 @@ const Magnificent7 = () => {
   // Focus on just AAPL for now
   const FOCUS_SYMBOL = 'AAPL';
 
+  // Enhanced market hours detection
+  const marketStatus = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTime = currentHour + currentMinutes / 60;
+    const currentDay = now.getDay();
+    
+    const isWeekend = currentDay === 0 || currentDay === 6;
+    
+    // Market hours: 9:30 AM - 4:00 PM ET (14:30 - 21:00 UTC)
+    // Pre-market: 4:00 AM - 9:30 AM ET (9:00 - 14:30 UTC)
+    // After-hours: 4:00 PM - 8:00 PM ET (21:00 - 1:00 UTC next day)
+    
+    if (isWeekend) {
+      return {
+        isOpen: false,
+        status: 'closed',
+        message: 'Markets are closed (Weekend)',
+        webSocketLimited: true
+      };
+    }
+    
+    // Convert to ET for market hours (approximate)
+    const etHour = (currentHour - 5 + 24) % 24; // Rough EST conversion
+    const etTime = etHour + currentMinutes / 60;
+    
+    if (etTime >= 9.5 && etTime < 16) {
+      return {
+        isOpen: true,
+        status: 'open',
+        message: 'Markets are open',
+        webSocketLimited: false
+      };
+    } else if (etTime >= 4 && etTime < 9.5) {
+      return {
+        isOpen: false,
+        status: 'premarket',
+        message: 'Pre-market hours',
+        webSocketLimited: true
+      };
+    } else if (etTime >= 16 && etTime < 20) {
+      return {
+        isOpen: false,
+        status: 'afterhours',
+        message: 'After-hours trading',
+        webSocketLimited: true
+      };
+    } else {
+      return {
+        isOpen: false,
+        status: 'closed',
+        message: 'Markets are closed',
+        webSocketLimited: true
+      };
+    }
+  }, []);
+
   // WebSocket connection for real-time data
   const {
     isConnected: wsConnected,
@@ -85,18 +143,6 @@ const Magnificent7 = () => {
     enabled: useWebSocket
   });
 
-  const isMarketClosed = useMemo(() => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentDay = now.getDay();
-    
-    const isWeekend = currentDay === 0 || currentDay === 6;
-    const isAfterHours = currentHour < 14 || currentHour > 21;
-    
-    return isWeekend || isAfterHours;
-  }, []);
-
-  // Update price history when WebSocket data comes in
   useEffect(() => {
     if (wsData[FOCUS_SYMBOL] && useWebSocket) {
       const newDataPoint: PriceHistoryPoint = {
@@ -329,13 +375,60 @@ const Magnificent7 = () => {
             </div>
           </div>
 
-          {/* WebSocket Status Alert */}
-          {useWebSocket && wsError && (
+          {/* Market Hours Status */}
+          <Card className={`mb-6 ${
+            marketStatus.isOpen 
+              ? 'bg-emerald-900/20 border-emerald-600/50' 
+              : 'bg-amber-900/20 border-amber-600/50'
+          }`}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Clock className={`w-5 h-5 ${
+                  marketStatus.isOpen ? 'text-emerald-400' : 'text-amber-400'
+                }`} />
+                <div className="flex-1">
+                  <div className={`font-medium ${
+                    marketStatus.isOpen ? 'text-emerald-400' : 'text-amber-400'
+                  }`}>
+                    {marketStatus.message}
+                  </div>
+                  {marketStatus.webSocketLimited && (
+                    <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      WebSocket connectivity may be limited during off-market hours
+                    </div>
+                  )}
+                </div>
+                <Badge 
+                  variant={marketStatus.isOpen ? "default" : "secondary"}
+                  className={marketStatus.isOpen 
+                    ? "bg-emerald-600 text-white" 
+                    : "bg-amber-600 text-white"
+                  }
+                >
+                  {marketStatus.status.toUpperCase()}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* WebSocket Status Alert - Enhanced for market hours */}
+          {useWebSocket && (wsError || marketStatus.webSocketLimited) && (
             <Card className="mb-6 bg-yellow-900/20 border-yellow-600/50">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-yellow-400">
-                  <WifiOff className="w-4 h-4" />
-                  <span className="text-sm">{wsError}</span>
+                <div className="flex items-start gap-2 text-yellow-400">
+                  <WifiOff className="w-4 h-4 mt-0.5" />
+                  <div className="flex-1">
+                    {wsError && (
+                      <div className="text-sm mb-2">{wsError}</div>
+                    )}
+                    {marketStatus.webSocketLimited && (
+                      <div className="text-sm">
+                        <strong>Live data may be limited:</strong> Alpaca restricts WebSocket connections during {marketStatus.status} hours. 
+                        Switch to REST API for current market data, or try again during regular trading hours (9:30 AM - 4:00 PM ET).
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
