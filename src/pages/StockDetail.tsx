@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
@@ -22,10 +23,19 @@ import { getCompanyName } from "@/utils/stockUtils";
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const stockSymbol = symbol?.toUpperCase() || '';
   
   // Check if user came from watchlist
   const cameFromWatchlist = location.state?.from === 'watchlist' || document.referrer.includes('/watchlist');
+  
+  const handleBackClick = () => {
+    if (cameFromWatchlist) {
+      navigate('/watchlist');
+    } else {
+      navigate(-1); // Go back to previous page
+    }
+  };
   
   useSEO({
     title: `${stockSymbol} Stock Analysis - AI-Powered Insights`,
@@ -110,8 +120,19 @@ const StockDetail = () => {
           {/* Clean Stock Header Section - No cards or borders */}
           <div className="py-6 border-b border-slate-700/50">
             <div className="flex items-center justify-between">
-              {/* Left side - Stock info */}
+              {/* Left side - Back button and Stock info */}
               <div className="flex items-center space-x-4">
+                {/* Back Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackClick}
+                  className="text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                
                 {/* Stock Icon */}
                 <div className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
