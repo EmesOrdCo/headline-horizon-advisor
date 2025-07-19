@@ -34,10 +34,31 @@ serve(async (req) => {
   const { socket, response } = Deno.upgradeWebSocket(req);
   let alpacaSocket: WebSocket | null = null;
   let isAuthenticated = false;
+  let connectionAttempts = 0;
+  const maxConnectionAttempts = 1; // Limit to prevent connection spam
 
   const connectToAlpaca = () => {
+    if (connectionAttempts >= maxConnectionAttempts) {
+      console.log('Max connection attempts reached, sending error to client');
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Connection limit reached. Please try again later.'
+        }));
+      }
+      return;
+    }
+
+    connectionAttempts++;
+    
     try {
-      console.log('Connecting to Alpaca data stream...');
+      console.log(`Connecting to Alpaca data stream (attempt ${connectionAttempts}/${maxConnectionAttempts})...`);
+      
+      // Close existing connection if any
+      if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
+        alpacaSocket.close();
+      }
+      
       alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
       
       alpacaSocket.onopen = () => {
@@ -62,6 +83,7 @@ serve(async (req) => {
             for (const message of data) {
               if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
+                connectionAttempts = 0; // Reset on successful auth
                 console.log('Successfully authenticated with Alpaca');
                 
                 if (socket.readyState === WebSocket.OPEN) {
@@ -71,12 +93,17 @@ serve(async (req) => {
                   }));
                 }
               } else if (message.T === 'error') {
-                console.error('Alpaca authentication error:', message);
+                console.error('Alpaca error:', message);
+                
+                let errorMessage = `Alpaca error: ${message.msg || 'Unknown error'}`;
+                if (message.code === 406) {
+                  errorMessage = 'Connection limit exceeded. Market data may be temporarily unavailable.';
+                }
                 
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_error',
-                    message: `Authentication failed: ${message.msg || 'Unknown error'}`
+                    message: errorMessage
                   }));
                 }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
@@ -110,6 +137,7 @@ serve(async (req) => {
         console.log('Alpaca WebSocket disconnected:', event.code, event.reason);
         isAuthenticated = false;
         
+        // Don't automatically reconnect to prevent connection spam
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'error',
@@ -151,6 +179,8 @@ serve(async (req) => {
           
           console.log('Sending subscription to Alpaca:', subscribeMessage);
           alpacaSocket.send(JSON.stringify(subscribeMessage));
+        } else {
+          console.log('Cannot subscribe: not authenticated or connection not ready');
         }
       }
     } catch (error) {

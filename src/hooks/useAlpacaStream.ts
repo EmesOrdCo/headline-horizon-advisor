@@ -25,15 +25,52 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [streamData, setStreamData] = useState<Record<string, StreamData>>({});
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
-  const [hasShownError, setHasShownError] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 3;
+  const reconnectDelay = 5000; // 5 seconds
+
+  const cleanup = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    if (socketRef.current) {
+      socketRef.current.onopen = null;
+      socketRef.current.onmessage = null;
+      socketRef.current.onerror = null;
+      socketRef.current.onclose = null;
+      
+      if (socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.close();
+      }
+      socketRef.current = null;
+    }
+    
+    setIsConnected(false);
+    setIsAuthenticated(false);
+  }, []);
 
   const connect = useCallback(() => {
-    if (!enabled || symbols.length === 0) return;
+    if (!enabled || symbols.length === 0) {
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    // Prevent multiple simultaneous connection attempts
+    if (socketRef.current && socketRef.current.readyState === WebSocket.CONNECTING) {
+      console.log('Connection attempt already in progress');
+      return;
+    }
+
+    // Clean up any existing connection
+    cleanup();
 
     setConnectionStatus('connecting');
-    console.log('Connecting to Alpaca WebSocket for:', symbols[0]); // Only log first symbol
+    console.log('Attempting to connect to Alpaca WebSocket for:', symbols[0]);
     
     const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
@@ -41,9 +78,10 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
       socketRef.current = new WebSocket(wsUrl);
 
       socketRef.current.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
         setIsConnected(true);
         setConnectionStatus('connected');
+        reconnectAttemptsRef.current = 0; // Reset retry counter on successful connection
       };
 
       socketRef.current.onmessage = (event) => {
@@ -53,12 +91,12 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
           switch (message.type) {
             case 'auth_success':
               setIsAuthenticated(true);
-              console.log('Authenticated, subscribing to:', symbols[0]);
+              console.log('Authenticated successfully, subscribing to:', symbols[0]);
               
               if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                   type: 'subscribe',
-                  symbols: [symbols[0]] // Only subscribe to first symbol (AAPL)
+                  symbols: [symbols[0]]
                 }));
               }
               break;
@@ -67,15 +105,15 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
               setConnectionStatus('error');
               setIsAuthenticated(false);
               console.error('Authentication failed:', message.message);
-              if (!hasShownError) {
-                setHasShownError(true);
-              }
+              
+              // Don't retry if authentication fails
+              reconnectAttemptsRef.current = maxReconnectAttempts;
               break;
               
             case 'market_data':
               if (Array.isArray(message.data)) {
                 message.data.forEach((item: any) => {
-                  if (item.S === symbols[0]) { // Only process first symbol
+                  if (item.S === symbols[0]) {
                     const price = item.p || item.ap || item.bp || item.c;
                     if (price) {
                       setStreamData(prev => ({
@@ -104,8 +142,11 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
               setConnectionStatus('error');
               setIsAuthenticated(false);
               console.error('Stream error:', message.message);
-              if (!hasShownError) {
-                setHasShownError(true);
+              
+              // Check if it's a connection limit error
+              if (message.message && message.message.includes('connection limit')) {
+                console.log('Connection limit reached, will retry with delay');
+                scheduleReconnect();
               }
               break;
           }
@@ -121,28 +162,50 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
         setIsAuthenticated(false);
       };
 
-      socketRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
+      socketRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         setIsConnected(false);
         setIsAuthenticated(false);
         setConnectionStatus('disconnected');
+        
+        // Only attempt reconnect if it wasn't a manual close and we haven't exceeded max attempts
+        if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
+          scheduleReconnect();
+        }
       };
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [symbols, enabled, hasShownError]);
+  }, [symbols, enabled, cleanup]);
+
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      console.log('Max reconnection attempts reached');
+      setConnectionStatus('error');
+      return;
+    }
+
+    if (reconnectTimeoutRef.current) {
+      return; // Reconnect already scheduled
+    }
+
+    reconnectAttemptsRef.current++;
+    const delay = reconnectDelay * reconnectAttemptsRef.current; // Exponential backoff
+    
+    console.log(`Scheduling reconnect attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`);
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connect();
+    }, delay);
+  }, [connect]);
 
   const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-    setIsConnected(false);
-    setIsAuthenticated(false);
+    cleanup();
     setConnectionStatus('disconnected');
-  }, []);
+  }, [cleanup]);
 
   useEffect(() => {
     if (enabled && symbols.length > 0) {
@@ -152,9 +215,9 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
     }
 
     return () => {
-      disconnect();
+      cleanup();
     };
-  }, [symbols, enabled, connect, disconnect]);
+  }, [symbols, enabled, connect, disconnect, cleanup]);
 
   return {
     isConnected,
