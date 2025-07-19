@@ -127,15 +127,15 @@ async function fetchRecentHeadlines() {
       return [];
     }
     
-    // Filter for recent articles (last 4 hours) and sort by published date
-    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
-    console.log('🕒 Filtering for articles published after:', fourHoursAgo.toISOString());
+    // Filter for recent articles (last 2 hours instead of 4) for more frequent updates
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    console.log('🕒 Filtering for articles published after:', twoHoursAgo.toISOString());
     
     const recentArticles = articles.filter(article => {
       if (!article.published_at) return false;
       
       const publishedDate = new Date(article.published_at);
-      const isRecent = publishedDate > fourHoursAgo;
+      const isRecent = publishedDate > twoHoursAgo;
       
       if (!isRecent) {
         console.log(`⏰ Skipping older article: ${article.title} (published: ${article.published_at})`);
@@ -144,7 +144,7 @@ async function fetchRecentHeadlines() {
       return isRecent;
     });
     
-    console.log(`📅 Found ${recentArticles.length} recent articles (last 4 hours)`);
+    console.log(`📅 Found ${recentArticles.length} recent articles (last 2 hours)`);
     
     const sortedArticles = recentArticles
       .filter(article => article.title && article.url && article.published_at) // Filter out invalid articles
@@ -217,15 +217,15 @@ serve(async (req) => {
   try {
     console.log('🚀 Starting recent headlines fetch from MarketAux...');
     
-    // Delete old headlines (older than 4 hours) to keep database fresh
-    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    console.log('🧹 Cleaning up old headlines older than:', fourHoursAgo);
+    // Delete old headlines (older than 2 hours) to keep database fresh and allow re-showing articles
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    console.log('🧹 Cleaning up old headlines older than:', twoHoursAgo);
     
     const { error: deleteError } = await supabase
       .from('news_articles')
       .delete()
       .eq('symbol', 'GENERAL')
-      .lt('published_at', fourHoursAgo);
+      .lt('published_at', twoHoursAgo);
 
     if (deleteError) {
       console.error('⚠️ Error cleaning up old headlines:', deleteError);
@@ -239,13 +239,13 @@ serve(async (req) => {
     if (headlines.length > 0) {
       console.log(`💾 Processing ${headlines.length} headlines for storage...`);
       
-      // Get existing articles from the last 24 hours to prevent duplicates
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // Get existing articles from the last 4 hours to prevent duplicates (shorter window)
+      const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
       const { data: existingArticles, error: fetchError } = await supabase
         .from('news_articles')
         .select('url, title')
         .eq('symbol', 'GENERAL')
-        .gt('published_at', twentyFourHoursAgo);
+        .gt('published_at', fourHoursAgo);
       
       if (fetchError) {
         console.error('⚠️ Error fetching existing articles:', fetchError);
