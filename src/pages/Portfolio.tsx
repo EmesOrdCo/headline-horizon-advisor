@@ -274,21 +274,11 @@ const Portfolio = () => {
 
   // Chart View with Pie Chart
   const ChartView = () => {
-    // Calculate percentages that add up to exactly 100%
+    // Calculate correct percentages based on actual total value
     const totalValue = dummyPortfolioData.totalValue;
-    let runningTotal = 0;
     
     const chartData = dummyPortfolioData.holdings.map((holding, index) => {
-      const isLast = index === dummyPortfolioData.holdings.length - 1;
-      let percentage;
-      
-      if (isLast) {
-        // Last item gets the remainder to ensure total is exactly 100%
-        percentage = 100 - runningTotal;
-      } else {
-        percentage = (holding.totalValue / totalValue) * 100;
-        runningTotal += percentage;
-      }
+      const percentage = (holding.totalValue / totalValue) * 100;
       
       return {
         name: holding.symbol,
