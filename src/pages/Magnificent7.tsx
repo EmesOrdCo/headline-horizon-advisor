@@ -12,7 +12,7 @@ import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
-import { useAlpacaStream } from "@/hooks/useAlpacaStream";
+import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
@@ -72,8 +72,8 @@ const Magnificent7 = () => {
   // Focus on just AAPL for now
   const FOCUS_SYMBOL = 'AAPL';
 
-  // Real-time streaming for just AAPL
-  const streamResult = useAlpacaStream({
+  // Real-time streaming for just AAPL using singleton
+  const streamResult = useAlpacaStreamSingleton({
     symbols: [FOCUS_SYMBOL],
     enabled: true
   });
@@ -230,14 +230,14 @@ const Magnificent7 = () => {
       return (
         <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-emerald-900/20 text-emerald-400 border border-emerald-500/20">
           <Wifi className="w-3 h-3" />
-          Connected & Authenticated
+          Connected (Singleton)
         </div>
       );
     } else if (connectionStatus === 'connecting') {
       return (
         <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-yellow-900/20 text-yellow-400 border border-yellow-500/20">
           <Clock className="w-3 h-3 animate-spin" />
-          {errorMessage || 'Connecting...'}
+          {errorMessage || 'Connecting (Singleton)...'}
         </div>
       );
     } else if (connectionStatus === 'error') {
@@ -297,8 +297,8 @@ const Magnificent7 = () => {
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Live Data Test</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Testing real-time data connection for Apple Inc.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Live Data Test (Singleton)</h1>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Testing singleton WebSocket connection for Apple Inc. - avoids connection limits!</p>
                 
                 <div className="flex items-center gap-2 mt-2">
                   {getConnectionStatusDisplay()}
