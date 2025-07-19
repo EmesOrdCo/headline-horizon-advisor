@@ -8,6 +8,7 @@ import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RealTimePriceChart from "@/components/RealTimePriceChart";
+import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
@@ -224,7 +225,7 @@ const Magnificent7 = () => {
                     className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
                   >
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    {showCharts ? 'Hide Chart' : 'Show Chart'}
+                    {showCharts ? 'Hide Charts' : 'Show Charts'}
                   </Button>
                   <Button 
                     onClick={handleRefreshNews}
@@ -237,8 +238,8 @@ const Magnificent7 = () => {
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Stock Data from API</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Real stock price data for Apple Inc. from Alpaca API</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Stock Analysis</h1>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Real-time stock data and historical analysis for Apple Inc.</p>
               </div>
             </div>
           </div>
@@ -328,13 +329,27 @@ const Magnificent7 = () => {
             </CardContent>
           </Card>
 
+          {/* Historical Price Chart - Always Visible */}
+          <Card className="mb-8 bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">
+                Historical Price Chart
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-slate-700/30 rounded-lg p-4">
+                <HistoricalPriceChart symbol={FOCUS_SYMBOL} limit={30} />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Live Chart */}
           {showCharts && (
             <div className="grid grid-cols-1 gap-4 mb-8">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-white">
-                    {FOCUS_SYMBOL} Price Chart
+                    {FOCUS_SYMBOL} Live Price Chart
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -347,11 +362,11 @@ const Magnificent7 = () => {
                 </CardContent>
               </Card>
 
-              {/* New placeholder box */}
+              {/* Placeholder box */}
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-6">
                   <div className="text-center text-slate-400">
-                    <div className="text-lg font-medium">Add this stuff later</div>
+                    <div className="text-lg font-medium">Additional analysis coming soon</div>
                   </div>
                 </CardContent>
               </Card>
