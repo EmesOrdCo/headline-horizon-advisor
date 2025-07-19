@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
@@ -112,144 +111,150 @@ const StockDetail = () => {
               </Link>
             </div>
             
-            {/* Stock Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-emerald-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-white">{stockSymbol}</h1>
-                  <Badge className="bg-emerald-600 text-white">{stockInfo.name}</Badge>
+            {/* Stock Header with Tabs */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-emerald-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-white">${stockInfo.price.toFixed(2)}</span>
-                  <div className={`flex items-center gap-1 ${stockInfo.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {stockInfo.change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    <span>{stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)} ({stockInfo.changePercent.toFixed(2)}%)</span>
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl font-bold text-white">{stockSymbol}</h1>
+                    <Badge className="bg-emerald-600 text-white">{stockInfo.name}</Badge>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-2xl font-bold text-white">${stockInfo.price.toFixed(2)}</span>
+                    <div className={`flex items-center gap-1 ${stockInfo.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {stockInfo.change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <span>{stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)} ({stockInfo.changePercent.toFixed(2)}%)</span>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Tabs moved to the right */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="bg-slate-800/50 border-slate-700">
+                  <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                    AI Qualitative Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="data" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                    All Data
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-            <TabsList className="bg-slate-800/50 border-slate-700">
-              <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                AI Qualitative Analysis
-              </TabsTrigger>
-              <TabsTrigger value="data" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                All Data
-              </TabsTrigger>
-            </TabsList>
+          {/* Main Chart Section - Full Width */}
+          <div className="mb-8">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Live Price Movement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96">
+                  <RealTimePriceChart
+                    data={priceHistory}
+                    symbol={stockSymbol}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            {/* Shared Layout Components */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 mt-6">
-              {/* Live Price Chart */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" />
-                    Live Price Movement
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <RealTimePriceChart
-                      data={priceHistory}
-                      symbol={stockSymbol}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Key Upcoming Events */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    Upcoming Events
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-emerald-400 font-semibold">Earnings Report</div>
-                        <div className="text-slate-400 text-sm">Q2 2025</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">27</div>
-                        <div className="text-slate-400 text-sm">AUG</div>
-                      </div>
+          {/* Secondary Components Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Key Upcoming Events */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Upcoming Events
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-emerald-400 font-semibold">Earnings Report</div>
+                      <div className="text-slate-400 text-sm">Q2 2025</div>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-blue-400 font-semibold">Dividend Payment</div>
-                        <div className="text-slate-400 text-sm">$0.28 per share</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">15</div>
-                        <div className="text-slate-400 text-sm">SEP</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-purple-400 font-semibold">Analyst Day</div>
-                        <div className="text-slate-400 text-sm">Investor meeting</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">03</div>
-                        <div className="text-slate-400 text-sm">OCT</div>
-                      </div>
+                    <div className="text-right">
+                      <div className="text-white font-bold">27</div>
+                      <div className="text-slate-400 text-sm">AUG</div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* AI Forecast */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Bot className="w-5 h-5" />
-                    AI Forecast
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
-                      <div className="text-emerald-400 font-bold text-2xl">BULLISH</div>
-                      <div className="text-slate-300 text-sm mt-1">Next 30 days</div>
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-blue-400 font-semibold">Dividend Payment</div>
+                      <div className="text-slate-400 text-sm">$0.28 per share</div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Confidence Level</span>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            {[1,2,3,4].map(i => (
-                              <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                            ))}
-                            <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                          </div>
-                          <span className="text-white font-semibold">82%</span>
+                    <div className="text-right">
+                      <div className="text-white font-bold">15</div>
+                      <div className="text-slate-400 text-sm">SEP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-purple-400 font-semibold">Analyst Day</div>
+                      <div className="text-slate-400 text-sm">Investor meeting</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-white font-bold">03</div>
+                      <div className="text-slate-400 text-sm">OCT</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Forecast */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  AI Forecast
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
+                    <div className="text-emerald-400 font-bold text-2xl">BULLISH</div>
+                    <div className="text-slate-300 text-sm mt-1">Next 30 days</div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Confidence Level</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {[1,2,3,4].map(i => (
+                            <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                          ))}
+                          <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Price Target</span>
-                        <span className="text-emerald-400 font-semibold">${(stockInfo.price * 1.12).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Upside Potential</span>
-                        <span className="text-emerald-400 font-semibold">+12%</span>
+                        <span className="text-white font-semibold">82%</span>
                       </div>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Price Target</span>
+                      <span className="text-emerald-400 font-semibold">${(stockInfo.price * 1.12).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Upside Potential</span>
+                      <span className="text-emerald-400 font-semibold">+12%</span>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-            {/* Tab Content */}
+          {/* Tab Content */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsContent value="analysis" className="space-y-6">
               <AIAnalysisTab symbol={stockSymbol} />
             </TabsContent>
