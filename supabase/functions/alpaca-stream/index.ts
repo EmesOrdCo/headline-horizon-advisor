@@ -19,22 +19,9 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
-  const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
+  const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
 
-  console.log('Checking Alpaca credentials...');
-  console.log('API Key exists:', !!alpacaApiKey);
-  console.log('Secret Key exists:', !!alpacaSecretKey);
-
-  if (!alpacaApiKey || !alpacaSecretKey) {
-    console.error('Missing Alpaca API credentials');
-    return new Response("Alpaca API credentials not configured", { 
-      status: 500,
-      headers: corsHeaders 
-    });
-  }
-
-  console.log('Alpaca credentials found, attempting WebSocket connection...');
+  console.log('Using Alpaca sandbox API key:', alpacaApiKey);
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   let alpacaSocket: WebSocket | null = null;
@@ -44,44 +31,45 @@ serve(async (req) => {
 
   const connectToAlpaca = () => {
     try {
-      console.log(`Connecting to Alpaca WebSocket (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts + 1})`);
-      alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+      console.log(`Connecting to Alpaca Sandbox WebSocket (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts + 1})`);
+      // Use sandbox WebSocket endpoint
+      alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/iex");
       
       alpacaSocket.onopen = () => {
-        console.log('Connected to Alpaca WebSocket successfully');
+        console.log('Connected to Alpaca Sandbox WebSocket successfully');
         reconnectAttempts = 0; // Reset on successful connection
         
         // Send authentication message immediately
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
-          secret: alpacaSecretKey
+          secret: "" // Paper trading may not require secret
         };
         
-        console.log('Sending authentication to Alpaca...');
+        console.log('Sending authentication to Alpaca Sandbox...');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
       alpacaSocket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('Received from Alpaca:', JSON.stringify(data, null, 2));
+          console.log('Received from Alpaca Sandbox:', JSON.stringify(data, null, 2));
           
           // Handle different message types
           if (Array.isArray(data)) {
             for (const message of data) {
               if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
-                console.log('Alpaca WebSocket authenticated successfully');
+                console.log('Alpaca Sandbox WebSocket authenticated successfully');
                 
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_success',
-                    message: 'Connected to Alpaca stream'
+                    message: 'Connected to Alpaca sandbox stream'
                   }));
                 }
               } else if (message.T === 'error') {
-                console.error('Alpaca authentication error:', message);
+                console.error('Alpaca sandbox authentication error:', message);
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_error',
@@ -100,28 +88,28 @@ serve(async (req) => {
             }
           }
         } catch (error) {
-          console.error('Error parsing Alpaca message:', error);
+          console.error('Error parsing Alpaca sandbox message:', error);
         }
       };
 
       alpacaSocket.onerror = (error) => {
-        console.error('Alpaca WebSocket error:', error);
+        console.error('Alpaca Sandbox WebSocket error:', error);
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'error',
-            message: 'Alpaca connection error - check API credentials and permissions'
+            message: 'Alpaca sandbox connection error - check API credentials'
           }));
         }
       };
 
       alpacaSocket.onclose = (event) => {
-        console.log('Alpaca WebSocket disconnected', event.code, event.reason);
+        console.log('Alpaca Sandbox WebSocket disconnected', event.code, event.reason);
         isAuthenticated = false;
         
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'disconnected',
-            message: `Alpaca stream disconnected: ${event.reason || 'Unknown reason'}`
+            message: `Alpaca sandbox stream disconnected: ${event.reason || 'Unknown reason'}`
           }));
         }
         
@@ -139,24 +127,24 @@ serve(async (req) => {
           if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
               type: 'error',
-              message: 'Unable to maintain connection to Alpaca after multiple attempts'
+              message: 'Unable to maintain connection to Alpaca sandbox after multiple attempts'
             }));
           }
         }
       };
     } catch (error) {
-      console.error('Failed to create Alpaca WebSocket:', error);
+      console.error('Failed to create Alpaca Sandbox WebSocket:', error);
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: 'error',
-          message: 'Failed to initialize Alpaca connection'
+          message: 'Failed to initialize Alpaca sandbox connection'
         }));
       }
     }
   };
 
   socket.onopen = () => {
-    console.log('Client WebSocket connected');
+    console.log('Client WebSocket connected to sandbox stream');
     connectToAlpaca();
   };
 
@@ -173,7 +161,7 @@ serve(async (req) => {
           quotes: message.symbols || []
         };
         
-        console.log('Subscribing to symbols:', subscribeMessage);
+        console.log('Subscribing to symbols in sandbox:', subscribeMessage);
         alpacaSocket.send(JSON.stringify(subscribeMessage));
       }
     } catch (error) {
@@ -182,7 +170,7 @@ serve(async (req) => {
   };
 
   socket.onclose = () => {
-    console.log('Client WebSocket disconnected');
+    console.log('Client WebSocket disconnected from sandbox stream');
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
     }
