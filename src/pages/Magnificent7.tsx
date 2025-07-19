@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,37 +161,6 @@ const Magnificent7 = () => {
     });
   }, [wsData, MAGNIFICENT_7_SYMBOLS, useWebSocket]);
 
-  const magnificent7ArticlesData = useMemo(() => {
-    return ['AAPL'].map(symbol => {
-      const article = newsData?.find(item => 
-        item.symbol === symbol && 
-        item.ai_confidence && 
-        item.ai_sentiment
-      );
-      
-      if (!article) {
-        return {
-          symbol,
-          sourceArticles: [],
-          article: null
-        };
-      }
-
-      let sourceArticles = [];
-      try {
-        sourceArticles = article.source_links ? JSON.parse(article.source_links) : [];
-      } catch (error) {
-        console.error('Error parsing source links:', error);
-      }
-      
-      return {
-        symbol,
-        sourceArticles,
-        article
-      };
-    });
-  }, [newsData]);
-
   const getStockPrice = (symbol: string) => {
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
     if (apiPrice && apiPrice.price > 0) {
@@ -260,14 +230,6 @@ const Magnificent7 = () => {
     } finally {
       setIsFetching(false);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return price.toFixed(2);
-  };
-
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString();
   };
 
   // Get the best available stock data (WebSocket first, then REST API)
@@ -446,181 +408,173 @@ const Magnificent7 = () => {
             </Card>
           )}
 
-          {/* Magnificent 7 Stock Price Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          {/* All Magnificent 7 Stock Analysis Sections */}
+          <div className="space-y-12">
             {MAGNIFICENT_7_SYMBOLS.map((symbol) => {
               const stockData = getBestStockData(symbol);
+              const article = newsData?.find(item => 
+                item.symbol === symbol && 
+                item.ai_confidence && 
+                item.ai_sentiment
+              );
+              
+              let sourceArticles = [];
+              try {
+                sourceArticles = article?.source_links ? JSON.parse(article.source_links) : [];
+              } catch (error) {
+                console.error('Error parsing source links:', error);
+              }
+              
+              const compositeHeadline = article ? generateCompositeHeadline(article) : `${symbol}: Market Analysis`;
               
               return (
-                <Card key={symbol} className="bg-slate-800/50 border-slate-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white flex items-center justify-between">
-                      <span>{symbol}</span>
-                      {useWebSocket ? (
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          stockData?.isRealTime ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                        }`}>
-                          {stockData?.isRealTime ? 'Live' : 'Delayed'}
-                        </span>
+                <div key={symbol} className="w-full">
+                  <Card className="mb-6 bg-slate-800/50 border-slate-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center justify-between">
+                        <span>{symbol} - Live Price</span>
+                        {useWebSocket ? (
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            stockData?.isRealTime ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
+                          }`}>
+                            {stockData?.isRealTime ? 'Live' : 'Delayed'}
+                          </span>
+                        ) : (
+                          <>
+                            {stockPricesLoading && <span className="text-yellow-400 text-xs">Loading...</span>}
+                            {stockPricesError && <span className="text-red-400 text-xs">Error</span>}
+                          </>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {stockData?.error ? (
+                        <div className="bg-red-900/20 border border-red-600/50 rounded-lg p-4">
+                          <div className="text-center text-red-400">
+                            <div className="text-lg font-bold">No Data</div>
+                            <div className="text-sm text-red-300 mt-1">
+                              {stockData.errorMessage || 'Unable to fetch stock price'}
+                            </div>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          {stockPricesLoading && <span className="text-yellow-400 text-xs">Loading...</span>}
-                          {stockPricesError && <span className="text-red-400 text-xs">Error</span>}
-                        </>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {stockData?.error ? (
-                      <div className="bg-red-900/20 border border-red-600/50 rounded-lg p-4">
-                        <div className="text-center text-red-400">
-                          <div className="text-lg font-bold">No Data</div>
-                          <div className="text-sm text-red-300 mt-1">
-                            {stockData.errorMessage || 'Unable to fetch stock price'}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
-                        {/* Main Trading Price */}
-                        <div className="text-center mb-4">
-                          <div className="text-2xl font-bold text-white mb-1">
-                            ${stockData.price.toFixed(2)}
-                          </div>
-                          
-                          {!stockData.isRealTime && (
-                            <div className={`flex items-center justify-center gap-2 text-sm ${
-                              stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                            }`}>
-                              {stockData.change >= 0 ? (
-                                <TrendingUp className="w-4 h-4" />
-                              ) : (
-                                <TrendingDown className="w-4 h-4" />
-                              )}
-                              <span>
-                                {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} 
-                                ({stockData.changePercent >= 0 ? '+' : ''}{stockData.changePercent.toFixed(2)}%)
-                              </span>
+                        <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
+                          <div className="text-center mb-4">
+                            <div className="text-2xl font-bold text-white mb-1">
+                              ${stockData.price.toFixed(2)}
                             </div>
-                          )}
-                        </div>
+                            
+                            {!stockData.isRealTime && (
+                              <div className={`flex items-center justify-center gap-2 text-sm ${
+                                stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                              }`}>
+                                {stockData.change >= 0 ? (
+                                  <TrendingUp className="w-4 h-4" />
+                                ) : (
+                                  <TrendingDown className="w-4 h-4" />
+                                )}
+                                <span>
+                                  {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} 
+                                  ({stockData.changePercent >= 0 ? '+' : ''}{stockData.changePercent.toFixed(2)}%)
+                                </span>
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Bid/Ask Spread */}
-                        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-600">
-                          <div className="text-center">
-                            <div className="text-sm font-bold text-red-400">
-                              ${stockData.bidPrice.toFixed(2)}
+                          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-600">
+                            <div className="text-center">
+                              <div className="text-sm font-bold text-red-400">
+                                ${stockData.bidPrice.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-slate-400">Bid</div>
                             </div>
-                            <div className="text-xs text-slate-400">Bid</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-sm font-bold text-emerald-400">
-                              ${stockData.askPrice.toFixed(2)}
+                            <div className="text-center">
+                              <div className="text-sm font-bold text-emerald-400">
+                                ${stockData.askPrice.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-slate-400">Ask</div>
                             </div>
-                            <div className="text-xs text-slate-400">Ask</div>
                           </div>
                         </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Historical Price Chart for each stock */}
+                  <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                    <CardHeader>
+                      <CardTitle className="text-white">
+                        Historical Price Chart ({symbol})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-slate-700/30 rounded-lg p-4">
+                        <HistoricalPriceChart symbol={symbol} limit={30} />
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* Live Chart if enabled */}
+                  {showCharts && (
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                      <CardHeader>
+                        <CardTitle className="text-white">
+                          {symbol} {useWebSocket ? 'Live' : 'Real-Time'} Price Chart
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="bg-slate-700/30 rounded-lg p-4">
+                          <RealTimePriceChart
+                            data={priceHistory[symbol] || []}
+                            symbol={symbol}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* News Analysis Section for each stock */}
+                  {article ? (
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                          <div className="lg:col-span-2">
+                            <NewsCard 
+                              symbol={article.symbol}
+                              title={compositeHeadline}
+                              description={article.description}
+                              confidence={article.ai_confidence}
+                              sentiment={article.ai_sentiment}
+                              category={article.category}
+                              isHistorical={article.ai_reasoning?.includes('Historical')}
+                              sourceLinks="[]"
+                              stockPrice={stockData}
+                            />
+                          </div>
+                          <div className="lg:col-span-3">
+                            <SourceArticles 
+                              parsedSourceLinks={sourceArticles}
+                              isHistorical={article.ai_reasoning?.includes('Historical')}
+                              weightsLoading={false}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-6">
+                        <div className="text-center text-slate-400">
+                          <div className="text-lg font-medium">No news analysis available for {symbol}</div>
+                          <div className="text-sm mt-2">Try refreshing news data to get the latest analysis</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               );
             })}
           </div>
-
-          {/* Historical Price Chart - Always Visible */}
-          <Card className="mb-8 bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">
-                Historical Price Chart (AAPL)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-slate-700/30 rounded-lg p-4">
-                <HistoricalPriceChart symbol="AAPL" limit={30} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Live Chart */}
-          {showCharts && (
-            <div className="grid grid-cols-1 gap-4 mb-8">
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">
-                    AAPL {useWebSocket ? 'Live' : 'Real-Time'} Price Chart
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-slate-700/30 rounded-lg p-4">
-                    <RealTimePriceChart
-                      data={priceHistory['AAPL'] || []}
-                      symbol="AAPL"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Placeholder box */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <div className="text-center text-slate-400">
-                    <div className="text-lg font-medium">Additional analysis coming soon</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* News Analysis Section - only show if we have news data */}
-          {newsData && newsData.length > 0 && (
-            <div className="space-y-8">
-              {newsData
-                .filter(item => item.symbol === 'AAPL')
-                .map((article) => {
-                  const stockData = getBestStockData('AAPL');
-                  const compositeHeadline = generateCompositeHeadline(article);
-                  
-                  let sourceArticles = [];
-                  try {
-                    sourceArticles = article.source_links ? JSON.parse(article.source_links) : [];
-                  } catch (error) {
-                    console.error('Error parsing source links:', error);
-                  }
-                  
-                  return (
-                    <div key={article.id} className="w-full">
-                      <Card className="bg-slate-800/50 border-slate-700 h-full">
-                        <CardContent className="p-6 h-full">
-                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                            <div className="lg:col-span-2">
-                              <NewsCard 
-                                symbol={article.symbol}
-                                title={compositeHeadline}
-                                description={article.description}
-                                confidence={article.ai_confidence}
-                                sentiment={article.ai_sentiment}
-                                category={article.category}
-                                isHistorical={article.ai_reasoning?.includes('Historical')}
-                                sourceLinks="[]"
-                                stockPrice={stockData}
-                              />
-                            </div>
-                            <div className="lg:col-span-3">
-                              <SourceArticles 
-                                parsedSourceLinks={sourceArticles}
-                                isHistorical={article.ai_reasoning?.includes('Historical')}
-                                weightsLoading={false}
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
         </div>
       </div>
       
