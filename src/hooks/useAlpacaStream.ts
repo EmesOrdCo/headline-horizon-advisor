@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 interface StreamData {
   type: string;
@@ -26,82 +25,63 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [streamData, setStreamData] = useState<Record<string, StreamData>>({});
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [hasShownError, setHasShownError] = useState(false);
   
   const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
-  const { toast } = useToast();
 
   const connect = useCallback(() => {
     if (!enabled || symbols.length === 0) return;
 
-    // Clear any existing reconnect timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
     setConnectionStatus('connecting');
-    console.log('Attempting to connect to Alpaca stream...');
+    console.log('Connecting to Alpaca WebSocket for:', symbols[0]); // Only log first symbol
     
-    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-polling`;
+    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
     try {
       socketRef.current = new WebSocket(wsUrl);
 
       socketRef.current.onopen = () => {
-        console.log('Connected to Alpaca stream');
+        console.log('WebSocket connected');
         setIsConnected(true);
         setConnectionStatus('connected');
-        reconnectAttemptsRef.current = 0; // Reset on successful connection
       };
 
       socketRef.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          console.log('Received message:', message);
           
           switch (message.type) {
             case 'auth_success':
               setIsAuthenticated(true);
-              console.log('Stream authenticated, subscribing to symbols:', symbols);
+              console.log('Authenticated, subscribing to:', symbols[0]);
               
-              // Subscribe to symbols after authentication
               if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                   type: 'subscribe',
-                  symbols: symbols
+                  symbols: [symbols[0]] // Only subscribe to first symbol (AAPL)
                 }));
               }
-              
-              toast({
-                title: "Connected",
-                description: "Real-time market data stream connected",
-              });
               break;
               
             case 'auth_error':
               setConnectionStatus('error');
               setIsAuthenticated(false);
               console.error('Authentication failed:', message.message);
-              toast({
-                title: "Authentication Failed",
-                description: message.message || "Failed to authenticate with market data provider",
-                variant: "destructive",
-              });
+              if (!hasShownError) {
+                setHasShownError(true);
+              }
               break;
               
             case 'market_data':
-              // Handle market data
               if (Array.isArray(message.data)) {
                 message.data.forEach((item: any) => {
-                  if (item.S) { // Symbol exists
-                    const price = item.p || item.ap || item.bp || item.c; // Trade, ask, bid, or close price
+                  if (item.S === symbols[0]) { // Only process first symbol
+                    const price = item.p || item.ap || item.bp || item.c;
                     if (price) {
                       setStreamData(prev => ({
                         ...prev,
                         [item.S]: {
-                          type: item.T, // Message type (t=trade, q=quote, b=bar)
+                          type: item.T,
                           symbol: item.S,
                           price: price,
                           timestamp: item.t ? new Date(item.t / 1000000).toISOString() : new Date().toISOString(),
@@ -124,39 +104,8 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
               setConnectionStatus('error');
               setIsAuthenticated(false);
               console.error('Stream error:', message.message);
-              toast({
-                title: "Stream Error",
-                description: message.message || "Connection error occurred",
-                variant: "destructive",
-              });
-              
-              // Attempt to reconnect with exponential backoff
-              if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-                reconnectTimeoutRef.current = setTimeout(() => {
-                  if (enabled) {
-                    reconnectAttemptsRef.current++;
-                    console.log(`Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
-                    connect();
-                  }
-                }, delay);
-              }
-              break;
-              
-            case 'disconnected':
-              setConnectionStatus('disconnected');
-              setIsAuthenticated(false);
-              console.log('Stream disconnected:', message.message);
-              
-              // Attempt to reconnect
-              if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-                reconnectTimeoutRef.current = setTimeout(() => {
-                  if (enabled) {
-                    reconnectAttemptsRef.current++;
-                    console.log(`Attempting to reconnect after disconnection (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
-                    connect();
-                  }
-                }, 3000);
+              if (!hasShownError) {
+                setHasShownError(true);
               }
               break;
           }
@@ -170,51 +119,22 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
         setConnectionStatus('error');
         setIsConnected(false);
         setIsAuthenticated(false);
-        
-        // Only show toast for first few attempts to avoid spam
-        if (reconnectAttemptsRef.current < 3) {
-          toast({
-            title: "Connection Error",
-            description: "Failed to connect to real-time data stream. Retrying...",
-            variant: "destructive",
-          });
-        }
-        
-        // Attempt to reconnect with exponential backoff
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (enabled) {
-              reconnectAttemptsRef.current++;
-              console.log(`Attempting to reconnect after error (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
-              connect();
-            }
-          }, delay);
-        }
       };
 
       socketRef.current.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
         setIsAuthenticated(false);
-        if (connectionStatus !== 'error') {
-          setConnectionStatus('disconnected');
-        }
+        setConnectionStatus('disconnected');
       };
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [symbols, enabled, toast]);
+  }, [symbols, enabled, hasShownError]);
 
   const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    
-    reconnectAttemptsRef.current = maxReconnectAttempts; // Prevent reconnection
-    
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
