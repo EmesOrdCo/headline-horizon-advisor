@@ -44,15 +44,19 @@ const StockDetail = () => {
     enabled: true
   });
 
-  // Mock stock info - replace with real data source
-  const stockInfo = {
-    name: getCompanyName(stockSymbol),
-    price: stockPrices?.find(s => s.symbol === stockSymbol)?.price || getMockPrice(stockSymbol),
-    change: stockPrices?.find(s => s.symbol === stockSymbol)?.change || (Math.random() - 0.5) * 10,
-    changePercent: stockPrices?.find(s => s.symbol === stockSymbol)?.changePercent || (Math.random() - 0.5) * 5,
-    volume: Math.floor(Math.random() * 10000000) + 1000000,
-    marketCap: getMockMarketCap(stockSymbol),
-  };
+  // Get real stock info from API data
+  const stockInfo = useMemo(() => {
+    const stockData = stockPrices?.find(s => s.symbol === stockSymbol);
+    
+    return {
+      name: getCompanyName(stockSymbol),
+      price: stockData?.price || getMockPrice(stockSymbol),
+      change: stockData?.change || (Math.random() - 0.5) * 10,
+      changePercent: stockData?.changePercent || (Math.random() - 0.5) * 5,
+      volume: Math.floor(Math.random() * 10000000) + 1000000,
+      marketCap: getMockMarketCap(stockSymbol),
+    };
+  }, [stockSymbol, stockPrices]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -63,7 +67,7 @@ const StockDetail = () => {
         <MarketTicker />
       </div>
       
-      <div className="pt-16 px-4 sm:px-6">
+      <div className="pt-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <StockHeader 
@@ -86,44 +90,46 @@ const StockDetail = () => {
             </Tabs>
           </div>
 
-          {/* Main Chart and Side Cards Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Chart takes up 2/3 of the width */}
-            <div className="lg:col-span-2">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
+            {/* Chart Section - Takes up 3/4 width on xl screens */}
+            <div className="xl:col-span-3 space-y-6">
+              {/* Price Chart */}
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-white flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
                     Live Price Movement
                   </CardTitle>
+                  <div className="text-sm text-slate-400">
+                    {stockSymbol} Close Performance - 30 data points (until market close)
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-96">
+                  <div className="h-80">
                     <HistoricalPriceChart
                       symbol={stockSymbol}
                       timeframe="1Day"
                       limit={30}
-                      height={384}
+                      height={320}
                       showMiniChart={false}
                     />
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Price Alert Section */}
+              <PriceAlerts 
+                symbol={stockSymbol}
+                currentPrice={stockInfo.price}
+              />
             </div>
 
-            {/* Side Cards take up 1/3 of the width */}
-            <div className="space-y-4">
+            {/* Side Panel - Takes up 1/4 width on xl screens */}
+            <div className="xl:col-span-1 space-y-6">
               <UpcomingEvents />
               <AIForecast stockPrice={stockInfo.price} />
             </div>
-          </div>
-
-          {/* Price Alert Section - Directly below the chart */}
-          <div className="mb-8">
-            <PriceAlerts 
-              symbol={stockSymbol}
-              currentPrice={stockInfo.price}
-            />
           </div>
 
           {/* Tab Content */}
