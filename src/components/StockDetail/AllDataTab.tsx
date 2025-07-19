@@ -5,7 +5,7 @@ interface AllDataTabProps {
   symbol: string;
   stockInfo: {
     price: number;
-    volume: number;
+    volume: string | number;
     marketCap: string;
     change: number;
     changePercent: number;
@@ -33,6 +33,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">Valuation Metrics</CardTitle>
+            <p className="text-slate-400 text-sm">Fundamental data not available from Alpaca API</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {[
@@ -54,6 +55,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">Financial Health</CardTitle>
+            <p className="text-slate-400 text-sm">Fundamental data not available from Alpaca API</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {[
@@ -76,6 +78,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Technical Analysis</CardTitle>
+          <p className="text-slate-400 text-sm">Support/resistance calculated from current price; technical indicators require additional data sources</p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -119,7 +122,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
       {/* Real-time Market Data */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Market Data (Live from Alpaca)</CardTitle>
+          <CardTitle className="text-white">Market Data (Live from Alpaca API)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -139,7 +142,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Volume</div>
-              <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
+              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
             </div>
           </div>
           
@@ -164,11 +167,11 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         </CardContent>
       </Card>
 
-      {/* Financial Metrics Grid - TBC Section */}
+      {/* Additional Metrics - TBC Section */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Additional Metrics</CardTitle>
-          <p className="text-slate-400 text-sm">These metrics require fundamental data not available from Alpaca</p>
+          <p className="text-slate-400 text-sm">These metrics require fundamental/historical data not available from Alpaca API</p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

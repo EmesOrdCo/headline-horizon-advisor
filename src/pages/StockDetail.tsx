@@ -68,8 +68,8 @@ const StockDetail = () => {
         askPrice: stockData.askPrice,
         bidPrice: stockData.bidPrice,
         previousClose: stockData.previousClose,
-        volume: Math.floor(Math.random() * 10000000) + 1000000, // Mock volume for now
-        marketCap: "$2.8T", // Mock market cap for now
+        volume: "TBC", // Volume not available from current Alpaca endpoint
+        marketCap: "TBC", // Market cap not available from Alpaca
         isLoading: false,
       };
     }
@@ -83,8 +83,8 @@ const StockDetail = () => {
       askPrice: 0,
       bidPrice: 0,
       previousClose: 0,
-      volume: 0,
-      marketCap: "N/A",
+      volume: "TBC",
+      marketCap: "TBC",
       isLoading: stockPricesLoading,
     };
   }, [stockSymbol, stockPrices, stockPricesLoading]);
