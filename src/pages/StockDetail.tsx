@@ -146,111 +146,114 @@ const StockDetail = () => {
             </div>
           </div>
 
-          {/* Main Chart Section - Full Width */}
-          <div className="mb-8">
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Live Price Movement
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96">
-                  <RealTimePriceChart
-                    data={priceHistory}
-                    symbol={stockSymbol}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Main Chart and Side Cards Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Chart takes up 2/3 of the width */}
+            <div className="lg:col-span-2">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Live Price Movement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-96">
+                    <RealTimePriceChart
+                      data={priceHistory}
+                      symbol={stockSymbol}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Secondary Components Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Key Upcoming Events */}
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Upcoming Events
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                    <div>
-                      <div className="text-emerald-400 font-semibold">Earnings Report</div>
-                      <div className="text-slate-400 text-sm">Q2 2025</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-bold">27</div>
-                      <div className="text-slate-400 text-sm">AUG</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                    <div>
-                      <div className="text-blue-400 font-semibold">Dividend Payment</div>
-                      <div className="text-slate-400 text-sm">$0.28 per share</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-bold">15</div>
-                      <div className="text-slate-400 text-sm">SEP</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                    <div>
-                      <div className="text-purple-400 font-semibold">Analyst Day</div>
-                      <div className="text-slate-400 text-sm">Investor meeting</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-bold">03</div>
-                      <div className="text-slate-400 text-sm">OCT</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* AI Forecast */}
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Bot className="w-5 h-5" />
-                  AI Forecast
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
-                    <div className="text-emerald-400 font-bold text-2xl">BULLISH</div>
-                    <div className="text-slate-300 text-sm mt-1">Next 30 days</div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Confidence Level</span>
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          {[1,2,3,4].map(i => (
-                            <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                          ))}
-                          <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                        </div>
-                        <span className="text-white font-semibold">82%</span>
+            {/* Side Cards take up 1/3 of the width */}
+            <div className="space-y-6">
+              {/* Key Upcoming Events */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Upcoming Events
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                      <div>
+                        <div className="text-emerald-400 font-semibold">Earnings Report</div>
+                        <div className="text-slate-400 text-sm">Q2 2025</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-bold">27</div>
+                        <div className="text-slate-400 text-sm">AUG</div>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Price Target</span>
-                      <span className="text-emerald-400 font-semibold">${(stockInfo.price * 1.12).toFixed(2)}</span>
+                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                      <div>
+                        <div className="text-blue-400 font-semibold">Dividend Payment</div>
+                        <div className="text-slate-400 text-sm">$0.28 per share</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-bold">15</div>
+                        <div className="text-slate-400 text-sm">SEP</div>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Upside Potential</span>
-                      <span className="text-emerald-400 font-semibold">+12%</span>
+                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                      <div>
+                        <div className="text-purple-400 font-semibold">Analyst Day</div>
+                        <div className="text-slate-400 text-sm">Investor meeting</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-bold">03</div>
+                        <div className="text-slate-400 text-sm">OCT</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* AI Forecast */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Bot className="w-5 h-5" />
+                    AI Forecast
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
+                      <div className="text-emerald-400 font-bold text-2xl">BULLISH</div>
+                      <div className="text-slate-300 text-sm mt-1">Next 30 days</div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Confidence Level</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
+                            {[1,2,3,4].map(i => (
+                              <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                            ))}
+                            <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                          </div>
+                          <span className="text-white font-semibold">82%</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Price Target</span>
+                        <span className="text-emerald-400 font-semibold">${(stockInfo.price * 1.12).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Upside Potential</span>
+                        <span className="text-emerald-400 font-semibold">+12%</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Tab Content */}
