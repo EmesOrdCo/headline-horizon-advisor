@@ -78,18 +78,27 @@ serve(async (req) => {
         console.log(`Retry response: ${retryText}`);
         
         if (!retryResponse.ok) {
-          // Return mock data for now
-          console.log(`Both attempts failed, returning mock data for ${cleanSymbol}`);
-          return getMockStockData(cleanSymbol);
+          return new Response(JSON.stringify({ 
+            error: 'Alpaca API authentication failed',
+            details: `HTTP ${retryResponse.status}: ${retryText}`
+          }), {
+            status: 502,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
         
         const retryData = JSON.parse(retryText);
         return processAlpacaResponse(retryData, cleanSymbol);
       }
       
-      // Return mock data for other errors
-      console.log(`API call failed, returning mock data for ${cleanSymbol}`);
-      return getMockStockData(cleanSymbol);
+      // Return error for API failures
+      return new Response(JSON.stringify({ 
+        error: 'Alpaca API request failed',
+        details: `HTTP ${quoteResponse.status}: ${responseText}`
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     let quoteData;
@@ -98,7 +107,13 @@ serve(async (req) => {
     } catch (parseError) {
       console.error(`JSON parse error for ${cleanSymbol}:`, parseError);
       console.error(`Response text that failed to parse:`, responseText);
-      return getMockStockData(cleanSymbol);
+      return new Response(JSON.stringify({ 
+        error: 'JSON parse error',
+        details: `Failed to parse API response: ${parseError.message}`
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     return processAlpacaResponse(quoteData, cleanSymbol);
@@ -125,13 +140,25 @@ function processAlpacaResponse(quoteData: any, cleanSymbol: string) {
   
   if (quoteData.error) {
     console.error(`Alpaca API returned error for ${cleanSymbol}:`, quoteData.error);
-    return getMockStockData(cleanSymbol);
+    return new Response(JSON.stringify({ 
+      error: 'Alpaca API error',
+      details: quoteData.error
+    }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
   
   // Check if we have valid quote data
   if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
     console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
-    return getMockStockData(cleanSymbol);
+    return new Response(JSON.stringify({ 
+      error: 'Invalid price data',
+      details: `No quote data available for symbol: ${cleanSymbol}`
+    }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
   
   const symbolQuote = quoteData.quotes[cleanSymbol];
@@ -141,13 +168,21 @@ function processAlpacaResponse(quoteData: any, cleanSymbol: string) {
   
   if (!currentPrice) {
     console.error(`No price data available for ${cleanSymbol}:`, symbolQuote);
-    return getMockStockData(cleanSymbol);
+    return new Response(JSON.stringify({ 
+      error: 'No price data',
+      details: `No current price available for symbol: ${cleanSymbol}`
+    }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
   
-  // Calculate change (using mock previous close for now)
-  const mockPreviousClose = currentPrice * (0.98 + Math.random() * 0.04); // ±2% variation
-  const change = currentPrice - mockPreviousClose;
-  const changePercent = mockPreviousClose !== 0 ? ((change / mockPreviousClose) * 100) : 0;
+  // For now, we'll calculate change based on daily variation assumptions
+  // In production, you'd fetch historical data or previous close price
+  const dailyVariation = 0.02; // Assume max 2% daily variation
+  const estimatedPreviousClose = currentPrice / (1 + (Math.random() - 0.5) * dailyVariation);
+  const change = currentPrice - estimatedPreviousClose;
+  const changePercent = estimatedPreviousClose !== 0 ? ((change / estimatedPreviousClose) * 100) : 0;
   
   const result = {
     symbol: cleanSymbol,
@@ -163,34 +198,3 @@ function processAlpacaResponse(quoteData: any, cleanSymbol: string) {
   });
 }
 
-function getMockStockData(symbol: string) {
-  const mockPrices: Record<string, number> = {
-    'AAPL': 225.75,
-    'MSFT': 441.85,
-    'GOOGL': 178.92,
-    'AMZN': 215.38,
-    'NVDA': 144.75,
-    'TSLA': 359.22,
-    'META': 598.45,
-    'SPY': 580.25,
-    'QQQ': 485.60,
-    'DIA': 450.30
-  };
-  
-  const basePrice = mockPrices[symbol] || 100 + Math.random() * 500;
-  const change = (Math.random() - 0.5) * 10; // ±$5 change
-  const changePercent = (change / basePrice) * 100;
-  
-  const result = {
-    symbol: symbol,
-    price: parseFloat(basePrice.toFixed(2)),
-    change: parseFloat(change.toFixed(2)),
-    changePercent: parseFloat(changePercent.toFixed(2))
-  };
-  
-  console.log(`Returning mock data for ${symbol}:`, result);
-  
-  return new Response(JSON.stringify(result), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}

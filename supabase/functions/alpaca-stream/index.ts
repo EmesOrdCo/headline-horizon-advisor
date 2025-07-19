@@ -45,8 +45,13 @@ serve(async (req) => {
   const connectToAlpaca = () => {
     // Circuit breaker: if we've had too many failures, don't try for a while
     if (circuitBreakerOpen) {
-      console.log('Circuit breaker is open, using mock data');
-      startMockDataStream();
+      console.log('Circuit breaker is open - connection limit exceeded');
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Alpaca API connection limit exceeded. Please try again later.'
+        }));
+      }
       return;
     }
 
@@ -70,11 +75,9 @@ serve(async (req) => {
       circuitBreakerOpen = true;
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
-          type: 'auth_success',
-          message: 'Connected to mock data stream (Alpaca connection limit reached)'
+          type: 'error',
+          message: 'Alpaca API connection limit exceeded. Real-time data unavailable.'
         }));
-        
-        startMockDataStream();
       }
       return;
     }
@@ -138,11 +141,9 @@ serve(async (req) => {
                   
                   if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
-                      type: 'auth_success',
-                      message: 'Connected to mock data stream (Alpaca connection limit reached)'
+                      type: 'error',
+                      message: `Alpaca API connection limit exceeded (Error ${message.code}). Real-time data unavailable.`
                     }));
-                    
-                    startMockDataStream();
                   }
                   return;
                 }
@@ -179,7 +180,7 @@ serve(async (req) => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'error',
-            message: 'Alpaca data connection error - switching to mock data'
+            message: 'Alpaca API connection error. Real-time data unavailable.'
           }));
         }
       };
@@ -209,15 +210,13 @@ serve(async (req) => {
             }
           }, connectionBackoffTime);
         } else {
-          console.log('Max reconnection attempts reached or circuit breaker open, switching to mock data');
+          console.log('Max reconnection attempts reached, connection failed');
           circuitBreakerOpen = true;
           if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
-              type: 'auth_success',
-              message: 'Connected to mock data stream (Alpaca reconnection limit reached)'
+              type: 'error',
+              message: 'Alpaca API connection failed after maximum retry attempts. Real-time data unavailable.'
             }));
-            
-            startMockDataStream();
           }
         }
       };
@@ -228,52 +227,10 @@ serve(async (req) => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: 'error',
-          message: 'Failed to initialize Alpaca data connection - using mock data'
+          message: 'Failed to initialize Alpaca API connection. Real-time data unavailable.'
         }));
-        
-        startMockDataStream();
       }
     }
-  };
-
-  let mockDataInterval: number | null = null;
-
-  const startMockDataStream = () => {
-    console.log('Starting mock data stream');
-    
-    const mockPrices: Record<string, number> = {
-      'AAPL': 225.75,
-      'MSFT': 441.85,
-      'GOOGL': 178.92,
-      'AMZN': 215.38,
-      'NVDA': 144.75,
-      'TSLA': 359.22,
-      'META': 598.45
-    };
-    
-    // Send mock data every 5 seconds
-    mockDataInterval = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN && subscribedSymbols.length > 0) {
-        subscribedSymbols.forEach(symbol => {
-          const basePrice = mockPrices[symbol] || 100 + Math.random() * 500;
-          const variance = (Math.random() - 0.5) * 0.02; // ±1% variation
-          const price = basePrice * (1 + variance);
-          
-          const mockData = {
-            T: 't', // trade
-            S: symbol,
-            p: price,
-            s: Math.floor(Math.random() * 1000) + 100, // volume
-            t: Date.now() * 1000000 // timestamp in nanoseconds
-          };
-          
-          socket.send(JSON.stringify({
-            type: 'market_data',
-            data: [mockData]
-          }));
-        });
-      }
-    }, 5000);
   };
 
   socket.onopen = () => {
@@ -312,18 +269,12 @@ serve(async (req) => {
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
     }
-    if (mockDataInterval) {
-      clearInterval(mockDataInterval);
-    }
   };
 
   socket.onerror = (error) => {
     console.error('Client WebSocket error:', error);
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
-    }
-    if (mockDataInterval) {
-      clearInterval(mockDataInterval);
     }
   };
 

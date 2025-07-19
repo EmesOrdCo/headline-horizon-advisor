@@ -198,18 +198,14 @@ const Magnificent7 = () => {
       return apiPrice;
     }
     
-    const mockPrice = mockClosePrices[symbol as keyof typeof mockClosePrices];
-    if (mockPrice) {
-      const mockData = {
-        symbol,
-        price: mockPrice,
-        change: (Math.random() - 0.5) * 8,
-        changePercent: (Math.random() - 0.5) * 3
-      };
-      return mockData;
-    }
-    
-    return null;
+    // Show error if no real price data available
+    return {
+      symbol,
+      price: 0,
+      change: 0,
+      changePercent: 0,
+      error: true
+    };
   };
 
   const generateCompositeHeadline = (item: any): string => {
@@ -351,7 +347,7 @@ const Magnificent7 = () => {
                     ) : connectionStatus === 'error' ? (
                       <>
                         <WifiOff className="w-3 h-3" />
-                        Connection Error - Using Sample Data
+                        API Connection Failed - Real-time data unavailable
                       </>
                     ) : (
                       <>
@@ -416,7 +412,7 @@ const Magnificent7 = () => {
                               </div>
                             )}
                           </>
-                        ) : fallbackPrice ? (
+                         ) : fallbackPrice && fallbackPrice.price > 0 ? (
                           <>
                             <div className="text-lg font-bold text-white">
                               ${fallbackPrice.price.toFixed(2)}
@@ -431,8 +427,9 @@ const Magnificent7 = () => {
                             )}
                           </>
                         ) : (
-                          <div className="text-slate-400 text-sm">
-                            Loading...
+                          <div className="text-red-400 text-sm text-center">
+                            <div>API Error</div>
+                            <div className="text-xs text-slate-500">No real-time data</div>
                           </div>
                         )}
                       </div>

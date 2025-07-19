@@ -44,7 +44,7 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
     setConnectionStatus('connecting');
     console.log('Attempting to connect to Alpaca stream...');
     
-    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
+    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-polling`;
     
     try {
       socketRef.current = new WebSocket(wsUrl);
