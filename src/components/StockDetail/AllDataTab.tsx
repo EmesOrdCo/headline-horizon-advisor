@@ -17,6 +17,8 @@ interface AllDataTabProps {
 }
 
 const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
+  console.log('AllDataTab: Component mounted for symbol:', symbol);
+  
   // Fetch Finnhub metrics
   const { metrics: finnhubMetrics, loading: finnhubLoading } = useFinnhubMetrics(symbol);
   
