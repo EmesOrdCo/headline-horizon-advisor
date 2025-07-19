@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,7 @@ const Homepage1 = () => {
       
       <main className="pt-32 sm:pt-36">
         {/* Hero Section with Featured Story */}
-        <section className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 py-12 sm:py-20">
+        <section className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 py-12 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div>
@@ -30,7 +29,7 @@ const Homepage1 = () => {
                   based on recent inflation data and employment trends.
                 </p>
                 <div className="flex items-center gap-4 mb-6">
-                  <Badge variant="outline" className="text-emerald-600 border-emerald-600">
+                  <Badge variant="outline" className="text-emerald-600 border-emerald-600 dark:text-emerald-400 dark:border-emerald-400">
                     High Confidence
                   </Badge>
                   <span className="text-sm text-gray-500 dark:text-slate-400">
@@ -48,7 +47,7 @@ const Homepage1 = () => {
               <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-lg">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Market Impact Analysis</CardTitle>
+                    <CardTitle className="text-lg text-gray-900 dark:text-white">Market Impact Analysis</CardTitle>
                     <Badge className="bg-blue-500 text-white">LIVE</Badge>
                   </div>
                 </CardHeader>
@@ -83,24 +82,24 @@ const Homepage1 = () => {
         </section>
 
         {/* Top Stories Grid */}
-        <section className="py-12 sm:py-16 px-4 sm:px-6">
+        <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white dark:bg-slate-900">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Top Stories</h2>
               <Link to="/news">
-                <Button variant="outline">View All News</Button>
+                <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">View All News</Button>
               </Link>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((item) => (
-                <Card key={item} className="hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-slate-700">
+                <Card key={item} className="hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className="text-xs">AAPL</Badge>
+                      <Badge variant="outline" className="text-xs border-gray-200 text-gray-600 dark:border-slate-600 dark:text-slate-400">AAPL</Badge>
                       <span className="text-xs text-gray-500 dark:text-slate-400">2 hours ago</span>
                     </div>
-                    <CardTitle className="text-lg leading-tight hover:text-emerald-600 transition-colors">
+                    <CardTitle className="text-lg leading-tight hover:text-emerald-600 transition-colors text-gray-900 dark:text-white">
                       Apple Reports Record Q4 Revenue Driven by iPhone 15 Sales
                     </CardTitle>
                   </CardHeader>
@@ -120,7 +119,7 @@ const Homepage1 = () => {
         </section>
 
         {/* AI Analysis Section */}
-        <section className="bg-slate-50 dark:bg-slate-800 py-12 sm:py-16 px-4 sm:px-6">
+        <section className="bg-gray-50 dark:bg-slate-800 py-12 sm:py-16 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">

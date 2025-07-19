@@ -17,23 +17,27 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark';
+  });
 
   useEffect(() => {
-    // Always apply dark theme
-    document.documentElement.classList.add('dark');
-    
-    // Store preference as dark
-    localStorage.setItem('theme', 'dark');
-  }, []);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
-    // Theme toggle disabled - always stay in dark mode
-    console.log('Theme toggle disabled - staying in dark mode');
+    setIsDarkMode(prev => !prev);
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode: true, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
