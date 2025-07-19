@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -12,6 +12,7 @@ import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
+import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
@@ -66,10 +67,23 @@ const Magnificent7 = () => {
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
+  const [useWebSocket, setUseWebSocket] = useState(true);
   const { toast } = useToast();
 
   // Focus on just AAPL for now
   const FOCUS_SYMBOL = 'AAPL';
+
+  // WebSocket connection for real-time data
+  const {
+    isConnected: wsConnected,
+    isAuthenticated: wsAuthenticated,
+    connectionStatus: wsStatus,
+    streamData: wsData,
+    errorMessage: wsError
+  } = useAlpacaStreamSingleton({
+    symbols: [FOCUS_SYMBOL],
+    enabled: useWebSocket
+  });
 
   const isMarketClosed = useMemo(() => {
     const now = new Date();
@@ -82,8 +96,21 @@ const Magnificent7 = () => {
     return isWeekend || isAfterHours;
   }, []);
 
+  // Update price history when WebSocket data comes in
   useEffect(() => {
-  }, []);
+    if (wsData[FOCUS_SYMBOL] && useWebSocket) {
+      const newDataPoint: PriceHistoryPoint = {
+        timestamp: wsData[FOCUS_SYMBOL].timestamp || new Date().toISOString(),
+        price: wsData[FOCUS_SYMBOL].price || 0,
+        symbol: FOCUS_SYMBOL
+      };
+      
+      setPriceHistory(prev => ({
+        ...prev,
+        [FOCUS_SYMBOL]: [...(prev[FOCUS_SYMBOL] || []), newDataPoint].slice(-50) // Keep last 50 points
+      }));
+    }
+  }, [wsData, FOCUS_SYMBOL, useWebSocket]);
 
   const magnificent7ArticlesData = useMemo(() => {
     return ['AAPL'].map(symbol => {
@@ -195,8 +222,34 @@ const Magnificent7 = () => {
     return new Date(timestamp).toLocaleTimeString();
   };
 
-  // Get AAPL stock data from API
-  const aaplStock = getStockPrice(FOCUS_SYMBOL);
+  // Get the best available stock data (WebSocket first, then REST API)
+  const getBestStockData = (symbol: string) => {
+    if (useWebSocket && wsData[symbol]) {
+      const wsPrice = wsData[symbol];
+      return {
+        symbol,
+        price: wsPrice.price || 0,
+        askPrice: wsPrice.ask || wsPrice.price || 0,
+        bidPrice: wsPrice.bid || wsPrice.price || 0,
+        previousClose: wsPrice.close || wsPrice.price || 0,
+        change: 0, // WebSocket data doesn't include change calculation
+        changePercent: 0,
+        isRealTime: true
+      };
+    }
+    
+    const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
+    if (apiPrice && apiPrice.price > 0) {
+      return {
+        ...apiPrice,
+        isRealTime: false
+      };
+    }
+    
+    return null;
+  };
+
+  const aaplStock = getBestStockData(FOCUS_SYMBOL);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -220,6 +273,27 @@ const Magnificent7 = () => {
                 </Link>
                 <div className="flex items-center gap-4">
                   <Button 
+                    onClick={() => setUseWebSocket(!useWebSocket)}
+                    variant="outline" 
+                    className={`border-slate-600 ${
+                      useWebSocket 
+                        ? 'bg-emerald-600/20 border-emerald-600 text-emerald-400' 
+                        : 'bg-slate-700/50 text-slate-300'
+                    } hover:bg-slate-600/50`}
+                  >
+                    {useWebSocket ? (
+                      <>
+                        <Wifi className="w-4 h-4 mr-2" />
+                        Live Data {wsConnected ? '(Connected)' : '(Connecting...)'}
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-4 h-4 mr-2" />
+                        REST API
+                      </>
+                    )}
+                  </Button>
+                  <Button 
                     onClick={() => setShowCharts(!showCharts)}
                     variant="outline" 
                     className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
@@ -239,28 +313,61 @@ const Magnificent7 = () => {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Stock Analysis</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Real-time stock data and historical analysis for Apple Inc.</p>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">
+                  Real-time stock data and historical analysis for Apple Inc.
+                  {useWebSocket && (
+                    <span className={`ml-2 text-xs px-2 py-1 rounded ${
+                      wsConnected ? 'bg-emerald-600/20 text-emerald-400' : 'bg-yellow-600/20 text-yellow-400'
+                    }`}>
+                      {wsStatus === 'connected' ? 'Live Stream Active' : 
+                       wsStatus === 'connecting' ? 'Connecting...' : 
+                       wsStatus === 'error' ? 'Stream Error' : 'Disconnected'}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </div>
+
+          {/* WebSocket Status Alert */}
+          {useWebSocket && wsError && (
+            <Card className="mb-6 bg-yellow-900/20 border-yellow-600/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-yellow-400">
+                  <WifiOff className="w-4 h-4" />
+                  <span className="text-sm">{wsError}</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* AAPL Stock Price Card */}
           <Card className="mb-8 bg-slate-800/50 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 {FOCUS_SYMBOL} - Apple Inc.
-                {stockPricesLoading && <span className="text-yellow-400 text-sm">Loading...</span>}
-                {stockPricesError && <span className="text-red-400 text-sm">Error</span>}
+                {useWebSocket ? (
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    aaplStock?.isRealTime ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
+                  }`}>
+                    {aaplStock?.isRealTime ? 'Real-time' : 'Delayed'}
+                  </span>
+                ) : (
+                  <>
+                    {stockPricesLoading && <span className="text-yellow-400 text-sm">Loading...</span>}
+                    {stockPricesError && <span className="text-red-400 text-sm">Error</span>}
+                  </>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {stockPricesLoading ? (
+              {(!useWebSocket && stockPricesLoading) ? (
                 <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
                   <div className="text-center text-slate-400">
                     <div className="text-xl font-bold">Loading AAPL data...</div>
                   </div>
                 </div>
-              ) : stockPricesError ? (
+              ) : (!useWebSocket && stockPricesError) ? (
                 <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
                   <div className="text-center text-red-400">
                     <div className="text-xl font-bold">Failed to load data</div>
@@ -272,7 +379,7 @@ const Magnificent7 = () => {
                   <div className="flex items-center justify-between mb-6">
                     <Badge className="bg-blue-600 text-white">{FOCUS_SYMBOL}</Badge>
                     <div className="text-sm text-slate-400">
-                      Live from Alpaca API
+                      {useWebSocket ? 'Live from WebSocket' : 'Live from Alpaca API'}
                     </div>
                   </div>
                   
@@ -281,25 +388,31 @@ const Magnificent7 = () => {
                     <div className="text-4xl font-bold text-white mb-2">
                       ${aaplStock.price.toFixed(2)}
                     </div>
-                    <div className="text-sm text-slate-400 mb-2">Last Trade Price</div>
-                    
-                    <div className={`flex items-center justify-center gap-2 text-lg ${
-                      aaplStock.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`}>
-                      {aaplStock.change >= 0 ? (
-                        <TrendingUp className="w-5 h-5" />
-                      ) : (
-                        <TrendingDown className="w-5 h-5" />
-                      )}
-                      <span>
-                        {aaplStock.change >= 0 ? '+' : ''}{aaplStock.change.toFixed(2)} 
-                        ({aaplStock.changePercent >= 0 ? '+' : ''}{aaplStock.changePercent.toFixed(2)}%)
-                      </span>
+                    <div className="text-sm text-slate-400 mb-2">
+                      {aaplStock.isRealTime ? 'Live Price' : 'Last Trade Price'}
                     </div>
                     
-                    <div className="text-sm text-slate-500 mt-2">
-                      vs Previous Close: ${aaplStock.previousClose.toFixed(2)}
-                    </div>
+                    {!aaplStock.isRealTime && (
+                      <div className={`flex items-center justify-center gap-2 text-lg ${
+                        aaplStock.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {aaplStock.change >= 0 ? (
+                          <TrendingUp className="w-5 h-5" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5" />
+                        )}
+                        <span>
+                          {aaplStock.change >= 0 ? '+' : ''}{aaplStock.change.toFixed(2)} 
+                          ({aaplStock.changePercent >= 0 ? '+' : ''}{aaplStock.changePercent.toFixed(2)}%)
+                        </span>
+                      </div>
+                    )}
+                    
+                    {!aaplStock.isRealTime && (
+                      <div className="text-sm text-slate-500 mt-2">
+                        vs Previous Close: ${aaplStock.previousClose.toFixed(2)}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bid/Ask Spread */}
@@ -349,7 +462,7 @@ const Magnificent7 = () => {
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-white">
-                    {FOCUS_SYMBOL} Live Price Chart
+                    {FOCUS_SYMBOL} {useWebSocket ? 'Live' : 'Real-Time'} Price Chart
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -379,7 +492,7 @@ const Magnificent7 = () => {
               {newsData
                 .filter(item => item.symbol === FOCUS_SYMBOL)
                 .map((article) => {
-                  const stockPrice = getStockPrice(FOCUS_SYMBOL);
+                  const stockPrice = getBestStockData(FOCUS_SYMBOL);
                   const compositeHeadline = generateCompositeHeadline(article);
                   
                   let sourceArticles = [];
