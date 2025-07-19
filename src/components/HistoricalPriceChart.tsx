@@ -75,8 +75,8 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1M');
   const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
 
-  // Get the limit based on selected period
-  const currentLimit = TIME_PERIODS.find(p => p.value === selectedPeriod)?.days || 30;
+  // For mini charts, use the passed limit prop. For full charts, use the selected period
+  const currentLimit = showMiniChart ? limit : (TIME_PERIODS.find(p => p.value === selectedPeriod)?.days || 30);
   
   const { data: historicalData, isLoading, error } = useHistoricalPrices(symbol, timeframe, currentLimit);
 
