@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,11 @@ interface PriceHistoryPoint {
 
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
+  const location = useLocation();
   const stockSymbol = symbol?.toUpperCase() || '';
+  
+  // Check if user came from watchlist
+  const cameFromWatchlist = location.state?.from === 'watchlist' || document.referrer.includes('/watchlist');
   
   useSEO({
     title: `${stockSymbol} Stock Analysis - AI-Powered Insights`,
@@ -122,10 +126,10 @@ const StockDetail = () => {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <Link to="/dashboard">
+              <Link to={cameFromWatchlist ? "/watchlist" : "/dashboard"}>
                 <Button variant="ghost" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  {cameFromWatchlist ? "Back to Watchlist" : "Back to Dashboard"}
                 </Button>
               </Link>
             </div>

@@ -1,19 +1,28 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import DashboardNav from "@/components/DashboardNav";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import DashboardNav from "@/components/DashboardNav";
+import MiniChart from "@/components/MiniChart";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
-import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
-import ChartModal from "@/components/ChartModal";
+
+interface Stock {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: string;
+}
 
 const Watchlist = () => {
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [selectedStock, setSelectedStock] = useState<{ symbol: string; name: string } | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
+  const [selectedChart, setSelectedChart<{ symbol: string; data: any[] } | null>(null);
 
   // Stock symbols from the mock data
   const watchlistSymbols = ["NVDA", "TSLA", "AMZN", "PLTR", "AAPL", "SOXL", "GOOGL", "MSTR", "META"];
@@ -21,330 +30,222 @@ const Watchlist = () => {
   // Get real-time stock prices using the user stocks hook
   const { data: stockPrices, isLoading: pricesLoading } = useUserStockPrices(watchlistSymbols);
 
-  // Watchlist data with real prices
-  const watchlistData = [
+  const watchlistData: Stock[] = [
     {
       symbol: "NVDA",
       name: "NVIDIA Corporation",
-      riskScore: 6,
-      consensus: "Strong Buy",
-      logo: "🟢"
+      price: 789.25,
+      change: 15.75,
+      changePercent: 2.03,
+      marketCap: "1.94T",
     },
     {
       symbol: "TSLA",
-      name: "Tesla Motors, Inc.",
-      riskScore: 6,
-      consensus: "Buy",
-      logo: "🔴"
+      name: "Tesla, Inc.",
+      price: 1050.50,
+      change: -22.30,
+      changePercent: -2.07,
+      marketCap: "1.01T",
     },
     {
       symbol: "AMZN",
-      name: "Amazon.com Inc",
-      riskScore: 5,
-      consensus: "Strong Buy",
-      logo: "🟡"
+      name: "Amazon.com, Inc.",
+      price: 3420.80,
+      change: 45.20,
+      changePercent: 1.34,
+      marketCap: "1.72T",
     },
     {
       symbol: "PLTR",
       name: "Palantir Technologies Inc.",
-      riskScore: 8,
-      consensus: "Hold",
-      logo: "⚫"
+      price: 27.50,
+      change: 0.80,
+      changePercent: 3.00,
+      marketCap: "52.14B",
     },
     {
       symbol: "AAPL",
-      name: "Apple",
-      riskScore: 4,
-      consensus: "Strong Buy",
-      logo: "🍎"
+      name: "Apple Inc.",
+      price: 150.25,
+      change: -1.20,
+      changePercent: -0.80,
+      marketCap: "2.46T",
     },
     {
       symbol: "SOXL",
-      name: "Direxion Daily Semiconductors Bull 3...",
-      riskScore: 9,
-      consensus: "Hold",
-      logo: "📊"
+      name: "Direxion Daily Semiconductor Bull 3x Shares",
+      price: 45.67,
+      change: 1.23,
+      changePercent: 2.76,
+      marketCap: "1.23B",
     },
     {
       symbol: "GOOGL",
-      name: "Alphabet",
-      riskScore: 5,
-      consensus: "Buy",
-      logo: "🔵"
+      name: "Alphabet Inc.",
+      price: 2700.15,
+      change: 30.50,
+      changePercent: 1.14,
+      marketCap: "1.80T",
     },
     {
       symbol: "MSTR",
       name: "MicroStrategy Incorporated",
-      riskScore: 7,
-      consensus: "Hold",
-      logo: "🟠"
+      price: 650.75,
+      change: -15.25,
+      changePercent: -2.29,
+      marketCap: "6.12B",
     },
     {
       symbol: "META",
-      name: "Meta Platforms Inc",
-      riskScore: 6,
-      consensus: "Strong Buy",
-      logo: "🔷"
-    }
+      name: "Meta Platforms, Inc.",
+      price: 350.20,
+      change: 5.80,
+      changePercent: 1.68,
+      marketCap: "945.67B",
+    },
   ];
 
-  const filters = ["All", "Market Open", "Stocks", "People"];
-
-  const getConsensusColor = (consensus: string) => {
-    switch (consensus) {
-      case "Strong Buy":
-        return "text-green-600 font-semibold";
-      case "Buy":
-        return "text-green-500 font-medium";
-      case "Hold":
-        return "text-yellow-600 font-medium";
-      default:
-        return "text-gray-600";
-    }
+  const getRealPrice = (symbol: string): number => {
+    const stock = stockPrices?.find((s) => s.symbol === symbol);
+    return stock ? stock.price : watchlistData.find((s) => s.symbol === symbol)?.price || 0;
   };
 
-  const getRiskScoreColor = (score: number) => {
-    if (score <= 3) return "text-green-600 border-green-600";
-    if (score <= 6) return "text-yellow-600 border-yellow-600";
-    return "text-red-600 border-red-600";
+  const getRealChange = (symbol: string): number => {
+    const stock = stockPrices?.find((s) => s.symbol === symbol);
+    return stock ? stock.change : watchlistData.find((s) => s.symbol === symbol)?.change || 0;
   };
 
-  // Mini chart component for each stock
-  const MiniChart = ({ symbol }: { symbol: string }) => {
-    const { data: historicalData, isLoading } = useHistoricalPrices(symbol, '1Day', 7);
-    
-    const handleChartClick = () => {
-      const stock = watchlistData.find(s => s.symbol === symbol);
-      if (stock) {
-        setSelectedStock({ symbol: stock.symbol, name: stock.name });
-      }
-    };
+  const getRealChangePercent = (symbol: string): number => {
+    const stock = stockPrices?.find((s) => s.symbol === symbol);
+    return stock ? stock.changePercent : watchlistData.find((s) => s.symbol === symbol)?.changePercent || 0;
+  };
 
-    if (isLoading) {
-      return (
-        <div className="w-[120px] h-[50px] flex items-center justify-center">
-          <div className="animate-pulse bg-gray-200 dark:bg-slate-700 w-full h-full rounded"></div>
-        </div>
-      );
+  const filteredData = () => {
+    if (!stockPrices) {
+      return [];
     }
-    
-    if (!historicalData?.data || historicalData.data.length === 0) {
-      return (
-        <div className="w-[120px] h-[50px] flex items-center justify-center">
-          <div className="text-slate-400 text-xs">No data</div>
-        </div>
-      );
+  
+    let data = watchlistData.map(stock => {
+      const realPrice = getRealPrice(stock.symbol);
+      const realChange = getRealChange(stock.symbol);
+      const realChangePercent = getRealChangePercent(stock.symbol);
+  
+      return {
+        ...stock,
+        price: realPrice,
+        change: realChange,
+        changePercent: realChangePercent,
+      };
+    });
+  
+    if (activeTab === "gainers") {
+      data = data.sort((a, b) => b.change - a.change);
+      return data.filter((stock) => stock.change > 0);
+    } else if (activeTab === "losers") {
+      data = data.sort((a, b) => a.change - b.change);
+      return data.filter((stock) => stock.change < 0);
+    } else {
+      return data;
     }
-
-    const chartData = historicalData.data;
-    const prices = chartData.map(d => d.close);
-    const isPositive = prices[prices.length - 1] >= prices[0];
-    
-    // Create SVG path from historical data
-    const maxPrice = Math.max(...prices);
-    const minPrice = Math.min(...prices);
-    const priceRange = maxPrice - minPrice;
-    
-    // If price range is too small, show flat line
-    if (priceRange < 0.01) {
-      const points = chartData.map((_, index) => {
-        const x = (index / (chartData.length - 1)) * 110;
-        const y = 25;
-        return `${x},${y}`;
-      }).join(' ');
-
-      return (
-        <div onClick={handleChartClick} className="cursor-pointer hover:opacity-80 transition-opacity">
-          <svg width="120" height="50" className="inline-block">
-            <polyline
-              points={points}
-              fill="none"
-              stroke={isPositive ? "#10b981" : "#ef4444"}
-              strokeWidth="2"
-              className="opacity-70"
-            />
-          </svg>
-        </div>
-      );
-    }
-    
-    const points = chartData.map((point, index) => {
-      const x = (index / (chartData.length - 1)) * 110;
-      const y = 40 - ((point.close - minPrice) / priceRange) * 30;
-      return `${x},${y}`;
-    }).join(' ');
-
-    const gradientId = `gradient-${symbol}-${isPositive ? 'positive' : 'negative'}`;
-
-    return (
-      <div onClick={handleChartClick} className="cursor-pointer hover:opacity-80 transition-opacity">
-        <svg width="120" height="50" className="inline-block">
-          <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
-              <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
-            </linearGradient>
-          </defs>
-          <polyline
-            points={points}
-            fill="none"
-            stroke={isPositive ? "#10b981" : "#ef4444"}
-            strokeWidth="2"
-            className="opacity-70"
-          />
-          <polygon
-            points={`0,50 ${points} 110,50`}
-            fill={`url(#${gradientId})`}
-          />
-        </svg>
-      </div>
-    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      <main className="pt-20 px-4 sm:px-6 lg:px-8">
+      <div className="pt-16 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="py-8">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                My Watchlist
-              </h1>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  +
-                </Button>
-                <Button variant="outline" size="sm">
-                  ≡
-                </Button>
-                <Button variant="outline" size="sm">
-                  ⋮⋮⋮⋮
-                </Button>
-                <Button variant="outline" size="sm">
-                  ⋮
-                </Button>
-              </div>
-            </div>
-
-            {/* Filter Tabs */}
-            <Tabs value={activeFilter} onValueChange={setActiveFilter} className="mb-6">
-              <TabsList className="bg-white dark:bg-slate-800 p-1">
-                {filters.map((filter) => (
-                  <TabsTrigger
-                    key={filter}
-                    value={filter}
-                    className="px-4 py-2 rounded-full data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900"
-                  >
-                    {filter}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-
-            {/* Watchlist Table */}
-            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-              <CardContent className="p-0">
-                {pricesLoading ? (
-                  <div className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
-                    <p className="text-slate-600 dark:text-slate-400">Loading real-time stock data...</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-b border-slate-200 dark:border-slate-700">
-                        <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 w-1/4">Markets</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-right w-1/6">Change 1D</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/4">Chart</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/6">Risk Score</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400 font-medium py-4 text-center w-1/6">Consensus</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {watchlistData.map((stock) => {
-                        const priceData = stockPrices?.find(p => p.symbol === stock.symbol);
-                        
-                        return (
-                          <TableRow 
-                            key={stock.symbol} 
-                            className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
-                          >
-                            <TableCell className="py-4">
-                              <Link 
-                                to={`/stock/${stock.symbol.toLowerCase()}`}
-                                className="flex items-center gap-3 group cursor-pointer"
-                              >
-                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-lg">
-                                  {stock.logo}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-slate-900 dark:text-white text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center gap-2">
-                                    {stock.symbol}
-                                    <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                  </div>
-                                  <div className="text-slate-500 dark:text-slate-400 text-sm">
-                                    {stock.name}
-                                  </div>
-                                </div>
-                              </Link>
-                            </TableCell>
-                            <TableCell className="py-4 text-right">
-                              {priceData ? (
-                                <>
-                                  <div className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                                    ${priceData.price.toFixed(2)}
-                                  </div>
-                                  <div className={`flex items-center justify-end gap-1 text-sm font-medium ${
-                                    priceData.change >= 0 ? 'text-green-600' : 'text-red-600'
-                                  }`}>
-                                    {priceData.change >= 0 ? (
-                                      <TrendingUp className="w-4 h-4" />
-                                    ) : (
-                                      <TrendingDown className="w-4 h-4" />
-                                    )}
-                                    {priceData.change >= 0 ? '+' : ''}{priceData.change.toFixed(2)} ({priceData.changePercent.toFixed(2)}%)
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="text-slate-400 text-sm">
-                                  Loading...
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell className="py-4 text-center">
-                              <MiniChart symbol={stock.symbol} />
-                            </TableCell>
-                            <TableCell className="py-4 text-center">
-                              <div className={`inline-flex items-center justify-center w-8 h-8 border-2 rounded-lg font-bold text-lg ${getRiskScoreColor(stock.riskScore)}`}>
-                                {stock.riskScore}
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-4 text-center">
-                              <div className={`font-medium ${getConsensusColor(stock.consensus)}`}>
-                                {stock.consensus}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
           </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+            <TabsList className="bg-slate-800 border-slate-700">
+              <TabsTrigger value="all" className="data-[state=active]:bg-emerald-600">All Stocks</TabsTrigger>
+              <TabsTrigger value="gainers" className="data-[state=active]:bg-emerald-600">Gainers</TabsTrigger>
+              <TabsTrigger value="losers" className="data-[state=active]:bg-emerald-600">Losers</TabsTrigger>
+            </TabsList>
+
+            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700 hover:bg-slate-700/20">
+                    <TableHead className="text-slate-400">Symbol</TableHead>
+                    <TableHead className="text-slate-400">Price</TableHead>
+                    <TableHead className="text-slate-400">Change</TableHead>
+                    <TableHead className="text-slate-400">Market Cap</TableHead>
+                    <TableHead className="text-slate-400">Chart (1D)</TableHead>
+                    <TableHead className="text-slate-400">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData().map((stock) => (
+                    <TableRow key={stock.symbol} className="border-slate-700 hover:bg-slate-700/30">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">{stock.symbol.slice(0, 2)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-white">{stock.symbol}</div>
+                            <div className="text-slate-400 text-sm">{stock.name}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-white font-semibold">
+                        {pricesLoading ? (
+                          <div className="animate-pulse bg-slate-700 w-16 h-4 rounded"></div>
+                        ) : (
+                          `$${getRealPrice(stock.symbol).toFixed(2)}`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className={`flex items-center gap-1 ${getRealChange(stock.symbol) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {getRealChange(stock.symbol) >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          <span>{getRealChange(stock.symbol) >= 0 ? '+' : ''}{getRealChangePercent(stock.symbol).toFixed(2)}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">{stock.marketCap}</TableCell>
+                      <TableCell>
+                        <MiniChart symbol={stock.symbol} />
+                      </TableCell>
+                      <TableCell>
+                        <Link 
+                          to={`/stock/${stock.symbol.toLowerCase()}`}
+                          state={{ from: 'watchlist' }}
+                          className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                        >
+                          View Details
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Tabs>
         </div>
-      </main>
+      </div>
 
       {/* Chart Modal */}
-      <ChartModal
-        isOpen={!!selectedStock}
-        onClose={() => setSelectedStock(null)}
-        symbol={selectedStock?.symbol || ""}
-        stockName={selectedStock?.name || ""}
-      />
+      {selectedChart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-2xl bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">{selectedChart.symbol} - 1 Day Chart</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* <StockChart data={selectedChart.data} /> */}
+              {/* Replace StockChart with your actual chart component */}
+              <p className="text-slate-400">Chart component here</p>
+            </CardContent>
+            <div className="p-4">
+              <Button variant="secondary" onClick={() => setSelectedChart(null)}>Close Chart</Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
