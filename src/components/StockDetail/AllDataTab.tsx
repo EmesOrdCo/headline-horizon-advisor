@@ -47,7 +47,7 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         formattedValue = `$${value.toFixed(2)}`;
       }
     } else if (format === 'percentage') {
-      formattedValue = `${(value * 100).toFixed(2)}%`;
+      formattedValue = `${value.toFixed(2)}%`;
     } else if (format === 'ratio') {
       formattedValue = value.toFixed(2);
     } else {
