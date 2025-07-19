@@ -20,7 +20,7 @@ serve(async (req) => {
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
     // Get proper Alpaca credentials from Supabase secrets
-    const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+    const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
     const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
     console.log(`=== DEBUGGING ALPACA PAPER API FOR ${cleanSymbol} ===`);
@@ -28,7 +28,7 @@ serve(async (req) => {
     console.log('Alpaca Secret Key exists:', !!alpacaSecretKey);
 
     if (!alpacaApiKey || !alpacaSecretKey) {
-      console.error('ALPACA_API_KEY or ALPACA_SECRET_KEY not configured in environment');
+      console.error('ALPACA_TRADER_API_KEY or ALPACA_SECRET_KEY not configured in environment');
       throw new Error('Alpaca API credentials not configured');
     }
 

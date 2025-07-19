@@ -20,7 +20,7 @@ serve(async (req) => {
   }
 
   // Get proper Alpaca credentials from Supabase secrets
-  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+  const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
   const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
   console.log('Using Alpaca paper trading credentials');
