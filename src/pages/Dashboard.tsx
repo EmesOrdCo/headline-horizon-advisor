@@ -153,7 +153,8 @@ const Dashboard = () => {
       <DashboardNav />
       <MarketTicker />
       
-      <main className="pt-32 sm:pt-36 p-4 sm:p-6 w-[95%] mx-auto">
+      <main className="pt-16 sm:pt-18 p-2 sm:p-3 w-[95%] mx-auto">
+
         {/* TOP SECTION - Modified to include breaking news */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
           {/* Main Content - Breaking News Section */}
