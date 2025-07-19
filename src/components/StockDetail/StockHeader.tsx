@@ -18,9 +18,9 @@ interface StockHeaderProps {
 
 const StockHeader = ({ symbol, stockInfo, cameFromWatchlist }: StockHeaderProps) => {
   return (
-    <div className="mb-8">
-      {/* Back Navigation */}
-      <div className="mb-6">
+    <div className="mb-4">
+      {/* Back Navigation - reduced bottom margin */}
+      <div className="mb-3">
         <Link to={cameFromWatchlist ? "/watchlist" : "/dashboard"}>
           <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-700/50 p-2">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -38,8 +38,8 @@ const StockHeader = ({ symbol, stockInfo, cameFromWatchlist }: StockHeaderProps)
         
         {/* Stock Details */}
         <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-3 mb-3">
-            <h1 className="text-3xl font-bold text-white">{symbol}</h1>
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <h1 className="text-2xl font-bold text-white">{symbol}</h1>
             <Badge className="bg-emerald-600 text-white px-3 py-1">
               {stockInfo.name}
             </Badge>
@@ -51,7 +51,7 @@ const StockHeader = ({ symbol, stockInfo, cameFromWatchlist }: StockHeaderProps)
               {stockInfo.isLoading ? (
                 <div className="animate-pulse bg-slate-700 w-32 h-8 rounded"></div>
               ) : (
-                <span className="text-3xl font-bold text-white">
+                <span className="text-2xl font-bold text-white">
                   ${stockInfo.price > 0 ? stockInfo.price.toFixed(2) : 'N/A'}
                 </span>
               )}

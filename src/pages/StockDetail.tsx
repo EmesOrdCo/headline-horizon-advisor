@@ -93,22 +93,23 @@ const StockDetail = () => {
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      {/* Market Ticker */}
-      <div className="pt-16">
+      {/* Market Ticker - reduced top padding */}
+      <div className="pt-14">
         <MarketTicker />
       </div>
       
-      <div className="pt-8 px-4 sm:px-6 lg:px-8">
+      {/* Main content - reduced top padding */}
+      <div className="pt-4 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
+          {/* Header - reduced bottom margin */}
           <StockHeader 
             symbol={stockSymbol}
             stockInfo={stockInfo}
             cameFromWatchlist={cameFromWatchlist}
           />
 
-          {/* Tabs */}
-          <div className="flex justify-end mb-6">
+          {/* Tabs - reduced bottom margin */}
+          <div className="flex justify-end mb-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-slate-800/50 border-slate-700">
                 <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
@@ -121,14 +122,14 @@ const StockDetail = () => {
             </Tabs>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
+          {/* Main Content Grid - reduced bottom margin */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-6">
             {/* Chart Section - Takes up 3/4 width on xl screens */}
             <div className="xl:col-span-3 space-y-6">
               {/* Price Chart */}
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
+                  <CardTitle className="text-white flex items-center gap-2 text-xl">
                     <BarChart3 className="w-5 h-5" />
                     Live Price Movement
                   </CardTitle>
@@ -163,8 +164,8 @@ const StockDetail = () => {
             </div>
           </div>
 
-          {/* Tab Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          {/* Tab Content - reduced bottom margin */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsContent value="analysis" className="space-y-6">
               <AIAnalysisTab symbol={stockSymbol} stockInfo={stockInfo} />
             </TabsContent>

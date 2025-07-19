@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -145,10 +144,10 @@ const Watchlist = () => {
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      <div className="pt-16 px-4 sm:px-6">
+      <div className="pt-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-white">My Watchlist</h1>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
