@@ -104,7 +104,7 @@ const StockDetail = () => {
     } else if (selectedAlertType && selectedAlertType !== 'Custom') {
       const percentage = parseFloat(selectedAlertType.replace('%', ''));
       const targetPrice = stockInfo.price * (1 + percentage / 100);
-      console.log(`Setting ${alertType} alert for ${stockSymbol} at $${targetPrice.toFixed(2)}`);
+      console.log(`Setting ${selectedAlertType} alert for ${stockSymbol} at $${targetPrice.toFixed(2)}`);
     }
   };
 
