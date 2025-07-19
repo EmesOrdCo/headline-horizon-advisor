@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, ComposedChart, Bar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -10,6 +9,8 @@ interface HistoricalPriceChartProps {
   symbol: string;
   timeframe?: string;
   limit?: number;
+  height?: number;
+  showMiniChart?: boolean;
 }
 
 type TimePeriod = '1D' | '1W' | '1M' | '3M' | '1Y';
@@ -70,7 +71,7 @@ const Candlestick = (props: any) => {
   );
 };
 
-const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: HistoricalPriceChartProps) => {
+const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, showMiniChart = false }: HistoricalPriceChartProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1M');
   const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
 
@@ -107,6 +108,13 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   };
 
   if (isLoading) {
+    if (showMiniChart) {
+      return (
+        <div className="w-full h-12 flex items-center justify-center">
+          <div className="animate-pulse bg-slate-700 w-full h-full rounded"></div>
+        </div>
+      );
+    }
     return (
       <div className="h-64 flex items-center justify-center text-slate-400">
         <div className="text-center">
@@ -118,6 +126,13 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   }
 
   if (error) {
+    if (showMiniChart) {
+      return (
+        <div className="w-full h-12 flex items-center justify-center text-red-400 text-xs">
+          Error
+        </div>
+      );
+    }
     return (
       <div className="h-64 flex items-center justify-center text-red-400">
         <div className="text-center">
@@ -129,6 +144,13 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   }
 
   if (!chartData.length) {
+    if (showMiniChart) {
+      return (
+        <div className="w-full h-12 flex items-center justify-center text-slate-400 text-xs">
+          No data
+        </div>
+      );
+    }
     return (
       <div className="h-64 flex items-center justify-center text-slate-400">
         <div className="text-center">
@@ -143,6 +165,25 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   const lastPrice = chartData[chartData.length - 1]?.close || 0;
   const totalChange = lastPrice - firstPrice;
   const totalChangePercent = firstPrice !== 0 ? ((totalChange / firstPrice) * 100) : 0;
+
+  // If this is a mini chart, render simplified version
+  if (showMiniChart) {
+    return (
+      <div className="w-full" style={{ height: height || 48 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData}>
+            <Line 
+              type="monotone" 
+              dataKey="close" 
+              stroke={totalChange >= 0 ? "#10b981" : "#ef4444"}
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
   // Custom candlestick rendering function
   const renderCandlestick = (props: any) => {
