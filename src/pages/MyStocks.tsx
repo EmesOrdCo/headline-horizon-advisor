@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,10 +6,15 @@ import MarketTicker from "@/components/MarketTicker";
 import StockSelection from "@/components/StockSelection";
 import NewsAnalysisDisplay from "@/components/NewsAnalysisDisplay";
 import Footer from "@/components/Footer";
+import RealTimeStockCard from "@/components/RealTimeStockCard";
+import RealTimePriceChart from "@/components/RealTimePriceChart";
 import { useToast } from "@/hooks/use-toast";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
-import { Loader2 } from "lucide-react";
+import { useAlpacaStream } from "@/hooks/useAlpacaStream";
+import { Loader2, BarChart3 } from "lucide-react";
 import { useSEO } from "@/hooks/useSEO";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface UserStock {
   id: string;
@@ -62,17 +66,37 @@ const MyStocks = () => {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("");
+  const [showChart, setShowChart] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<Record<string, Array<{timestamp: string, price: number, symbol: string}>>({});
 
-  // Use the dedicated user stock prices hook
+  // Use the dedicated user stock prices hook for fallback
   const userStockSymbols = userStocks.map(stock => stock.symbol);
   const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useUserStockPrices(userStockSymbols);
 
-  // Add console logs for debugging
-  console.log('User stocks:', userStocks);
-  console.log('User stock symbols:', userStockSymbols);
-  console.log('Stock prices data:', stockPrices);
-  console.log('Stock prices loading:', stockPricesLoading);
-  console.log('Stock prices error:', stockPricesError);
+  // Use the real-time streaming hook
+  const { isConnected, isAuthenticated, connectionStatus, streamData, connect, disconnect } = useAlpacaStream({
+    symbols: userStockSymbols,
+    enabled: userStocks.length > 0
+  });
+
+  // Store price history for charts
+  useEffect(() => {
+    Object.entries(streamData).forEach(([symbol, data]) => {
+      if (data.price && data.timestamp) {
+        setPriceHistory(prev => ({
+          ...prev,
+          [symbol]: [
+            ...(prev[symbol] || []).slice(-99), // Keep last 100 points
+            {
+              timestamp: data.timestamp,
+              price: data.price,
+              symbol: symbol
+            }
+          ]
+        }));
+      }
+    });
+  }, [streamData]);
 
   useEffect(() => {
     if (user) {
@@ -258,9 +282,37 @@ const MyStocks = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">My Stocks</h1>
-            <p className="text-slate-400">Track and analyze your stocks with AI-powered insights from Marketaux</p>
-            {stockPricesLoading && <p className="text-yellow-400 text-sm">Loading stock prices...</p>}
-            {stockPricesError && <p className="text-red-400 text-sm">Error loading stock prices</p>}
+            <p className="text-slate-400">Track and analyze your stocks with real-time data and AI-powered insights</p>
+            
+            {/* Connection Status */}
+            <div className="flex items-center gap-4 mt-4">
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                connectionStatus === 'connected' && isAuthenticated ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-500/20' :
+                connectionStatus === 'connecting' ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-500/20' :
+                connectionStatus === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/20' :
+                'bg-slate-700/50 text-slate-400 border border-slate-600'
+              }`}>
+                {connectionStatus === 'connected' && isAuthenticated ? '🟢 Live Data Connected' :
+                 connectionStatus === 'connecting' ? '🟡 Connecting...' :
+                 connectionStatus === 'error' ? '🔴 Connection Error' :
+                 '⚫ Disconnected'}
+              </div>
+              
+              {userStocks.length > 0 && (
+                <Button
+                  onClick={() => setShowChart(!showChart)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  {showChart ? 'Hide Charts' : 'Show Charts'}
+                </Button>
+              )}
+            </div>
+            
+            {stockPricesLoading && <p className="text-yellow-400 text-sm mt-2">Loading fallback stock prices...</p>}
+            {stockPricesError && <p className="text-red-400 text-sm mt-2">Error loading fallback stock prices</p>}
           </div>
 
           <StockSelection
@@ -273,6 +325,54 @@ const MyStocks = () => {
             analyzing={analyzing}
             stockPrices={stockPrices}
           />
+
+          {/* Real-time Stock Display */}
+          {userStocks.length > 0 && (
+            <Card className="mb-8 bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  Real-Time Stock Prices
+                  {isConnected && isAuthenticated && (
+                    <span className="text-emerald-400 text-sm">● LIVE</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {userStocks.map((stock) => (
+                    <RealTimeStockCard
+                      key={stock.id}
+                      stock={stock}
+                      streamData={streamData[stock.symbol]}
+                      isConnected={isConnected && isAuthenticated}
+                      onRemove={removeStock}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Real-time Charts */}
+          {showChart && userStocks.length > 0 && (
+            <Card className="mb-8 bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Live Price Charts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {userStocks.map((stock) => (
+                    <div key={stock.id} className="bg-slate-700/30 rounded-lg p-4">
+                      <RealTimePriceChart
+                        data={priceHistory[stock.symbol] || []}
+                        symbol={stock.symbol}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <NewsAnalysisDisplay
             userStocks={userStocks}
