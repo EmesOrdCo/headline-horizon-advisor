@@ -19,17 +19,17 @@ serve(async (req) => {
 
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
-    // Get proper Alpaca credentials from Supabase secrets
+    // Get proper Alpaca paper trading credentials from Supabase secrets
     const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
-    const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+    const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
     console.log(`=== DEBUGGING ALPACA PAPER API FOR ${cleanSymbol} ===`);
-    console.log('Alpaca API Key exists:', !!alpacaApiKey);
-    console.log('Alpaca Secret Key exists:', !!alpacaSecretKey);
+    console.log('Alpaca Trader API Key exists:', !!alpacaApiKey);
+    console.log('Alpaca Trader Secret Key exists:', !!alpacaSecretKey);
 
     if (!alpacaApiKey || !alpacaSecretKey) {
-      console.error('ALPACA_TRADER_API_KEY or ALPACA_SECRET_KEY not configured in environment');
-      throw new Error('Alpaca API credentials not configured');
+      console.error('ALPACA_TRADER_API_KEY or ALPACA_TRADER_SECRET_KEY not configured in environment');
+      throw new Error('Alpaca trader API credentials not configured');
     }
 
     // Use paper trading endpoint for quotes

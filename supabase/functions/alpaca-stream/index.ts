@@ -19,17 +19,17 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  // Get proper Alpaca credentials from Supabase secrets
+  // Get proper Alpaca trader credentials from Supabase secrets
   const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
-  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
   console.log('Using Alpaca paper trading credentials');
-  console.log('API Key exists:', !!alpacaApiKey);
-  console.log('Secret Key exists:', !!alpacaSecretKey);
+  console.log('Trader API Key exists:', !!alpacaApiKey);
+  console.log('Trader Secret Key exists:', !!alpacaSecretKey);
 
   if (!alpacaApiKey || !alpacaSecretKey) {
-    console.error('Missing Alpaca API credentials');
-    return new Response("Missing Alpaca API credentials", { status: 500 });
+    console.error('Missing Alpaca trader API credentials');
+    return new Response("Missing Alpaca trader API credentials", { status: 500 });
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
@@ -48,14 +48,14 @@ serve(async (req) => {
         console.log('Connected to Alpaca Paper Trading WebSocket successfully');
         reconnectAttempts = 0; // Reset on successful connection
         
-        // Send authentication message with proper format for paper trading using actual key and secret
+        // Send authentication message with proper format for paper trading using trader credentials
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication to Alpaca Paper Trading with proper credentials');
+        console.log('Sending authentication to Alpaca Paper Trading with trader credentials');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
@@ -106,7 +106,7 @@ serve(async (req) => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'error',
-            message: 'Alpaca paper trading connection error - check API credentials'
+            message: 'Alpaca paper trading connection error - check trader API credentials'
           }));
         }
       };
