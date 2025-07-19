@@ -36,20 +36,44 @@ serve(async (req) => {
   let alpacaSocket: WebSocket | null = null;
   let isAuthenticated = false;
   let reconnectAttempts = 0;
-  const maxReconnectAttempts = 2; // Reduce reconnection attempts to avoid connection limits
+  const maxReconnectAttempts = 1; // Reduce to just 1 attempt to avoid hitting limits
   let subscribedSymbols: string[] = [];
+  let connectionBackoffTime = 1000; // Start with 1 second
+  let lastConnectionAttempt = 0;
+  let circuitBreakerOpen = false;
 
   const connectToAlpaca = () => {
+    // Circuit breaker: if we've had too many failures, don't try for a while
+    if (circuitBreakerOpen) {
+      console.log('Circuit breaker is open, using mock data');
+      startMockDataStream();
+      return;
+    }
+
+    // Rate limiting: don't try to connect too frequently
+    const now = Date.now();
+    if (now - lastConnectionAttempt < connectionBackoffTime) {
+      console.log(`Rate limiting: waiting ${connectionBackoffTime}ms between attempts`);
+      setTimeout(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          connectToAlpaca();
+        }
+      }, connectionBackoffTime);
+      return;
+    }
+
+    lastConnectionAttempt = now;
+
     // Don't attempt to reconnect if we've exceeded limits
     if (reconnectAttempts >= maxReconnectAttempts) {
-      console.log('Max reconnection attempts reached, switching to mock data mode');
+      console.log('Max reconnection attempts reached, opening circuit breaker');
+      circuitBreakerOpen = true;
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: 'auth_success',
           message: 'Connected to mock data stream (Alpaca connection limit reached)'
         }));
         
-        // Start sending mock data
         startMockDataStream();
       }
       return;
@@ -60,9 +84,19 @@ serve(async (req) => {
       // Use the data stream endpoint instead of paper trading
       alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
       
+      // Set a connection timeout
+      const connectionTimeout = setTimeout(() => {
+        if (alpacaSocket && alpacaSocket.readyState === WebSocket.CONNECTING) {
+          console.log('Connection timeout, closing socket');
+          alpacaSocket.close();
+        }
+      }, 10000); // 10 second timeout
+      
       alpacaSocket.onopen = () => {
+        clearTimeout(connectionTimeout);
         console.log('Connected to Alpaca Data WebSocket successfully');
         reconnectAttempts = 0; // Reset on successful connection
+        connectionBackoffTime = 1000; // Reset backoff time
         
         // Send authentication message
         const authMessage = {
@@ -96,9 +130,10 @@ serve(async (req) => {
               } else if (message.T === 'error') {
                 console.error('Alpaca data authentication error:', message);
                 
-                // If connection limit exceeded, switch to mock data
+                // If connection limit exceeded, open circuit breaker immediately
                 if (message.code === 406) {
-                  console.log('Connection limit exceeded, switching to mock data');
+                  console.log('Connection limit exceeded, opening circuit breaker');
+                  circuitBreakerOpen = true;
                   reconnectAttempts = maxReconnectAttempts; // Stop trying to reconnect
                   
                   if (socket.readyState === WebSocket.OPEN) {
@@ -135,7 +170,12 @@ serve(async (req) => {
       };
 
       alpacaSocket.onerror = (error) => {
+        clearTimeout(connectionTimeout);
         console.error('Alpaca Data WebSocket error:', error);
+        
+        // Increase backoff time exponentially
+        connectionBackoffTime = Math.min(connectionBackoffTime * 2, 30000); // Max 30 seconds
+        
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'error',
@@ -145,6 +185,7 @@ serve(async (req) => {
       };
 
       alpacaSocket.onclose = (event) => {
+        clearTimeout(connectionTimeout);
         console.log('Alpaca Data WebSocket disconnected', event.code, event.reason);
         isAuthenticated = false;
         
@@ -155,17 +196,21 @@ serve(async (req) => {
           }));
         }
         
+        // Increase backoff time exponentially
+        connectionBackoffTime = Math.min(connectionBackoffTime * 2, 30000); // Max 30 seconds
+        
         // Attempt to reconnect if we haven't exceeded max attempts
-        if (reconnectAttempts < maxReconnectAttempts) {
+        if (reconnectAttempts < maxReconnectAttempts && !circuitBreakerOpen) {
           reconnectAttempts++;
-          console.log(`Attempting to reconnect in 5 seconds... (${reconnectAttempts}/${maxReconnectAttempts})`);
+          console.log(`Attempting to reconnect in ${connectionBackoffTime}ms... (${reconnectAttempts}/${maxReconnectAttempts})`);
           setTimeout(() => {
             if (socket.readyState === WebSocket.OPEN) {
               connectToAlpaca();
             }
-          }, 5000);
+          }, connectionBackoffTime);
         } else {
-          console.log('Max reconnection attempts reached, switching to mock data');
+          console.log('Max reconnection attempts reached or circuit breaker open, switching to mock data');
+          circuitBreakerOpen = true;
           if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
               type: 'auth_success',
@@ -178,6 +223,8 @@ serve(async (req) => {
       };
     } catch (error) {
       console.error('Failed to create Alpaca Data WebSocket:', error);
+      connectionBackoffTime = Math.min(connectionBackoffTime * 2, 30000); // Increase backoff
+      
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: 'error',

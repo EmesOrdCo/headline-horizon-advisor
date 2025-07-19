@@ -64,3 +64,6 @@ template.email_change = "./supabase/templates/email_change.html"
 
 [functions.alpaca-stream]
 verify_jwt = false
+
+[functions.alpaca-polling]
+verify_jwt = false
