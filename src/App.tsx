@@ -21,6 +21,7 @@ import BiggestMovers from "./pages/BiggestMovers";
 import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
+import StockDetail from "./pages/StockDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -43,6 +44,14 @@ const App = () => (
               <Route path="/homepage4" element={<Homepage4 />} />
               <Route path="/homepage5" element={<Homepage5 />} />
               <Route path="/homepage-showcase" element={<HomepageShowcase />} />
+              <Route
+                path="/stock/:symbol"
+                element={
+                  <ProtectedRoute>
+                    <StockDetail />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/my-stocks"
                 element={

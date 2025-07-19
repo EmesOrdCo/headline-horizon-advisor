@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -90,40 +90,31 @@ const Magnificent7 = () => {
   
   const { isConnected, isAuthenticated, connectionStatus, streamData } = streamResult;
 
-  // Enhanced market closed detection
   const isMarketClosed = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
     const currentDay = now.getDay();
     
-    // Weekend or outside market hours (9:30 AM - 4 PM ET, roughly 14:30 - 21:00 UTC)
     const isWeekend = currentDay === 0 || currentDay === 6;
     const isAfterHours = currentHour < 14 || currentHour > 21;
-    
-    // Also consider market closed if API is failing or no stock data
     const apiFailure = stockPricesError || (!stockPricesLoading && (!stockPrices || stockPrices.length === 0));
     
     return isWeekend || isAfterHours || connectionStatus === 'error' || apiFailure;
   }, [connectionStatus, stockPricesError, stockPricesLoading, stockPrices]);
 
-  console.log('Market status:', { isMarketClosed, stockPricesError, stockPricesLoading, stockPricesLength: stockPrices?.length });
-
-  // Generate mock historical data when market is closed or API fails
   useEffect(() => {
     if (isMarketClosed) {
-      console.log('Generating mock historical data for closed market');
       const mockHistory: {[key: string]: PriceHistoryPoint[]} = {};
       
       MAGNIFICENT_7.forEach(symbol => {
         const basePrice = mockClosePrices[symbol as keyof typeof mockClosePrices];
         const points: PriceHistoryPoint[] = [];
         
-        // Generate 50 mock data points for the trading day
         for (let i = 0; i < 50; i++) {
-          const variance = (Math.random() - 0.5) * 0.04; // ±2% variance
+          const variance = (Math.random() - 0.5) * 0.04;
           const price = basePrice * (1 + variance);
           const timestamp = new Date();
-          timestamp.setHours(9, 30 + (i * 7.8), 0, 0); // Spread across 6.5 hour trading day
+          timestamp.setHours(9, 30 + (i * 7.8), 0, 0);
           
           points.push({
             timestamp: timestamp.toISOString(),
@@ -136,11 +127,9 @@ const Magnificent7 = () => {
       });
       
       setPriceHistory(mockHistory);
-      console.log('Mock historical data generated:', mockHistory);
     }
   }, [isMarketClosed]);
 
-  // Store price history for charts from live data
   useEffect(() => {
     if (!isMarketClosed) {
       Object.entries(streamData).forEach(([symbol, data]) => {
@@ -148,7 +137,7 @@ const Magnificent7 = () => {
           setPriceHistory(prev => ({
             ...prev,
             [symbol]: [
-              ...(prev[symbol] || []).slice(-99), // Keep last 100 points
+              ...(prev[symbol] || []).slice(-99),
               {
                 timestamp: data.timestamp,
                 price: data.price,
@@ -161,7 +150,6 @@ const Magnificent7 = () => {
     }
   }, [streamData, isMarketClosed]);
 
-  // Prepare magnificent 7 articles data - ALWAYS return an array of 7 items
   const magnificent7ArticlesData = useMemo(() => {
     return MAGNIFICENT_7.map(symbol => {
       const article = newsData?.find(item => 
@@ -193,7 +181,6 @@ const Magnificent7 = () => {
     });
   }, [newsData]);
 
-  // ALWAYS call useArticleWeights for all 7 stocks to maintain hook consistency
   const articleWeightsResults = MAGNIFICENT_7.map((symbol, index) => {
     const articleData = magnificent7ArticlesData[index];
     return useArticleWeights({
@@ -205,29 +192,23 @@ const Magnificent7 = () => {
     });
   });
 
-  // Enhanced stock price function with better fallback logic
   const getStockPrice = (symbol: string) => {
-    // First try to get from API data
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
     if (apiPrice && apiPrice.price > 0) {
-      console.log(`Using API price for ${symbol}:`, apiPrice);
       return apiPrice;
     }
     
-    // Fallback to mock data
     const mockPrice = mockClosePrices[symbol as keyof typeof mockClosePrices];
     if (mockPrice) {
       const mockData = {
         symbol,
         price: mockPrice,
-        change: (Math.random() - 0.5) * 8, // Random change between -4 and +4
-        changePercent: (Math.random() - 0.5) * 3 // Random change % between -1.5% and +1.5%
+        change: (Math.random() - 0.5) * 8,
+        changePercent: (Math.random() - 0.5) * 3
       };
-      console.log(`Using mock price for ${symbol}:`, mockData);
       return mockData;
     }
     
-    console.log(`No price data available for ${symbol}`);
     return null;
   };
 
@@ -344,7 +325,6 @@ const Magnificent7 = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
                 <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies with {isMarketClosed ? 'close' : 'live'} market data</p>
                 
-                {/* Connection/Market Status */}
                 <div className="flex items-center gap-2 mt-2">
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
                     isMarketClosed ? 'bg-orange-900/20 text-orange-400 border border-orange-500/20' :
@@ -405,59 +385,61 @@ const Magnificent7 = () => {
                   const fallbackPrice = getStockPrice(symbol);
                   
                   return (
-                    <div
-                      key={symbol}
-                      className="bg-slate-700/50 border border-slate-600 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge className="bg-emerald-600 text-white">{symbol}</Badge>
-                        {isMarketClosed ? (
-                          <Clock className="w-3 h-3 text-orange-400" />
-                        ) : isConnected && isAuthenticated ? (
-                          <Wifi className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <WifiOff className="w-3 h-3 text-slate-400" />
-                        )}
-                      </div>
-                      
-                      <div className="text-right">
-                        {!isMarketClosed && liveData?.price ? (
-                          <>
-                            <div className="text-lg font-bold text-white">
-                              ${formatPrice(liveData.price)}
-                            </div>
-                            {liveData.timestamp && (
-                              <div className="text-xs text-slate-400">
-                                {formatTime(liveData.timestamp)}
-                              </div>
+                    <Link key={symbol} to={`/stock/${symbol}`} className="block">
+                      <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-600/50 transition-colors cursor-pointer group">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge className="bg-emerald-600 text-white">{symbol}</Badge>
+                          <div className="flex items-center gap-2">
+                            {isMarketClosed ? (
+                              <Clock className="w-3 h-3 text-orange-400" />
+                            ) : isConnected && isAuthenticated ? (
+                              <Wifi className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <WifiOff className="w-3 h-3 text-slate-400" />
                             )}
-                            {liveData.volume && (
-                              <div className="text-xs text-slate-400">
-                                Vol: {liveData.volume.toLocaleString()}
-                              </div>
-                            )}
-                          </>
-                        ) : fallbackPrice ? (
-                          <>
-                            <div className="text-lg font-bold text-white">
-                              ${fallbackPrice.price.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-slate-400">
-                              {isMarketClosed ? 'Close Price' : 'Last Price'}
-                            </div>
-                            {fallbackPrice.change !== undefined && (
-                              <div className={`text-xs ${fallbackPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {fallbackPrice.change >= 0 ? '+' : ''}{fallbackPrice.change.toFixed(2)} ({fallbackPrice.changePercent?.toFixed(2)}%)
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-slate-400 text-sm">
-                            Loading...
+                            <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-white transition-colors" />
                           </div>
-                        )}
+                        </div>
+                        
+                        <div className="text-right">
+                          {!isMarketClosed && liveData?.price ? (
+                            <>
+                              <div className="text-lg font-bold text-white">
+                                ${formatPrice(liveData.price)}
+                              </div>
+                              {liveData.timestamp && (
+                                <div className="text-xs text-slate-400">
+                                  {formatTime(liveData.timestamp)}
+                                </div>
+                              )}
+                              {liveData.volume && (
+                                <div className="text-xs text-slate-400">
+                                  Vol: {liveData.volume.toLocaleString()}
+                                </div>
+                              )}
+                            </>
+                          ) : fallbackPrice ? (
+                            <>
+                              <div className="text-lg font-bold text-white">
+                                ${fallbackPrice.price.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                {isMarketClosed ? 'Close Price' : 'Last Price'}
+                              </div>
+                              {fallbackPrice.change !== undefined && (
+                                <div className={`text-xs ${fallbackPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  {fallbackPrice.change >= 0 ? '+' : ''}{fallbackPrice.change.toFixed(2)} ({fallbackPrice.changePercent?.toFixed(2)}%)
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-slate-400 text-sm">
+                              Loading...
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -502,8 +484,6 @@ const Magnificent7 = () => {
                 if (article) {
                   const compositeHeadline = generateCompositeHeadline(article);
                   const sourceArticles = stockData.sourceArticles;
-                  
-                  // Get article weights for this specific stock
                   const { data: articleWeights, isLoading: weightsLoading } = articleWeightsResults[index];
                   
                   return (
@@ -511,7 +491,6 @@ const Magnificent7 = () => {
                       <Card className="bg-slate-800/50 border-slate-700 h-full">
                         <CardContent className="p-6 h-full">
                           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                            {/* Main Analysis - Left Side (narrower) */}
                             <div className="lg:col-span-2">
                               <NewsCard 
                                 symbol={article.symbol}
@@ -525,7 +504,6 @@ const Magnificent7 = () => {
                                 stockPrice={stockPrice}
                               />
                             </div>
-                            {/* Source Articles - Right Side (wider) */}
                             <div className="lg:col-span-3">
                               <SourceArticles 
                                 parsedSourceLinks={sourceArticles}
