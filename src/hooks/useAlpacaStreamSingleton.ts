@@ -20,9 +20,9 @@ interface UseAlpacaStreamProps {
   enabled?: boolean;
 }
 
-// Singleton WebSocket connection manager
+// True singleton WebSocket connection manager
 class AlpacaStreamManager {
-  private static instance: AlpacaStreamManager;
+  private static instance: AlpacaStreamManager | null = null;
   private socket: WebSocket | null = null;
   private subscribers: Map<string, (data: Record<string, StreamData>) => void> = new Map();
   private streamData: Record<string, StreamData> = {};
@@ -30,6 +30,9 @@ class AlpacaStreamManager {
   private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
   private isAuthenticated = false;
   private errorMessage = '';
+  private connectionAttempts = 0;
+  private maxAttempts = 1;
+  private reconnectTimeout: NodeJS.Timeout | null = null;
 
   static getInstance(): AlpacaStreamManager {
     if (!AlpacaStreamManager.instance) {
@@ -39,39 +42,45 @@ class AlpacaStreamManager {
   }
 
   subscribe(id: string, callback: (data: Record<string, StreamData>) => void, symbols: string[]) {
+    console.log(`Singleton: Subscribing ${id} to symbols:`, symbols);
     this.subscribers.set(id, callback);
     
     // Add new symbols to subscription
     const newSymbols = symbols.filter(symbol => !this.subscribedSymbols.has(symbol));
     newSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
 
-    // Connect if not already connected (singleton logic)
-    if (!this.socket && this.subscribedSymbols.size > 0) {
+    // Only connect if we don't have a connection and haven't exceeded attempts
+    if (!this.socket && this.connectionAttempts < this.maxAttempts) {
       this.connect();
-    }
-
-    // Subscribe to new symbols if connected
-    if (this.socket && this.isAuthenticated && newSymbols.length > 0) {
+    } else if (this.socket && this.isAuthenticated && newSymbols.length > 0) {
+      // Subscribe to new symbols if already connected
       this.socket.send(JSON.stringify({
         type: 'subscribe',
         symbols: newSymbols
       }));
     }
 
-    // Send current data immediately
+    // Send current status immediately
     callback(this.streamData);
   }
 
   unsubscribe(id: string, symbols: string[]) {
+    console.log(`Singleton: Unsubscribing ${id} from symbols:`, symbols);
     this.subscribers.delete(id);
     
-    // Remove symbols if no other subscribers need them
+    // Remove symbols that are no longer needed
     symbols.forEach(symbol => {
-      this.subscribedSymbols.delete(symbol);
-      delete this.streamData[symbol];
+      const stillNeeded = Array.from(this.subscribers.values()).some(callback => 
+        // This is a simplified check - in reality you'd track which symbols each subscriber needs
+        this.subscribedSymbols.has(symbol)
+      );
+      if (!stillNeeded) {
+        this.subscribedSymbols.delete(symbol);
+        delete this.streamData[symbol];
+      }
     });
 
-    // Disconnect if no subscribers (clean close)
+    // Disconnect if no more subscribers
     if (this.subscribers.size === 0) {
       this.disconnect();
     }
@@ -88,17 +97,18 @@ class AlpacaStreamManager {
   }
 
   private connect() {
-    // Prevent multiple connections (singleton enforcement)
-    if (this.socket) {
-      console.log('Singleton: Connection already exists, skipping');
+    // Prevent multiple simultaneous connections
+    if (this.socket || this.connectionAttempts >= this.maxAttempts) {
+      console.log('Singleton: Connection already exists or max attempts reached');
       return;
     }
 
+    this.connectionAttempts++;
     this.connectionStatus = 'connecting';
     this.errorMessage = '';
     this.notifySubscribers();
 
-    console.log('Singleton: Creating new WebSocket connection');
+    console.log(`Singleton: Creating WebSocket connection (attempt ${this.connectionAttempts}/${this.maxAttempts})`);
     
     const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
@@ -106,7 +116,7 @@ class AlpacaStreamManager {
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
-        console.log('Singleton: WebSocket connected successfully');
+        console.log('Singleton: WebSocket connected');
         this.connectionStatus = 'connected';
         this.errorMessage = '';
         this.notifySubscribers();
@@ -115,12 +125,14 @@ class AlpacaStreamManager {
       this.socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          console.log('Singleton: Received message:', message);
           
           switch (message.type) {
             case 'auth_success':
               this.isAuthenticated = true;
               this.errorMessage = '';
-              console.log('Singleton: Authenticated successfully, subscribing to:', Array.from(this.subscribedSymbols));
+              this.connectionAttempts = 0; // Reset on success
+              console.log('Singleton: Authenticated, subscribing to:', Array.from(this.subscribedSymbols));
               
               if (this.socket?.readyState === WebSocket.OPEN && this.subscribedSymbols.size > 0) {
                 this.socket.send(JSON.stringify({
@@ -135,7 +147,7 @@ class AlpacaStreamManager {
               this.connectionStatus = 'error';
               this.isAuthenticated = false;
               this.errorMessage = message.message || 'Authentication failed';
-              console.error('Singleton: Authentication failed:', message.message);
+              console.error('Singleton: Auth error:', message.message);
               this.notifySubscribers();
               break;
               
@@ -180,7 +192,7 @@ class AlpacaStreamManager {
               break;
           }
         } catch (error) {
-          console.error('Singleton: Error parsing stream message:', error);
+          console.error('Singleton: Error parsing message:', error);
           this.errorMessage = 'Failed to parse stream data';
           this.notifySubscribers();
         }
@@ -195,7 +207,7 @@ class AlpacaStreamManager {
       };
 
       this.socket.onclose = (event) => {
-        console.log('Singleton: WebSocket disconnected, code:', event.code);
+        console.log('Singleton: WebSocket closed, code:', event.code);
         this.isAuthenticated = false;
         this.connectionStatus = 'error';
         this.errorMessage = 'Connection closed. Real-time data unavailable.';
@@ -204,7 +216,7 @@ class AlpacaStreamManager {
       };
 
     } catch (error) {
-      console.error('Singleton: Failed to create WebSocket connection:', error);
+      console.error('Singleton: Failed to create WebSocket:', error);
       this.connectionStatus = 'error';
       this.errorMessage = 'Failed to initialize WebSocket connection';
       this.notifySubscribers();
@@ -212,13 +224,20 @@ class AlpacaStreamManager {
   }
 
   private disconnect() {
+    console.log('Singleton: Disconnecting...');
     this.cleanup();
     this.connectionStatus = 'disconnected';
     this.errorMessage = '';
+    this.connectionAttempts = 0;
     this.notifySubscribers();
   }
 
   private cleanup() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    
     if (this.socket) {
       this.socket.onopen = null;
       this.socket.onmessage = null;
@@ -226,7 +245,7 @@ class AlpacaStreamManager {
       this.socket.onclose = null;
       
       if (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) {
-        this.socket.close(1000, "Reconnecting cleanly");
+        this.socket.close(1000, "Clean disconnect");
       }
       this.socket = null;
     }
@@ -262,7 +281,7 @@ export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaS
   }, [symbols, enabled, updateStatus]);
 
   return {
-    isConnected: status.isConnected,
+    isConnected: status.connectionStatus === 'connected',
     isAuthenticated: status.isAuthenticated,
     connectionStatus: status.connectionStatus,
     streamData: status.streamData,
