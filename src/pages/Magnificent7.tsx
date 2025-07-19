@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,22 +99,23 @@ const Magnificent7 = () => {
     });
   }, [streamData]);
 
-  // Prepare magnificent 7 articles data
-  const magnificent7Articles = useMemo(() => {
+  // Prepare magnificent 7 articles data - ALWAYS return an array of 7 items
+  const magnificent7ArticlesData = useMemo(() => {
     return MAGNIFICENT_7.map(symbol => {
-      return newsData?.find(item => 
+      const article = newsData?.find(item => 
         item.symbol === symbol && 
         item.ai_confidence && 
         item.ai_sentiment
       );
-    }).filter(Boolean);
-  }, [newsData]);
-
-  // Get source articles for each stock - moved outside of render
-  const articlesWithSources = useMemo(() => {
-    return magnificent7Articles.map(article => {
-      if (!article) return null;
       
+      if (!article) {
+        return {
+          symbol,
+          sourceArticles: [],
+          article: null
+        };
+      }
+
       let sourceArticles = [];
       try {
         sourceArticles = article.source_links ? JSON.parse(article.source_links) : [];
@@ -122,22 +124,65 @@ const Magnificent7 = () => {
       }
       
       return {
-        ...article,
-        sourceArticles
+        symbol,
+        sourceArticles,
+        article
       };
-    }).filter(Boolean);
-  }, [magnificent7Articles]);
-
-  // Call useArticleWeights for each article with sources - FIXED: moved outside of map
-  const articleWeightsResults = articlesWithSources.map(article => {
-    return useArticleWeights({
-      articles: article?.sourceArticles || [],
-      overallSentiment: article?.ai_sentiment || 'Neutral',
-      overallConfidence: article?.ai_confidence || 50,
-      symbol: article?.symbol || '',
-      enabled: (article?.sourceArticles?.length || 0) > 0 && !article?.ai_reasoning?.includes('Historical')
     });
-  });
+  }, [newsData]);
+
+  // ALWAYS call useArticleWeights for all 7 stocks to maintain hook consistency
+  const articleWeightsResults = [
+    useArticleWeights({
+      articles: magnificent7ArticlesData[0]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[0]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[0]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[0],
+      enabled: (magnificent7ArticlesData[0]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[0]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[1]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[1]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[1]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[1],
+      enabled: (magnificent7ArticlesData[1]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[1]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[2]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[2]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[2]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[2],
+      enabled: (magnificent7ArticlesData[2]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[2]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[3]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[3]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[3]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[3],
+      enabled: (magnificent7ArticlesData[3]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[3]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[4]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[4]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[4]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[4],
+      enabled: (magnificent7ArticlesData[4]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[4]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[5]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[5]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[5]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[5],
+      enabled: (magnificent7ArticlesData[5]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[5]?.article?.ai_reasoning?.includes('Historical')
+    }),
+    useArticleWeights({
+      articles: magnificent7ArticlesData[6]?.sourceArticles || [],
+      overallSentiment: magnificent7ArticlesData[6]?.article?.ai_sentiment || 'Neutral',
+      overallConfidence: magnificent7ArticlesData[6]?.article?.ai_confidence || 50,
+      symbol: MAGNIFICENT_7[6],
+      enabled: (magnificent7ArticlesData[6]?.sourceArticles?.length || 0) > 0 && !magnificent7ArticlesData[6]?.article?.ai_reasoning?.includes('Historical')
+    })
+  ];
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -400,16 +445,16 @@ const Magnificent7 = () => {
               </div>
             ) : (
               MAGNIFICENT_7.map((symbol, index) => {
-                const article = magnificent7Articles.find(item => item?.symbol === symbol);
+                const stockData = magnificent7ArticlesData[index];
+                const article = stockData?.article;
                 const stockPrice = getStockPrice(symbol);
                 
                 if (article) {
                   const compositeHeadline = generateCompositeHeadline(article);
-                  const sourceArticles = getSourceArticles(article);
+                  const sourceArticles = stockData.sourceArticles;
                   
-                  // Get article weights for this specific stock using the pre-computed results
-                  const articleWeightsResult = articleWeightsResults[articlesWithSources.findIndex(a => a?.symbol === symbol)];
-                  const { data: articleWeights, isLoading: weightsLoading } = articleWeightsResult || { data: null, isLoading: false };
+                  // Get article weights for this specific stock
+                  const { data: articleWeights, isLoading: weightsLoading } = articleWeightsResults[index];
                   
                   return (
                     <div key={article.id} className="w-full">
