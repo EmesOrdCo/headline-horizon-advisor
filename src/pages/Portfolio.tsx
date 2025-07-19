@@ -367,45 +367,50 @@ const Portfolio = () => {
               <div className="space-y-3">
                 {chartData.map((holding, index) => (
                   <div key={holding.name} className="bg-slate-700/40 rounded-lg px-4 py-3 border border-slate-600/50 hover:bg-slate-700/60 transition-colors">
-                    {/* Single horizontal line layout */}
-                    <div className="flex items-center justify-between gap-6 w-full">
-                      <div className="flex items-center gap-3 flex-shrink-0 min-w-0">
+                    {/* Equal spacing layout with 5 sections */}
+                    <div className="grid grid-cols-5 gap-4 items-center">
+                      {/* Section 1: Color dot + Symbol */}
+                      <div className="flex items-center gap-3">
                         <div 
                           className="w-3 h-3 rounded-full flex-shrink-0" 
                           style={{ backgroundColor: holding.color }}
                         />
-                        <Badge className="bg-emerald-600 text-white text-xs font-medium px-2 py-1 flex-shrink-0">
+                        <Badge className="bg-emerald-600 text-white text-xs font-medium px-2 py-1">
                           {holding.name}
                         </Badge>
                       </div>
                       
-                      <div className="flex-1 min-w-0 px-4">
+                      {/* Section 2: Company Name */}
+                      <div>
                         <p className="text-slate-300 text-sm font-medium truncate">
                           {holding.fullName}
                         </p>
                       </div>
                       
-                      <div className="flex items-center gap-8 flex-shrink-0">
-                        <div className="text-center min-w-0">
-                          <p className="text-slate-400 text-xs">Value</p>
-                          <p className="text-white font-semibold text-sm">
-                            {formatCurrency(holding.value)}
-                          </p>
+                      {/* Section 3: Value */}
+                      <div className="text-center">
+                        <p className="text-slate-400 text-xs">Value</p>
+                        <p className="text-white font-semibold text-sm">
+                          {formatCurrency(holding.value)}
+                        </p>
+                      </div>
+                      
+                      {/* Section 4: Change */}
+                      <div className="text-center">
+                        <p className="text-slate-400 text-xs">Change</p>
+                        <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
+                          holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {formatPercent(holding.dayChangePercent)}
                         </div>
-                        <div className="text-center min-w-0">
-                          <p className="text-slate-400 text-xs">Change</p>
-                          <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
-                            holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                          }`}>
-                            {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {formatPercent(holding.dayChangePercent)}
-                          </div>
-                        </div>
-                        <div className="text-center min-w-0">
-                          <p className="text-slate-400 text-xs">Allocation</p>
-                          <div className="text-white font-bold text-lg">
-                            {holding.percentage.toFixed(1)}%
-                          </div>
+                      </div>
+                      
+                      {/* Section 5: Allocation */}
+                      <div className="text-center">
+                        <p className="text-slate-400 text-xs">Allocation</p>
+                        <div className="text-white font-bold text-lg">
+                          {holding.percentage.toFixed(1)}%
                         </div>
                       </div>
                     </div>
