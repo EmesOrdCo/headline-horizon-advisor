@@ -15,7 +15,7 @@ import Homepage3 from "./pages/Homepage3";
 import Homepage4 from "./pages/Homepage4";
 import Homepage5 from "./pages/Homepage5";
 import HomepageShowcase from "./pages/HomepageShowcase";
-import MyStocks from "./pages/MyStocks";
+import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
 import BiggestMovers from "./pages/BiggestMovers";
 import Magnificent7 from "./pages/Magnificent7";
@@ -53,10 +53,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/my-stocks"
+                path="/portfolio"
                 element={
                   <ProtectedRoute>
-                    <MyStocks />
+                    <Portfolio />
                   </ProtectedRoute>
                 }
               />

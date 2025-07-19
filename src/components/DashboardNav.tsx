@@ -62,8 +62,8 @@ const DashboardNav = () => {
         Home
       </Link>
       
-      <Link to="/my-stocks" className="text-slate-300 hover:text-white transition-colors font-medium">
-        My Stocks
+      <Link to="/portfolio" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Portfolio
       </Link>
       
       <Link to="/watchlist" className="text-slate-300 hover:text-white transition-colors font-medium">
