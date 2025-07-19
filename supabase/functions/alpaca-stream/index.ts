@@ -22,9 +22,16 @@ serve(async (req) => {
   const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
   const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
 
+  console.log('Checking Alpaca credentials...');
+  console.log('API Key exists:', !!alpacaApiKey);
+  console.log('Secret Key exists:', !!alpacaSecretKey);
+
   if (!alpacaApiKey || !alpacaSecretKey) {
     console.error('Missing Alpaca API credentials');
-    return new Response("Alpaca API credentials not configured", { status: 500 });
+    return new Response("Alpaca API credentials not configured", { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 
   console.log('Alpaca credentials found, attempting WebSocket connection...');
@@ -32,18 +39,19 @@ serve(async (req) => {
   const { socket, response } = Deno.upgradeWebSocket(req);
   let alpacaSocket: WebSocket | null = null;
   let isAuthenticated = false;
+  let reconnectAttempts = 0;
+  const maxReconnectAttempts = 3;
 
-  socket.onopen = () => {
-    console.log('Client WebSocket connected');
-    
-    // Connect to Alpaca WebSocket with better error handling
+  const connectToAlpaca = () => {
     try {
+      console.log(`Connecting to Alpaca WebSocket (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts + 1})`);
       alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
       
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca WebSocket successfully');
+        reconnectAttempts = 0; // Reset on successful connection
         
-        // Send authentication message
+        // Send authentication message immediately
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
@@ -66,22 +74,28 @@ serve(async (req) => {
                 isAuthenticated = true;
                 console.log('Alpaca WebSocket authenticated successfully');
                 
-                socket.send(JSON.stringify({
-                  type: 'auth_success',
-                  message: 'Connected to Alpaca stream'
-                }));
+                if (socket.readyState === WebSocket.OPEN) {
+                  socket.send(JSON.stringify({
+                    type: 'auth_success',
+                    message: 'Connected to Alpaca stream'
+                  }));
+                }
               } else if (message.T === 'error') {
                 console.error('Alpaca authentication error:', message);
-                socket.send(JSON.stringify({
-                  type: 'auth_error',
-                  message: `Authentication failed: ${message.msg || 'Unknown error'}`
-                }));
+                if (socket.readyState === WebSocket.OPEN) {
+                  socket.send(JSON.stringify({
+                    type: 'auth_error',
+                    message: `Authentication failed: ${message.msg || 'Unknown error'}`
+                  }));
+                }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
                 // Forward market data (trades, quotes, bars)
-                socket.send(JSON.stringify({
-                  type: 'market_data',
-                  data: [message]
-                }));
+                if (socket.readyState === WebSocket.OPEN) {
+                  socket.send(JSON.stringify({
+                    type: 'market_data',
+                    data: [message]
+                  }));
+                }
               }
             }
           }
@@ -102,20 +116,48 @@ serve(async (req) => {
 
       alpacaSocket.onclose = (event) => {
         console.log('Alpaca WebSocket disconnected', event.code, event.reason);
+        isAuthenticated = false;
+        
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'disconnected',
             message: `Alpaca stream disconnected: ${event.reason || 'Unknown reason'}`
           }));
         }
+        
+        // Attempt to reconnect if we haven't exceeded max attempts
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++;
+          console.log(`Attempting to reconnect in 3 seconds... (${reconnectAttempts}/${maxReconnectAttempts})`);
+          setTimeout(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+              connectToAlpaca();
+            }
+          }, 3000);
+        } else {
+          console.log('Max reconnection attempts reached');
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Unable to maintain connection to Alpaca after multiple attempts'
+            }));
+          }
+        }
       };
     } catch (error) {
       console.error('Failed to create Alpaca WebSocket:', error);
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Failed to initialize Alpaca connection'
-      }));
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Failed to initialize Alpaca connection'
+        }));
+      }
     }
+  };
+
+  socket.onopen = () => {
+    console.log('Client WebSocket connected');
+    connectToAlpaca();
   };
 
   socket.onmessage = (event) => {
