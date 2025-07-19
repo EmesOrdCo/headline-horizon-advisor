@@ -24,13 +24,15 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
       console.log('All unique symbols to fetch:', uniqueSymbols);
       
       try {
-        console.log('Fetching live stock prices from Alpaca...');
+        console.log('Fetching stock prices from REST API only...');
         
         const results: StockPrice[] = [];
         const errors: Array<{symbol: string, error: string}> = [];
         
-        // Fetch with 1 second delays to respect Alpaca limits
-        for (const symbol of uniqueSymbols) {
+        // Try to fetch just a few symbols to test if API works at all
+        const testSymbols = uniqueSymbols.slice(0, 3); // Just test with first 3 symbols
+        
+        for (const symbol of testSymbols) {
           try {
             console.log(`Fetching price for ${symbol}...`);
             
@@ -64,10 +66,10 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
               errors.push({ symbol, error: 'No price data available' });
             }
             
-            // Wait 1 second between requests (60 calls/minute to be safe)
-            if (uniqueSymbols.indexOf(symbol) < uniqueSymbols.length - 1) {
-              console.log('Waiting 1 second before next request...');
-              await new Promise(resolve => setTimeout(resolve, 1000));
+            // Wait 2 seconds between requests to be very conservative
+            if (testSymbols.indexOf(symbol) < testSymbols.length - 1) {
+              console.log('Waiting 2 seconds before next request...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
             }
             
           } catch (error) {
@@ -76,20 +78,26 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
           }
         }
 
-        console.log(`Final results: Successfully fetched ${results.length}/${uniqueSymbols.length} stock prices`, results);
+        console.log(`Final results: Successfully fetched ${results.length}/${testSymbols.length} stock prices`, results);
         if (errors.length > 0) {
           console.log(`Errors encountered:`, errors);
         }
+        
+        // If we got no results at all, throw an error so the component shows "not available"
+        if (results.length === 0) {
+          throw new Error('No stock data available from API');
+        }
+        
         return results;
       } catch (error) {
         console.error('Error fetching stock prices:', error);
         throw error;
       }
     },
-    staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
+    staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes
+    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes
     retry: 1,
-    retryDelay: 30000, // Wait 30 seconds between retries
-    enabled: true, // Always enabled
+    retryDelay: 60000, // Wait 1 minute between retries
+    enabled: true,
   });
 };
