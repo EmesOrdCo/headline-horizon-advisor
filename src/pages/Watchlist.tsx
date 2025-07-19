@@ -203,8 +203,8 @@ const Watchlist = () => {
                         >
                           <HistoricalPriceChart 
                             symbol={stock.symbol} 
-                            timeframe="1Hour"
-                            limit={168}
+                            timeframe="1Day"
+                            limit={7}
                             height={64}
                             showMiniChart={true}
                           />
