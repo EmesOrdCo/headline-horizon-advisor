@@ -12,6 +12,16 @@ interface HistoricalPriceChartProps {
   limit?: number;
 }
 
+type TimePeriod = '1D' | '1W' | '1M' | '3M' | '1Y';
+
+const TIME_PERIODS: { label: string; value: TimePeriod; days: number }[] = [
+  { label: '1D', value: '1D', days: 1 },
+  { label: '1W', value: '1W', days: 7 },
+  { label: '1M', value: '1M', days: 30 },
+  { label: '3M', value: '3M', days: 90 },
+  { label: '1Y', value: '1Y', days: 365 },
+];
+
 // Custom Candlestick component for Recharts
 const Candlestick = (props: any) => {
   const { payload, x, y, width, height } = props;
@@ -61,8 +71,13 @@ const Candlestick = (props: any) => {
 };
 
 const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: HistoricalPriceChartProps) => {
-  const { data: historicalData, isLoading, error } = useHistoricalPrices(symbol, timeframe, limit);
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1M');
   const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
+
+  // Get the limit based on selected period
+  const currentLimit = TIME_PERIODS.find(p => p.value === selectedPeriod)?.days || 30;
+  
+  const { data: historicalData, isLoading, error } = useHistoricalPrices(symbol, timeframe, currentLimit);
 
   const chartData = useMemo(() => {
     if (!historicalData?.data) return [];
@@ -181,13 +196,32 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white">
-              {symbol} Historical Price Chart ({limit} days)
+              {symbol} Live Performance
             </h3>
             <p className="text-sm text-slate-400">
               {chartData.length} data points
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Time Period Buttons */}
+            <div className="flex gap-1">
+              {TIME_PERIODS.map((period) => (
+                <Button
+                  key={period.value}
+                  onClick={() => setSelectedPeriod(period.value)}
+                  variant={selectedPeriod === period.value ? 'default' : 'outline'}
+                  size="sm"
+                  className={selectedPeriod === period.value 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                  }
+                >
+                  {period.label}
+                </Button>
+              ))}
+            </div>
+            
+            {/* Chart Type Buttons */}
             <div className="flex gap-2">
               <Button
                 onClick={() => setChartType('line')}
@@ -208,13 +242,14 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
                 Candles
               </Button>
             </div>
+            
             <div className="text-right">
               <div className={`text-lg font-semibold ${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)} 
                 ({totalChange >= 0 ? '+' : ''}{totalChangePercent.toFixed(2)}%)
               </div>
               <div className="text-sm text-slate-400">
-                Period change
+                {selectedPeriod} change
               </div>
             </div>
           </div>

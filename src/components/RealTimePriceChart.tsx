@@ -60,7 +60,7 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
     <div className="w-full">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-white">
-          {symbol} {isMarketClosed ? 'Close Price Chart' : 'Live Price Chart'}
+          {symbol} {isMarketClosed ? 'Close Performance' : 'Live Performance'}
         </h3>
         <p className="text-sm text-slate-400">
           {data.length} data points {isMarketClosed && '(until market close)'}
