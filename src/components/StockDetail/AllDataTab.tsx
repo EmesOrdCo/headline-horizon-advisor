@@ -62,30 +62,30 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           <CardHeader>
             <CardTitle className="text-white">Valuation Metrics</CardTitle>
             <p className="text-slate-400 text-sm">
-              Enhanced with Twelve Data API 
-              <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+              Twelve Data Free Plan - Limited metrics available
+              <Badge variant="outline" className="ml-2 text-xs border-orange-400 text-orange-300">Free Plan</Badge>
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Earnings</span>
-              {formatTwelveDataValue(twelveDataMetrics.peRatio)}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Book</span>
-              {formatTwelveDataValue(twelveDataMetrics.priceToBook)}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Price-to-Sales</span>
-              {formatTwelveDataValue(twelveDataMetrics.priceToSales)}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">EV/EBITDA</span>
-              {formatTwelveDataValue(twelveDataMetrics.evToEbitda)}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
               <span className="text-slate-400">PEG Ratio</span>
-              {formatTwelveDataValue(twelveDataMetrics.pegRatio)}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
           </CardContent>
         </Card>
@@ -95,30 +95,30 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           <CardHeader>
             <CardTitle className="text-white">Financial Health</CardTitle>
             <p className="text-slate-400 text-sm">
-              Enhanced with Twelve Data API 
-              <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+              Twelve Data Free Plan - Limited metrics available
+              <Badge variant="outline" className="ml-2 text-xs border-orange-400 text-orange-300">Free Plan</Badge>
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Revenue Growth (YoY)</span>
-              {formatTwelveDataValue(twelveDataMetrics.revenueGrowth, 'percentage')}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Gross Margin</span>
-              {formatTwelveDataValue(twelveDataMetrics.grossMargin, 'percentage')}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Operating Margin</span>
-              {formatTwelveDataValue(twelveDataMetrics.operatingMargin, 'percentage')}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-400">Net Margin</span>
-              {formatTwelveDataValue(twelveDataMetrics.netMargin, 'percentage')}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
               <span className="text-slate-400">ROE</span>
-              {formatTwelveDataValue(twelveDataMetrics.returnOnEquity, 'percentage')}
+              <span className="text-orange-400 text-sm italic">Requires Pro Plan</span>
             </div>
           </CardContent>
         </Card>
