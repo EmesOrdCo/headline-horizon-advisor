@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,12 @@ interface NewsArticle {
   category?: string;
 }
 
+interface PriceHistoryPoint {
+  timestamp: string;
+  price: number;
+  symbol: string;
+}
+
 const MyStocks = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -67,7 +74,7 @@ const MyStocks = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedStock, setSelectedStock] = useState("");
   const [showChart, setShowChart] = useState(false);
-  const [priceHistory, setPriceHistory] = useState<Record<string, Array<{timestamp: string, price: number, symbol: string}>>({});
+  const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
 
   // Use the dedicated user stock prices hook for fallback
   const userStockSymbols = userStocks.map(stock => stock.symbol);
