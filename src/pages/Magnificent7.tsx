@@ -62,7 +62,7 @@ const Magnificent7 = () => {
   });
   
   const { data: newsData, isLoading, refetch } = useNews();
-  const { data: stockPrices } = useStockPrices();
+  const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useStockPrices();
   const fetchNews = useFetchNews();
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
@@ -71,15 +71,15 @@ const Magnificent7 = () => {
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
 
-  // Mock close prices for when API is unavailable (typical close prices for demonstration)
+  // Enhanced mock close prices with realistic values
   const mockClosePrices = {
-    'AAPL': 150.25,
-    'MSFT': 350.80,
-    'GOOGL': 125.45,
-    'AMZN': 145.90,
-    'NVDA': 450.30,
-    'TSLA': 185.60,
-    'META': 275.40
+    'AAPL': 225.75,
+    'MSFT': 441.85,
+    'GOOGL': 178.92,
+    'AMZN': 215.38,
+    'NVDA': 144.75,
+    'TSLA': 359.22,
+    'META': 598.45
   };
 
   // Real-time streaming for Magnificent 7
@@ -90,7 +90,7 @@ const Magnificent7 = () => {
   
   const { isConnected, isAuthenticated, connectionStatus, streamData } = streamResult;
 
-  // Check if market is closed based on connection errors and current time
+  // Enhanced market closed detection
   const isMarketClosed = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -100,12 +100,18 @@ const Magnificent7 = () => {
     const isWeekend = currentDay === 0 || currentDay === 6;
     const isAfterHours = currentHour < 14 || currentHour > 21;
     
-    return isWeekend || isAfterHours || connectionStatus === 'error';
-  }, [connectionStatus]);
+    // Also consider market closed if API is failing or no stock data
+    const apiFailure = stockPricesError || (!stockPricesLoading && (!stockPrices || stockPrices.length === 0));
+    
+    return isWeekend || isAfterHours || connectionStatus === 'error' || apiFailure;
+  }, [connectionStatus, stockPricesError, stockPricesLoading, stockPrices]);
 
-  // Generate mock historical data for charts when market is closed
+  console.log('Market status:', { isMarketClosed, stockPricesError, stockPricesLoading, stockPricesLength: stockPrices?.length });
+
+  // Generate mock historical data when market is closed or API fails
   useEffect(() => {
-    if (isMarketClosed && Object.keys(priceHistory).length === 0) {
+    if (isMarketClosed) {
+      console.log('Generating mock historical data for closed market');
       const mockHistory: {[key: string]: PriceHistoryPoint[]} = {};
       
       MAGNIFICENT_7.forEach(symbol => {
@@ -114,14 +120,14 @@ const Magnificent7 = () => {
         
         // Generate 50 mock data points for the trading day
         for (let i = 0; i < 50; i++) {
-          const variance = (Math.random() - 0.5) * 0.05; // ±2.5% variance
+          const variance = (Math.random() - 0.5) * 0.04; // ±2% variance
           const price = basePrice * (1 + variance);
           const timestamp = new Date();
-          timestamp.setHours(9, 30 + (i * 8), 0, 0); // Spread across trading day
+          timestamp.setHours(9, 30 + (i * 7.8), 0, 0); // Spread across 6.5 hour trading day
           
           points.push({
             timestamp: timestamp.toISOString(),
-            price: price,
+            price: Number(price.toFixed(2)),
             symbol: symbol
           });
         }
@@ -130,6 +136,7 @@ const Magnificent7 = () => {
       });
       
       setPriceHistory(mockHistory);
+      console.log('Mock historical data generated:', mockHistory);
     }
   }, [isMarketClosed]);
 
@@ -198,21 +205,29 @@ const Magnificent7 = () => {
     });
   });
 
+  // Enhanced stock price function with better fallback logic
   const getStockPrice = (symbol: string) => {
+    // First try to get from API data
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
-    if (apiPrice) return apiPrice;
-    
-    // Return mock data when API is unavailable
-    const mockPrice = mockClosePrices[symbol as keyof typeof mockClosePrices];
-    if (mockPrice) {
-      return {
-        symbol,
-        price: mockPrice,
-        change: (Math.random() - 0.5) * 10, // Random change for demo
-        changePercent: (Math.random() - 0.5) * 5 // Random change % for demo
-      };
+    if (apiPrice && apiPrice.price > 0) {
+      console.log(`Using API price for ${symbol}:`, apiPrice);
+      return apiPrice;
     }
     
+    // Fallback to mock data
+    const mockPrice = mockClosePrices[symbol as keyof typeof mockClosePrices];
+    if (mockPrice) {
+      const mockData = {
+        symbol,
+        price: mockPrice,
+        change: (Math.random() - 0.5) * 8, // Random change between -4 and +4
+        changePercent: (Math.random() - 0.5) * 3 // Random change % between -1.5% and +1.5%
+      };
+      console.log(`Using mock price for ${symbol}:`, mockData);
+      return mockData;
+    }
+    
+    console.log(`No price data available for ${symbol}`);
     return null;
   };
 
