@@ -73,11 +73,13 @@ const MyStocks = () => {
   const userStockSymbols = userStocks.map(stock => stock.symbol);
   const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useUserStockPrices(userStockSymbols);
 
-  // Use the real-time streaming hook
-  const { isConnected, isAuthenticated, connectionStatus, streamData, connect, disconnect } = useAlpacaStream({
+  // Use the real-time streaming hook - fix the destructuring
+  const streamHookResult = useAlpacaStream({
     symbols: userStockSymbols,
     enabled: userStocks.length > 0
   });
+  
+  const { isConnected, isAuthenticated, connectionStatus, streamData, connect, disconnect } = streamHookResult;
 
   // Store price history for charts
   useEffect(() => {
