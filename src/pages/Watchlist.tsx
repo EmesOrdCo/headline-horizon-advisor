@@ -109,7 +109,15 @@ const Watchlist = () => {
 
   // Mini chart component for each stock
   const MiniChart = ({ symbol }: { symbol: string }) => {
-    const { data: historicalData } = useHistoricalPrices(symbol, '1Day', 7);
+    const { data: historicalData, isLoading } = useHistoricalPrices(symbol, '1Day', 7);
+    
+    if (isLoading) {
+      return (
+        <div className="w-[120px] h-[50px] flex items-center justify-center">
+          <div className="animate-pulse bg-gray-200 w-full h-full rounded"></div>
+        </div>
+      );
+    }
     
     if (!historicalData?.data || historicalData.data.length === 0) {
       // Fallback to mock chart if no data
@@ -117,21 +125,51 @@ const Watchlist = () => {
     }
 
     const chartData = historicalData.data;
-    const isPositive = chartData[chartData.length - 1]?.close >= chartData[0]?.close;
+    const prices = chartData.map(d => d.close);
+    const isPositive = prices[prices.length - 1] >= prices[0];
     
     // Create SVG path from historical data
-    const maxPrice = Math.max(...chartData.map(d => d.close));
-    const minPrice = Math.min(...chartData.map(d => d.close));
+    const maxPrice = Math.max(...prices);
+    const minPrice = Math.min(...prices);
     const priceRange = maxPrice - minPrice;
     
+    // If price range is too small, show flat line
+    if (priceRange < 0.01) {
+      const points = chartData.map((_, index) => {
+        const x = (index / (chartData.length - 1)) * 110; // 0 to 110 to fit within 120px width
+        const y = 25; // Middle of 50px height
+        return `${x},${y}`;
+      }).join(' ');
+
+      return (
+        <svg width="120" height="50" className="inline-block">
+          <polyline
+            points={points}
+            fill="none"
+            stroke={isPositive ? "#10b981" : "#ef4444"}
+            strokeWidth="2"
+            className="opacity-70"
+          />
+        </svg>
+      );
+    }
+    
     const points = chartData.map((point, index) => {
-      const x = (index / (chartData.length - 1)) * 95; // 0 to 95 to fit within 120px width
-      const y = priceRange > 0 ? (1 - ((point.close - minPrice) / priceRange)) * 40 + 5 : 25; // 5 to 45 to fit within 50px height
+      const x = (index / (chartData.length - 1)) * 110; // 0 to 110 to fit within 120px width
+      const y = 40 - ((point.close - minPrice) / priceRange) * 30; // Invert Y and scale to fit 10-40px range
       return `${x},${y}`;
     }).join(' ');
 
+    const gradientId = `gradient-${symbol}-${isPositive ? 'positive' : 'negative'}`;
+
     return (
       <svg width="120" height="50" className="inline-block">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
+            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
+          </linearGradient>
+        </defs>
         <polyline
           points={points}
           fill="none"
@@ -139,15 +177,9 @@ const Watchlist = () => {
           strokeWidth="2"
           className="opacity-70"
         />
-        <defs>
-          <linearGradient id={`gradient-${symbol}-${isPositive ? 'positive' : 'negative'}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
-            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
-          </linearGradient>
-        </defs>
         <polygon
-          points={`0,50 ${points} 95,50`}
-          fill={`url(#gradient-${symbol}-${isPositive ? 'positive' : 'negative'})`}
+          points={`0,50 ${points} 110,50`}
+          fill={`url(#${gradientId})`}
         />
       </svg>
     );
@@ -155,14 +187,23 @@ const Watchlist = () => {
 
   const generateMockChart = (isPositive: boolean) => {
     const points = [];
-    let value = 50;
-    for (let i = 0; i < 20; i++) {
-      value += (Math.random() - 0.5) * 10;
-      value = Math.max(10, Math.min(90, value));
-      points.push(`${i * 5},${100 - value}`);
+    let value = 30;
+    for (let i = 0; i < 15; i++) {
+      value += (Math.random() - 0.5) * 8;
+      value = Math.max(10, Math.min(40, value));
+      points.push(`${i * 7.5},${value}`);
     }
+    
+    const gradientId = `gradient-mock-${isPositive ? 'positive' : 'negative'}`;
+    
     return (
       <svg width="120" height="50" className="inline-block">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
+            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
+          </linearGradient>
+        </defs>
         <polyline
           points={points.join(' ')}
           fill="none"
@@ -170,15 +211,9 @@ const Watchlist = () => {
           strokeWidth="2"
           className="opacity-70"
         />
-        <defs>
-          <linearGradient id={`gradient-${isPositive ? 'positive' : 'negative'}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
-            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
-          </linearGradient>
-        </defs>
         <polygon
-          points={`0,100 ${points.join(' ')} 100,100`}
-          fill={`url(#gradient-${isPositive ? 'positive' : 'negative'})`}
+          points={`0,50 ${points.join(' ')} 112.5,50`}
+          fill={`url(#${gradientId})`}
         />
       </svg>
     );
