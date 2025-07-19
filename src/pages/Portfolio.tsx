@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSEO } from "@/hooks/useSEO";
 import { TrendingUp, TrendingDown, Eye, BarChart3, PieChart, List } from "lucide-react";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { ChartContainer } from "@/components/ui/chart";
 
 // Dummy portfolio data
 const dummyPortfolioData = {
@@ -267,43 +268,106 @@ const Portfolio = () => {
     </Card>
   );
 
-  // Chart View (Placeholder for now)
-  const ChartView = () => (
-    <Card className="bg-slate-800/50 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white">Portfolio Allocation</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {dummyPortfolioData.holdings.map((holding) => {
-            const percentage = (holding.totalValue / dummyPortfolioData.totalValue) * 100;
-            return (
-              <div key={holding.symbol} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge className="bg-emerald-600 text-white">{holding.symbol}</Badge>
-                  <span className="text-white">{holding.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-32 bg-slate-700 rounded-full h-2">
-                    <div
-                      className="bg-emerald-500 h-2 rounded-full"
-                      style={{ width: `${percentage}%` }}
+  // Chart View with Pie Chart
+  const ChartView = () => {
+    const chartData = dummyPortfolioData.holdings.map((holding, index) => {
+      const percentage = (holding.totalValue / dummyPortfolioData.totalValue) * 100;
+      return {
+        name: holding.symbol,
+        value: holding.totalValue,
+        percentage: percentage,
+        fullName: holding.name,
+        color: `hsl(${(index * 60) % 360}, 70%, 60%)`, // Generate different colors
+      };
+    });
+
+    const chartConfig = {
+      value: {
+        label: "Portfolio Value",
+      },
+    };
+
+    const CustomTooltip = ({ active, payload }: any) => {
+      if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-lg">
+            <p className="text-white font-semibold">{data.name}</p>
+            <p className="text-slate-300 text-sm">{data.fullName}</p>
+            <p className="text-emerald-400 font-semibold">
+              {formatCurrency(data.value)} ({data.percentage.toFixed(1)}%)
+            </p>
+          </div>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Portfolio Allocation</CardTitle>
+          <p className="text-slate-400 text-sm">Distribution of your investments</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Pie Chart */}
+            <div className="lg:col-span-2">
+              <ChartContainer config={chartConfig} className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      innerRadius={60}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="space-y-3">
+              <h3 className="text-white font-semibold mb-4">Holdings</h3>
+              {chartData.map((holding, index) => (
+                <div key={holding.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: holding.color }}
                     />
+                    <div>
+                      <Badge className="bg-emerald-600 text-white text-xs mb-1">
+                        {holding.name}
+                      </Badge>
+                      <p className="text-slate-300 text-sm">{holding.fullName}</p>
+                    </div>
                   </div>
-                  <span className="text-white font-semibold w-16 text-right">
-                    {percentage.toFixed(1)}%
-                  </span>
-                  <span className="text-slate-400 w-24 text-right">
-                    {formatCurrency(holding.totalValue)}
-                  </span>
+                  <div className="text-right">
+                    <p className="text-white font-semibold">
+                      {holding.percentage.toFixed(1)}%
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                      {formatCurrency(holding.value)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
