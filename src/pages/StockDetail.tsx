@@ -188,46 +188,44 @@ const StockDetail = () => {
             </div>
 
             {/* Side Cards take up 1/3 of the width */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Key Upcoming Events */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white flex items-center gap-2 text-base">
+                    <Calendar className="w-4 h-4" />
                     Upcoming Events
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-emerald-400 font-semibold">Earnings Report</div>
-                        <div className="text-slate-400 text-sm">Q2 2025</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">27</div>
-                        <div className="text-slate-400 text-sm">AUG</div>
-                      </div>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-emerald-400 font-semibold text-sm">Earnings Report</div>
+                      <div className="text-slate-400 text-xs">Q2 2025</div>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-blue-400 font-semibold">Dividend Payment</div>
-                        <div className="text-slate-400 text-sm">$0.28 per share</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">15</div>
-                        <div className="text-slate-400 text-sm">SEP</div>
-                      </div>
+                    <div className="text-right">
+                      <div className="text-white font-bold text-sm">27</div>
+                      <div className="text-slate-400 text-xs">AUG</div>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <div className="text-purple-400 font-semibold">Analyst Day</div>
-                        <div className="text-slate-400 text-sm">Investor meeting</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold">03</div>
-                        <div className="text-slate-400 text-sm">OCT</div>
-                      </div>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-blue-400 font-semibold text-sm">Dividend Payment</div>
+                      <div className="text-slate-400 text-xs">$0.28 per share</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-white font-bold text-sm">15</div>
+                      <div className="text-slate-400 text-xs">SEP</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <div className="text-purple-400 font-semibold text-sm">Analyst Day</div>
+                      <div className="text-slate-400 text-xs">Investor meeting</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-white font-bold text-sm">03</div>
+                      <div className="text-slate-400 text-xs">OCT</div>
                     </div>
                   </div>
                 </CardContent>
@@ -235,41 +233,109 @@ const StockDetail = () => {
 
               {/* AI Forecast */}
               <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Bot className="w-5 h-5" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white flex items-center gap-2 text-base">
+                    <Bot className="w-4 h-4" />
                     AI Forecast
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
-                      <div className="text-emerald-400 font-bold text-2xl">BULLISH</div>
-                      <div className="text-slate-300 text-sm mt-1">Next 30 days</div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Confidence Level</span>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            {[1,2,3,4].map(i => (
-                              <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                            ))}
-                            <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
-                          </div>
-                          <span className="text-white font-semibold">82%</span>
+                <CardContent className="space-y-3">
+                  <div className="text-center p-3 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
+                    <div className="text-emerald-400 font-bold text-xl">BULLISH</div>
+                    <div className="text-slate-300 text-xs mt-1">Next 30 days</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-sm">Confidence Level</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {[1,2,3,4].map(i => (
+                            <div key={i} className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                          ))}
+                          <div className="w-1.5 h-1.5 bg-slate-600 rounded-full"></div>
                         </div>
+                        <span className="text-white font-semibold text-sm">82%</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Price Target</span>
-                        <span className="text-emerald-400 font-semibold">${(stockInfo.price * 1.12).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Upside Potential</span>
-                        <span className="text-emerald-400 font-semibold">+12%</span>
-                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-sm">Price Target</span>
+                      <span className="text-emerald-400 font-semibold text-sm">${(stockInfo.price * 1.12).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-sm">Upside Potential</span>
+                      <span className="text-emerald-400 font-semibold text-sm">+12%</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Price Alert Section */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white flex items-center gap-2 text-base">
+                    <Bell className="w-4 h-4" />
+                    Set Price Alert
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-1 text-slate-400 text-xs mb-2">
+                    <Info className="w-3 h-3" />
+                    <span>Get notified when price hits target</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-1 mb-3">
+                    {['-10%', '-5%', '+5%', '+10%'].map((option) => (
+                      <Button
+                        key={option}
+                        variant={selectedAlertType === option ? "default" : "outline"}
+                        className={`px-2 py-1 text-xs rounded ${
+                          selectedAlertType === option 
+                            ? "bg-emerald-600 text-white border-emerald-600" 
+                            : "bg-transparent border-slate-600 text-slate-300 hover:border-emerald-600 hover:text-emerald-400"
+                        }`}
+                        onClick={() => handleAlertSelection(option)}
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    variant={selectedAlertType === 'Custom' ? "default" : "outline"}
+                    className={`w-full text-xs mb-2 ${
+                      selectedAlertType === 'Custom'
+                        ? "bg-emerald-600 text-white border-emerald-600"
+                        : "bg-transparent border-slate-600 text-slate-300 hover:border-emerald-600 hover:text-emerald-400"
+                    }`}
+                    onClick={() => handleAlertSelection('Custom')}
+                  >
+                    Custom Price
+                  </Button>
+
+                  {selectedAlertType === 'Custom' && (
+                    <div className="space-y-1">
+                      <Label htmlFor="custom-alert" className="text-slate-300 text-xs">
+                        Target Price
+                      </Label>
+                      <Input
+                        id="custom-alert"
+                        type="number"
+                        placeholder="Enter price"
+                        value={customAlertValue}
+                        onChange={(e) => setCustomAlertValue(e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 text-sm h-8"
+                      />
+                    </div>
+                  )}
+
+                  {selectedAlertType && (
+                    <Button 
+                      onClick={handleSetAlert}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8"
+                    >
+                      Set Alert
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -285,11 +351,6 @@ const StockDetail = () => {
               <AllDataTab 
                 symbol={stockSymbol} 
                 stockInfo={stockInfo}
-                selectedAlertType={selectedAlertType}
-                customAlertValue={customAlertValue}
-                onAlertSelection={handleAlertSelection}
-                onCustomAlertChange={setCustomAlertValue}
-                onSetAlert={handleSetAlert}
               />
             </TabsContent>
           </Tabs>
@@ -434,106 +495,16 @@ const AIAnalysisTab = ({ symbol, stockInfo }: { symbol: string; stockInfo: any }
   );
 };
 
-// All Data Tab Component
+// All Data Tab Component - Simplified without price alert
 const AllDataTab = ({ 
   symbol, 
-  stockInfo,
-  selectedAlertType,
-  customAlertValue,
-  onAlertSelection,
-  onCustomAlertChange,
-  onSetAlert
+  stockInfo
 }: { 
   symbol: string; 
   stockInfo: any;
-  selectedAlertType: string;
-  customAlertValue: string;
-  onAlertSelection: (type: string) => void;
-  onCustomAlertChange: (value: string) => void;
-  onSetAlert: () => void;
 }) => {
   return (
     <div className="space-y-6">
-      {/* Price Alert Section - Only on All Data Tab */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Set price alert
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-4">
-              <Info className="w-4 h-4" />
-              <span>Price alerts notify you when an asset hits a target you set.</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-3 mb-4">
-              {['-10%', '-5%', '+5%', '+10%', 'Custom'].map((option) => (
-                <Button
-                  key={option}
-                  variant={selectedAlertType === option ? "default" : "outline"}
-                  className={`px-6 py-2 rounded-full ${
-                    selectedAlertType === option 
-                      ? "bg-emerald-600 text-white border-emerald-600" 
-                      : "bg-transparent border-slate-600 text-slate-300 hover:border-emerald-600 hover:text-emerald-400"
-                  }`}
-                  onClick={() => onAlertSelection(option)}
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-
-            {selectedAlertType === 'Custom' && (
-              <div className="space-y-2">
-                <Label htmlFor="custom-alert" className="text-slate-300">
-                  Custom Price Target
-                </Label>
-                <Input
-                  id="custom-alert"
-                  type="number"
-                  placeholder="Enter target price"
-                  value={customAlertValue}
-                  onChange={(e) => onCustomAlertChange(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                />
-              </div>
-            )}
-
-            {selectedAlertType && (
-              <Button 
-                onClick={onSetAlert}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                Set Alert
-              </Button>
-            )}
-
-            {/* Financial Metrics Grid - Modular Layout */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 p-4 bg-slate-700/30 rounded-lg">
-              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
-                <div className="text-slate-400 text-sm mb-1">Market Cap</div>
-                <div className="text-white font-bold text-lg">{stockInfo.marketCap}</div>
-              </div>
-              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
-                <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
-                <div className="text-white font-bold text-lg">{(Math.random() * 30 + 10).toFixed(2)}</div>
-              </div>
-              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
-                <div className="text-slate-400 text-sm mb-1">Volume</div>
-                <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
-              </div>
-              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
-                <div className="text-slate-400 text-sm mb-1">52W High</div>
-                <div className="text-white font-bold text-lg">${(stockInfo.price * 1.25).toFixed(2)}</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Detailed Financial Data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Valuation Metrics */}
@@ -620,6 +591,33 @@ const AllDataTab = ({
                   <span className="text-white">${(stockInfo.price * 0.98).toFixed(2)}</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial Metrics Grid */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Key Metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Market Cap</div>
+              <div className="text-white font-bold text-lg">{stockInfo.marketCap}</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
+              <div className="text-white font-bold text-lg">{(Math.random() * 30 + 10).toFixed(2)}</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Volume</div>
+              <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">52W High</div>
+              <div className="text-white font-bold text-lg">${(stockInfo.price * 1.25).toFixed(2)}</div>
             </div>
           </div>
         </CardContent>
