@@ -7,20 +7,28 @@ export const useFinnhubMetrics = (symbol: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!symbol) return;
+    console.log('useFinnhubMetrics: useEffect triggered with symbol:', symbol);
+    
+    if (!symbol) {
+      console.log('useFinnhubMetrics: No symbol provided, skipping fetch');
+      return;
+    }
 
     const loadMetrics = async () => {
-      console.log('Finnhub: Starting fetch for symbol:', symbol);
+      console.log('useFinnhubMetrics: Starting fetch for symbol:', symbol);
       setLoading(true);
       setError(null);
       try {
+        console.log('useFinnhubMetrics: Calling fetchFinnhubMetrics...');
         const data = await fetchFinnhubMetrics(symbol);
-        console.log('Finnhub: Received data:', data);
+        console.log('useFinnhubMetrics: Received data:', data);
         setMetrics(data);
       } catch (err) {
-        setError('Failed to fetch financial metrics');
-        console.error('Finnhub fetch error:', err);
+        const errorMessage = 'Failed to fetch financial metrics';
+        setError(errorMessage);
+        console.error('useFinnhubMetrics: Fetch error:', err);
       } finally {
+        console.log('useFinnhubMetrics: Setting loading to false');
         setLoading(false);
       }
     };

@@ -41,44 +41,56 @@ export interface FinnhubMetrics {
 }
 
 export const fetchFinnhubMetrics = async (symbol: string): Promise<FinnhubMetrics> => {
-  console.log('Finnhub API: Fetching metrics for', symbol);
+  console.log('Finnhub API: Starting fetch for symbol:', symbol);
+  
   try {
-    // Finnhub endpoints for comprehensive financial data
-    const endpoints = [
-      `${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${FINNHUB_API_KEY}`,
-      `${BASE_URL}/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`,
-      `${BASE_URL}/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
-    ];
+    // Test individual endpoints to see which ones work
+    const metricsUrl = `${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${FINNHUB_API_KEY}`;
+    console.log('Finnhub API: Fetching metrics URL:', metricsUrl);
+    
+    const metricsResponse = await fetch(metricsUrl);
+    console.log('Finnhub API: Metrics response status:', metricsResponse.status);
+    
+    if (!metricsResponse.ok) {
+      console.error('Finnhub API: Failed to fetch metrics. Status:', metricsResponse.status);
+      const errorText = await metricsResponse.text();
+      console.error('Finnhub API: Error response:', errorText);
+      return {};
+    }
+    
+    const metricsData = await metricsResponse.json();
+    console.log('Finnhub API: Raw metrics data:', metricsData);
+    
+    // Check if we got valid data
+    if (!metricsData || Object.keys(metricsData).length === 0) {
+      console.warn('Finnhub API: No metrics data received');
+      return {};
+    }
 
-    console.log('Finnhub API: Fetching from endpoints:', endpoints);
-
-    const [metricsRes, profileRes, quoteRes] = await Promise.allSettled(
-      endpoints.map(async (url, index) => {
-        console.log(`Finnhub API: Fetching endpoint ${index + 1}`);
-        const response = await fetch(url);
-        const data = await response.json();
-        console.log(`Finnhub API: Response ${index + 1}:`, data);
-        return data;
-      })
-    );
-
-    const metrics = metricsRes.status === 'fulfilled' ? metricsRes.value : {};
-    const profile = profileRes.status === 'fulfilled' ? profileRes.value : {};
-    const quote = quoteRes.status === 'fulfilled' ? quoteRes.value : {};
-
-    console.log('Finnhub API: Metrics data:', metrics);
-    console.log('Finnhub API: Profile data:', profile);
-    console.log('Finnhub API: Quote data:', quote);
-
-    // Extract metrics from Finnhub response
-    const metric = metrics.metric || {};
-    const annual = metrics.annual || {};
-    const ttm = metrics.ttm || {};
-
-    return {
+    // Extract metrics from the response
+    const metric = metricsData.metric || {};
+    console.log('Finnhub API: Parsed metric object:', metric);
+    
+    // Try to get company profile separately
+    let marketCap = null;
+    try {
+      const profileUrl = `${BASE_URL}/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`;
+      console.log('Finnhub API: Fetching profile URL:', profileUrl);
+      const profileResponse = await fetch(profileUrl);
+      
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        console.log('Finnhub API: Profile data:', profileData);
+        marketCap = profileData.marketCapitalization;
+      }
+    } catch (profileError) {
+      console.warn('Finnhub API: Failed to fetch profile data:', profileError);
+    }
+    
+    const result = {
       // Valuation metrics
-      marketCap: profile.marketCapitalization,
-      peRatio: metric.peBasicExclExtraTTM || metric.peTTM,
+      marketCap: marketCap,
+      peRatio: metric.peBasicExclExtraTTM || metric.peTTM || metric.peAnnual,
       pegRatio: metric.pegRatio,
       priceToBook: metric.pbAnnual || metric.pbTTM,
       priceToSales: metric.psAnnual || metric.psTTM,
@@ -113,8 +125,12 @@ export const fetchFinnhubMetrics = async (symbol: string): Promise<FinnhubMetric
       fiftyTwoWeekHigh: metric['52WeekHigh'],
       fiftyTwoWeekLow: metric['52WeekLow'],
     };
+    
+    console.log('Finnhub API: Final result:', result);
+    return result;
+    
   } catch (error) {
-    console.error('Error fetching Finnhub metrics:', error);
+    console.error('Finnhub API: Fetch error:', error);
     return {};
   }
 };
