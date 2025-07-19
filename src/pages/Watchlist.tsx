@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, ExternalLink, Loader2 } from "lucide-react";
+import MarketTicker from "@/components/MarketTicker";
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
@@ -150,7 +151,11 @@ const Watchlist = () => {
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
       
-      <div className="pt-16 px-4 sm:px-6">
+      <div className="pt-16">
+        <MarketTicker />
+      </div>
+      
+      <div className="px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
