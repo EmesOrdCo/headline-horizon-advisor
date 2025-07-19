@@ -364,9 +364,9 @@ const Portfolio = () => {
             {/* Holdings Breakdown - Takes up 2 columns */}
             <div className="lg:col-span-2 space-y-4">
               <h3 className="text-white font-semibold text-xl mb-6">Holdings Breakdown</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="space-y-3">
                 {chartData.map((holding, index) => (
-                  <div key={holding.name} className="bg-slate-700/40 rounded-lg px-4 py-3 border border-slate-600/50 hover:bg-slate-700/60 transition-colors flex-1 min-w-0">
+                  <div key={holding.name} className="bg-slate-700/40 rounded-lg px-4 py-3 border border-slate-600/50 hover:bg-slate-700/60 transition-colors">
                     {/* Single horizontal line layout */}
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-2 flex-shrink-0">
