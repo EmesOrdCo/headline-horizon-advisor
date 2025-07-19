@@ -97,9 +97,9 @@ async function fetchRecentHeadlines() {
   try {
     console.log('🔍 Fetching recent headlines from MarketAux...');
     
-    // Fetch recent general market news from MarketAux (remove problematic published_after parameter)
-    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=true&language=en&limit=50&api_token=${marketauxApiKey}`;
-    console.log('📡 Making API request to MarketAux without date filter...');
+    // Fetch recent general market news from MarketAux with better source diversity
+    const apiUrl = `https://api.marketaux.com/v1/news/all?filter_entities=false&language=en&limit=100&sort=published_desc&api_token=${marketauxApiKey}`;
+    console.log('📡 Making API request to MarketAux for diverse sources...');
     
     const response = await fetch(apiUrl);
     
