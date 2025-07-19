@@ -19,7 +19,6 @@ interface Stock {
   price: number;
   change: number;
   changePercent: number;
-  marketCap: string;
 }
 
 const Watchlist = () => {
@@ -39,7 +38,6 @@ const Watchlist = () => {
       price: 789.25,
       change: 15.75,
       changePercent: 2.03,
-      marketCap: "1.94T",
     },
     {
       symbol: "TSLA",
@@ -47,7 +45,6 @@ const Watchlist = () => {
       price: 1050.50,
       change: -22.30,
       changePercent: -2.07,
-      marketCap: "1.01T",
     },
     {
       symbol: "AMZN",
@@ -55,7 +52,6 @@ const Watchlist = () => {
       price: 3420.80,
       change: 45.20,
       changePercent: 1.34,
-      marketCap: "1.72T",
     },
     {
       symbol: "PLTR",
@@ -63,7 +59,6 @@ const Watchlist = () => {
       price: 27.50,
       change: 0.80,
       changePercent: 3.00,
-      marketCap: "52.14B",
     },
     {
       symbol: "AAPL",
@@ -71,7 +66,6 @@ const Watchlist = () => {
       price: 150.25,
       change: -1.20,
       changePercent: -0.80,
-      marketCap: "2.46T",
     },
     {
       symbol: "SOXL",
@@ -79,7 +73,6 @@ const Watchlist = () => {
       price: 45.67,
       change: 1.23,
       changePercent: 2.76,
-      marketCap: "1.23B",
     },
     {
       symbol: "GOOGL",
@@ -87,7 +80,6 @@ const Watchlist = () => {
       price: 2700.15,
       change: 30.50,
       changePercent: 1.14,
-      marketCap: "1.80T",
     },
     {
       symbol: "MSTR",
@@ -95,7 +87,6 @@ const Watchlist = () => {
       price: 650.75,
       change: -15.25,
       changePercent: -2.29,
-      marketCap: "6.12B",
     },
     {
       symbol: "META",
@@ -103,7 +94,6 @@ const Watchlist = () => {
       price: 350.20,
       change: 5.80,
       changePercent: 1.68,
-      marketCap: "945.67B",
     },
   ];
 
@@ -213,8 +203,8 @@ const Watchlist = () => {
                         >
                           <HistoricalPriceChart 
                             symbol={stock.symbol} 
-                            timeframe="1Day"
-                            limit={7}
+                            timeframe="1Hour"
+                            limit={168}
                             height={64}
                             showMiniChart={true}
                           />
