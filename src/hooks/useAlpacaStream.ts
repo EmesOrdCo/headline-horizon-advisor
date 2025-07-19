@@ -28,14 +28,19 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const connect = useCallback(() => {
     if (!enabled || symbols.length === 0) return;
 
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
     setConnectionStatus('connecting');
     
-    // Use the full Supabase function URL
     const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
     try {
@@ -50,6 +55,7 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
       socketRef.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          console.log('Received message:', message);
           
           switch (message.type) {
             case 'auth_success':
@@ -70,48 +76,73 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
               
             case 'auth_error':
               setConnectionStatus('error');
+              setIsAuthenticated(false);
               toast({
                 title: "Authentication Failed",
-                description: message.message,
+                description: message.message || "Failed to authenticate with market data provider",
                 variant: "destructive",
               });
               break;
               
             case 'market_data':
-              // Handle different data types
+              // Handle market data
               if (Array.isArray(message.data)) {
                 message.data.forEach((item: any) => {
                   if (item.S) { // Symbol exists
-                    setStreamData(prev => ({
-                      ...prev,
-                      [item.S]: {
-                        type: item.T, // Message type (t=trade, q=quote, b=bar)
-                        symbol: item.S,
-                        price: item.p || item.ap || item.c, // Trade price, ask price, or close price
-                        timestamp: item.t,
-                        volume: item.s || item.v,
-                        bid: item.bp,
-                        ask: item.ap,
-                        open: item.o,
-                        high: item.h,
-                        low: item.l,
-                        close: item.c
-                      }
-                    }));
+                    const price = item.p || item.ap || item.bp || item.c; // Trade, ask, bid, or close price
+                    if (price) {
+                      setStreamData(prev => ({
+                        ...prev,
+                        [item.S]: {
+                          type: item.T, // Message type (t=trade, q=quote, b=bar)
+                          symbol: item.S,
+                          price: price,
+                          timestamp: item.t ? new Date(item.t / 1000000).toISOString() : new Date().toISOString(),
+                          volume: item.s || item.v,
+                          bid: item.bp,
+                          ask: item.ap,
+                          open: item.o,
+                          high: item.h,
+                          low: item.l,
+                          close: item.c
+                        }
+                      }));
+                    }
                   }
                 });
               }
               break;
               
             case 'error':
-            case 'disconnected':
               setConnectionStatus('error');
               setIsAuthenticated(false);
               toast({
                 title: "Stream Error",
-                description: message.message,
+                description: message.message || "Connection error occurred",
                 variant: "destructive",
               });
+              
+              // Attempt to reconnect after 5 seconds
+              reconnectTimeoutRef.current = setTimeout(() => {
+                if (enabled) {
+                  console.log('Attempting to reconnect...');
+                  connect();
+                }
+              }, 5000);
+              break;
+              
+            case 'disconnected':
+              setConnectionStatus('disconnected');
+              setIsAuthenticated(false);
+              console.log('Stream disconnected:', message.message);
+              
+              // Attempt to reconnect after 3 seconds
+              reconnectTimeoutRef.current = setTimeout(() => {
+                if (enabled) {
+                  console.log('Attempting to reconnect after disconnection...');
+                  connect();
+                }
+              }, 3000);
               break;
           }
         } catch (error) {
@@ -122,27 +153,44 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
       socketRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setConnectionStatus('error');
+        setIsConnected(false);
+        setIsAuthenticated(false);
+        
         toast({
           title: "Connection Error",
-          description: "Failed to connect to real-time data stream",
+          description: "Failed to connect to real-time data stream. Retrying...",
           variant: "destructive",
         });
+        
+        // Attempt to reconnect after 5 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (enabled) {
+            console.log('Attempting to reconnect after error...');
+            connect();
+          }
+        }, 5000);
       };
 
       socketRef.current.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
         setIsAuthenticated(false);
-        setConnectionStatus('disconnected');
+        if (connectionStatus !== 'error') {
+          setConnectionStatus('disconnected');
+        }
       };
 
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionStatus('error');
     }
-  }, [symbols, enabled, toast]);
+  }, [symbols, enabled, toast, connectionStatus]);
 
   const disconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    
     if (socketRef.current) {
       socketRef.current.close();
       socketRef.current = null;
