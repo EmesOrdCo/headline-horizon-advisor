@@ -23,7 +23,7 @@ serve(async (req) => {
     const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
     const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
-    console.log(`=== DEBUGGING ALPACA PAPER API FOR ${cleanSymbol} ===`);
+    console.log(`=== DEBUGGING ALPACA API FOR ${cleanSymbol} ===`);
     console.log('Alpaca Trader API Key exists:', !!alpacaApiKey);
     console.log('Alpaca Trader Secret Key exists:', !!alpacaSecretKey);
     
@@ -36,7 +36,7 @@ serve(async (req) => {
       throw new Error('Alpaca trader API credentials not configured');
     }
 
-    // Try the data API endpoint instead of paper trading endpoint
+    // Get current quote data
     const quoteUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
@@ -50,80 +50,101 @@ serve(async (req) => {
       },
     });
     
-    console.log(`Response status for ${cleanSymbol}:`, quoteResponse.status);
-    console.log(`Response headers for ${cleanSymbol}:`, Object.fromEntries(quoteResponse.headers.entries()));
-    
-    const responseText = await quoteResponse.text();
-    console.log(`Raw response for ${cleanSymbol}:`, responseText);
+    console.log(`Quote response status for ${cleanSymbol}:`, quoteResponse.status);
     
     if (!quoteResponse.ok) {
-      console.error(`Alpaca API error for ${cleanSymbol}: ${quoteResponse.status} - ${responseText}`);
-      
-      // If we get authentication errors, try with basic auth
-      if (quoteResponse.status === 401 || quoteResponse.status === 403) {
-        console.log('Trying with basic authentication...');
-        
-        const basicAuth = btoa(`${alpacaApiKey}:${alpacaSecretKey}`);
-        const retryResponse = await fetch(quoteUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Basic ${basicAuth}`,
-            'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
-            'Accept': 'application/json',
-          },
-        });
-        
-        const retryText = await retryResponse.text();
-        console.log(`Retry response status: ${retryResponse.status}`);
-        console.log(`Retry response: ${retryText}`);
-        
-        if (!retryResponse.ok) {
-          return new Response(JSON.stringify({ 
-            error: 'Alpaca API authentication failed',
-            details: `HTTP ${retryResponse.status}: ${retryText}`
-          }), {
-            status: 502,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
-        const retryData = JSON.parse(retryText);
-        return processAlpacaResponse(retryData, cleanSymbol);
-      }
-      
-      // Return error for API failures
-      return new Response(JSON.stringify({ 
-        error: 'Alpaca API request failed',
-        details: `HTTP ${quoteResponse.status}: ${responseText}`
-      }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error(`Alpaca quote API error for ${cleanSymbol}: ${quoteResponse.status}`);
+      throw new Error(`Quote API request failed: ${quoteResponse.status}`);
     }
     
-    let quoteData;
-    try {
-      quoteData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error(`JSON parse error for ${cleanSymbol}:`, parseError);
-      console.error(`Response text that failed to parse:`, responseText);
-      return new Response(JSON.stringify({ 
-        error: 'JSON parse error',
-        details: `Failed to parse API response: ${parseError.message}`
-      }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const quoteData = JSON.parse(await quoteResponse.text());
+    console.log(`Quote data for ${cleanSymbol}:`, quoteData);
+
+    // Get last trade data for actual trading price
+    const tradeUrl = `https://data.alpaca.markets/v2/stocks/trades/latest?symbols=${cleanSymbol}`;
+    console.log(`Making trade request to: ${tradeUrl}`);
+    
+    const tradeResponse = await fetch(tradeUrl, {
+      method: 'GET',
+      headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
+        'Accept': 'application/json',
+      },
+    });
+    
+    const tradeData = tradeResponse.ok ? JSON.parse(await tradeResponse.text()) : null;
+    console.log(`Trade data for ${cleanSymbol}:`, tradeData);
+
+    // Get previous day's closing price for proper percentage calculation
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
+    console.log(`Making bars request to: ${barsUrl}`);
+    
+    const barsResponse = await fetch(barsUrl, {
+      method: 'GET',
+      headers: {
+        'APCA-API-KEY-ID': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
+        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
+        'Accept': 'application/json',
+      },
+    });
+    
+    const barsData = barsResponse.ok ? JSON.parse(await barsResponse.text()) : null;
+    console.log(`Bars data for ${cleanSymbol}:`, barsData);
+
+    // Process the data
+    if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
+      throw new Error(`No quote data available for symbol: ${cleanSymbol}`);
     }
     
-    return processAlpacaResponse(quoteData, cleanSymbol);
+    const symbolQuote = quoteData.quotes[cleanSymbol];
+    const symbolTrade = tradeData?.trades?.[cleanSymbol];
+    const symbolBars = barsData?.bars?.[cleanSymbol];
+    
+    // Get prices
+    const askPrice = symbolQuote.ap || 0;
+    const bidPrice = symbolQuote.bp || 0;
+    const lastTradePrice = symbolTrade?.p || askPrice; // Fallback to ask if no trade data
+    const previousClose = symbolBars?.[0]?.c || lastTradePrice;
+    
+    console.log(`Price breakdown for ${cleanSymbol}:`, {
+      askPrice,
+      bidPrice,
+      lastTradePrice,
+      previousClose
+    });
+    
+    // Calculate real change
+    const change = lastTradePrice - previousClose;
+    const changePercent = previousClose !== 0 ? ((change / previousClose) * 100) : 0;
+    
+    const result = {
+      symbol: cleanSymbol,
+      price: parseFloat(lastTradePrice.toFixed(2)),
+      askPrice: parseFloat(askPrice.toFixed(2)),
+      bidPrice: parseFloat(bidPrice.toFixed(2)),
+      previousClose: parseFloat(previousClose.toFixed(2)),
+      change: parseFloat(change.toFixed(2)),
+      changePercent: parseFloat(changePercent.toFixed(2))
+    };
+    
+    console.log(`Final result for ${cleanSymbol}:`, result);
+    
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
     
   } catch (error) {
     console.error('=== FULL ERROR DETAILS ===');
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Error object:', error);
     
     return new Response(JSON.stringify({ 
       error: error.message,
@@ -134,67 +155,3 @@ serve(async (req) => {
     });
   }
 });
-
-function processAlpacaResponse(quoteData: any, cleanSymbol: string) {
-  console.log(`Parsed data for ${cleanSymbol}:`, quoteData);
-  
-  if (quoteData.error) {
-    console.error(`Alpaca API returned error for ${cleanSymbol}:`, quoteData.error);
-    return new Response(JSON.stringify({ 
-      error: 'Alpaca API error',
-      details: quoteData.error
-    }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  
-  // Check if we have valid quote data
-  if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
-    console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
-    return new Response(JSON.stringify({ 
-      error: 'Invalid price data',
-      details: `No quote data available for symbol: ${cleanSymbol}`
-    }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  
-  const symbolQuote = quoteData.quotes[cleanSymbol];
-  
-  // Get the current price from the ask price (ap) or bid price (bp) as fallback
-  const currentPrice = symbolQuote.ap || symbolQuote.bp;
-  
-  if (!currentPrice) {
-    console.error(`No price data available for ${cleanSymbol}:`, symbolQuote);
-    return new Response(JSON.stringify({ 
-      error: 'No price data',
-      details: `No current price available for symbol: ${cleanSymbol}`
-    }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  
-  // For now, we'll calculate change based on daily variation assumptions
-  // In production, you'd fetch historical data or previous close price
-  const dailyVariation = 0.02; // Assume max 2% daily variation
-  const estimatedPreviousClose = currentPrice / (1 + (Math.random() - 0.5) * dailyVariation);
-  const change = currentPrice - estimatedPreviousClose;
-  const changePercent = estimatedPreviousClose !== 0 ? ((change / estimatedPreviousClose) * 100) : 0;
-  
-  const result = {
-    symbol: cleanSymbol,
-    price: parseFloat(currentPrice.toFixed(2)),
-    change: parseFloat(change.toFixed(2)),
-    changePercent: parseFloat(changePercent.toFixed(2))
-  };
-  
-  console.log(`Successful result for ${cleanSymbol}:`, result);
-  
-  return new Response(JSON.stringify(result), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff, Clock, AlertCircle } from "lucide-react";
+import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -11,8 +11,6 @@ import RealTimePriceChart from "@/components/RealTimePriceChart";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
-import { useArticleWeights } from "@/hooks/useArticleWeights";
-import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
@@ -72,14 +70,6 @@ const Magnificent7 = () => {
   // Focus on just AAPL for now
   const FOCUS_SYMBOL = 'AAPL';
 
-  // Real-time streaming for just AAPL using singleton
-  const streamResult = useAlpacaStreamSingleton({
-    symbols: [FOCUS_SYMBOL],
-    enabled: false // Disable streaming, use API data instead
-  });
-  
-  const { isConnected, isAuthenticated, connectionStatus, streamData, errorMessage } = streamResult;
-
   const isMarketClosed = useMemo(() => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -92,21 +82,7 @@ const Magnificent7 = () => {
   }, []);
 
   useEffect(() => {
-    const liveData = streamData[FOCUS_SYMBOL];
-    if (liveData?.price && liveData?.timestamp) {
-      setPriceHistory(prev => ({
-        ...prev,
-        [FOCUS_SYMBOL]: [
-          ...(prev[FOCUS_SYMBOL] || []).slice(-99),
-          {
-            timestamp: liveData.timestamp,
-            price: liveData.price,
-            symbol: FOCUS_SYMBOL
-          }
-        ]
-      }));
-    }
-  }, [streamData]);
+  }, []);
 
   const magnificent7ArticlesData = useMemo(() => {
     return ['AAPL'].map(symbol => {
@@ -145,7 +121,7 @@ const Magnificent7 = () => {
       return apiPrice;
     }
     
-    return null; // Return null instead of error object
+    return null;
   };
 
   const generateCompositeHeadline = (item: any): string => {
@@ -221,38 +197,6 @@ const Magnificent7 = () => {
   // Get AAPL stock data from API
   const aaplStock = getStockPrice(FOCUS_SYMBOL);
 
-  const getConnectionStatusDisplay = () => {
-    if (connectionStatus === 'connected' && isAuthenticated) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-emerald-900/20 text-emerald-400 border border-emerald-500/20">
-          <Wifi className="w-3 h-3" />
-          Connected (Singleton)
-        </div>
-      );
-    } else if (connectionStatus === 'connecting') {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-yellow-900/20 text-yellow-400 border border-yellow-500/20">
-          <Clock className="w-3 h-3 animate-spin" />
-          {errorMessage || 'Connecting (Singleton)...'}
-        </div>
-      );
-    } else if (connectionStatus === 'error') {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-red-900/20 text-red-400 border border-red-500/20">
-          <AlertCircle className="w-3 h-3" />
-          {errorMessage || 'Connection Failed'}
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-slate-700/50 text-slate-400 border border-slate-600">
-          <WifiOff className="w-3 h-3" />
-          Disconnected
-        </div>
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -295,10 +239,6 @@ const Magnificent7 = () => {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">AAPL Stock Data from API</h1>
                 <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">Real stock price data for Apple Inc. from Alpaca API</p>
-                
-                <div className="flex items-center gap-2 mt-2">
-                  {getConnectionStatusDisplay()}
-                </div>
               </div>
             </div>
           </div>
@@ -328,17 +268,19 @@ const Magnificent7 = () => {
                 </div>
               ) : aaplStock ? (
                 <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-6">
                     <Badge className="bg-blue-600 text-white">{FOCUS_SYMBOL}</Badge>
                     <div className="text-sm text-slate-400">
                       Live from Alpaca API
                     </div>
                   </div>
                   
-                  <div className="text-center">
+                  {/* Main Trading Price */}
+                  <div className="text-center mb-6">
                     <div className="text-4xl font-bold text-white mb-2">
                       ${aaplStock.price.toFixed(2)}
                     </div>
+                    <div className="text-sm text-slate-400 mb-2">Last Trade Price</div>
                     
                     <div className={`flex items-center justify-center gap-2 text-lg ${
                       aaplStock.change >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -354,8 +296,24 @@ const Magnificent7 = () => {
                       </span>
                     </div>
                     
-                    <div className="text-sm text-slate-400 mt-2">
-                      Daily Change
+                    <div className="text-sm text-slate-500 mt-2">
+                      vs Previous Close: ${aaplStock.previousClose.toFixed(2)}
+                    </div>
+                  </div>
+
+                  {/* Bid/Ask Spread */}
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-600">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-red-400">
+                        ${aaplStock.bidPrice.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-slate-400">Bid (Buy Price)</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-emerald-400">
+                        ${aaplStock.askPrice.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-slate-400">Ask (Sell Price)</div>
                     </div>
                   </div>
                 </div>

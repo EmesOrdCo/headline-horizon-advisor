@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface StockPrice {
   symbol: string;
   price: number;
+  askPrice: number;
+  bidPrice: number;
+  previousClose: number;
   change: number;
   changePercent: number;
   error?: boolean;
@@ -25,13 +28,13 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
       console.log('All unique symbols to fetch:', uniqueSymbols);
       
       try {
-        console.log('Fetching stock prices from REST API only...');
+        console.log('Fetching stock prices from REST API...');
         
         const results: StockPrice[] = [];
         const errors: Array<{symbol: string, error: string}> = [];
         
-        // Try to fetch just a few symbols to test if API works at all
-        const testSymbols = uniqueSymbols.slice(0, 3); // Just test with first 3 symbols
+        // Fetch first 3 symbols for testing
+        const testSymbols = uniqueSymbols.slice(0, 3);
         
         for (const symbol of testSymbols) {
           try {
@@ -57,6 +60,9 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
               const stockPrice: StockPrice = {
                 symbol,
                 price: parseFloat(data.price.toFixed(2)),
+                askPrice: parseFloat((data.askPrice || data.price).toFixed(2)),
+                bidPrice: parseFloat((data.bidPrice || data.price).toFixed(2)),
+                previousClose: parseFloat((data.previousClose || data.price).toFixed(2)),
                 change: parseFloat(data.change.toFixed(2)),
                 changePercent: parseFloat(data.changePercent.toFixed(2))
               };
@@ -67,7 +73,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
               errors.push({ symbol, error: 'No price data available' });
             }
             
-            // Wait 2 seconds between requests to be very conservative
+            // Wait 2 seconds between requests
             if (testSymbols.indexOf(symbol) < testSymbols.length - 1) {
               console.log('Waiting 2 seconds before next request...');
               await new Promise(resolve => setTimeout(resolve, 2000));
@@ -80,11 +86,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
         }
 
         console.log(`Final results: Successfully fetched ${results.length}/${testSymbols.length} stock prices`, results);
-        if (errors.length > 0) {
-          console.log(`Errors encountered:`, errors);
-        }
         
-        // If we got no results at all, throw an error so the component shows "not available"
         if (results.length === 0) {
           throw new Error('No stock data available from API');
         }
@@ -95,10 +97,10 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes
     retry: 1,
-    retryDelay: 60000, // Wait 1 minute between retries
+    retryDelay: 60000,
     enabled: true,
   });
 };
