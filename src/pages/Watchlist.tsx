@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import DashboardNav from "@/components/DashboardNav";
-import MiniChart from "@/components/MiniChart";
+import HistoricalPriceChart from "@/components/HistoricalPriceChart";
+import ChartModal from "@/components/ChartModal";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 
 interface Stock {
@@ -22,7 +24,7 @@ interface Stock {
 
 const Watchlist = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedChart, setSelectedChart<{ symbol: string; data: any[] } | null>(null);
+  const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
 
   // Stock symbols from the mock data
   const watchlistSymbols = ["NVDA", "TSLA", "AMZN", "PLTR", "AAPL", "SOXL", "GOOGL", "MSTR", "META"];
@@ -207,7 +209,16 @@ const Watchlist = () => {
                       </TableCell>
                       <TableCell className="text-slate-300">{stock.marketCap}</TableCell>
                       <TableCell>
-                        <MiniChart symbol={stock.symbol} />
+                        <div 
+                          className="w-24 h-12 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setSelectedChart({ symbol: stock.symbol, stockName: stock.name })}
+                        >
+                          <HistoricalPriceChart 
+                            symbol={stock.symbol} 
+                            height={48}
+                            showMiniChart={true}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Link 
@@ -230,21 +241,12 @@ const Watchlist = () => {
 
       {/* Chart Modal */}
       {selectedChart && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="w-full max-w-2xl bg-slate-800 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">{selectedChart.symbol} - 1 Day Chart</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* <StockChart data={selectedChart.data} /> */}
-              {/* Replace StockChart with your actual chart component */}
-              <p className="text-slate-400">Chart component here</p>
-            </CardContent>
-            <div className="p-4">
-              <Button variant="secondary" onClick={() => setSelectedChart(null)}>Close Chart</Button>
-            </div>
-          </Card>
-        </div>
+        <ChartModal
+          isOpen={!!selectedChart}
+          onClose={() => setSelectedChart(null)}
+          symbol={selectedChart.symbol}
+          stockName={selectedChart.stockName}
+        />
       )}
     </div>
   );
