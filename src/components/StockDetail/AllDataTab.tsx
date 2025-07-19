@@ -7,10 +7,24 @@ interface AllDataTabProps {
     price: number;
     volume: number;
     marketCap: string;
+    change: number;
+    changePercent: number;
+    previousClose: number;
+    askPrice: number;
+    bidPrice: number;
   };
 }
 
 const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
+  // Calculate available metrics from Alpaca data
+  const bidAskSpread = stockInfo.askPrice && stockInfo.bidPrice 
+    ? (stockInfo.askPrice - stockInfo.bidPrice).toFixed(4)
+    : "TBC";
+
+  const dailyRange = stockInfo.previousClose 
+    ? `${Math.min(stockInfo.price, stockInfo.previousClose).toFixed(2)} - ${Math.max(stockInfo.price, stockInfo.previousClose).toFixed(2)}`
+    : "TBC";
+
   return (
     <div className="space-y-6">
       {/* Detailed Financial Data */}
@@ -22,15 +36,15 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           </CardHeader>
           <CardContent className="space-y-3">
             {[
-              { label: "Price-to-Earnings", value: (Math.random() * 30 + 10).toFixed(2) },
-              { label: "Price-to-Book", value: (Math.random() * 5 + 1).toFixed(2) },
-              { label: "Price-to-Sales", value: (Math.random() * 10 + 2).toFixed(2) },
-              { label: "EV/EBITDA", value: (Math.random() * 20 + 8).toFixed(2) },
-              { label: "PEG Ratio", value: (Math.random() * 3 + 0.5).toFixed(2) },
+              { label: "Price-to-Earnings", value: "TBC" },
+              { label: "Price-to-Book", value: "TBC" },
+              { label: "Price-to-Sales", value: "TBC" },
+              { label: "EV/EBITDA", value: "TBC" },
+              { label: "PEG Ratio", value: "TBC" },
             ].map((metric, index) => (
               <div key={index} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
                 <span className="text-slate-400">{metric.label}</span>
-                <span className="text-white font-semibold">{metric.value}</span>
+                <span className="text-slate-400 text-sm italic">{metric.value}</span>
               </div>
             ))}
           </CardContent>
@@ -43,17 +57,15 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
           </CardHeader>
           <CardContent className="space-y-3">
             {[
-              { label: "Revenue Growth (YoY)", value: `${(Math.random() * 20 + 5).toFixed(1)}%`, positive: Math.random() > 0.3 },
-              { label: "Gross Margin", value: `${(Math.random() * 40 + 20).toFixed(1)}%`, positive: true },
-              { label: "Operating Margin", value: `${(Math.random() * 25 + 10).toFixed(1)}%`, positive: Math.random() > 0.2 },
-              { label: "Net Margin", value: `${(Math.random() * 20 + 5).toFixed(1)}%`, positive: Math.random() > 0.2 },
-              { label: "ROE", value: `${(Math.random() * 25 + 8).toFixed(1)}%`, positive: true },
+              { label: "Revenue Growth (YoY)", value: "TBC" },
+              { label: "Gross Margin", value: "TBC" },
+              { label: "Operating Margin", value: "TBC" },
+              { label: "Net Margin", value: "TBC" },
+              { label: "ROE", value: "TBC" },
             ].map((metric, index) => (
               <div key={index} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
                 <span className="text-slate-400">{metric.label}</span>
-                <span className={`font-semibold ${metric.positive ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {metric.value}
-                </span>
+                <span className="text-slate-400 text-sm italic">{metric.value}</span>
               </div>
             ))}
           </CardContent>
@@ -88,15 +100,15 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-slate-400">RSI (14)</span>
-                  <span className="text-white">{(Math.random() * 40 + 30).toFixed(0)}</span>
+                  <span className="text-slate-400 text-sm italic">TBC</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">MACD</span>
-                  <span className="text-emerald-400">Bullish</span>
+                  <span className="text-slate-400 text-sm italic">TBC</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">MA (50)</span>
-                  <span className="text-white">${(stockInfo.price * 0.98).toFixed(2)}</span>
+                  <span className="text-slate-400 text-sm italic">TBC</span>
                 </div>
               </div>
             </div>
@@ -104,28 +116,77 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         </CardContent>
       </Card>
 
-      {/* Financial Metrics Grid */}
+      {/* Real-time Market Data */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Key Metrics</CardTitle>
+          <CardTitle className="text-white">Market Data (Live from Alpaca)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-              <div className="text-slate-400 text-sm mb-1">Market Cap</div>
-              <div className="text-white font-bold text-lg">{stockInfo.marketCap}</div>
+              <div className="text-slate-400 text-sm mb-1">Current Price</div>
+              <div className="text-white font-bold text-lg">${stockInfo.price.toFixed(2)}</div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-              <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
-              <div className="text-white font-bold text-lg">{(Math.random() * 30 + 10).toFixed(2)}</div>
+              <div className="text-slate-400 text-sm mb-1">Daily Change</div>
+              <div className={`font-bold text-lg ${stockInfo.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)} ({stockInfo.changePercent.toFixed(2)}%)
+              </div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Previous Close</div>
+              <div className="text-white font-bold text-lg">${stockInfo.previousClose.toFixed(2)}</div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Volume</div>
               <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
             </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Ask Price</div>
+              <div className="text-white font-bold text-lg">${stockInfo.askPrice.toFixed(2)}</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Bid Price</div>
+              <div className="text-white font-bold text-lg">${stockInfo.bidPrice.toFixed(2)}</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Bid-Ask Spread</div>
+              <div className="text-white font-bold text-lg">{bidAskSpread}</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Daily Range</div>
+              <div className="text-white font-bold text-sm">{dailyRange}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial Metrics Grid - TBC Section */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Additional Metrics</CardTitle>
+          <p className="text-slate-400 text-sm">These metrics require fundamental data not available from Alpaca</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Market Cap</div>
+              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
+              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+            </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">52W High</div>
-              <div className="text-white font-bold text-lg">${(stockInfo.price * 1.25).toFixed(2)}</div>
+              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">52W Low</div>
+              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
             </div>
           </div>
         </CardContent>
