@@ -7,7 +7,7 @@ import { BarChart3 } from "lucide-react";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
-import RealTimePriceChart from "@/components/RealTimePriceChart";
+import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import StockHeader from "@/components/StockDetail/StockHeader";
 import UpcomingEvents from "@/components/StockDetail/UpcomingEvents";
 import AIForecast from "@/components/StockDetail/AIForecast";
@@ -18,12 +18,6 @@ import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
 import { useSEO } from "@/hooks/useSEO";
 import { getCompanyName, getMockPrice, getMockMarketCap } from "@/utils/stockUtils";
-
-interface PriceHistoryPoint {
-  timestamp: string;
-  price: number;
-  symbol: string;
-}
 
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -39,7 +33,6 @@ const StockDetail = () => {
     canonical: `https://yourdomain.com/stock/${stockSymbol.toLowerCase()}`,
   });
 
-  const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [activeTab, setActiveTab] = useState("analysis");
 
   // Fetch stock prices
@@ -60,44 +53,6 @@ const StockDetail = () => {
     volume: Math.floor(Math.random() * 10000000) + 1000000,
     marketCap: getMockMarketCap(stockSymbol),
   };
-
-  // Store price history for charts
-  useEffect(() => {
-    const liveData = streamData[stockSymbol];
-    if (liveData?.price && liveData?.timestamp) {
-      setPriceHistory(prev => [
-        ...prev.slice(-99), // Keep last 100 points
-        {
-          timestamp: liveData.timestamp,
-          price: liveData.price,
-          symbol: stockSymbol
-        }
-      ]);
-    }
-  }, [streamData, stockSymbol]);
-
-  // Generate mock historical data for chart
-  useEffect(() => {
-    if (priceHistory.length === 0) {
-      const basePrice = stockInfo.price;
-      const mockHistory: PriceHistoryPoint[] = [];
-      
-      for (let i = 0; i < 50; i++) {
-        const variance = (Math.random() - 0.5) * 0.04;
-        const price = basePrice * (1 + variance);
-        const timestamp = new Date();
-        timestamp.setHours(9, 30 + (i * 7.8), 0, 0);
-        
-        mockHistory.push({
-          timestamp: timestamp.toISOString(),
-          price: Number(price.toFixed(2)),
-          symbol: stockSymbol
-        });
-      }
-      
-      setPriceHistory(mockHistory);
-    }
-  }, [stockInfo.price, stockSymbol, priceHistory.length]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -144,9 +99,12 @@ const StockDetail = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="h-96">
-                    <RealTimePriceChart
-                      data={priceHistory}
+                    <HistoricalPriceChart
                       symbol={stockSymbol}
+                      timeframe="1Day"
+                      limit={30}
+                      height={384}
+                      showMiniChart={false}
                     />
                   </div>
                 </CardContent>
