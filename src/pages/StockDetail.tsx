@@ -17,7 +17,7 @@ import AllDataTab from "@/components/StockDetail/AllDataTab";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
 import { useSEO } from "@/hooks/useSEO";
-import { getCompanyName, getMockPrice, getMockMarketCap } from "@/utils/stockUtils";
+import { getCompanyName } from "@/utils/stockUtils";
 
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -35,28 +35,59 @@ const StockDetail = () => {
 
   const [activeTab, setActiveTab] = useState("analysis");
 
-  // Fetch stock prices
-  const { data: stockPrices } = useStockPrices([stockSymbol]);
+  // Fetch stock prices with real-time data
+  const { data: stockPrices, isLoading: stockPricesLoading, refetch: refetchStockPrices } = useStockPrices([stockSymbol]);
   
-  // Real-time streaming
+  // Real-time streaming for live updates
   const { streamData } = useAlpacaStream({
     symbols: [stockSymbol],
     enabled: true
   });
 
-  // Get real stock info from API data
+  // Refetch stock prices every 30 seconds to ensure fresh data
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchStockPrices();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [refetchStockPrices]);
+
+  // Get real stock info from API data with proper fallbacks
   const stockInfo = useMemo(() => {
+    // First try to get data from the API
     const stockData = stockPrices?.find(s => s.symbol === stockSymbol);
     
+    // Use real API data if available, otherwise use loading state or fallback
+    if (stockData && !stockData.error && stockData.price > 0) {
+      return {
+        name: getCompanyName(stockSymbol),
+        price: stockData.price,
+        change: stockData.change,
+        changePercent: stockData.changePercent,
+        askPrice: stockData.askPrice,
+        bidPrice: stockData.bidPrice,
+        previousClose: stockData.previousClose,
+        volume: Math.floor(Math.random() * 10000000) + 1000000, // Mock volume for now
+        marketCap: "$2.8T", // Mock market cap for now
+        isLoading: false,
+      };
+    }
+
+    // Return loading state or fallback data
     return {
       name: getCompanyName(stockSymbol),
-      price: stockData?.price || getMockPrice(stockSymbol),
-      change: stockData?.change || (Math.random() - 0.5) * 10,
-      changePercent: stockData?.changePercent || (Math.random() - 0.5) * 5,
-      volume: Math.floor(Math.random() * 10000000) + 1000000,
-      marketCap: getMockMarketCap(stockSymbol),
+      price: 0,
+      change: 0,
+      changePercent: 0,
+      askPrice: 0,
+      bidPrice: 0,
+      previousClose: 0,
+      volume: 0,
+      marketCap: "N/A",
+      isLoading: stockPricesLoading,
     };
-  }, [stockSymbol, stockPrices]);
+  }, [stockSymbol, stockPrices, stockPricesLoading]);
 
   return (
     <div className="min-h-screen bg-slate-900">

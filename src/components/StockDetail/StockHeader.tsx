@@ -11,6 +11,7 @@ interface StockHeaderProps {
     price: number;
     change: number;
     changePercent: number;
+    isLoading?: boolean;
   };
   cameFromWatchlist: boolean;
 }
@@ -47,25 +48,35 @@ const StockHeader = ({ symbol, stockInfo, cameFromWatchlist }: StockHeaderProps)
           {/* Price Information */}
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white">
-                ${stockInfo.price.toFixed(2)}
-              </span>
+              {stockInfo.isLoading ? (
+                <div className="animate-pulse bg-slate-700 w-32 h-8 rounded"></div>
+              ) : (
+                <span className="text-3xl font-bold text-white">
+                  ${stockInfo.price > 0 ? stockInfo.price.toFixed(2) : 'N/A'}
+                </span>
+              )}
             </div>
             
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
-              stockInfo.change >= 0 
-                ? 'bg-emerald-900/30 text-emerald-400' 
-                : 'bg-red-900/30 text-red-400'
-            }`}>
-              {stockInfo.change >= 0 ? 
-                <TrendingUp className="w-4 h-4" /> : 
-                <TrendingDown className="w-4 h-4" />
-              }
-              <span className="font-semibold">
-                {stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)} 
-                ({stockInfo.change >= 0 ? '+' : ''}{stockInfo.changePercent.toFixed(2)}%)
-              </span>
-            </div>
+            {!stockInfo.isLoading && stockInfo.price > 0 && (
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+                stockInfo.change >= 0 
+                  ? 'bg-emerald-900/30 text-emerald-400' 
+                  : 'bg-red-900/30 text-red-400'
+              }`}>
+                {stockInfo.change >= 0 ? 
+                  <TrendingUp className="w-4 h-4" /> : 
+                  <TrendingDown className="w-4 h-4" />
+                }
+                <span className="font-semibold">
+                  {stockInfo.change >= 0 ? '+' : ''}{stockInfo.change.toFixed(2)} 
+                  ({stockInfo.change >= 0 ? '+' : ''}{stockInfo.changePercent.toFixed(2)}%)
+                </span>
+              </div>
+            )}
+            
+            {stockInfo.isLoading && (
+              <div className="animate-pulse bg-slate-700 w-24 h-6 rounded"></div>
+            )}
           </div>
         </div>
       </div>
