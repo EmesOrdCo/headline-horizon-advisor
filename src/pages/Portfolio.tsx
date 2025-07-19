@@ -367,7 +367,7 @@ const Portfolio = () => {
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {chartData.map((holding, index) => (
                   <div key={holding.name} className="bg-slate-700/40 rounded-xl p-5 border border-slate-600/50 hover:bg-slate-700/60 transition-colors">
-                    {/* Header with stock symbol and percentage */}
+                    {/* Header with stock symbol */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div 
@@ -383,28 +383,27 @@ const Portfolio = () => {
                       </div>
                     </div>
                     
-                    {/* Company name - fills the middle space */}
-                    <div className="mb-4">
-                      <p className="text-slate-300 text-base font-medium text-center px-2">
+                    {/* Middle section with company name and metrics */}
+                    <div className="mb-4 text-center space-y-3">
+                      <p className="text-slate-300 text-base font-medium">
                         {holding.fullName}
                       </p>
-                    </div>
-                    
-                    {/* Bottom metrics row */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-600/30">
-                      <div className="text-center">
-                        <p className="text-slate-400 text-xs mb-1">Portfolio Value</p>
-                        <p className="text-white font-semibold text-sm">
-                          {formatCurrency(holding.value)}
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-slate-400 text-xs mb-1">Daily Change</p>
-                        <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
-                          holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {holding.dayChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          {formatPercent(holding.dayChangePercent)}
+                      
+                      <div className="flex items-center justify-center gap-6">
+                        <div className="text-center">
+                          <p className="text-slate-400 text-xs mb-1">Portfolio Value</p>
+                          <p className="text-white font-semibold text-sm">
+                            {formatCurrency(holding.value)}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-slate-400 text-xs mb-1">Daily Change</p>
+                          <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
+                            holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+                          }`}>
+                            {holding.dayChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                            {formatPercent(holding.dayChangePercent)}
+                          </div>
                         </div>
                       </div>
                     </div>
