@@ -19,11 +19,18 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  // For Alpaca sandbox, use the paper trading credentials
-  const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
-  const alpacaSecretKey = "PKCAGC210ZT4QSGNJKHI";
+  // Get proper Alpaca credentials from Supabase secrets
+  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
   console.log('Using Alpaca sandbox credentials');
+  console.log('API Key exists:', !!alpacaApiKey);
+  console.log('Secret Key exists:', !!alpacaSecretKey);
+
+  if (!alpacaApiKey || !alpacaSecretKey) {
+    console.error('Missing Alpaca API credentials');
+    return new Response("Missing Alpaca API credentials", { status: 500 });
+  }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   let alpacaSocket: WebSocket | null = null;
@@ -41,14 +48,14 @@ serve(async (req) => {
         console.log('Connected to Alpaca Sandbox WebSocket successfully');
         reconnectAttempts = 0; // Reset on successful connection
         
-        // Send authentication message with proper format for sandbox
+        // Send authentication message with proper format for sandbox using actual key and secret
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication to Alpaca Sandbox');
+        console.log('Sending authentication to Alpaca Sandbox with proper credentials');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 

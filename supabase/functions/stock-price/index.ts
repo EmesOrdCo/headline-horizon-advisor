@@ -19,16 +19,17 @@ serve(async (req) => {
 
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
-    // Use the sandbox API key
-    const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
+    // Get proper Alpaca credentials from Supabase secrets
+    const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+    const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
     console.log(`=== DEBUGGING ALPACA SANDBOX API FOR ${cleanSymbol} ===`);
     console.log('Alpaca API Key exists:', !!alpacaApiKey);
-    console.log('Alpaca API Key length:', alpacaApiKey?.length || 0);
+    console.log('Alpaca Secret Key exists:', !!alpacaSecretKey);
 
-    if (!alpacaApiKey) {
-      console.error('ALPACA_API_KEY not configured in environment');
-      throw new Error('ALPACA_API_KEY not configured');
+    if (!alpacaApiKey || !alpacaSecretKey) {
+      console.error('ALPACA_API_KEY or ALPACA_SECRET_KEY not configured in environment');
+      throw new Error('Alpaca API credentials not configured');
     }
 
     // Use sandbox endpoint for quotes
@@ -39,7 +40,7 @@ serve(async (req) => {
       method: 'GET',
       headers: {
         'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
         'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
@@ -103,7 +104,7 @@ serve(async (req) => {
       method: 'GET',
       headers: {
         'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaApiKey,
+        'APCA-API-SECRET-KEY': alpacaSecretKey,
         'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
