@@ -169,7 +169,7 @@ const StockDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Chart takes up 2/3 of the width */}
             <div className="lg:col-span-2">
-              <Card className="bg-slate-800/50 border-slate-700 mb-6">
+              <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-white flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
@@ -182,118 +182,6 @@ const StockDetail = () => {
                       data={priceHistory}
                       symbol={stockSymbol}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* TLDR Section moved below chart */}
-              <Card className="bg-slate-800/50 border-slate-700 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Info className="w-5 h-5" />
-                    TLDR - Key Takeaways
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
-                      <h4 className="text-emerald-400 font-semibold mb-2">📈 Sentiment</h4>
-                      <p className="text-slate-300 text-sm">
-                        Strong bullish sentiment with 75% positive news coverage. Technical indicators support upward momentum.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-                      <h4 className="text-blue-400 font-semibold mb-2">🎯 Target</h4>
-                      <p className="text-slate-300 text-sm">
-                        AI forecast suggests 12% upside potential with 82% confidence. Price target set at ${(stockInfo.price * 1.12).toFixed(2)}.
-                      </p>
-                    </div>
-                    <div className="p-4 bg-purple-900/20 border border-purple-500/20 rounded-lg">
-                      <h4 className="text-purple-400 font-semibold mb-2">⚠️ Risk</h4>
-                      <p className="text-slate-300 text-sm">
-                        Moderate risk with diversified revenue. Main concern is market volatility, but fundamentals remain solid.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Price Alert Section moved below TLDR */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Bell className="w-5 h-5" />
-                    Set price alert
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-4">
-                      <Info className="w-4 h-4" />
-                      <span>Price alerts notify you when an asset hits a target you set.</span>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      {['-10%', '-5%', '+5%', '+10%', 'Custom'].map((option) => (
-                        <Button
-                          key={option}
-                          variant={selectedAlertType === option ? "default" : "outline"}
-                          className={`px-6 py-2 rounded-full ${
-                            selectedAlertType === option 
-                              ? "bg-emerald-600 text-white border-emerald-600" 
-                              : "bg-transparent border-slate-600 text-slate-300 hover:border-emerald-600 hover:text-emerald-400"
-                          }`}
-                          onClick={() => handleAlertSelection(option)}
-                        >
-                          {option}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {selectedAlertType === 'Custom' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="custom-alert" className="text-slate-300">
-                          Custom Price Target
-                        </Label>
-                        <Input
-                          id="custom-alert"
-                          type="number"
-                          placeholder="Enter target price"
-                          value={customAlertValue}
-                          onChange={(e) => setCustomAlertValue(e.target.value)}
-                          className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-                        />
-                      </div>
-                    )}
-
-                    {selectedAlertType && (
-                      <Button 
-                        onClick={handleSetAlert}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        Set Alert
-                      </Button>
-                    )}
-
-                    {/* Financial Metrics moved here */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                      <div className="p-3 bg-slate-700/50 rounded-lg">
-                        <div className="text-slate-400 text-sm">Market Cap</div>
-                        <div className="text-white font-bold text-lg">{stockInfo.marketCap}</div>
-                      </div>
-                      <div className="p-3 bg-slate-700/50 rounded-lg">
-                        <div className="text-slate-400 text-sm">P/E Ratio</div>
-                        <div className="text-white font-bold text-lg">{(Math.random() * 30 + 10).toFixed(2)}</div>
-                      </div>
-                      <div className="p-3 bg-slate-700/50 rounded-lg">
-                        <div className="text-slate-400 text-sm">Volume</div>
-                        <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
-                      </div>
-                      <div className="p-3 bg-slate-700/50 rounded-lg">
-                        <div className="text-slate-400 text-sm">52W High</div>
-                        <div className="text-white font-bold text-lg">${(stockInfo.price * 1.25).toFixed(2)}</div>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -390,7 +278,7 @@ const StockDetail = () => {
           {/* Tab Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsContent value="analysis" className="space-y-6">
-              <AIAnalysisTab symbol={stockSymbol} />
+              <AIAnalysisTab symbol={stockSymbol} stockInfo={stockInfo} />
             </TabsContent>
 
             <TabsContent value="data" className="space-y-6">
@@ -414,9 +302,41 @@ const StockDetail = () => {
 };
 
 // AI Analysis Tab Component
-const AIAnalysisTab = ({ symbol }: { symbol: string }) => {
+const AIAnalysisTab = ({ symbol, stockInfo }: { symbol: string; stockInfo: any }) => {
   return (
     <div className="space-y-6">
+      {/* TLDR Section - Only on AI Analysis Tab */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Info className="w-5 h-5" />
+            TLDR - Key Takeaways
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-emerald-900/20 border border-emerald-500/20 rounded-lg">
+              <h4 className="text-emerald-400 font-semibold mb-2">📈 Sentiment</h4>
+              <p className="text-slate-300 text-sm">
+                Strong bullish sentiment with 75% positive news coverage. Technical indicators support upward momentum.
+              </p>
+            </div>
+            <div className="p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+              <h4 className="text-blue-400 font-semibold mb-2">🎯 Target</h4>
+              <p className="text-slate-300 text-sm">
+                AI forecast suggests 12% upside potential with 82% confidence. Price target set at ${(stockInfo.price * 1.12).toFixed(2)}.
+              </p>
+            </div>
+            <div className="p-4 bg-purple-900/20 border border-purple-500/20 rounded-lg">
+              <h4 className="text-purple-400 font-semibold mb-2">⚠️ Risk</h4>
+              <p className="text-slate-300 text-sm">
+                Moderate risk with diversified revenue. Main concern is market volatility, but fundamentals remain solid.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Main Analysis Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* AI Analysis */}
@@ -534,6 +454,86 @@ const AllDataTab = ({
 }) => {
   return (
     <div className="space-y-6">
+      {/* Price Alert Section - Only on All Data Tab */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Set price alert
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-slate-400 text-sm mb-4">
+              <Info className="w-4 h-4" />
+              <span>Price alerts notify you when an asset hits a target you set.</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-3 mb-4">
+              {['-10%', '-5%', '+5%', '+10%', 'Custom'].map((option) => (
+                <Button
+                  key={option}
+                  variant={selectedAlertType === option ? "default" : "outline"}
+                  className={`px-6 py-2 rounded-full ${
+                    selectedAlertType === option 
+                      ? "bg-emerald-600 text-white border-emerald-600" 
+                      : "bg-transparent border-slate-600 text-slate-300 hover:border-emerald-600 hover:text-emerald-400"
+                  }`}
+                  onClick={() => onAlertSelection(option)}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+
+            {selectedAlertType === 'Custom' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-alert" className="text-slate-300">
+                  Custom Price Target
+                </Label>
+                <Input
+                  id="custom-alert"
+                  type="number"
+                  placeholder="Enter target price"
+                  value={customAlertValue}
+                  onChange={(e) => onCustomAlertChange(e.target.value)}
+                  className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                />
+              </div>
+            )}
+
+            {selectedAlertType && (
+              <Button 
+                onClick={onSetAlert}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                Set Alert
+              </Button>
+            )}
+
+            {/* Financial Metrics Grid - Modular Layout */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 p-4 bg-slate-700/30 rounded-lg">
+              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
+                <div className="text-slate-400 text-sm mb-1">Market Cap</div>
+                <div className="text-white font-bold text-lg">{stockInfo.marketCap}</div>
+              </div>
+              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
+                <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
+                <div className="text-white font-bold text-lg">{(Math.random() * 30 + 10).toFixed(2)}</div>
+              </div>
+              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
+                <div className="text-slate-400 text-sm mb-1">Volume</div>
+                <div className="text-white font-bold text-lg">{(stockInfo.volume / 1000000).toFixed(1)}M</div>
+              </div>
+              <div className="p-3 bg-slate-800/50 rounded-lg text-center">
+                <div className="text-slate-400 text-sm mb-1">52W High</div>
+                <div className="text-white font-bold text-lg">${(stockInfo.price * 1.25).toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Detailed Financial Data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Valuation Metrics */}
