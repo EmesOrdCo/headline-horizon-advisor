@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +130,9 @@ const Magnificent7 = () => {
       };
     }
   }, []);
+
+  // Automatically determine data source based on market status
+  const useWebSocket = marketStatus.isOpen && !marketStatus.webSocketLimited;
 
   // WebSocket connection for real-time data
   const {
@@ -293,27 +295,6 @@ const Magnificent7 = () => {
                 </Link>
                 <div className="flex items-center gap-4">
                   <Button 
-                    onClick={() => setUseWebSocket(!useWebSocket)}
-                    variant="outline" 
-                    className={`border-slate-600 ${
-                      useWebSocket 
-                        ? 'bg-emerald-600/20 border-emerald-600 text-emerald-400' 
-                        : 'bg-slate-700/50 text-slate-300'
-                    } hover:bg-slate-600/50`}
-                  >
-                    {useWebSocket ? (
-                      <>
-                        <Wifi className="w-4 h-4 mr-2" />
-                        Live Data {wsConnected ? '(Connected)' : '(Connecting...)'}
-                      </>
-                    ) : (
-                      <>
-                        <WifiOff className="w-4 h-4 mr-2" />
-                        REST API
-                      </>
-                    )}
-                  </Button>
-                  <Button 
                     onClick={() => setShowCharts(!showCharts)}
                     variant="outline" 
                     className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
@@ -335,73 +316,83 @@ const Magnificent7 = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks Analysis</h1>
                 <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">
                   Real-time stock data and analysis for the Magnificent 7 tech stocks
-                  {useWebSocket && (
-                    <span className={`ml-2 text-xs px-2 py-1 rounded ${
-                      wsConnected ? 'bg-emerald-600/20 text-emerald-400' : 'bg-yellow-600/20 text-yellow-400'
-                    }`}>
-                      {wsStatus === 'connected' ? 'Live Stream Active' : 
-                       wsStatus === 'connecting' ? 'Connecting...' : 
-                       wsStatus === 'error' ? 'Stream Error' : 'Disconnected'}
-                    </span>
-                  )}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Market Hours Status */}
+          {/* Market Status Banner */}
           <Card className={`mb-6 ${
             marketStatus.isOpen 
               ? 'bg-emerald-900/20 border-emerald-600/50' 
-              : 'bg-amber-900/20 border-amber-600/50'
+              : 'bg-slate-800/50 border-slate-600'
           }`}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Clock className={`w-5 h-5 ${
-                  marketStatus.isOpen ? 'text-emerald-400' : 'text-amber-400'
-                }`} />
-                <div className="flex-1">
-                  <div className={`font-medium ${
-                    marketStatus.isOpen ? 'text-emerald-400' : 'text-amber-400'
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+                    marketStatus.isOpen 
+                      ? 'bg-emerald-600/20 text-emerald-400' 
+                      : 'bg-slate-700/50 text-slate-300'
                   }`}>
-                    {marketStatus.message}
-                  </div>
-                  {marketStatus.webSocketLimited && (
-                    <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      WebSocket connectivity may be limited during off-market hours
+                    <div className={`w-3 h-3 rounded-full ${
+                      marketStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
+                    }`} />
+                    <div className="font-medium">
+                      {marketStatus.message}
                     </div>
-                  )}
+                    <Badge 
+                      variant={marketStatus.isOpen ? "default" : "secondary"}
+                      className={marketStatus.isOpen 
+                        ? "bg-emerald-600 text-white" 
+                        : "bg-slate-600 text-slate-200"
+                      }
+                    >
+                      {marketStatus.status.toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge 
-                  variant={marketStatus.isOpen ? "default" : "secondary"}
-                  className={marketStatus.isOpen 
-                    ? "bg-emerald-600 text-white" 
-                    : "bg-amber-600 text-white"
-                  }
-                >
-                  {marketStatus.status.toUpperCase()}
-                </Badge>
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium ${
+                    useWebSocket 
+                      ? 'bg-emerald-600/20 text-emerald-400' 
+                      : 'bg-blue-600/20 text-blue-400'
+                  }`}>
+                    {useWebSocket ? (
+                      <>
+                        <Wifi className="w-4 h-4" />
+                        Live WebSocket Data
+                        {wsConnected && <span className="text-xs">(Connected)</span>}
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4" />
+                        REST API Data
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
+              {!marketStatus.isOpen && (
+                <div className="mt-3 text-sm text-slate-400 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Using REST API for market data during off-hours. Data may be delayed.
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* WebSocket Status Alert */}
-          {useWebSocket && (wsError || marketStatus.webSocketLimited) && (
+          {/* WebSocket Status Alert - Only show if there are connection issues during market hours */}
+          {useWebSocket && wsError && (
             <Card className="mb-6 bg-yellow-900/20 border-yellow-600/50">
               <CardContent className="p-4">
                 <div className="flex items-start gap-2 text-yellow-400">
                   <WifiOff className="w-4 h-4 mt-0.5" />
                   <div className="flex-1">
-                    {wsError && (
-                      <div className="text-sm mb-2">{wsError}</div>
-                    )}
-                    {marketStatus.webSocketLimited && (
-                      <div className="text-sm">
-                        <strong>Live data may be limited:</strong> Alpaca restricts WebSocket connections during {marketStatus.status} hours. 
-                        Switch to REST API for current market data, or try again during regular trading hours (9:30 AM - 4:00 PM ET).
-                      </div>
-                    )}
+                    <div className="text-sm mb-2">{wsError}</div>
+                    <div className="text-sm">
+                      <strong>WebSocket connection failed:</strong> Falling back to REST API for current market data.
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -433,18 +424,11 @@ const Magnificent7 = () => {
                     <CardHeader>
                       <CardTitle className="text-white flex items-center justify-between">
                         <span>{symbol} - Live Price</span>
-                        {useWebSocket ? (
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            stockData?.isRealTime ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                          }`}>
-                            {stockData?.isRealTime ? 'Live' : 'Delayed'}
-                          </span>
-                        ) : (
-                          <>
-                            {stockPricesLoading && <span className="text-yellow-400 text-xs">Loading...</span>}
-                            {stockPricesError && <span className="text-red-400 text-xs">Error</span>}
-                          </>
-                        )}
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
+                        }`}>
+                          {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
+                        </span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
