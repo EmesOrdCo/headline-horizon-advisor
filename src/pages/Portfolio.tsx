@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
@@ -337,10 +336,10 @@ const Portfolio = () => {
           <p className="text-slate-400 text-sm">Distribution of your investments</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Pie Chart */}
-            <div className="lg:col-span-2">
-              <ChartContainer config={chartConfig} className="h-80 w-full">
+            <div className="flex justify-center">
+              <ChartContainer config={chartConfig} className="h-80 w-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <Pie
@@ -362,39 +361,44 @@ const Portfolio = () => {
               </ChartContainer>
             </div>
 
-            {/* Legend */}
-            <div className="space-y-3">
-              <h3 className="text-white font-semibold mb-4">Holdings</h3>
-              {chartData.map((holding, index) => (
-                <div key={holding.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: holding.color }}
-                    />
-                    <div>
-                      <Badge className="bg-emerald-600 text-white text-xs mb-1">
-                        {holding.name}
-                      </Badge>
-                      <p className="text-slate-300 text-sm">{holding.fullName}</p>
-                      <div className={`text-xs flex items-center gap-1 ${
-                        holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                      }`}>
-                        {holding.dayChange >= 0 ? <TrendingUp className="w-2 h-2" /> : <TrendingDown className="w-2 h-2" />}
-                        {formatPercent(holding.dayChangePercent)}
+            {/* Improved Legend */}
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-lg mb-4">Holdings Breakdown</h3>
+              <div className="space-y-4">
+                {chartData.map((holding, index) => (
+                  <div key={holding.name} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: holding.color }}
+                        />
+                        <Badge className="bg-emerald-600 text-white text-xs">
+                          {holding.name}
+                        </Badge>
+                      </div>
+                      <div className="text-white font-bold text-lg">
+                        {holding.percentage.toFixed(1)}%
+                      </div>
+                    </div>
+                    
+                    <div className="ml-7">
+                      <p className="text-slate-300 text-sm mb-2">{holding.fullName}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-slate-400 text-sm">
+                          {formatCurrency(holding.value)}
+                        </p>
+                        <div className={`flex items-center gap-1 text-sm ${
+                          holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {formatPercent(holding.dayChangePercent)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-white font-semibold">
-                      {holding.percentage.toFixed(1)}%
-                    </p>
-                    <p className="text-slate-400 text-sm">
-                      {formatCurrency(holding.value)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
