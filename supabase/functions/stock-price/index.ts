@@ -23,7 +23,7 @@ serve(async (req) => {
     const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
     const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
-    console.log(`=== DEBUGGING ALPACA SANDBOX API FOR ${cleanSymbol} ===`);
+    console.log(`=== DEBUGGING ALPACA PAPER API FOR ${cleanSymbol} ===`);
     console.log('Alpaca API Key exists:', !!alpacaApiKey);
     console.log('Alpaca Secret Key exists:', !!alpacaSecretKey);
 
@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error('Alpaca API credentials not configured');
     }
 
-    // Use sandbox endpoint for quotes
+    // Use paper trading endpoint for quotes
     const quoteUrl = `https://paper-api.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
@@ -96,7 +96,7 @@ serve(async (req) => {
       throw new Error(`No price data available for ${cleanSymbol}`);
     }
     
-    // Also get previous close to calculate change - use sandbox endpoint
+    // Also get previous close to calculate change - use paper trading endpoint
     const previousCloseUrl = `https://paper-api.alpaca.markets/v2/stocks/bars/latest?symbols=${cleanSymbol}&timeframe=1Day`;
     console.log(`Making previous close request to: ${previousCloseUrl}`);
     
