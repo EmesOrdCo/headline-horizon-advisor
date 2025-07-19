@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
@@ -9,9 +8,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
+import ChartModal from "@/components/ChartModal";
 
 const Watchlist = () => {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [selectedStock, setSelectedStock] = useState<{ symbol: string; name: string } | null>(null);
 
   // Stock symbols from the mock data
   const watchlistSymbols = ["NVDA", "TSLA", "AMZN", "PLTR", "AAPL", "SOXL", "GOOGL", "MSTR", "META"];
@@ -111,6 +112,13 @@ const Watchlist = () => {
   const MiniChart = ({ symbol }: { symbol: string }) => {
     const { data: historicalData, isLoading } = useHistoricalPrices(symbol, '1Day', 7);
     
+    const handleChartClick = () => {
+      const stock = watchlistData.find(s => s.symbol === symbol);
+      if (stock) {
+        setSelectedStock({ symbol: stock.symbol, name: stock.name });
+      }
+    };
+
     if (isLoading) {
       return (
         <div className="w-[120px] h-[50px] flex items-center justify-center">
@@ -121,7 +129,11 @@ const Watchlist = () => {
     
     if (!historicalData?.data || historicalData.data.length === 0) {
       // Fallback to mock chart if no data
-      return generateMockChart(Math.random() > 0.5);
+      return (
+        <div onClick={handleChartClick} className="cursor-pointer">
+          {generateMockChart(Math.random() > 0.5)}
+        </div>
+      );
     }
 
     const chartData = historicalData.data;
@@ -136,13 +148,43 @@ const Watchlist = () => {
     // If price range is too small, show flat line
     if (priceRange < 0.01) {
       const points = chartData.map((_, index) => {
-        const x = (index / (chartData.length - 1)) * 110; // 0 to 110 to fit within 120px width
-        const y = 25; // Middle of 50px height
+        const x = (index / (chartData.length - 1)) * 110;
+        const y = 25;
         return `${x},${y}`;
       }).join(' ');
 
       return (
+        <div onClick={handleChartClick} className="cursor-pointer">
+          <svg width="120" height="50" className="inline-block">
+            <polyline
+              points={points}
+              fill="none"
+              stroke={isPositive ? "#10b981" : "#ef4444"}
+              strokeWidth="2"
+              className="opacity-70"
+            />
+          </svg>
+        </div>
+      );
+    }
+    
+    const points = chartData.map((point, index) => {
+      const x = (index / (chartData.length - 1)) * 110;
+      const y = 40 - ((point.close - minPrice) / priceRange) * 30;
+      return `${x},${y}`;
+    }).join(' ');
+
+    const gradientId = `gradient-${symbol}-${isPositive ? 'positive' : 'negative'}`;
+
+    return (
+      <div onClick={handleChartClick} className="cursor-pointer hover:opacity-80 transition-opacity">
         <svg width="120" height="50" className="inline-block">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
+              <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
+            </linearGradient>
+          </defs>
           <polyline
             points={points}
             fill="none"
@@ -150,38 +192,12 @@ const Watchlist = () => {
             strokeWidth="2"
             className="opacity-70"
           />
+          <polygon
+            points={`0,50 ${points} 110,50`}
+            fill={`url(#${gradientId})`}
+          />
         </svg>
-      );
-    }
-    
-    const points = chartData.map((point, index) => {
-      const x = (index / (chartData.length - 1)) * 110; // 0 to 110 to fit within 120px width
-      const y = 40 - ((point.close - minPrice) / priceRange) * 30; // Invert Y and scale to fit 10-40px range
-      return `${x},${y}`;
-    }).join(' ');
-
-    const gradientId = `gradient-${symbol}-${isPositive ? 'positive' : 'negative'}`;
-
-    return (
-      <svg width="120" height="50" className="inline-block">
-        <defs>
-          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.3"/>
-            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity="0.1"/>
-          </linearGradient>
-        </defs>
-        <polyline
-          points={points}
-          fill="none"
-          stroke={isPositive ? "#10b981" : "#ef4444"}
-          strokeWidth="2"
-          className="opacity-70"
-        />
-        <polygon
-          points={`0,50 ${points} 110,50`}
-          fill={`url(#${gradientId})`}
-        />
-      </svg>
+      </div>
     );
   };
 
@@ -355,6 +371,14 @@ const Watchlist = () => {
           </div>
         </div>
       </main>
+
+      {/* Chart Modal */}
+      <ChartModal
+        isOpen={!!selectedStock}
+        onClose={() => setSelectedStock(null)}
+        symbol={selectedStock?.symbol || ""}
+        stockName={selectedStock?.name || ""}
+      />
     </div>
   );
 };
