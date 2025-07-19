@@ -175,8 +175,7 @@ const Watchlist = () => {
                     <TableHead className="text-slate-400">Symbol</TableHead>
                     <TableHead className="text-slate-400">Price</TableHead>
                     <TableHead className="text-slate-400">Change</TableHead>
-                    <TableHead className="text-slate-400">Market Cap</TableHead>
-                    <TableHead className="text-slate-400">Chart (1D)</TableHead>
+                    <TableHead className="text-slate-400">Chart (1W)</TableHead>
                     <TableHead className="text-slate-400">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -207,15 +206,16 @@ const Watchlist = () => {
                           <span>{getRealChange(stock.symbol) >= 0 ? '+' : ''}{getRealChangePercent(stock.symbol).toFixed(2)}%</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-300">{stock.marketCap}</TableCell>
                       <TableCell>
                         <div 
-                          className="w-24 h-12 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-32 h-16 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setSelectedChart({ symbol: stock.symbol, stockName: stock.name })}
                         >
                           <HistoricalPriceChart 
                             symbol={stock.symbol} 
-                            height={48}
+                            timeframe="1Day"
+                            limit={7}
+                            height={64}
                             showMiniChart={true}
                           />
                         </div>
