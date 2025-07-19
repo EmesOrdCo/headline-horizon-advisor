@@ -145,13 +145,7 @@ const Magnificent7 = () => {
       return apiPrice;
     }
     
-    return {
-      symbol,
-      price: 0,
-      change: 0,
-      changePercent: 0,
-      error: true
-    };
+    return null; // Return null instead of error object
   };
 
   const generateCompositeHeadline = (item: any): string => {
@@ -332,7 +326,7 @@ const Magnificent7 = () => {
                     <div className="text-sm text-slate-500 mt-2">API Error: {stockPricesError.message}</div>
                   </div>
                 </div>
-              ) : aaplStock && !aaplStock.error ? (
+              ) : aaplStock ? (
                 <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <Badge className="bg-blue-600 text-white">{FOCUS_SYMBOL}</Badge>

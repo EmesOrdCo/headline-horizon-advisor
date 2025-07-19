@@ -7,6 +7,7 @@ interface StockPrice {
   price: number;
   change: number;
   changePercent: number;
+  error?: boolean;
 }
 
 export const useStockPrices = (additionalSymbols: string[] = []) => {
@@ -53,7 +54,7 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
             }
             
             if (data?.price && data.price > 0) {
-              const stockPrice = {
+              const stockPrice: StockPrice = {
                 symbol,
                 price: parseFloat(data.price.toFixed(2)),
                 change: parseFloat(data.change.toFixed(2)),
