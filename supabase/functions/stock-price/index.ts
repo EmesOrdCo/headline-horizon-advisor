@@ -7,58 +7,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting: Store last request time per IP to enforce limits
-const requestTimes = new Map<string, number[]>();
-
-const enforceRateLimit = (clientIp: string): boolean => {
-  const now = Date.now();
-  const clientRequests = requestTimes.get(clientIp) || [];
-  
-  // Remove requests older than 1 minute
-  const recentRequests = clientRequests.filter(time => now - time < 60000);
-  
-  // Check if we're under the 60 requests/minute limit
-  if (recentRequests.length >= 60) {
-    console.log(`Rate limit exceeded for ${clientIp}: ${recentRequests.length} requests in last minute`);
-    return false;
-  }
-  
-  // Add current request time
-  recentRequests.push(now);
-  requestTimes.set(clientIp, recentRequests);
-  
-  return true;
-};
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get client IP for rate limiting
-    const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    // Enforce rate limiting
-    if (!enforceRateLimit(clientIp)) {
-      return new Response(JSON.stringify({ 
-        error: 'Rate limit exceeded. Maximum 60 requests per minute allowed.',
-        details: 'Please wait before making another request'
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const { symbol } = await req.json();
 
     console.log(`→ RAW SYMBOL: "${symbol}" (length=${symbol.length})`);
 
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
-    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
+    // Use the sandbox API key
+    const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
 
-    console.log(`=== DEBUGGING ALPACA API FOR ${cleanSymbol} ===`);
+    console.log(`=== DEBUGGING ALPACA SANDBOX API FOR ${cleanSymbol} ===`);
     console.log('Alpaca API Key exists:', !!alpacaApiKey);
     console.log('Alpaca API Key length:', alpacaApiKey?.length || 0);
 
@@ -67,17 +31,9 @@ serve(async (req) => {
       throw new Error('ALPACA_API_KEY not configured');
     }
 
-    if (alpacaApiKey.length < 10) {
-      console.error('ALPACA_API_KEY appears to be invalid (too short)');
-      throw new Error('ALPACA_API_KEY appears to be invalid');
-    }
-
-    // First get the latest quote - correct endpoint structure
-    const quoteUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
+    // Use sandbox endpoint for quotes
+    const quoteUrl = `https://paper-api.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
-    
-    // Add minimum 1-second delay between requests to respect API limits
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const quoteResponse = await fetch(quoteUrl, {
       method: 'GET',
@@ -123,7 +79,7 @@ serve(async (req) => {
       throw new Error(`Alpaca API error: ${quoteData.error}`);
     }
     
-    // Check if we have valid quote data (new API format)
+    // Check if we have valid quote data
     if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
       console.error(`Invalid price data for ${cleanSymbol}:`, quoteData);
       throw new Error(`Invalid or missing price data for ${cleanSymbol}`);
@@ -139,8 +95,8 @@ serve(async (req) => {
       throw new Error(`No price data available for ${cleanSymbol}`);
     }
     
-    // Also get previous close to calculate change
-    const previousCloseUrl = `https://data.alpaca.markets/v2/stocks/bars/latest?symbols=${cleanSymbol}&timeframe=1Day`;
+    // Also get previous close to calculate change - use sandbox endpoint
+    const previousCloseUrl = `https://paper-api.alpaca.markets/v2/stocks/bars/latest?symbols=${cleanSymbol}&timeframe=1Day`;
     console.log(`Making previous close request to: ${previousCloseUrl}`);
     
     const previousCloseResponse = await fetch(previousCloseUrl, {

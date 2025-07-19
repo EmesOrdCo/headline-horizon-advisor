@@ -19,9 +19,9 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  // Use the provided API key - for sandbox, this should work as both key and secret
+  // For Alpaca sandbox, use the paper trading credentials
   const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
-  const alpacaSecretKey = "PKCAGC210ZT4QSGNJKHI"; // Using same key as secret for sandbox
+  const alpacaSecretKey = "PKCAGC210ZT4QSGNJKHI";
 
   console.log('Using Alpaca sandbox credentials');
 
@@ -34,7 +34,7 @@ serve(async (req) => {
   const connectToAlpaca = () => {
     try {
       console.log(`Connecting to Alpaca Sandbox WebSocket (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts + 1})`);
-      // Use correct sandbox WebSocket endpoint
+      // Use correct sandbox WebSocket endpoint for IEX data
       alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/iex");
       
       alpacaSocket.onopen = () => {
@@ -48,7 +48,7 @@ serve(async (req) => {
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication to Alpaca Sandbox with key:', alpacaApiKey);
+        console.log('Sending authentication to Alpaca Sandbox');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
