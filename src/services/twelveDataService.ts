@@ -38,50 +38,63 @@ export interface TwelveDataMetrics {
 }
 
 export const fetchTwelveDataMetrics = async (symbol: string): Promise<TwelveDataMetrics> => {
+  console.log('TwelveData API: Fetching metrics for', symbol);
   try {
     const endpoints = [
-      `${BASE_URL}/statistics?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
-      `${BASE_URL}/profile?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
-      `${BASE_URL}/dividends?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`
+      `${BASE_URL}/price?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/quote?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`,
+      `${BASE_URL}/time_series?symbol=${symbol}&interval=1day&outputsize=1&apikey=${TWELVE_DATA_API_KEY}`
     ];
 
-    const [statisticsRes, profileRes, dividendsRes] = await Promise.allSettled(
-      endpoints.map(url => fetch(url).then(res => res.json()))
+    console.log('TwelveData API: Using endpoints:', endpoints);
+
+    const [priceRes, quoteRes, timeSeriesRes] = await Promise.allSettled(
+      endpoints.map(url => {
+        console.log('TwelveData API: Fetching from', url);
+        return fetch(url).then(res => {
+          console.log('TwelveData API: Response status for', url, ':', res.status);
+          return res.json();
+        });
+      })
     );
 
-    const statistics = statisticsRes.status === 'fulfilled' ? statisticsRes.value : {};
-    const profile = profileRes.status === 'fulfilled' ? profileRes.value : {};
-    const dividends = dividendsRes.status === 'fulfilled' ? dividendsRes.value : {};
+    const price = priceRes.status === 'fulfilled' ? priceRes.value : {};
+    const quote = quoteRes.status === 'fulfilled' ? quoteRes.value : {};
+    const timeSeries = timeSeriesRes.status === 'fulfilled' ? timeSeriesRes.value : {};
+
+    console.log('TwelveData API: Price response:', price);
+    console.log('TwelveData API: Quote response:', quote);
+    console.log('TwelveData API: TimeSeries response:', timeSeries);
 
     return {
-      // From statistics endpoint
-      marketCap: statistics.market_capitalization,
-      peRatio: statistics.pe_ratio,
-      pegRatio: statistics.peg_ratio,
-      priceToBook: statistics.price_to_book_ratio,
-      priceToSales: statistics.price_to_sales_ratio,
-      enterpriseValue: statistics.enterprise_value,
-      evToRevenue: statistics.ev_to_revenue,
-      evToEbitda: statistics.ev_to_ebitda,
-      debtToEquity: statistics.debt_to_equity,
-      currentRatio: statistics.current_ratio,
-      quickRatio: statistics.quick_ratio,
-      returnOnEquity: statistics.return_on_equity,
-      returnOnAssets: statistics.return_on_assets,
-      grossMargin: statistics.gross_margin,
-      operatingMargin: statistics.operating_margin,
-      netMargin: statistics.net_margin,
-      beta: statistics.beta,
-      eps: statistics.earnings_per_share,
-      bookValuePerShare: statistics.book_value_per_share,
+      // From quote endpoint (most metrics should be here for free plan)
+      marketCap: quote.market_cap,
+      peRatio: quote.pe_ratio,
+      pegRatio: quote.peg_ratio,
+      priceToBook: quote.price_to_book_ratio,
+      priceToSales: quote.price_to_sales_ratio,
+      enterpriseValue: quote.enterprise_value,
+      evToRevenue: quote.ev_to_revenue,
+      evToEbitda: quote.ev_to_ebitda,
+      debtToEquity: quote.debt_to_equity,
+      currentRatio: quote.current_ratio,
+      quickRatio: quote.quick_ratio,
+      returnOnEquity: quote.return_on_equity,
+      returnOnAssets: quote.return_on_assets,
+      grossMargin: quote.gross_margin,
+      operatingMargin: quote.operating_margin,
+      netMargin: quote.net_margin,
+      beta: quote.beta,
+      eps: quote.eps,
+      bookValuePerShare: quote.book_value_per_share,
       
-      // From dividends endpoint
-      dividendYield: dividends.yield,
-      dividendPerShare: dividends.amount,
+      // From quote endpoint for dividends
+      dividendYield: quote.dividend_yield,
+      dividendPerShare: quote.dividend_per_share,
       
       // Growth metrics (if available)
-      revenueGrowth: statistics.revenue_growth,
-      earningsGrowth: statistics.earnings_growth,
+      revenueGrowth: quote.revenue_growth,
+      earningsGrowth: quote.earnings_growth,
     };
   } catch (error) {
     console.error('Error fetching Twelve Data metrics:', error);

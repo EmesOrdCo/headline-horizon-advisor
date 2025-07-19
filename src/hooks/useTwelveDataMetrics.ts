@@ -10,10 +10,12 @@ export const useTwelveDataMetrics = (symbol: string) => {
     if (!symbol) return;
 
     const loadMetrics = async () => {
+      console.log('TwelveData: Starting fetch for symbol:', symbol);
       setLoading(true);
       setError(null);
       try {
         const data = await fetchTwelveDataMetrics(symbol);
+        console.log('TwelveData: Received data:', data);
         setMetrics(data);
       } catch (err) {
         setError('Failed to fetch additional metrics');
