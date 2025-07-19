@@ -30,10 +30,6 @@ class AlpacaStreamManager {
   private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
   private isAuthenticated = false;
   private errorMessage = '';
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 1; // Reduced to 1 to avoid spam
-  private reconnectTimeout: NodeJS.Timeout | null = null;
-  private isConnecting = false; // Add flag to prevent multiple simultaneous connections
 
   static getInstance(): AlpacaStreamManager {
     if (!AlpacaStreamManager.instance) {
@@ -49,8 +45,8 @@ class AlpacaStreamManager {
     const newSymbols = symbols.filter(symbol => !this.subscribedSymbols.has(symbol));
     newSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
 
-    // Connect if not already connected or connecting
-    if (this.connectionStatus === 'disconnected' && this.subscribedSymbols.size > 0 && !this.isConnecting) {
+    // Connect if not already connected (singleton logic)
+    if (!this.socket && this.subscribedSymbols.size > 0) {
       this.connect();
     }
 
@@ -75,7 +71,7 @@ class AlpacaStreamManager {
       delete this.streamData[symbol];
     });
 
-    // Disconnect if no subscribers
+    // Disconnect if no subscribers (clean close)
     if (this.subscribers.size === 0) {
       this.disconnect();
     }
@@ -92,19 +88,17 @@ class AlpacaStreamManager {
   }
 
   private connect() {
-    // Prevent multiple simultaneous connection attempts
-    if (this.isConnecting || (this.socket && this.socket.readyState === WebSocket.CONNECTING)) {
-      console.log('Singleton: Connection attempt already in progress, skipping');
+    // Prevent multiple connections (singleton enforcement)
+    if (this.socket) {
+      console.log('Singleton: Connection already exists, skipping');
       return;
     }
 
-    this.isConnecting = true;
-    this.cleanup();
     this.connectionStatus = 'connecting';
     this.errorMessage = '';
     this.notifySubscribers();
 
-    console.log('Singleton: Attempting WebSocket connection');
+    console.log('Singleton: Creating new WebSocket connection');
     
     const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
@@ -115,8 +109,6 @@ class AlpacaStreamManager {
         console.log('Singleton: WebSocket connected successfully');
         this.connectionStatus = 'connected';
         this.errorMessage = '';
-        this.reconnectAttempts = 0;
-        this.isConnecting = false;
         this.notifySubscribers();
       };
 
@@ -142,11 +134,8 @@ class AlpacaStreamManager {
             case 'auth_error':
               this.connectionStatus = 'error';
               this.isAuthenticated = false;
-              this.isConnecting = false;
               this.errorMessage = message.message || 'Authentication failed';
               console.error('Singleton: Authentication failed:', message.message);
-              // Don't retry auth errors
-              this.reconnectAttempts = this.maxReconnectAttempts;
               this.notifySubscribers();
               break;
               
@@ -179,13 +168,10 @@ class AlpacaStreamManager {
             case 'error':
               this.connectionStatus = 'error';
               this.isAuthenticated = false;
-              this.isConnecting = false;
               
               if (message.message && message.message.includes('connection limit')) {
                 this.errorMessage = 'Connection limit reached. Real-time data unavailable.';
-                console.log('Singleton: Connection limit reached - stopping retries');
-                // Stop all retry attempts for connection limit errors
-                this.reconnectAttempts = this.maxReconnectAttempts;
+                console.log('Singleton: Connection limit reached');
               } else {
                 this.errorMessage = message.message || 'Stream error occurred';
                 console.error('Singleton: Stream error:', message.message);
@@ -203,9 +189,7 @@ class AlpacaStreamManager {
       this.socket.onerror = (error) => {
         console.error('Singleton: WebSocket error:', error);
         this.connectionStatus = 'error';
-        this.isConnected = false;
         this.isAuthenticated = false;
-        this.isConnecting = false;
         this.errorMessage = 'WebSocket connection failed';
         this.notifySubscribers();
       };
@@ -213,63 +197,28 @@ class AlpacaStreamManager {
       this.socket.onclose = (event) => {
         console.log('Singleton: WebSocket disconnected, code:', event.code);
         this.isAuthenticated = false;
-        this.isConnecting = false;
-        
-        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts && this.subscribers.size > 0) {
-          this.connectionStatus = 'connecting';
-          this.scheduleReconnect();
-        } else {
-          this.connectionStatus = 'error';
-          if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            this.errorMessage = 'Connection failed. Real-time data unavailable.';
-          }
-        }
+        this.connectionStatus = 'error';
+        this.errorMessage = 'Connection closed. Real-time data unavailable.';
+        this.cleanup();
         this.notifySubscribers();
       };
 
     } catch (error) {
       console.error('Singleton: Failed to create WebSocket connection:', error);
       this.connectionStatus = 'error';
-      this.isConnecting = false;
       this.errorMessage = 'Failed to initialize WebSocket connection';
       this.notifySubscribers();
     }
-  }
-
-  private scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts || this.reconnectTimeout) {
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = 15000; // Fixed 15 second delay
-    
-    console.log(`Singleton: Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-    this.errorMessage = `Retrying connection... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`;
-    this.notifySubscribers();
-    
-    this.reconnectTimeout = setTimeout(() => {
-      this.reconnectTimeout = null;
-      if (this.subscribers.size > 0) {
-        this.connect();
-      }
-    }, delay);
   }
 
   private disconnect() {
     this.cleanup();
     this.connectionStatus = 'disconnected';
     this.errorMessage = '';
-    this.isConnecting = false;
     this.notifySubscribers();
   }
 
   private cleanup() {
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-    
     if (this.socket) {
       this.socket.onopen = null;
       this.socket.onmessage = null;
@@ -277,13 +226,12 @@ class AlpacaStreamManager {
       this.socket.onclose = null;
       
       if (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) {
-        this.socket.close();
+        this.socket.close(1000, "Reconnecting cleanly");
       }
       this.socket = null;
     }
     
     this.isAuthenticated = false;
-    this.isConnecting = false;
   }
 
   private notifySubscribers() {
