@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -99,17 +98,50 @@ const Magnificent7 = () => {
     });
   }, [streamData]);
 
+  // Prepare magnificent 7 articles data
+  const magnificent7Articles = useMemo(() => {
+    return MAGNIFICENT_7.map(symbol => {
+      return newsData?.find(item => 
+        item.symbol === symbol && 
+        item.ai_confidence && 
+        item.ai_sentiment
+      );
+    }).filter(Boolean);
+  }, [newsData]);
+
+  // Get source articles for each stock - moved outside of render
+  const articlesWithSources = useMemo(() => {
+    return magnificent7Articles.map(article => {
+      if (!article) return null;
+      
+      let sourceArticles = [];
+      try {
+        sourceArticles = article.source_links ? JSON.parse(article.source_links) : [];
+      } catch (error) {
+        console.error('Error parsing source links:', error);
+      }
+      
+      return {
+        ...article,
+        sourceArticles
+      };
+    }).filter(Boolean);
+  }, [magnificent7Articles]);
+
+  // Call useArticleWeights for each article with sources - FIXED: moved outside of map
+  const articleWeightsResults = articlesWithSources.map(article => {
+    return useArticleWeights({
+      articles: article?.sourceArticles || [],
+      overallSentiment: article?.ai_sentiment || 'Neutral',
+      overallConfidence: article?.ai_confidence || 50,
+      symbol: article?.symbol || '',
+      enabled: (article?.sourceArticles?.length || 0) > 0 && !article?.ai_reasoning?.includes('Historical')
+    });
+  });
+
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
-
-  const magnificent7Articles = MAGNIFICENT_7.map(symbol => {
-    return newsData?.find(item => 
-      item.symbol === symbol && 
-      item.ai_confidence && 
-      item.ai_sentiment
-    );
-  }).filter(Boolean);
 
   const generateCompositeHeadline = (item: any): string => {
     const symbol = item.symbol;
@@ -367,22 +399,17 @@ const Magnificent7 = () => {
                 Loading Magnificent 7 analysis...
               </div>
             ) : (
-              MAGNIFICENT_7.map((symbol) => {
-                const article = magnificent7Articles.find(item => item.symbol === symbol);
+              MAGNIFICENT_7.map((symbol, index) => {
+                const article = magnificent7Articles.find(item => item?.symbol === symbol);
                 const stockPrice = getStockPrice(symbol);
                 
                 if (article) {
                   const compositeHeadline = generateCompositeHeadline(article);
                   const sourceArticles = getSourceArticles(article);
                   
-                  // Get article weights for each stock
-                  const { data: articleWeights, isLoading: weightsLoading } = useArticleWeights({
-                    articles: sourceArticles,
-                    overallSentiment: article.ai_sentiment || 'Neutral',
-                    overallConfidence: article.ai_confidence || 50,
-                    symbol: article.symbol,
-                    enabled: sourceArticles.length > 0 && !article.ai_reasoning?.includes('Historical')
-                  });
+                  // Get article weights for this specific stock using the pre-computed results
+                  const articleWeightsResult = articleWeightsResults[articlesWithSources.findIndex(a => a?.symbol === symbol)];
+                  const { data: articleWeights, isLoading: weightsLoading } = articleWeightsResult || { data: null, isLoading: false };
                   
                   return (
                     <div key={article.id} className="w-full">
