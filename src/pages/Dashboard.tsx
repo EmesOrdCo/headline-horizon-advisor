@@ -9,6 +9,7 @@ import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RSSHeadlines from "@/components/RSSHeadlines";
+import AutoRefreshAnalytics from "@/components/AutoRefreshAnalytics";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
 import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
@@ -152,6 +153,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-900">
+      <AutoRefreshAnalytics />
       <DashboardNav />
       <MarketTicker />
       
