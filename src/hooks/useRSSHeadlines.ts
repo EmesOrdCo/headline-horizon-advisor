@@ -23,8 +23,8 @@ export const useRSSHeadlines = () => {
       console.log(`✅ Fetched ${data?.length || 0} RSS headlines`);
       return data;
     },
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: false, // Disable auto-refetch, let component handle it
   });
 };
 
