@@ -33,7 +33,7 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   const chartConfig = {
     close: {
       label: "Close Price",
-      color: "hsl(var(--chart-1))",
+      color: "#10b981",
     },
   };
 
@@ -102,17 +102,17 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
       <ChartContainer config={chartConfig} className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="date" 
-              stroke="hsl(var(--muted-foreground))"
+              stroke="#9CA3AF"
               fontSize={12}
-              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fill: '#9CA3AF' }}
             />
             <YAxis 
-              stroke="hsl(var(--muted-foreground))"
+              stroke="#9CA3AF"
               fontSize={12}
-              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fill: '#9CA3AF' }}
               domain={['dataMin - 1', 'dataMax + 1']}
             />
             <ChartTooltip 
@@ -152,10 +152,10 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
             <Line 
               type="monotone" 
               dataKey="close" 
-              stroke="var(--color-close)" 
+              stroke="#10b981" 
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, fill: "var(--color-close)" }}
+              activeDot={{ r: 4, fill: "#10b981" }}
             />
           </LineChart>
         </ResponsiveContainer>
