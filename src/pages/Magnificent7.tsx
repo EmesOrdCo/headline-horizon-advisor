@@ -1,19 +1,28 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RefreshCw, ArrowLeft, BarChart3, Wifi, WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
+import RealTimePriceChart from "@/components/RealTimePriceChart";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useNews, useFetchNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
-import { useState } from "react";
+import { useAlpacaStream } from "@/hooks/useAlpacaStream";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
+
+interface PriceHistoryPoint {
+  timestamp: string;
+  price: number;
+  symbol: string;
+}
 
 const Magnificent7 = () => {
   useSEO({
@@ -52,13 +61,43 @@ const Magnificent7 = () => {
       ]
     }
   });
+  
   const { data: newsData, isLoading, refetch } = useNews();
   const { data: stockPrices } = useStockPrices();
   const fetchNews = useFetchNews();
   const [isFetching, setIsFetching] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
   const { toast } = useToast();
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+
+  // Real-time streaming for Magnificent 7
+  const streamResult = useAlpacaStream({
+    symbols: MAGNIFICENT_7,
+    enabled: true
+  });
+  
+  const { isConnected, isAuthenticated, connectionStatus, streamData } = streamResult;
+
+  // Store price history for charts
+  useEffect(() => {
+    Object.entries(streamData).forEach(([symbol, data]) => {
+      if (data.price && data.timestamp) {
+        setPriceHistory(prev => ({
+          ...prev,
+          [symbol]: [
+            ...(prev[symbol] || []).slice(-99), // Keep last 100 points
+            {
+              timestamp: data.timestamp,
+              price: data.price,
+              symbol: symbol
+            }
+          ]
+        }));
+      }
+    });
+  }, [streamData]);
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -145,6 +184,14 @@ const Magnificent7 = () => {
     }
   };
 
+  const formatPrice = (price: number) => {
+    return price.toFixed(2);
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -165,22 +212,155 @@ const Magnificent7 = () => {
                     Back to Dashboard
                   </Button>
                 </Link>
-                <Button 
-                  onClick={handleRefreshNews}
-                  disabled={isFetching}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-                  {isFetching ? 'Fetching...' : 'Refresh News'}
-                </Button>
+                <div className="flex items-center gap-4">
+                  <Button 
+                    onClick={() => setShowCharts(!showCharts)}
+                    variant="outline" 
+                    className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    {showCharts ? 'Hide Charts' : 'Show Charts'}
+                  </Button>
+                  <Button 
+                    onClick={handleRefreshNews}
+                    disabled={isFetching}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                    {isFetching ? 'Fetching...' : 'Refresh News'}
+                  </Button>
+                </div>
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Magnificent 7 Stocks</h1>
-                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies</p>
+                <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">AI-analyzed news for the seven largest tech companies with live market data</p>
+                
+                {/* Connection Status */}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+                    connectionStatus === 'connected' && isAuthenticated ? 'bg-emerald-900/20 text-emerald-400 border border-emerald-500/20' :
+                    connectionStatus === 'connecting' ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-500/20' :
+                    connectionStatus === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/20' :
+                    'bg-slate-700/50 text-slate-400 border border-slate-600'
+                  }`}>
+                    {connectionStatus === 'connected' && isAuthenticated ? (
+                      <>
+                        <Wifi className="w-3 h-3" />
+                        Live Data Connected
+                      </>
+                    ) : connectionStatus === 'connecting' ? (
+                      <>
+                        <WifiOff className="w-3 h-3" />
+                        Connecting...
+                      </>
+                    ) : connectionStatus === 'error' ? (
+                      <>
+                        <WifiOff className="w-3 h-3" />
+                        Connection Error
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-3 h-3" />
+                        Disconnected
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Live Price Dashboard */}
+          <Card className="mb-8 bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                Live Magnificent 7 Prices
+                {isConnected && isAuthenticated && (
+                  <span className="text-emerald-400 text-sm">● LIVE</span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {MAGNIFICENT_7.map((symbol) => {
+                  const liveData = streamData[symbol];
+                  const fallbackPrice = getStockPrice(symbol);
+                  
+                  return (
+                    <div
+                      key={symbol}
+                      className="bg-slate-700/50 border border-slate-600 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge className="bg-emerald-600 text-white">{symbol}</Badge>
+                        {isConnected && isAuthenticated ? (
+                          <Wifi className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <WifiOff className="w-3 h-3 text-slate-400" />
+                        )}
+                      </div>
+                      
+                      <div className="text-right">
+                        {liveData?.price ? (
+                          <>
+                            <div className="text-lg font-bold text-white">
+                              ${formatPrice(liveData.price)}
+                            </div>
+                            {liveData.timestamp && (
+                              <div className="text-xs text-slate-400">
+                                {formatTime(liveData.timestamp)}
+                              </div>
+                            )}
+                            {liveData.volume && (
+                              <div className="text-xs text-slate-400">
+                                Vol: {liveData.volume.toLocaleString()}
+                              </div>
+                            )}
+                          </>
+                        ) : fallbackPrice ? (
+                          <>
+                            <div className="text-lg font-bold text-slate-300">
+                              ${fallbackPrice.price.toFixed(2)}
+                            </div>
+                            <div className="text-xs text-slate-400">
+                              Static Price
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-slate-400 text-sm">
+                            No price data
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Live Charts */}
+          {showCharts && (
+            <Card className="mb-8 bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Live Price Charts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {MAGNIFICENT_7.map((symbol) => (
+                    <div key={symbol} className="bg-slate-700/30 rounded-lg p-4">
+                      <RealTimePriceChart
+                        data={priceHistory[symbol] || []}
+                        symbol={symbol}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* News Analysis Section */}
           <div className="space-y-8">
             {isLoading ? (
               <div className="text-center text-gray-600 dark:text-slate-400 py-8">
