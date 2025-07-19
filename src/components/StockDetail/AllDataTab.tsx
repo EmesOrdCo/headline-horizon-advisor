@@ -1,5 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useTwelveDataMetrics } from "@/hooks/useTwelveDataMetrics";
 
 interface AllDataTabProps {
   symbol: string;
@@ -16,6 +18,9 @@ interface AllDataTabProps {
 }
 
 const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
+  // Fetch Twelve Data metrics
+  const { metrics: twelveDataMetrics, loading: twelveDataLoading } = useTwelveDataMetrics(symbol);
+  
   // Calculate available metrics from Alpaca data
   const bidAskSpread = stockInfo.askPrice && stockInfo.bidPrice 
     ? (stockInfo.askPrice - stockInfo.bidPrice).toFixed(4)
@@ -25,6 +30,29 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
     ? `${Math.min(stockInfo.price, stockInfo.previousClose).toFixed(2)} - ${Math.max(stockInfo.price, stockInfo.previousClose).toFixed(2)}`
     : "TBC";
 
+  // Helper function to format values with Twelve Data styling
+  const formatTwelveDataValue = (value: number | undefined, format: 'currency' | 'percentage' | 'number' = 'number', fallback = "TBC") => {
+    if (value === undefined || value === null) {
+      return <span className="text-slate-400 text-sm italic">{fallback}</span>;
+    }
+    
+    let formattedValue = '';
+    if (format === 'currency') {
+      formattedValue = `$${value.toFixed(2)}`;
+    } else if (format === 'percentage') {
+      formattedValue = `${value.toFixed(2)}%`;
+    } else {
+      formattedValue = value.toFixed(2);
+    }
+    
+    return (
+      <span className="text-blue-300 font-medium">
+        {formattedValue}
+        <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Detailed Financial Data */}
@@ -33,21 +61,32 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">Valuation Metrics</CardTitle>
-            <p className="text-slate-400 text-sm">Fundamental data not available from Alpaca API</p>
+            <p className="text-slate-400 text-sm">
+              Enhanced with Twelve Data API 
+              <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { label: "Price-to-Earnings", value: "TBC" },
-              { label: "Price-to-Book", value: "TBC" },
-              { label: "Price-to-Sales", value: "TBC" },
-              { label: "EV/EBITDA", value: "TBC" },
-              { label: "PEG Ratio", value: "TBC" },
-            ].map((metric, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
-                <span className="text-slate-400">{metric.label}</span>
-                <span className="text-slate-400 text-sm italic">{metric.value}</span>
-              </div>
-            ))}
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Price-to-Earnings</span>
+              {formatTwelveDataValue(twelveDataMetrics.peRatio)}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Price-to-Book</span>
+              {formatTwelveDataValue(twelveDataMetrics.priceToBook)}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Price-to-Sales</span>
+              {formatTwelveDataValue(twelveDataMetrics.priceToSales)}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">EV/EBITDA</span>
+              {formatTwelveDataValue(twelveDataMetrics.evToEbitda)}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
+              <span className="text-slate-400">PEG Ratio</span>
+              {formatTwelveDataValue(twelveDataMetrics.pegRatio)}
+            </div>
           </CardContent>
         </Card>
 
@@ -55,21 +94,32 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">Financial Health</CardTitle>
-            <p className="text-slate-400 text-sm">Fundamental data not available from Alpaca API</p>
+            <p className="text-slate-400 text-sm">
+              Enhanced with Twelve Data API 
+              <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { label: "Revenue Growth (YoY)", value: "TBC" },
-              { label: "Gross Margin", value: "TBC" },
-              { label: "Operating Margin", value: "TBC" },
-              { label: "Net Margin", value: "TBC" },
-              { label: "ROE", value: "TBC" },
-            ].map((metric, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
-                <span className="text-slate-400">{metric.label}</span>
-                <span className="text-slate-400 text-sm italic">{metric.value}</span>
-              </div>
-            ))}
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Revenue Growth (YoY)</span>
+              {formatTwelveDataValue(twelveDataMetrics.revenueGrowth, 'percentage')}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Gross Margin</span>
+              {formatTwelveDataValue(twelveDataMetrics.grossMargin, 'percentage')}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Operating Margin</span>
+              {formatTwelveDataValue(twelveDataMetrics.operatingMargin, 'percentage')}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-400">Net Margin</span>
+              {formatTwelveDataValue(twelveDataMetrics.netMargin, 'percentage')}
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-slate-700 last:border-b-0">
+              <span className="text-slate-400">ROE</span>
+              {formatTwelveDataValue(twelveDataMetrics.returnOnEquity, 'percentage')}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -167,29 +217,67 @@ const AllDataTab = ({ symbol, stockInfo }: AllDataTabProps) => {
         </CardContent>
       </Card>
 
-      {/* Additional Metrics - TBC Section */}
+      {/* Additional Metrics */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Additional Metrics</CardTitle>
-          <p className="text-slate-400 text-sm">These metrics require fundamental/historical data not available from Alpaca API</p>
+          <p className="text-slate-400 text-sm">
+            Enhanced with Twelve Data API 
+            <Badge variant="outline" className="ml-2 text-xs border-blue-400 text-blue-300">TD</Badge>
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
               <div className="text-slate-400 text-sm mb-1">Market Cap</div>
-              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+              <div className="text-white font-bold text-lg">
+                {twelveDataMetrics.marketCap ? formatTwelveDataValue(twelveDataMetrics.marketCap, 'currency') : <span className="text-slate-400 italic">TBC</span>}
+              </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-              <div className="text-slate-400 text-sm mb-1">P/E Ratio</div>
-              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+              <div className="text-slate-400 text-sm mb-1">EPS</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.eps, 'currency')}
+              </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-              <div className="text-slate-400 text-sm mb-1">52W High</div>
-              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+              <div className="text-slate-400 text-sm mb-1">Beta</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.beta)}
+              </div>
             </div>
             <div className="p-3 bg-slate-700/30 rounded-lg text-center">
-              <div className="text-slate-400 text-sm mb-1">52W Low</div>
-              <div className="text-slate-400 font-bold text-lg italic">TBC</div>
+              <div className="text-slate-400 text-sm mb-1">Dividend Yield</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.dividendYield, 'percentage')}
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Current Ratio</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.currentRatio)}
+              </div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Debt to Equity</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.debtToEquity)}
+              </div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">ROA</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.returnOnAssets, 'percentage')}
+              </div>
+            </div>
+            <div className="p-3 bg-slate-700/30 rounded-lg text-center">
+              <div className="text-slate-400 text-sm mb-1">Book Value/Share</div>
+              <div className="text-white font-bold text-lg">
+                {formatTwelveDataValue(twelveDataMetrics.bookValuePerShare, 'currency')}
+              </div>
             </div>
           </div>
         </CardContent>
