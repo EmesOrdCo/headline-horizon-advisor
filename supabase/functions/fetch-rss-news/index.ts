@@ -11,6 +11,37 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Function to calculate string similarity
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function getEditDistance(str1: string, str2: string): number {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const substitutionCost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1, // insertion
+        matrix[j - 1][i] + 1, // deletion
+        matrix[j - 1][i - 1] + substitutionCost // substitution
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
 // Function to detect if text is in English
 function isEnglishText(text: string): boolean {
   if (!text) return false;
@@ -252,22 +283,59 @@ serve(async (req) => {
       }
       
       // Create sets for efficient duplicate checking
-      const existingUrls = new Set(existingArticles?.map(a => a.url) || []);
-      const existingTitles = new Set(existingArticles?.map(a => a.title.toLowerCase()) || []);
+      const existingUrls = new Set(existingArticles?.map(a => {
+        // Normalize URLs by removing query parameters and fragments
+        try {
+          const url = new URL(a.url);
+          return `${url.protocol}//${url.host}${url.pathname}`;
+        } catch {
+          return a.url;
+        }
+      }) || []);
+      
+      const existingTitles = new Set(existingArticles?.map(a => {
+        // Normalize titles by removing punctuation and extra spaces
+        return a.title.toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }) || []);
       
       // Filter out duplicates by URL and similar titles
       const newHeadlines = headlines.filter(headline => {
+        // Normalize headline URL for comparison
+        let normalizedUrl = headline.url;
+        try {
+          const url = new URL(headline.url);
+          normalizedUrl = `${url.protocol}//${url.host}${url.pathname}`;
+        } catch {
+          // Keep original if URL parsing fails
+        }
+        
         // Check URL duplicates
-        if (existingUrls.has(headline.url)) {
+        if (existingUrls.has(normalizedUrl)) {
           console.log(`🔄 Skipping duplicate URL: ${headline.url}`);
           return false;
         }
         
-        // Check title duplicates (case-insensitive)
-        const titleLower = headline.title.toLowerCase();
-        if (existingTitles.has(titleLower)) {
+        // Normalize headline title for comparison
+        const normalizedTitle = headline.title.toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // Check title duplicates (normalized comparison)
+        if (existingTitles.has(normalizedTitle)) {
           console.log(`🔄 Skipping duplicate title: ${headline.title}`);
           return false;
+        }
+        
+        // Additional check for very similar titles (85% similarity)
+        for (const existingTitle of existingTitles) {
+          if (calculateSimilarity(normalizedTitle, existingTitle) > 0.85) {
+            console.log(`🔄 Skipping similar title: ${headline.title}`);
+            return false;
+          }
         }
         
         return true;
