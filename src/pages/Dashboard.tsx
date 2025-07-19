@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
+import RSSHeadlines from "@/components/RSSHeadlines";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
 import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
@@ -429,6 +431,20 @@ const Dashboard = () => {
                 Bitcoin, Ethereum, and major altcoins analysis
               </span>
             </div>
+          </div>
+        </section>
+
+        {/* RECENT HEADLINES SECTION */}
+        <section className="border-t border-slate-700 pt-8 mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Recent Headlines</h2>
+              <p className="text-slate-400 text-sm">Latest market news and updates</p>
+            </div>
+          </div>
+          
+          <div className="max-w-2xl mx-auto">
+            <RSSHeadlines />
           </div>
         </section>
       </main>

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUp, TrendingUp, Clock, FileText } from "lucide-react";
@@ -7,7 +8,6 @@ import MarketTicker from "@/components/MarketTicker";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import AnalysisPipeline from "@/components/AnalysisPipeline";
-import RSSHeadlines from "@/components/RSSHeadlines";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -73,23 +73,6 @@ const HomePage = () => {
           </p>
           <div className="max-w-7xl mx-auto px-4">
             <AnalysisPipeline />
-          </div>
-        </div>
-      </section>
-      
-      {/* Recent Headlines Section */}
-      <section className="py-8 sm:py-12 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Latest Market News
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-slate-300 max-w-2xl mx-auto">
-              Stay updated with the latest financial news and market developments
-            </p>
-          </div>
-          <div className="max-w-2xl mx-auto">
-            <RSSHeadlines />
           </div>
         </div>
       </section>
