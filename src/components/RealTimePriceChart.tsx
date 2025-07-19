@@ -45,7 +45,7 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
 
   if (data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-slate-400">
+      <div className="h-48 flex items-center justify-center text-slate-400">
         <div className="text-center">
           <p className="mb-2">No price data available for {symbol}</p>
           {isMarketClosed && (
@@ -67,7 +67,7 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
         </p>
       </div>
       
-      <ChartContainer config={chartConfig} className="h-64 w-full">
+      <ChartContainer config={chartConfig} className="h-48 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

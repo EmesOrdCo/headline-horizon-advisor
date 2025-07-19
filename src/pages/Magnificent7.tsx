@@ -372,21 +372,32 @@ const Magnificent7 = () => {
 
           {/* Live Chart */}
           {showCharts && (
-            <Card className="mb-8 bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">
-                  {FOCUS_SYMBOL} Price Chart
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-slate-700/30 rounded-lg p-4">
-                  <RealTimePriceChart
-                    data={priceHistory[FOCUS_SYMBOL] || []}
-                    symbol={FOCUS_SYMBOL}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 gap-4 mb-8">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">
+                    {FOCUS_SYMBOL} Price Chart
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-slate-700/30 rounded-lg p-4">
+                    <RealTimePriceChart
+                      data={priceHistory[FOCUS_SYMBOL] || []}
+                      symbol={FOCUS_SYMBOL}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* New placeholder box */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="text-center text-slate-400">
+                    <div className="text-lg font-medium">Add this stuff later</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* News Analysis Section - only show if we have news data */}
