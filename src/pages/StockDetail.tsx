@@ -24,6 +24,15 @@ const StockDetail = () => {
   const location = useLocation();
   const stockSymbol = symbol?.toUpperCase() || '';
   
+  // Debug logging for layout debugging
+  useEffect(() => {
+    console.log('StockDetail Layout Debug:', {
+      symbol: stockSymbol,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      route: location.pathname
+    });
+  }, [stockSymbol, location.pathname]);
+
   // Check if user came from watchlist
   const cameFromWatchlist = location.state?.from === 'watchlist' || document.referrer.includes('/watchlist');
   
@@ -91,24 +100,32 @@ const StockDetail = () => {
 
   return (
     <div className="min-h-screen bg-slate-900">
+      {/* Debug: Add visual indicator for layout debugging */}
+      <div className="fixed top-0 right-0 z-50 bg-red-500 text-white text-xs p-2 opacity-75">
+        Layout Debug: {window.innerWidth}x{window.innerHeight}
+      </div>
+      
       <DashboardNav />
       
-      {/* Market Ticker */}
-      <div className="pt-16">
+      {/* Market Ticker - Debug spacing */}
+      <div className="pt-16 border-2 border-yellow-500/20">
         <MarketTicker />
       </div>
       
-      <div className="pt-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <StockHeader 
-            symbol={stockSymbol}
-            stockInfo={stockInfo}
-            cameFromWatchlist={cameFromWatchlist}
-          />
+      {/* Main content wrapper - Debug spacing */}
+      <div className="pt-8 px-4 sm:px-6 lg:px-8 border-2 border-blue-500/20">
+        <div className="max-w-7xl mx-auto border-2 border-green-500/20">
+          {/* Header - Debug spacing */}
+          <div className="border-2 border-purple-500/20">
+            <StockHeader 
+              symbol={stockSymbol}
+              stockInfo={stockInfo}
+              cameFromWatchlist={cameFromWatchlist}
+            />
+          </div>
 
-          {/* Tabs */}
-          <div className="flex justify-end mb-6">
+          {/* Tabs - Debug spacing */}
+          <div className="flex justify-end mb-6 border-2 border-orange-500/20">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-slate-800/50 border-slate-700">
                 <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
@@ -121,10 +138,10 @@ const StockDetail = () => {
             </Tabs>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
-            {/* Chart Section - Takes up 3/4 width on xl screens */}
-            <div className="xl:col-span-3 space-y-6">
+          {/* Main Content Grid - Debug grid layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8 border-2 border-red-500/20">
+            {/* Chart Section - Debug grid column span */}
+            <div className="xl:col-span-3 space-y-6 border-2 border-cyan-500/20">
               {/* Price Chart */}
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader className="pb-4">
@@ -156,8 +173,8 @@ const StockDetail = () => {
               />
             </div>
 
-            {/* Side Panel - Takes up 1/4 width on xl screens */}
-            <div className="xl:col-span-1 space-y-6">
+            {/* Side Panel - Debug grid column span */}
+            <div className="xl:col-span-1 space-y-6 border-2 border-pink-500/20">
               <UpcomingEvents />
               <AIForecast stockPrice={stockInfo.price} />
             </div>
