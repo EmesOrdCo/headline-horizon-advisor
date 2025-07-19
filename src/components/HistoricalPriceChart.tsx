@@ -1,8 +1,10 @@
 
-import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { useMemo, useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, ComposedChart, Bar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
 import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
+import { BarChart3, TrendingUp } from "lucide-react";
 
 interface HistoricalPriceChartProps {
   symbol: string;
@@ -10,8 +12,57 @@ interface HistoricalPriceChartProps {
   limit?: number;
 }
 
+// Custom Candlestick component for Recharts
+const Candlestick = (props: any) => {
+  const { payload, x, y, width, height } = props;
+  if (!payload) return null;
+  
+  const { open, high, low, close } = payload;
+  const isGreen = close >= open;
+  const color = isGreen ? '#10b981' : '#ef4444';
+  const bodyHeight = Math.abs(close - open);
+  const bodyY = Math.min(close, open);
+  
+  // Calculate positions relative to the chart scale
+  const candleWidth = Math.max(width * 0.6, 2);
+  const wickWidth = 1;
+  const centerX = x + width / 2;
+  
+  // Scale values to chart coordinates (this is a simplified approach)
+  const scale = height / (high - low);
+  const highY = y;
+  const lowY = y + height;
+  const bodyTop = y + (high - Math.max(open, close)) * scale;
+  const bodyBottom = y + (high - Math.min(open, close)) * scale;
+  
+  return (
+    <g>
+      {/* High-Low wick */}
+      <line
+        x1={centerX}
+        y1={highY}
+        x2={centerX}
+        y2={lowY}
+        stroke={color}
+        strokeWidth={wickWidth}
+      />
+      {/* Open-Close body */}
+      <rect
+        x={centerX - candleWidth / 2}
+        y={bodyTop}
+        width={candleWidth}
+        height={Math.max(bodyBottom - bodyTop, 1)}
+        fill={isGreen ? color : 'transparent'}
+        stroke={color}
+        strokeWidth={1}
+      />
+    </g>
+  );
+};
+
 const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: HistoricalPriceChartProps) => {
   const { data: historicalData, isLoading, error } = useHistoricalPrices(symbol, timeframe, limit);
+  const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
 
   const chartData = useMemo(() => {
     if (!historicalData?.data) return [];
@@ -27,6 +78,9 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
       high: point.high,
       low: point.low,
       volume: point.volume,
+      // For candlestick coloring
+      isGreen: point.close >= point.open,
+      bodyHeight: Math.abs(point.close - point.open),
     }));
   }, [historicalData]);
 
@@ -75,6 +129,52 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
   const totalChange = lastPrice - firstPrice;
   const totalChangePercent = firstPrice !== 0 ? ((totalChange / firstPrice) * 100) : 0;
 
+  // Custom candlestick rendering function
+  const renderCandlestick = (props: any) => {
+    const { payload, x, y, width, height } = props;
+    if (!payload || !payload.length) return null;
+    
+    const data = payload[0].payload;
+    const { open, high, low, close } = data;
+    const isGreen = close >= open;
+    const color = isGreen ? '#10b981' : '#ef4444';
+    
+    const candleWidth = Math.max(width * 0.6, 2);
+    const centerX = x + width / 2;
+    
+    // Find the y-scale range
+    const yScale = props.yAxisMap?.[payload[0].dataKey]?.scale || ((val: number) => val);
+    
+    const highY = yScale(high);
+    const lowY = yScale(low);
+    const openY = yScale(open);
+    const closeY = yScale(close);
+    
+    return (
+      <g key={`candlestick-${x}`}>
+        {/* High-Low wick */}
+        <line
+          x1={centerX}
+          y1={highY}
+          x2={centerX}
+          y2={lowY}
+          stroke={color}
+          strokeWidth={1}
+        />
+        {/* Open-Close body */}
+        <rect
+          x={centerX - candleWidth / 2}
+          y={Math.min(openY, closeY)}
+          width={candleWidth}
+          height={Math.max(Math.abs(closeY - openY), 1)}
+          fill={isGreen ? color : 'transparent'}
+          stroke={color}
+          strokeWidth={1}
+        />
+      </g>
+    );
+  };
+
   return (
     <div className="w-full">
       <div className="mb-4">
@@ -87,13 +187,35 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
               {chartData.length} data points
             </p>
           </div>
-          <div className="text-right">
-            <div className={`text-lg font-semibold ${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)} 
-              ({totalChange >= 0 ? '+' : ''}{totalChangePercent.toFixed(2)}%)
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setChartType('line')}
+                variant={chartType === 'line' ? 'default' : 'outline'}
+                size="sm"
+                className={chartType === 'line' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
+              >
+                <TrendingUp className="w-4 h-4 mr-1" />
+                Line
+              </Button>
+              <Button
+                onClick={() => setChartType('candlestick')}
+                variant={chartType === 'candlestick' ? 'default' : 'outline'}
+                size="sm"
+                className={chartType === 'candlestick' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />
+                Candles
+              </Button>
             </div>
-            <div className="text-sm text-slate-400">
-              Period change
+            <div className="text-right">
+              <div className={`text-lg font-semibold ${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)} 
+                ({totalChange >= 0 ? '+' : ''}{totalChangePercent.toFixed(2)}%)
+              </div>
+              <div className="text-sm text-slate-400">
+                Period change
+              </div>
             </div>
           </div>
         </div>
@@ -101,63 +223,174 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30 }: Histor
       
       <ChartContainer config={chartConfig} className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="date" 
-              stroke="#9CA3AF"
-              fontSize={12}
-              tick={{ fill: '#9CA3AF' }}
-            />
-            <YAxis 
-              stroke="#9CA3AF"
-              fontSize={12}
-              tick={{ fill: '#9CA3AF' }}
-              domain={['dataMin - 1', 'dataMax + 1']}
-            />
-            <ChartTooltip 
-              content={({ active, payload, label }) => {
-                if (!active || !payload || !payload.length) return null;
-                
-                const data = payload[0].payload;
-                return (
-                  <div className="bg-slate-800 border border-slate-600 rounded-lg p-3">
-                    <p className="text-white font-medium mb-2">{data.fullDate}</p>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Close:</span>
-                        <span className="text-white font-medium">${data.close}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Open:</span>
-                        <span className="text-slate-300">${data.open}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">High:</span>
-                        <span className="text-emerald-400">${data.high}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Low:</span>
-                        <span className="text-red-400">${data.low}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Volume:</span>
-                        <span className="text-slate-300">{data.volume.toLocaleString()}</span>
+          {chartType === 'line' ? (
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#9CA3AF"
+                fontSize={12}
+                tick={{ fill: '#9CA3AF' }}
+              />
+              <YAxis 
+                stroke="#9CA3AF"
+                fontSize={12}
+                tick={{ fill: '#9CA3AF' }}
+                domain={['dataMin - 1', 'dataMax + 1']}
+              />
+              <ChartTooltip 
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-slate-800 border border-slate-600 rounded-lg p-3">
+                      <p className="text-white font-medium mb-2">{data.fullDate}</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Close:</span>
+                          <span className="text-white font-medium">${data.close}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Open:</span>
+                          <span className="text-slate-300">${data.open}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">High:</span>
+                          <span className="text-emerald-400">${data.high}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Low:</span>
+                          <span className="text-red-400">${data.low}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Volume:</span>
+                          <span className="text-slate-300">{data.volume.toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="close" 
-              stroke="#10b981" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, fill: "#10b981" }}
-            />
-          </LineChart>
+                  );
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="close" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: "#10b981" }}
+              />
+            </LineChart>
+          ) : (
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#9CA3AF"
+                fontSize={12}
+                tick={{ fill: '#9CA3AF' }}
+              />
+              <YAxis 
+                stroke="#9CA3AF"
+                fontSize={12}
+                tick={{ fill: '#9CA3AF' }}
+                domain={['dataMin - 2', 'dataMax + 2']}
+              />
+              <ChartTooltip 
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  
+                  const data = payload[0].payload;
+                  const change = data.close - data.open;
+                  const changePercent = data.open !== 0 ? ((change / data.open) * 100) : 0;
+                  
+                  return (
+                    <div className="bg-slate-800 border border-slate-600 rounded-lg p-3">
+                      <p className="text-white font-medium mb-2">{data.fullDate}</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Open:</span>
+                          <span className="text-slate-300">${data.open.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">High:</span>
+                          <span className="text-emerald-400">${data.high.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Low:</span>
+                          <span className="text-red-400">${data.low.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Close:</span>
+                          <span className="text-white font-medium">${data.close.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Change:</span>
+                          <span className={`font-medium ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Volume:</span>
+                          <span className="text-slate-300">{data.volume.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+              {/* Render candlesticks using Bar with custom shape */}
+              <Bar 
+                dataKey="close" 
+                shape={(props: any) => {
+                  const { payload, x, y, width, height } = props;
+                  if (!payload) return null;
+                  
+                  const { open, high, low, close } = payload;
+                  const isGreen = close >= open;
+                  const color = isGreen ? '#10b981' : '#ef4444';
+                  
+                  const candleWidth = Math.max(width * 0.6, 2);
+                  const centerX = x + width / 2;
+                  
+                  // Calculate positions for OHLC
+                  const chartHeight = height;
+                  const dataRange = Math.max(...chartData.map(d => d.high)) - Math.min(...chartData.map(d => d.low));
+                  const scale = chartHeight / dataRange;
+                  const minValue = Math.min(...chartData.map(d => d.low));
+                  
+                  const highY = y + chartHeight - ((high - minValue) * scale);
+                  const lowY = y + chartHeight - ((low - minValue) * scale);
+                  const openY = y + chartHeight - ((open - minValue) * scale);
+                  const closeY = y + chartHeight - ((close - minValue) * scale);
+                  
+                  return (
+                    <g key={`candlestick-${x}`}>
+                      {/* High-Low wick */}
+                      <line
+                        x1={centerX}
+                        y1={highY}
+                        x2={centerX}
+                        y2={lowY}
+                        stroke={color}
+                        strokeWidth={1}
+                      />
+                      {/* Open-Close body */}
+                      <rect
+                        x={centerX - candleWidth / 2}
+                        y={Math.min(openY, closeY)}
+                        width={candleWidth}
+                        height={Math.max(Math.abs(closeY - openY), 1)}
+                        fill={isGreen ? color : 'transparent'}
+                        stroke={color}
+                        strokeWidth={1}
+                      />
+                    </g>
+                  );
+                }}
+              />
+            </ComposedChart>
+          )}
         </ResponsiveContainer>
       </ChartContainer>
     </div>
