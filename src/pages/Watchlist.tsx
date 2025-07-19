@@ -1,11 +1,12 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 
 const Watchlist = () => {
   const [activeFilter, setActiveFilter] = useState("All");
@@ -213,21 +214,28 @@ const Watchlist = () => {
                   </TableHeader>
                   <TableBody>
                     {watchlistData.map((stock) => (
-                      <TableRow key={stock.symbol} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750">
+                      <TableRow 
+                        key={stock.symbol} 
+                        className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750"
+                      >
                         <TableCell className="py-4">
-                          <div className="flex items-center gap-3">
+                          <Link 
+                            to={`/stock/${stock.symbol.toLowerCase()}`}
+                            className="flex items-center gap-3 group cursor-pointer"
+                          >
                             <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-lg">
                               {stock.logo}
                             </div>
-                            <div>
-                              <div className="font-semibold text-slate-900 dark:text-white text-lg">
+                            <div className="flex-1">
+                              <div className="font-semibold text-slate-900 dark:text-white text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center gap-2">
                                 {stock.symbol}
+                                <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                               <div className="text-slate-500 dark:text-slate-400 text-sm">
                                 {stock.name}
                               </div>
                             </div>
-                          </div>
+                          </Link>
                         </TableCell>
                         <TableCell className="py-4 text-right">
                           <div className="text-xl font-bold text-slate-900 dark:text-white mb-1">
