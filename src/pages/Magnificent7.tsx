@@ -67,7 +67,6 @@ const Magnificent7 = () => {
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
-  const [useWebSocket, setUseWebSocket] = useState(true);
   const { toast } = useToast();
 
   // Focus on all Magnificent 7 stocks
