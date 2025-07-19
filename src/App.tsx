@@ -5,16 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Index from "./pages/Index";
+import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
-import Homepage1 from "./pages/Homepage1";
-import Homepage2 from "./pages/Homepage2";
-import Homepage3 from "./pages/Homepage3";
-import Homepage4 from "./pages/Homepage4";
-import Homepage5 from "./pages/Homepage5";
-import HomepageShowcase from "./pages/HomepageShowcase";
 import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
 import BiggestMovers from "./pages/BiggestMovers";
@@ -36,14 +30,8 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/homepage1" element={<Homepage1 />} />
-              <Route path="/homepage2" element={<Homepage2 />} />
-              <Route path="/homepage3" element={<Homepage3 />} />
-              <Route path="/homepage4" element={<Homepage4 />} />
-              <Route path="/homepage5" element={<Homepage5 />} />
-              <Route path="/homepage-showcase" element={<HomepageShowcase />} />
               <Route
                 path="/stock/:symbol"
                 element={

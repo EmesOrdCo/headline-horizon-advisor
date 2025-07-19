@@ -11,7 +11,7 @@ import AnalysisPipeline from "@/components/AnalysisPipeline";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 
-const Index = () => {
+const HomePage = () => {
   useSEO({
     title: "AI-Powered Market Intelligence & Real-Time Predictions",
     description: "Empowering investors with AI-driven market intelligence and real-time predictions. Get comprehensive stock analysis, sentiment insights, and data-driven investment decisions.",
@@ -72,4 +72,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default HomePage;
