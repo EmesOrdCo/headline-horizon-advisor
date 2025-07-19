@@ -11,6 +11,7 @@ interface StockPrice {
   change: number;
   changePercent: number;
   error?: boolean;
+  errorMessage?: string;
 }
 
 export const useStockPrices = (additionalSymbols: string[] = []) => {
@@ -33,63 +34,110 @@ export const useStockPrices = (additionalSymbols: string[] = []) => {
         const results: StockPrice[] = [];
         const errors: Array<{symbol: string, error: string}> = [];
         
-        // Fetch first 3 symbols for testing
-        const testSymbols = uniqueSymbols.slice(0, 3);
+        // Try to fetch all symbols, but limit concurrent requests to avoid rate limits
+        const batchSize = 3;
+        const batches: string[][] = [];
         
-        for (const symbol of testSymbols) {
-          try {
-            console.log(`Fetching price for ${symbol}...`);
-            
-            const { data, error } = await supabase.functions.invoke('stock-price', {
-              body: { symbol },
-            });
-            
-            if (error) {
-              console.error(`Supabase function error for ${symbol}:`, error);
-              errors.push({ symbol, error: error.message || 'Function error' });
-              continue;
-            }
-            
-            if (data?.error) {
-              console.error(`API error for ${symbol}:`, data.error);
-              errors.push({ symbol, error: data.error });
-              continue;
-            }
-            
-            if (data?.price && data.price > 0) {
-              const stockPrice: StockPrice = {
+        for (let i = 0; i < uniqueSymbols.length; i += batchSize) {
+          batches.push(uniqueSymbols.slice(i, i + batchSize));
+        }
+        
+        for (const batch of batches) {
+          const batchPromises = batch.map(async (symbol) => {
+            try {
+              console.log(`Fetching price for ${symbol}...`);
+              
+              const { data, error } = await supabase.functions.invoke('stock-price', {
+                body: { symbol },
+              });
+              
+              if (error) {
+                console.error(`Supabase function error for ${symbol}:`, error);
+                return {
+                  symbol,
+                  price: 0,
+                  askPrice: 0,
+                  bidPrice: 0,
+                  previousClose: 0,
+                  change: 0,
+                  changePercent: 0,
+                  error: true,
+                  errorMessage: error.message || 'Function error'
+                };
+              }
+              
+              if (data?.error) {
+                console.error(`API error for ${symbol}:`, data.error);
+                return {
+                  symbol,
+                  price: 0,
+                  askPrice: 0,
+                  bidPrice: 0,
+                  previousClose: 0,
+                  change: 0,
+                  changePercent: 0,
+                  error: true,
+                  errorMessage: data.error
+                };
+              }
+              
+              if (data?.price && data.price > 0) {
+                const stockPrice: StockPrice = {
+                  symbol,
+                  price: parseFloat(data.price.toFixed(2)),
+                  askPrice: parseFloat((data.askPrice || data.price).toFixed(2)),
+                  bidPrice: parseFloat((data.bidPrice || data.price).toFixed(2)),
+                  previousClose: parseFloat((data.previousClose || data.price).toFixed(2)),
+                  change: parseFloat(data.change.toFixed(2)),
+                  changePercent: parseFloat(data.changePercent.toFixed(2)),
+                  error: false
+                };
+                console.log(`Successfully fetched price for ${symbol}:`, stockPrice);
+                return stockPrice;
+              } else {
+                console.warn(`No valid price data for ${symbol}:`, data);
+                return {
+                  symbol,
+                  price: 0,
+                  askPrice: 0,
+                  bidPrice: 0,
+                  previousClose: 0,
+                  change: 0,
+                  changePercent: 0,
+                  error: true,
+                  errorMessage: 'No price data available'
+                };
+              }
+              
+            } catch (error) {
+              console.error(`Error fetching price for ${symbol}:`, error);
+              return {
                 symbol,
-                price: parseFloat(data.price.toFixed(2)),
-                askPrice: parseFloat((data.askPrice || data.price).toFixed(2)),
-                bidPrice: parseFloat((data.bidPrice || data.price).toFixed(2)),
-                previousClose: parseFloat((data.previousClose || data.price).toFixed(2)),
-                change: parseFloat(data.change.toFixed(2)),
-                changePercent: parseFloat(data.changePercent.toFixed(2))
+                price: 0,
+                askPrice: 0,
+                bidPrice: 0,
+                previousClose: 0,
+                change: 0,
+                changePercent: 0,
+                error: true,
+                errorMessage: error instanceof Error ? error.message : 'Unknown error'
               };
-              results.push(stockPrice);
-              console.log(`Successfully fetched price for ${symbol}:`, stockPrice);
-            } else {
-              console.warn(`No valid price data for ${symbol}:`, data);
-              errors.push({ symbol, error: 'No price data available' });
             }
-            
-            // Wait 2 seconds between requests
-            if (testSymbols.indexOf(symbol) < testSymbols.length - 1) {
-              console.log('Waiting 2 seconds before next request...');
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-            
-          } catch (error) {
-            console.error(`Error fetching price for ${symbol}:`, error);
-            errors.push({ symbol, error: error instanceof Error ? error.message : 'Unknown error' });
+          });
+          
+          const batchResults = await Promise.all(batchPromises);
+          results.push(...batchResults);
+          
+          // Wait between batches to avoid rate limits
+          if (batches.indexOf(batch) < batches.length - 1) {
+            console.log('Waiting 1 second before next batch...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
 
-        console.log(`Final results: Successfully fetched ${results.length}/${testSymbols.length} stock prices`, results);
-        
-        if (results.length === 0) {
-          throw new Error('No stock data available from API');
-        }
+        console.log(`Final results: Processed ${results.length} symbols`);
+        console.log('Success:', results.filter(r => !r.error).length);
+        console.log('Errors:', results.filter(r => r.error).length);
         
         return results;
       } catch (error) {
