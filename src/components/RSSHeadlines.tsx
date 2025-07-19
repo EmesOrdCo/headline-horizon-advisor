@@ -158,22 +158,29 @@ const RSSHeadlines = () => {
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {headline.title}
                       </h4>
-                      {headline.description && (
-                        <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">
-                          {headline.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-500">
-                          <Clock className="w-3 h-3" />
-                          {formatTimeAgo(headline.published_at)}
-                        </div>
-                        {headline.category && (
-                          <div className="text-xs text-gray-500 dark:text-slate-500">
-                            • {headline.category}
-                          </div>
-                        )}
-                      </div>
+                       {headline.description && (
+                         <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">
+                           {headline.description}
+                         </p>
+                       )}
+                       {headline.ai_reasoning && (
+                         <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md border-l-2 border-blue-200 dark:border-blue-800">
+                           <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                             📊 AI Summary: {headline.ai_reasoning}
+                           </p>
+                         </div>
+                       )}
+                       <div className="flex items-center gap-2 mt-2">
+                         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-500">
+                           <Clock className="w-3 h-3" />
+                           {formatTimeAgo(headline.published_at)}
+                         </div>
+                         {headline.category && (
+                           <div className="text-xs text-gray-500 dark:text-slate-500">
+                             • {headline.category}
+                           </div>
+                         )}
+                       </div>
                     </div>
                     <ExternalLink className="w-3 h-3 text-gray-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors flex-shrink-0 mt-1" />
                   </div>
