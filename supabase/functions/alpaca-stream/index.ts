@@ -19,9 +19,11 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
+  // Use the provided API key - for sandbox, this should work as both key and secret
   const alpacaApiKey = "PKCAGC210ZT4QSGNJKHI";
+  const alpacaSecretKey = "PKCAGC210ZT4QSGNJKHI"; // Using same key as secret for sandbox
 
-  console.log('Using Alpaca sandbox API key:', alpacaApiKey);
+  console.log('Using Alpaca sandbox credentials');
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   let alpacaSocket: WebSocket | null = null;
@@ -32,21 +34,21 @@ serve(async (req) => {
   const connectToAlpaca = () => {
     try {
       console.log(`Connecting to Alpaca Sandbox WebSocket (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts + 1})`);
-      // Use sandbox WebSocket endpoint
+      // Use correct sandbox WebSocket endpoint
       alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/iex");
       
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca Sandbox WebSocket successfully');
         reconnectAttempts = 0; // Reset on successful connection
         
-        // Send authentication message immediately
+        // Send authentication message with proper format for sandbox
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
-          secret: "" // Paper trading may not require secret
+          secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication to Alpaca Sandbox...');
+        console.log('Sending authentication to Alpaca Sandbox with key:', alpacaApiKey);
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
@@ -73,7 +75,7 @@ serve(async (req) => {
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_error',
-                    message: `Authentication failed: ${message.msg || 'Unknown error'}`
+                    message: `Authentication failed: ${message.msg || 'Unknown error'} (Code: ${message.code || 'N/A'})`
                   }));
                 }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
