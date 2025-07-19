@@ -336,9 +336,9 @@ const Portfolio = () => {
           <p className="text-slate-400 text-sm">Distribution of your investments</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Pie Chart */}
-            <div className="flex justify-center">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Pie Chart - Takes up 1 column */}
+            <div className="flex justify-center items-center">
               <ChartContainer config={chartConfig} className="h-80 w-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
@@ -361,38 +361,44 @@ const Portfolio = () => {
               </ChartContainer>
             </div>
 
-            {/* Improved Legend */}
-            <div className="space-y-4">
-              <h3 className="text-white font-semibold text-lg mb-4">Holdings Breakdown</h3>
-              <div className="space-y-4">
+            {/* Holdings Breakdown - Takes up 2 columns */}
+            <div className="lg:col-span-2 space-y-4">
+              <h3 className="text-white font-semibold text-xl mb-6">Holdings Breakdown</h3>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {chartData.map((holding, index) => (
-                  <div key={holding.name} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={holding.name} className="bg-slate-700/40 rounded-xl p-5 border border-slate-600/50 hover:bg-slate-700/60 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div 
-                          className="w-4 h-4 rounded-full flex-shrink-0" 
+                          className="w-5 h-5 rounded-full flex-shrink-0 shadow-md" 
                           style={{ backgroundColor: holding.color }}
                         />
-                        <Badge className="bg-emerald-600 text-white text-xs">
+                        <Badge className="bg-emerald-600 text-white text-sm font-medium px-3 py-1">
                           {holding.name}
                         </Badge>
                       </div>
-                      <div className="text-white font-bold text-lg">
+                      <div className="text-white font-bold text-xl">
                         {holding.percentage.toFixed(1)}%
                       </div>
                     </div>
                     
-                    <div className="ml-7">
-                      <p className="text-slate-300 text-sm mb-2">{holding.fullName}</p>
+                    <div className="ml-8 space-y-3">
+                      <p className="text-slate-300 text-sm font-medium">{holding.fullName}</p>
                       <div className="flex items-center justify-between">
-                        <p className="text-slate-400 text-sm">
-                          {formatCurrency(holding.value)}
-                        </p>
-                        <div className={`flex items-center gap-1 text-sm ${
-                          holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                          {formatPercent(holding.dayChangePercent)}
+                        <div>
+                          <p className="text-slate-400 text-xs mb-1">Portfolio Value</p>
+                          <p className="text-white font-semibold text-lg">
+                            {formatCurrency(holding.value)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-slate-400 text-xs mb-1">Daily Change</p>
+                          <div className={`flex items-center gap-1 text-sm font-medium ${
+                            holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
+                          }`}>
+                            {holding.dayChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                            {formatPercent(holding.dayChangePercent)}
+                          </div>
                         </div>
                       </div>
                     </div>
