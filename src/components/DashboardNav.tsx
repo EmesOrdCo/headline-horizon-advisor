@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Bell, User, Settings, Zap, Monitor, MessageCircle, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,12 +70,12 @@ const DashboardNav = () => {
         Watchlist
       </Link>
 
-      <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Wallet
-      </Link>
-      
       <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
         Biggest Movers
+      </Link>
+      
+      <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Wallet
       </Link>
     </>
   );
@@ -127,6 +127,63 @@ const DashboardNav = () => {
             {!isMobile && (
               <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             )}
+            
+            {/* Notifications Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-slate-300 hover:text-white hover:bg-slate-800 relative"
+            >
+              <Bell className="w-5 h-5" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+            </Button>
+
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-300 hover:text-white hover:bg-slate-800 relative"
+                >
+                  <User className="w-5 h-5" />
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-slate-800 border-slate-700 text-slate-200"
+              >
+                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                  <User className="w-4 h-4 mr-3" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                  <Settings className="w-4 h-4 mr-3" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                  <Zap className="w-4 h-4 mr-3" />
+                  Feature Walkthroughs
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                  <Monitor className="w-4 h-4 mr-3" />
+                  Color Theme
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
+                  <MessageCircle className="w-4 h-4 mr-3" />
+                  Give Feedback
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button 
               onClick={handleSignOut}
               variant="outline" 
