@@ -53,12 +53,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <Navigation />
       
-      {/* Market Ticker - Force positioning directly below navbar */}
-      <div className="relative z-10 mt-0">
-        <MarketTicker />
-      </div>
-      
-      {/* Hero - Remove any top spacing */}
+      {/* Hero */}
       <div className="mt-0">
         <Hero />
       </div>
