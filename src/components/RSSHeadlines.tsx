@@ -105,7 +105,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
   };
 
   return (
-    <div className={`bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl ${compact ? 'p-2' : 'p-4 sm:p-6'} ${compact ? 'h-auto' : 'h-[400px] sm:h-[600px]'} flex flex-col ${compact ? '' : 'sticky top-6'}`}>
+    <div className={`bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl ${compact ? 'p-2' : 'p-4 sm:p-6'} ${compact ? 'h-64' : 'h-[400px] sm:h-[600px]'} flex flex-col ${compact ? '' : 'sticky top-6'}`}>
       {!compact && (
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Headlines</h3>
@@ -147,7 +147,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
       )}
       
       {headlines && headlines.length > 0 && (
-        <ScrollArea className={compact ? "h-64" : "flex-1"}>
+        <ScrollArea className={compact ? "flex-1" : "flex-1"}>
           <div className={compact ? "space-y-2" : "space-y-3"}>
             {headlines.slice(0, maxItems).map((headline, index) => (
                 <div 
