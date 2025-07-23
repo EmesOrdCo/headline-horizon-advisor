@@ -74,9 +74,16 @@ serve(async (req) => {
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
-      alpacaSocket.onmessage = (event) => {
+      alpacaSocket.onmessage = async (event) => {
         try {
-          const data = JSON.parse(event.data);
+          let rawData = event.data;
+          
+          // Handle binary data (Blob)
+          if (rawData instanceof Blob) {
+            rawData = await rawData.text();
+          }
+          
+          const data = JSON.parse(rawData);
           console.log('Received from Alpaca:', data);
           
           if (Array.isArray(data)) {
