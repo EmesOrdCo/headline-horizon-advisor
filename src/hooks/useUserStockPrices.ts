@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,6 +12,11 @@ export const useUserStockPrices = (symbols: string[] = []) => {
   return useQuery({
     queryKey: ['user-stock-prices', symbols],
     queryFn: async () => {
+      // TEMPORARILY DISABLED - Logo population in progress
+      console.log('Stock price fetching temporarily disabled during logo population');
+      return [];
+      
+      /* ORIGINAL CODE DISABLED DURING LOGO POPULATION
       if (symbols.length === 0) return [];
       
       console.log('useUserStockPrices called with symbols:', symbols);
@@ -77,11 +81,11 @@ export const useUserStockPrices = (symbols: string[] = []) => {
         console.error('Error fetching user stock prices:', error);
         throw error;
       }
+      */
     },
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 1 minute
-    retry: 1,
-    retryDelay: 15000, // Wait 15 seconds between retries
-    enabled: symbols.length > 0,
+    refetchInterval: false, // Disabled during logo population
+    retry: 0, // Disabled during logo population
+    enabled: false, // Completely disabled
   });
 };
