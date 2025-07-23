@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      company_logos: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url: string
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news_articles: {
         Row: {
           ai_confidence: number | null
