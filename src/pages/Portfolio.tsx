@@ -6,411 +6,433 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useSEO } from "@/hooks/useSEO";
-import { TrendingUp, TrendingDown, Eye, BarChart3, PieChart, List } from "lucide-react";
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, Activity, Target, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 
 // Dummy portfolio data
-const dummyPortfolioData = {
-  totalValue: 125847.32,
-  totalGain: 8234.56,
-  totalGainPercent: 7.01,
-  dayChange: -342.18,
-  dayChangePercent: -0.27,
-  holdings: [
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      shares: 25,
-      avgCost: 180.50,
-      currentPrice: 195.23,
-      totalValue: 4880.75,
-      gain: 368.25,
-      gainPercent: 8.15,
-      dayChange: -2.34,
-      dayChangePercent: -1.18,
-    },
-    {
-      symbol: "GOOGL",
-      name: "Alphabet Inc.",
-      shares: 8,
-      avgCost: 2650.00,
-      currentPrice: 2789.45,
-      totalValue: 22315.60,
-      gain: 1115.60,
-      gainPercent: 5.26,
-      dayChange: 15.23,
-      dayChangePercent: 0.55,
-    },
-    {
-      symbol: "MSFT",
-      name: "Microsoft Corporation",
-      shares: 15,
-      avgCost: 320.75,
-      currentPrice: 342.18,
-      totalValue: 5132.70,
-      gain: 321.45,
-      gainPercent: 6.68,
-      dayChange: -4.56,
-      dayChangePercent: -1.31,
-    },
-    {
-      symbol: "TSLA",
-      name: "Tesla Inc.",
-      shares: 12,
-      avgCost: 245.80,
-      currentPrice: 267.90,
-      totalValue: 3214.80,
-      gain: 265.20,
-      gainPercent: 8.98,
-      dayChange: 8.45,
-      dayChangePercent: 3.26,
-    },
-    {
-      symbol: "NVDA",
-      name: "NVIDIA Corporation",
-      shares: 6,
-      avgCost: 420.15,
-      currentPrice: 498.72,
-      totalValue: 2992.32,
-      gain: 471.42,
-      gainPercent: 18.71,
-      dayChange: 12.34,
-      dayChangePercent: 2.54,
-    },
-  ],
+const portfolioData = {
+  totalValue: { USD: 125847.32, GBP: 99678.90, EUR: 117234.56 },
+  totalDeposited: { USD: 110000.00, GBP: 87200.45, EUR: 102500.80 },
+  availableCash: { USD: 5847.32, GBP: 4628.90, EUR: 5434.56 },
+  invested: { USD: 120000.00, GBP: 95050.00, EUR: 111800.00 },
+  dayChange: { USD: -342.18, GBP: -271.34, EUR: -318.45 },
+  dayChangePercent: { USD: -0.27, GBP: -0.27, EUR: -0.27 },
+  totalReturn: { USD: 15847.32, GBP: 12578.45, EUR: 14733.76 },
+  totalReturnPercent: { USD: 14.41, GBP: 14.42, EUR: 14.38 },
 };
 
-type ViewMode = 'cards' | 'table' | 'chart';
+const performanceData = [
+  { date: '2024-01', value: 95000, sp500: 4200, nasdaq: 13000, btc: 42000 },
+  { date: '2024-02', value: 98500, sp500: 4350, nasdaq: 13500, btc: 48000 },
+  { date: '2024-03', value: 102000, sp500: 4500, nasdaq: 14000, btc: 52000 },
+  { date: '2024-04', value: 106500, sp500: 4650, nasdaq: 14500, btc: 58000 },
+  { date: '2024-05', value: 112000, sp500: 4800, nasdaq: 15000, btc: 62000 },
+  { date: '2024-06', value: 118500, sp500: 4950, nasdaq: 15500, btc: 65000 },
+  { date: '2024-07', value: 125847, sp500: 5100, nasdaq: 16000, btc: 67000 },
+];
+
+const assetCategories = {
+  stocks: [
+    { symbol: "AAPL", name: "Apple Inc.", investment: 25000, currentValue: 28750, change: 15.0, dayChange: -1.2, logo: "🍎" },
+    { symbol: "GOOGL", name: "Alphabet Inc.", investment: 20000, currentValue: 22400, change: 12.0, dayChange: 0.8, logo: "🔍" },
+    { symbol: "MSFT", name: "Microsoft Corp.", investment: 18000, currentValue: 19980, change: 11.0, dayChange: -0.5, logo: "🖥️" },
+    { symbol: "TSLA", name: "Tesla Inc.", investment: 15000, currentValue: 18300, change: 22.0, dayChange: 3.2, logo: "🚗" },
+    { symbol: "NVDA", name: "NVIDIA Corp.", investment: 12000, currentValue: 16800, change: 40.0, dayChange: 2.1, logo: "🎮" },
+  ],
+  crypto: [
+    { symbol: "BTC", name: "Bitcoin", investment: 8000, currentValue: 9120, change: 14.0, dayChange: -2.3, logo: "₿" },
+    { symbol: "ETH", name: "Ethereum", investment: 5000, currentValue: 5650, change: 13.0, dayChange: -1.8, logo: "Ξ" },
+    { symbol: "SOL", name: "Solana", investment: 3000, currentValue: 3720, change: 24.0, dayChange: 4.2, logo: "◎" },
+  ],
+  funds: [
+    { symbol: "SPY", name: "SPDR S&P 500 ETF", investment: 10000, currentValue: 10800, change: 8.0, dayChange: -0.3, logo: "📊" },
+    { symbol: "QQQ", name: "Invesco QQQ Trust", investment: 8000, currentValue: 8720, change: 9.0, dayChange: 0.2, logo: "📈" },
+  ]
+};
+
+const tradeHistory = [
+  { asset: "AAPL", type: "BUY", quantity: 50, price: 180.50, date: "2024-07-15", time: "09:30", gainLoss: 750.00 },
+  { asset: "GOOGL", type: "BUY", quantity: 10, price: 2650.00, date: "2024-07-12", time: "14:22", gainLoss: 400.00 },
+  { asset: "BTC", type: "BUY", quantity: 0.2, price: 62000.00, date: "2024-07-10", time: "16:45", gainLoss: 340.00 },
+  { asset: "TSLA", type: "SELL", quantity: 25, price: 267.90, date: "2024-07-08", time: "11:15", gainLoss: -125.00 },
+  { asset: "MSFT", type: "BUY", quantity: 30, price: 342.18, date: "2024-07-05", time: "10:30", gainLoss: 580.00 },
+  { asset: "ETH", type: "BUY", quantity: 2.5, price: 3200.00, date: "2024-07-03", time: "13:20", gainLoss: 200.00 },
+  { asset: "NVDA", type: "BUY", quantity: 15, price: 498.72, date: "2024-07-01", time: "15:45", gainLoss: 920.00 },
+];
 
 const Portfolio = () => {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'GBP' | 'EUR'>('USD');
+  const [showBenchmark, setShowBenchmark] = useState(false);
+  const [benchmarkType, setBenchmarkType] = useState<'sp500' | 'nasdaq' | 'btc'>('sp500');
   
   useSEO({
-    title: "My Portfolio",
+    title: "Portfolio - Investment Tracker",
     description: "Track your investment portfolio performance with detailed analytics and insights.",
     canonical: "https://yourdomain.com/portfolio",
     ogType: "website",
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
+  const formatCurrency = (value: number, currency: string = selectedCurrency) => {
+    const currencySymbols = { USD: '$', GBP: '£', EUR: '€' };
+    return `${currencySymbols[currency as keyof typeof currencySymbols]}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatPercent = (value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
-  // Portfolio Summary Component
-  const PortfolioSummary = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-slate-400">Total Value</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-white">
-            {formatCurrency(dummyPortfolioData.totalValue)}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-slate-400">Total Gain/Loss</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold flex items-center gap-2 ${
-            dummyPortfolioData.totalGain >= 0 ? 'text-emerald-400' : 'text-red-400'
-          }`}>
-            {dummyPortfolioData.totalGain >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-            {formatCurrency(dummyPortfolioData.totalGain)}
-          </div>
-          <div className={`text-sm ${dummyPortfolioData.totalGainPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {formatPercent(dummyPortfolioData.totalGainPercent)}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-slate-400">Day Change</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold flex items-center gap-2 ${
-            dummyPortfolioData.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-          }`}>
-            {dummyPortfolioData.dayChange >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-            {formatCurrency(dummyPortfolioData.dayChange)}
-          </div>
-          <div className={`text-sm ${dummyPortfolioData.dayChangePercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {formatPercent(dummyPortfolioData.dayChangePercent)}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-slate-400">Holdings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-white">
-            {dummyPortfolioData.holdings.length}
-          </div>
-          <div className="text-sm text-slate-400">Positions</div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Cards View
-  const CardsView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {dummyPortfolioData.holdings.map((holding) => (
-        <Card key={holding.symbol} className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Badge className="bg-emerald-600 text-white mb-2">{holding.symbol}</Badge>
-                <CardTitle className="text-white text-lg">{holding.name}</CardTitle>
-              </div>
-              <div className="text-right">
-                <div className="text-xl font-bold text-white">
-                  {formatCurrency(holding.currentPrice)}
-                </div>
-                <div className={`text-sm flex items-center gap-1 ${
-                  holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}>
-                  {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {formatCurrency(holding.dayChange)} ({formatPercent(holding.dayChangePercent)})
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-slate-400">Shares</div>
-                <div className="text-white font-semibold">{holding.shares}</div>
-              </div>
-              <div>
-                <div className="text-slate-400">Avg Cost</div>
-                <div className="text-white font-semibold">{formatCurrency(holding.avgCost)}</div>
-              </div>
-              <div>
-                <div className="text-slate-400">Total Value</div>
-                <div className="text-white font-semibold">{formatCurrency(holding.totalValue)}</div>
-              </div>
-              <div>
-                <div className="text-slate-400">Gain/Loss</div>
-                <div className={`font-semibold flex items-center gap-1 ${holding.gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {holding.gain >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {formatCurrency(holding.gain)} ({formatPercent(holding.gainPercent)})
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-
-  // Table View
-  const TableView = () => (
-    <Card className="bg-slate-800/50 border-slate-700">
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-slate-700">
-              <tr className="text-left">
-                <th className="p-4 text-slate-400 font-medium">Symbol</th>
-                <th className="p-4 text-slate-400 font-medium">Name</th>
-                <th className="p-4 text-slate-400 font-medium">Shares</th>
-                <th className="p-4 text-slate-400 font-medium">Avg Cost</th>
-                <th className="p-4 text-slate-400 font-medium">Current Price</th>
-                <th className="p-4 text-slate-400 font-medium">Total Value</th>
-                <th className="p-4 text-slate-400 font-medium">Gain/Loss</th>
-                <th className="p-4 text-slate-400 font-medium">Day Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dummyPortfolioData.holdings.map((holding) => (
-                <tr key={holding.symbol} className="border-b border-slate-700 hover:bg-slate-700/30">
-                  <td className="p-4">
-                    <Badge className="bg-emerald-600 text-white">{holding.symbol}</Badge>
-                  </td>
-                  <td className="p-4 text-white">{holding.name}</td>
-                  <td className="p-4 text-white">{holding.shares}</td>
-                  <td className="p-4 text-white">{formatCurrency(holding.avgCost)}</td>
-                  <td className="p-4 text-white font-semibold">{formatCurrency(holding.currentPrice)}</td>
-                  <td className="p-4 text-white font-semibold">{formatCurrency(holding.totalValue)}</td>
-                  <td className={`p-4 font-semibold ${holding.gain >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    <div className="flex items-center gap-1">
-                      {holding.gain >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {formatCurrency(holding.gain)}
-                    </div>
-                    <div className="text-sm">({formatPercent(holding.gainPercent)})</div>
-                  </td>
-                  <td className={`p-4 ${holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    <div className="flex items-center gap-1">
-                      {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {formatCurrency(holding.dayChange)}
-                    </div>
-                    <div className="text-sm">({formatPercent(holding.dayChangePercent)})</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  // Chart View with Pie Chart
-  const ChartView = () => {
-    // Calculate correct percentages based on actual total value
-    const totalValue = dummyPortfolioData.totalValue;
+  // Account Summary Component
+  const AccountSummary = () => {
+    const data = portfolioData;
     
-    const chartData = dummyPortfolioData.holdings.map((holding, index) => {
-      const percentage = (holding.totalValue / totalValue) * 100;
-      
-      return {
-        name: holding.symbol,
-        value: holding.totalValue,
-        percentage: percentage,
-        fullName: holding.name,
-        dayChange: holding.dayChange,
-        dayChangePercent: holding.dayChangePercent,
-        color: `hsl(${(index * 60) % 360}, 70%, 60%)`, // Generate different colors
-      };
-    });
+    return (
+      <div className="space-y-6">
+        {/* Currency Selector */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Account Summary</h2>
+          <Select value={selectedCurrency} onValueChange={(value: 'USD' | 'GBP' | 'EUR') => setSelectedCurrency(value)}>
+            <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="USD">USD ($)</SelectItem>
+              <SelectItem value="GBP">GBP (£)</SelectItem>
+              <SelectItem value="EUR">EUR (€)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-    const chartConfig = {
-      value: {
-        label: "Portfolio Value",
-      },
-    };
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Total Account Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {formatCurrency(data.totalValue[selectedCurrency])}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">All investments & cash</p>
+            </CardContent>
+          </Card>
 
-    const CustomTooltip = ({ active, payload }: any) => {
-      if (active && payload && payload.length) {
-        const data = payload[0].payload;
-        return (
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-lg">
-            <p className="text-white font-semibold">{data.name}</p>
-            <p className="text-slate-300 text-sm">{data.fullName}</p>
-            <p className="text-emerald-400 font-semibold">
-              {formatCurrency(data.value)} ({data.percentage.toFixed(1)}%)
-            </p>
-            <p className={`text-sm flex items-center gap-1 ${
-              data.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-            }`}>
-              {data.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              Day: {formatCurrency(data.dayChange)} ({formatPercent(data.dayChangePercent)})
-            </p>
-          </div>
-        );
-      }
-      return null;
-    };
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400 flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Invested
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-400">
+                {formatCurrency(data.invested[selectedCurrency])}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Currently placed</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400 flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Available Cash
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-400">
+                {formatCurrency(data.availableCash[selectedCurrency])}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Ready to invest</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Overall Returns
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${data.totalReturn[selectedCurrency] >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatCurrency(data.totalReturn[selectedCurrency])}
+              </div>
+              <p className={`text-xs mt-1 ${data.totalReturnPercent[selectedCurrency] >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatPercent(data.totalReturnPercent[selectedCurrency])}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // Asset Breakdown Component
+  const AssetBreakdown = () => {
+    const allAssets = [...assetCategories.stocks, ...assetCategories.crypto, ...assetCategories.funds];
+    const pieData = allAssets.map((asset, index) => ({
+      name: asset.symbol,
+      value: asset.currentValue,
+      color: `hsl(${(index * 45) % 360}, 70%, 60%)`
+    }));
 
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">Portfolio Allocation</CardTitle>
-          <p className="text-slate-400 text-sm">Distribution of your investments</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Pie Chart - Takes up 1 column */}
-            <div className="flex justify-center items-center">
-              <ChartContainer config={chartConfig} className="h-80 w-80">
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white">Asset Breakdown</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Pie Chart */}
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{ value: { label: "Value" } }} className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
+                  <PieChart>
                     <Pie
-                      data={chartData}
+                      data={pieData}
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
-                      innerRadius={60}
+                      outerRadius={80}
+                      innerRadius={40}
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {chartData.map((entry, index) => (
+                      {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </RechartsPieChart>
+                    <Tooltip formatter={(value: number) => [formatCurrency(value), 'Value']} />
+                  </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Holdings Breakdown - Takes up 2 columns */}
-            <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-white font-semibold text-xl mb-6">Holdings Breakdown</h3>
-              <div className="space-y-3">
-                {chartData.map((holding, index) => (
-                  <div key={holding.name} className="bg-slate-700/40 rounded-lg px-4 py-3 border border-slate-600/50 hover:bg-slate-700/60 transition-colors">
-                    {/* Equal spacing layout with 5 sections */}
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      {/* Section 1: Color dot + Symbol */}
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: holding.color }}
-                        />
-                        <Badge className="bg-emerald-600 text-white text-xs font-medium px-2 py-1">
-                          {holding.name}
-                        </Badge>
-                      </div>
-                      
-                      {/* Section 2: Company Name */}
-                      <div>
-                        <p className="text-slate-300 text-sm font-medium truncate">
-                          {holding.fullName}
-                        </p>
-                      </div>
-                      
-                      {/* Section 3: Value */}
-                      <div className="text-center">
-                        <p className="text-slate-400 text-xs">Value</p>
-                        <p className="text-white font-semibold text-sm">
-                          {formatCurrency(holding.value)}
-                        </p>
-                      </div>
-                      
-                      {/* Section 4: Change */}
-                      <div className="text-center">
-                        <p className="text-slate-400 text-xs">Change</p>
-                        <div className={`flex items-center justify-center gap-1 text-sm font-medium ${
-                          holding.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {holding.dayChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                          {formatPercent(holding.dayChangePercent)}
+          {/* Asset Categories */}
+          <div className="lg:col-span-2 space-y-4">
+            {Object.entries(assetCategories).map(([category, assets]) => (
+              <Card key={category} className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white capitalize">{category}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {assets.map((asset) => (
+                      <div key={asset.symbol} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{asset.logo}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-emerald-600 text-white">{asset.symbol}</Badge>
+                              <span className="text-white font-medium">{asset.name}</span>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Invested: {formatCurrency(asset.investment)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white font-bold">{formatCurrency(asset.currentValue)}</div>
+                          <div className="flex items-center gap-4 text-sm mt-1">
+                            <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {asset.change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                              {formatPercent(asset.change)}
+                            </span>
+                            <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              Day: {formatPercent(asset.dayChange)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      
-                      {/* Section 5: Allocation */}
-                      <div className="text-center">
-                        <p className="text-slate-400 text-xs">Allocation</p>
-                        <div className="text-white font-bold text-lg">
-                          {holding.percentage.toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // Performance Chart Component
+  const PerformanceChart = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Performance Over Time</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch checked={showBenchmark} onCheckedChange={setShowBenchmark} />
+              <span className="text-sm text-slate-400">Compare to benchmark</span>
+            </div>
+            {showBenchmark && (
+              <Select value={benchmarkType} onValueChange={(value: 'sp500' | 'nasdaq' | 'btc') => setBenchmarkType(value)}>
+                <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sp500">S&P 500</SelectItem>
+                  <SelectItem value="nasdaq">NASDAQ</SelectItem>
+                  <SelectItem value="btc">Bitcoin</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-6">
+            <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={performanceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="date" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '8px' }}
+                    labelStyle={{ color: '#F1F5F9' }}
+                    formatter={(value: number, name: string) => [
+                      name === 'value' ? formatCurrency(value) : `$${value.toLocaleString()}`,
+                      name === 'value' ? 'Portfolio' : name.toUpperCase()
+                    ]}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }} />
+                  {showBenchmark && (
+                    <Line 
+                      type="monotone" 
+                      dataKey={benchmarkType} 
+                      stroke="#6366F1" 
+                      strokeWidth={2} 
+                      strokeDasharray="5 5"
+                      dot={{ fill: '#6366F1', strokeWidth: 2, r: 3 }} 
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // All-Time Returns Component
+  const AllTimeReturns = () => {
+    const data = portfolioData;
+    const totalDeposited = data.totalDeposited[selectedCurrency];
+    const currentValue = data.totalValue[selectedCurrency];
+    const totalReturn = currentValue - totalDeposited;
+    const returnPercent = (totalReturn / totalDeposited) * 100;
+
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white">All-Time Returns</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400">Amount Deposited</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-400">
+                {formatCurrency(totalDeposited)}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Total invested over time</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400">Current Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {formatCurrency(currentValue)}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Portfolio value today</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-400">Total Return</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${totalReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatCurrency(totalReturn)}
+              </div>
+              <p className={`text-xs mt-1 ${returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatPercent(returnPercent)} vs. deposits
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  // Trade History Component
+  const TradeHistory = () => {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white">Trade History</h2>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-slate-700">
+                  <tr className="text-left">
+                    <th className="p-4 text-slate-400 font-medium">Asset</th>
+                    <th className="p-4 text-slate-400 font-medium">Type</th>
+                    <th className="p-4 text-slate-400 font-medium">Quantity</th>
+                    <th className="p-4 text-slate-400 font-medium">Price</th>
+                    <th className="p-4 text-slate-400 font-medium">Date/Time</th>
+                    <th className="p-4 text-slate-400 font-medium">Gain/Loss</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tradeHistory.map((trade, index) => (
+                    <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                      <td className="p-4">
+                        <Badge className="bg-emerald-600 text-white">{trade.asset}</Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge variant={trade.type === 'BUY' ? 'default' : 'destructive'}>
+                          {trade.type}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-white">{trade.quantity}</td>
+                      <td className="p-4 text-white">{formatCurrency(trade.price)}</td>
+                      <td className="p-4 text-slate-300">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          <span>{trade.date} {trade.time}</span>
+                        </div>
+                      </td>
+                      <td className={`p-4 font-medium ${trade.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <div className="flex items-center gap-1">
+                          {trade.gainLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {formatCurrency(Math.abs(trade.gainLoss))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
@@ -422,64 +444,24 @@ const Portfolio = () => {
         <MarketTicker />
       </div>
       
-      <div className="pt-16 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">My Portfolio</h1>
-                <p className="text-slate-400">Track your investment performance with detailed analytics</p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setViewMode('cards')}
-                  variant={viewMode === 'cards' ? 'default' : 'outline'}
-                  size="sm"
-                  className={viewMode === 'cards' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50'}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Cards
-                </Button>
-                <Button
-                  onClick={() => setViewMode('table')}
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  className={viewMode === 'table' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50'}
-                >
-                  <List className="w-4 h-4 mr-2" />
-                  Table
-                </Button>
-                <Button
-                  onClick={() => setViewMode('chart')}
-                  variant={viewMode === 'chart' ? 'default' : 'outline'}
-                  size="sm"
-                  className={viewMode === 'chart' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50'}
-                >
-                  <PieChart className="w-4 h-4 mr-2" />
-                  Chart
-                </Button>
-              </div>
+      <div className="pt-16 px-6 pb-12">
+        <div className="max-w-7xl mx-auto space-y-12">
+          {/* Demo Mode Banner */}
+          <div className="bg-amber-600/20 border border-amber-600/30 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+              <span className="text-amber-300 font-medium">Demo Mode</span>
             </div>
-            
-            <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2 text-yellow-400">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <span className="text-sm font-medium">Demo Mode</span>
-              </div>
-              <p className="text-slate-300 text-sm mt-1">
-                This portfolio uses dummy data for demonstration. Connect your brokerage account to see real positions.
-              </p>
-            </div>
+            <p className="text-amber-200 text-sm mt-1">
+              This portfolio uses dummy data for demonstration. Connect your brokerage account to see real positions.
+            </p>
           </div>
 
-          <PortfolioSummary />
-
-          <div className="mb-8">
-            {viewMode === 'cards' && <CardsView />}
-            {viewMode === 'table' && <TableView />}
-            {viewMode === 'chart' && <ChartView />}
-          </div>
+          <AccountSummary />
+          <AssetBreakdown />
+          <PerformanceChart />
+          <AllTimeReturns />
+          <TradeHistory />
         </div>
       </div>
       
