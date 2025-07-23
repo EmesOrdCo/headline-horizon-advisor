@@ -175,8 +175,8 @@ const Portfolio = () => {
     );
   };
 
-  // Asset Breakdown Component
-  const AssetBreakdown = () => {
+  // Asset Breakdown and Performance Component
+  const AssetBreakdownAndPerformance = () => {
     const allAssets = [...assetCategories.stocks, ...assetCategories.crypto, ...assetCategories.funds];
     const pieData = allAssets.map((asset, index) => ({
       name: asset.symbol,
@@ -186,70 +186,41 @@ const Portfolio = () => {
 
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white">Asset Breakdown</h2>
+        <h2 className="text-2xl font-bold text-white">Portfolio Overview</h2>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Pie Chart */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{ value: { label: "Value" } }} className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      innerRadius={40}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [formatCurrency(value), 'Value']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Asset Categories */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Asset Categories - Left Side (Smaller) */}
           <div className="lg:col-span-2 space-y-4">
             {Object.entries(assetCategories).map(([category, assets]) => (
               <Card key={category} className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white capitalize">{category}</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white capitalize text-lg">{category}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {assets.map((asset) => (
-                      <div key={asset.symbol} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{asset.logo}</span>
+                      <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{asset.logo}</span>
                           <div>
                             <div className="flex items-center gap-2">
-                              <Badge className="bg-emerald-600 text-white">{asset.symbol}</Badge>
-                              <span className="text-white font-medium">{asset.name}</span>
+                              <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                              <span className="text-white text-sm font-medium">{asset.name}</span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">
+                            <p className="text-xs text-slate-400">
                               Invested: {formatCurrency(asset.investment)}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-white font-bold">{formatCurrency(asset.currentValue)}</div>
-                          <div className="flex items-center gap-4 text-sm mt-1">
+                          <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                          <div className="flex items-center gap-2 text-xs mt-1">
                             <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {asset.change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                              {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
                               {formatPercent(asset.change)}
                             </span>
                             <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              Day: {formatPercent(asset.dayChange)}
+                              {formatPercent(asset.dayChange)}
                             </span>
                           </div>
                         </div>
@@ -260,72 +231,100 @@ const Portfolio = () => {
               </Card>
             ))}
           </div>
-        </div>
-      </div>
-    );
-  };
 
-  // Performance Chart Component
-  const PerformanceChart = () => {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">Performance Over Time</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={showBenchmark} onCheckedChange={setShowBenchmark} />
-              <span className="text-sm text-slate-400">Compare to benchmark</span>
-            </div>
-            {showBenchmark && (
-              <Select value={benchmarkType} onValueChange={(value: 'sp500' | 'nasdaq' | 'btc') => setBenchmarkType(value)}>
-                <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sp500">S&P 500</SelectItem>
-                  <SelectItem value="nasdaq">NASDAQ</SelectItem>
-                  <SelectItem value="btc">Bitcoin</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
+          {/* Performance Chart and Pie Chart - Right Side */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Performance Chart */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-lg">Performance Over Time</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={showBenchmark} onCheckedChange={setShowBenchmark} />
+                      <span className="text-sm text-slate-400">Compare to benchmark</span>
+                    </div>
+                    {showBenchmark && (
+                      <Select value={benchmarkType} onValueChange={(value: 'sp500' | 'nasdaq' | 'btc') => setBenchmarkType(value)}>
+                        <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sp500">S&P 500</SelectItem>
+                          <SelectItem value="nasdaq">NASDAQ</SelectItem>
+                          <SelectItem value="btc">Bitcoin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="date" stroke="#9CA3AF" />
+                      <YAxis stroke="#9CA3AF" tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '8px' }}
+                        labelStyle={{ color: '#F1F5F9' }}
+                        formatter={(value: number, name: string) => [
+                          name === 'value' ? formatCurrency(value) : `$${value.toLocaleString()}`,
+                          name === 'value' ? 'Portfolio' : name.toUpperCase()
+                        ]}
+                      />
+                      <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }} />
+                      {showBenchmark && (
+                        <Line 
+                          type="monotone" 
+                          dataKey={benchmarkType} 
+                          stroke="#6366F1" 
+                          strokeWidth={2} 
+                          strokeDasharray="5 5"
+                          dot={{ fill: '#6366F1', strokeWidth: 2, r: 3 }} 
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Portfolio Allocation Pie Chart */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={120}
+                        innerRadius={60}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => [formatCurrency(value), 'Value']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardContent className="p-6">
-            <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={performanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F1F5F9' }}
-                    formatter={(value: number, name: string) => [
-                      name === 'value' ? formatCurrency(value) : `$${value.toLocaleString()}`,
-                      name === 'value' ? 'Portfolio' : name.toUpperCase()
-                    ]}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={3} dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }} />
-                  {showBenchmark && (
-                    <Line 
-                      type="monotone" 
-                      dataKey={benchmarkType} 
-                      stroke="#6366F1" 
-                      strokeWidth={2} 
-                      strokeDasharray="5 5"
-                      dot={{ fill: '#6366F1', strokeWidth: 2, r: 3 }} 
-                    />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
       </div>
     );
   };
+
 
   // All-Time Returns Component
   const AllTimeReturns = () => {
@@ -458,8 +457,7 @@ const Portfolio = () => {
           </div>
 
           <AccountSummary />
-          <AssetBreakdown />
-          <PerformanceChart />
+          <AssetBreakdownAndPerformance />
           <AllTimeReturns />
           <TradeHistory />
         </div>
