@@ -235,8 +235,8 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle className="text-white text-sm">Recent Headlines</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <RSSHeadlines />
+              <CardContent className="space-y-2">
+                <RSSHeadlines maxItems={4} compact={true} />
               </CardContent>
             </Card>
 
@@ -419,19 +419,6 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* RECENT HEADLINES SECTION */}
-        <section className="border-t border-slate-700 pt-8 mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Recent Headlines</h2>
-              <p className="text-slate-400 text-sm">Latest market news and updates</p>
-            </div>
-          </div>
-          
-          <div className="max-w-2xl mx-auto">
-            <RSSHeadlines />
-          </div>
-        </section>
       </main>
       
       <Footer />

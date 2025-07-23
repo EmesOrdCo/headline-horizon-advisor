@@ -6,7 +6,12 @@ import { useRSSHeadlines, useFetchRSSNews } from "@/hooks/useRSSHeadlines";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-const RSSHeadlines = () => {
+interface RSSHeadlinesProps {
+  maxItems?: number;
+  compact?: boolean;
+}
+
+const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => {
   const { data: headlines, isLoading, error } = useRSSHeadlines();
   const fetchRSSNews = useFetchRSSNews();
   const queryClient = useQueryClient();
@@ -100,25 +105,27 @@ const RSSHeadlines = () => {
   };
 
   return (
-    <div className="bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl p-4 sm:p-6 h-[400px] sm:h-[600px] flex flex-col sticky top-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Headlines</h3>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-            <span>Updates every 2min</span>
+    <div className={`bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl ${compact ? 'p-2' : 'p-4 sm:p-6'} ${compact ? 'h-auto' : 'h-[400px] sm:h-[600px]'} flex flex-col ${compact ? '' : 'sticky top-6'}`}>
+      {!compact && (
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Headlines</h3>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span>Updates every 2min</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isManualRefreshing}
+              className="h-8 px-3 text-xs"
+            >
+              <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManualRefresh}
-            disabled={isManualRefreshing}
-            className="h-8 px-3 text-xs"
-          >
-            <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
-      </div>
+      )}
       
       {error && (
         <div className="flex-1 flex items-center justify-center">
@@ -140,52 +147,52 @@ const RSSHeadlines = () => {
       )}
       
       {headlines && headlines.length > 0 && (
-        <ScrollArea className="flex-1">
-          <div className="space-y-3">
-            {headlines.slice(0, 15).map((headline, index) => (
-              <div 
-                key={`${headline.url}-${index}`}
-                className="group cursor-pointer border-b border-gray-100 dark:border-slate-700 pb-3 last:border-b-0"
-              >
-                <a 
-                  href={headline.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-lg p-2 -m-2 transition-colors"
+        <ScrollArea className={compact ? "h-auto max-h-64" : "flex-1"}>
+          <div className={compact ? "space-y-2" : "space-y-3"}>
+            {headlines.slice(0, maxItems).map((headline, index) => (
+                <div 
+                  key={`${headline.url}-${index}`}
+                  className={`group cursor-pointer border-b border-gray-100 dark:border-slate-700 ${compact ? 'pb-2' : 'pb-3'} last:border-b-0`}
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {headline.title}
-                      </h4>
-                       {headline.description && (
-                         <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">
-                           {headline.description}
-                         </p>
-                       )}
-                       {headline.ai_reasoning && (
-                         <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md border-l-2 border-blue-200 dark:border-blue-800">
-                           <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-                             📊 AI Summary: {headline.ai_reasoning}
-                           </p>
-                         </div>
-                       )}
-                       <div className="flex items-center gap-2 mt-2">
-                         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-500">
-                           <Clock className="w-3 h-3" />
-                           {formatTimeAgo(headline.published_at)}
-                         </div>
-                         {headline.category && (
-                           <div className="text-xs text-gray-500 dark:text-slate-500">
-                             • {headline.category}
-                           </div>
-                         )}
-                       </div>
+                  <a 
+                    href={headline.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`block hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-lg ${compact ? 'p-1 -m-1' : 'p-2 -m-2'} transition-colors`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
+                          {headline.title}
+                        </h4>
+                        {!compact && headline.description && (
+                          <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">
+                            {headline.description}
+                          </p>
+                        )}
+                        {!compact && headline.ai_reasoning && (
+                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md border-l-2 border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                              📊 AI Summary: {headline.ai_reasoning}
+                            </p>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-500">
+                            <Clock className="w-3 h-3" />
+                            {formatTimeAgo(headline.published_at)}
+                          </div>
+                          {!compact && headline.category && (
+                            <div className="text-xs text-gray-500 dark:text-slate-500">
+                              • {headline.category}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-3 h-3 text-gray-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors flex-shrink-0 mt-1" />
                     </div>
-                    <ExternalLink className="w-3 h-3 text-gray-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors flex-shrink-0 mt-1" />
-                  </div>
-                </a>
-              </div>
+                  </a>
+                </div>
             ))}
           </div>
         </ScrollArea>
