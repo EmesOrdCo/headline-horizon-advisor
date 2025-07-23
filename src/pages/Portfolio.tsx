@@ -299,23 +299,49 @@ const Portfolio = () => {
                 <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={{ value: { label: "Value" } }} className="h-64">
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
-                        cx="50%"
+                        cx="35%"
                         cy="50%"
                         outerRadius={100}
                         innerRadius={50}
                         paddingAngle={2}
                         dataKey="value"
-                        label={({ name, percentage }) => `${name} ${percentage}%`}
+                        label={({ name, percentage, x, y, index }) => {
+                          const RADIAN = Math.PI / 180;
+                          const radius = 100 + 60; // Extended radius for labels
+                          const angle = pieData.slice(0, index + 1).reduce((sum, item, i) => {
+                            if (i === index) {
+                              return sum + (item.value / pieData.reduce((total, p) => total + p.value, 0)) * 360 / 2;
+                            }
+                            return sum + (item.value / pieData.reduce((total, p) => total + p.value, 0)) * 360;
+                          }, 0) - 90;
+                          
+                          const labelX = x + Math.cos(-angle * RADIAN) * (radius - 100);
+                          const labelY = y + Math.sin(-angle * RADIAN) * (radius - 100);
+                          
+                          return (
+                            <text 
+                              x={labelX} 
+                              y={labelY} 
+                              fill="#F1F5F9" 
+                              textAnchor="start"
+                              dominantBaseline="central"
+                              fontSize={13}
+                              fontWeight="500"
+                            >
+                              {`${name} ${percentage}%`}
+                            </text>
+                          );
+                        }}
                         labelLine={{
                           stroke: '#9CA3AF',
-                          strokeWidth: 1,
+                          strokeWidth: 1.5,
                         }}
-                        fontSize={11}
+                        fontSize={13}
                         fill="#F1F5F9"
                       >
                         {pieData.map((entry, index) => (
