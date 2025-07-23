@@ -66,7 +66,7 @@ const IndexFunds = () => {
       item.ai_confidence && 
       item.ai_sentiment
     );
-  }).filter(Boolean);
+  }).filter(Boolean) || [];
 
   // Get source articles for a story
   const getSourceArticles = (story: any) => {
@@ -80,34 +80,35 @@ const IndexFunds = () => {
   };
 
   // Call hooks for each symbol at the top level to comply with Rules of Hooks
-  const spyArticle = indexFundArticles.find(item => item.symbol === 'SPY');
+  // Add safety checks to prevent accessing undefined data
+  const spyArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'SPY') : null;
   const spySourceArticles = spyArticle ? getSourceArticles(spyArticle) : [];
   const { data: spyArticleWeights, isLoading: spyWeightsLoading } = useArticleWeights({
     articles: spySourceArticles,
     overallSentiment: spyArticle?.ai_sentiment || 'Neutral',
     overallConfidence: spyArticle?.ai_confidence || 50,
     symbol: 'SPY',
-    enabled: spySourceArticles.length > 0 && !spyArticle?.ai_reasoning?.includes('Historical')
+    enabled: Boolean(spyArticle && spySourceArticles.length > 0 && !spyArticle?.ai_reasoning?.includes('Historical'))
   });
 
-  const qqqArticle = indexFundArticles.find(item => item.symbol === 'QQQ');
+  const qqqArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'QQQ') : null;
   const qqqSourceArticles = qqqArticle ? getSourceArticles(qqqArticle) : [];
   const { data: qqqArticleWeights, isLoading: qqqWeightsLoading } = useArticleWeights({
     articles: qqqSourceArticles,
     overallSentiment: qqqArticle?.ai_sentiment || 'Neutral',
     overallConfidence: qqqArticle?.ai_confidence || 50,
     symbol: 'QQQ',
-    enabled: qqqSourceArticles.length > 0 && !qqqArticle?.ai_reasoning?.includes('Historical')
+    enabled: Boolean(qqqArticle && qqqSourceArticles.length > 0 && !qqqArticle?.ai_reasoning?.includes('Historical'))
   });
 
-  const diaArticle = indexFundArticles.find(item => item.symbol === 'DIA');
+  const diaArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'DIA') : null;
   const diaSourceArticles = diaArticle ? getSourceArticles(diaArticle) : [];
   const { data: diaArticleWeights, isLoading: diaWeightsLoading } = useArticleWeights({
     articles: diaSourceArticles,
     overallSentiment: diaArticle?.ai_sentiment || 'Neutral',
     overallConfidence: diaArticle?.ai_confidence || 50,
     symbol: 'DIA',
-    enabled: diaSourceArticles.length > 0 && !diaArticle?.ai_reasoning?.includes('Historical')
+    enabled: Boolean(diaArticle && diaSourceArticles.length > 0 && !diaArticle?.ai_reasoning?.includes('Historical'))
   });
 
   // Create a lookup object for the article weights
