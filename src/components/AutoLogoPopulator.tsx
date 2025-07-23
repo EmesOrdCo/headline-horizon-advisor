@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,9 +30,18 @@ export const AutoLogoPopulator: React.FC = () => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [startTime, setStartTime] = useState<Date | null>(null);
 
-  // Auto-restart logic for overnight operation with persistent state checks
+  // PERSISTENT overnight operation - uses refs to avoid stale closures
+  const isRunningRef = useRef(false);
+  const autoModeRef = useRef(false);
+  
+  // Keep refs in sync with state
+  useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
+  useEffect(() => { autoModeRef.current = autoMode; }, [autoMode]);
+
   const runBatch = useCallback(async () => {
-    if (!isRunning) {
+    console.log('AutoPopulator: Running batch, isRunning:', isRunningRef.current, 'autoMode:', autoModeRef.current);
+    
+    if (!isRunningRef.current) {
       console.log('AutoPopulator: Stopping - isRunning is false');
       return;
     }
@@ -44,7 +53,7 @@ export const AutoLogoPopulator: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('populate-all-logos', {
         body: { 
           action: 'populate',
-          batchSize: 150 // Larger batches for overnight mode
+          batchSize: 150
         }
       });
 
@@ -56,36 +65,37 @@ export const AutoLogoPopulator: React.FC = () => {
         setStats(data);
         setBatchesCompleted(prev => prev + 1);
         
-        // CRITICAL: Check state again before scheduling next batch
-        if (data.remainingStocks > 0 && isRunning && autoMode) {
-          setCurrentStatus(`Batch ${batchesCompleted + 1} complete. Auto-continuing in 30 seconds...`);
+        console.log('AutoPopulator: Batch complete, remaining:', data.remainingStocks, 'running:', isRunningRef.current, 'auto:', autoModeRef.current);
+        
+        // Continue if there are remaining stocks AND we're still in auto mode
+        if (data.remainingStocks > 0 && isRunningRef.current && autoModeRef.current) {
+          setCurrentStatus(`Batch complete. Auto-continuing in 30 seconds... (${data.remainingStocks} remaining)`);
           
-          // Use a ref-based approach to ensure continuous operation
-          const scheduleNext = () => {
-            // Double-check state before proceeding
-            if (isRunning && autoMode) {
+          // Schedule next batch using refs to avoid stale closure issues
+          setTimeout(() => {
+            console.log('AutoPopulator: Scheduled batch check, running:', isRunningRef.current, 'auto:', autoModeRef.current);
+            if (isRunningRef.current && autoModeRef.current) {
               runBatch().catch(error => {
                 console.error('AutoPopulator: Scheduled batch failed:', error);
-                // Don't give up - retry again
-                if (isRunning && autoMode) {
-                  setTimeout(scheduleNext, 60000); // Retry in 1 minute
+                // Retry on failure
+                if (isRunningRef.current && autoModeRef.current) {
+                  setTimeout(() => {
+                    if (isRunningRef.current && autoModeRef.current) {
+                      runBatch();
+                    }
+                  }, 60000);
                 }
               });
             } else {
               console.log('AutoPopulator: Cancelled scheduled batch - state changed');
             }
-          };
-          
-          setTimeout(scheduleNext, 30000);
+          }, 30000);
         } else if (data.remainingStocks === 0) {
           setCurrentStatus('🎉 All logos populated successfully!');
           setIsRunning(false);
           setAutoMode(false);
-        } else if (!isRunning || !autoMode) {
-          setCurrentStatus('Batch complete. Auto mode disabled.');
-          setIsRunning(false);
         } else {
-          setCurrentStatus('Batch complete. Click "Continue" to run next batch.');
+          setCurrentStatus('Auto mode disabled or stopped by user');
           setIsRunning(false);
         }
       }
@@ -94,29 +104,30 @@ export const AutoLogoPopulator: React.FC = () => {
       setLastError(error.message || 'Unknown error occurred');
       setCurrentStatus('❌ Batch failed. Will retry in 2 minutes...');
       
-      // ROBUST AUTO-RETRY: Keep trying if in auto mode
-      if (isRunning && autoMode) {
-        const retryFunction = () => {
-          if (isRunning && autoMode) {
+      // Auto-retry with refs to avoid stale closures
+      if (isRunningRef.current && autoModeRef.current) {
+        setTimeout(() => {
+          console.log('AutoPopulator: Retry check, running:', isRunningRef.current, 'auto:', autoModeRef.current);
+          if (isRunningRef.current && autoModeRef.current) {
             setCurrentStatus('Retrying after error...');
             runBatch().catch(retryError => {
               console.error('AutoPopulator: Retry failed:', retryError);
-              // Keep retrying with exponential backoff
-              if (isRunning && autoMode) {
-                setTimeout(retryFunction, 300000); // 5 minutes on repeated failures
+              // Keep retrying if still in auto mode
+              if (isRunningRef.current && autoModeRef.current) {
+                setTimeout(() => {
+                  if (isRunningRef.current && autoModeRef.current) {
+                    runBatch();
+                  }
+                }, 300000); // 5 minutes on repeated failures
               }
             });
-          } else {
-            console.log('AutoPopulator: Cancelled retry - state changed');
           }
-        };
-        
-        setTimeout(retryFunction, 120000); // Initial 2 minute delay
+        }, 120000);
       } else {
         setIsRunning(false);
       }
     }
-  }, [isRunning, autoMode, batchesCompleted]);
+  }, []);
 
   // Check current status
   const checkStatus = useCallback(async () => {
