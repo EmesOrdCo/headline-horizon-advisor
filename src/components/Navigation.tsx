@@ -30,11 +30,6 @@ const Navigation = () => {
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
-          {user && (
-            <Link to="/wallet" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">
-              Wallet
-            </Link>
-          )}
           
           {/* Theme Toggle Button */}
           <Button
@@ -130,15 +125,6 @@ const Navigation = () => {
                   >
                     How it Works
                   </a>
-                  {user && (
-                    <Link 
-                      to="/wallet" 
-                      className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Wallet
-                    </Link>
-                  )}
                 </div>
               
               {/* Mobile Auth Buttons */}

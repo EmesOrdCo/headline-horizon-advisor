@@ -69,6 +69,10 @@ const DashboardNav = () => {
       <Link to="/watchlist" className="text-slate-300 hover:text-white transition-colors font-medium">
         Watchlist
       </Link>
+
+      <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium">
+        Wallet
+      </Link>
       
       <Link to="/biggest-movers" className="text-slate-300 hover:text-white transition-colors font-medium">
         Biggest Movers
