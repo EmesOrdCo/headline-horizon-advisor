@@ -236,7 +236,7 @@ const Dashboard = () => {
                 <CardTitle className="text-white text-sm">Recent Headlines</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <RSSHeadlines maxItems={4} compact={true} />
+                <RSSHeadlines maxItems={15} compact={true} />
               </CardContent>
             </Card>
 
