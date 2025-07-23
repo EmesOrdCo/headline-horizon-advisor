@@ -19,6 +19,7 @@ import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import CompanyLogo from "@/components/CompanyLogo";
 import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
+import Footer from "@/components/Footer";
 
 interface Stock {
   symbol: string;
@@ -525,6 +526,8 @@ const Watchlist = () => {
           stockName={selectedChart.stockName}
         />
       )}
+      
+      <Footer />
     </div>
   );
 };
