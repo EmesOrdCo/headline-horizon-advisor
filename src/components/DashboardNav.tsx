@@ -128,14 +128,22 @@ const DashboardNav = () => {
               <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             )}
             
+            <Button 
+              onClick={handleSignOut}
+              variant="outline" 
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800 text-xs sm:text-sm"
+            >
+              Sign Out
+            </Button>
+
             {/* Notifications Button */}
             <Button
               variant="ghost"
               size="icon"
-              className="text-slate-300 hover:text-white hover:bg-slate-800 relative"
+              className="text-slate-300 hover:text-white hover:bg-slate-800"
             >
               <Bell className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
             </Button>
 
             {/* Profile Dropdown */}
@@ -144,10 +152,9 @@ const DashboardNav = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-slate-300 hover:text-white hover:bg-slate-800 relative"
+                  className="text-slate-300 hover:text-white hover:bg-slate-800"
                 >
                   <User className="w-5 h-5" />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -183,15 +190,6 @@ const DashboardNav = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Button 
-              onClick={handleSignOut}
-              variant="outline" 
-              size="sm"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800 bg-slate-800 text-xs sm:text-sm"
-            >
-              Sign Out
-            </Button>
           </div>
         </div>
       </nav>
