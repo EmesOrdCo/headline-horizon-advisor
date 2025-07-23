@@ -59,7 +59,7 @@ serve(async (req) => {
         alpacaSocket.close();
       }
       
-      alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+      alpacaSocket = new WebSocket("wss://paper-api.alpaca.markets/stream");
       
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca data stream');
