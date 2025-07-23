@@ -68,6 +68,55 @@ const IndexFunds = () => {
     );
   }).filter(Boolean);
 
+  // Get source articles for a story
+  const getSourceArticles = (story: any) => {
+    if (!story?.source_links) return [];
+    
+    try {
+      return JSON.parse(story.source_links);
+    } catch {
+      return [];
+    }
+  };
+
+  // Call hooks for each symbol at the top level to comply with Rules of Hooks
+  const spyArticle = indexFundArticles.find(item => item.symbol === 'SPY');
+  const spySourceArticles = spyArticle ? getSourceArticles(spyArticle) : [];
+  const { data: spyArticleWeights, isLoading: spyWeightsLoading } = useArticleWeights({
+    articles: spySourceArticles,
+    overallSentiment: spyArticle?.ai_sentiment || 'Neutral',
+    overallConfidence: spyArticle?.ai_confidence || 50,
+    symbol: 'SPY',
+    enabled: spySourceArticles.length > 0 && !spyArticle?.ai_reasoning?.includes('Historical')
+  });
+
+  const qqqArticle = indexFundArticles.find(item => item.symbol === 'QQQ');
+  const qqqSourceArticles = qqqArticle ? getSourceArticles(qqqArticle) : [];
+  const { data: qqqArticleWeights, isLoading: qqqWeightsLoading } = useArticleWeights({
+    articles: qqqSourceArticles,
+    overallSentiment: qqqArticle?.ai_sentiment || 'Neutral',
+    overallConfidence: qqqArticle?.ai_confidence || 50,
+    symbol: 'QQQ',
+    enabled: qqqSourceArticles.length > 0 && !qqqArticle?.ai_reasoning?.includes('Historical')
+  });
+
+  const diaArticle = indexFundArticles.find(item => item.symbol === 'DIA');
+  const diaSourceArticles = diaArticle ? getSourceArticles(diaArticle) : [];
+  const { data: diaArticleWeights, isLoading: diaWeightsLoading } = useArticleWeights({
+    articles: diaSourceArticles,
+    overallSentiment: diaArticle?.ai_sentiment || 'Neutral',
+    overallConfidence: diaArticle?.ai_confidence || 50,
+    symbol: 'DIA',
+    enabled: diaSourceArticles.length > 0 && !diaArticle?.ai_reasoning?.includes('Historical')
+  });
+
+  // Create a lookup object for the article weights
+  const articleWeightsData = {
+    'SPY': { data: spyArticleWeights, isLoading: spyWeightsLoading },
+    'QQQ': { data: qqqArticleWeights, isLoading: qqqWeightsLoading },
+    'DIA': { data: diaArticleWeights, isLoading: diaWeightsLoading }
+  };
+
   const generateCompositeHeadline = (item: any): string => {
     const symbol = item.symbol;
     const sentiment = item.ai_sentiment?.toLowerCase() || 'neutral';
@@ -129,7 +178,7 @@ const IndexFunds = () => {
   };
 
   // Get source articles for a story
-  const getSourceArticles = (story: any) => {
+  const getSourceArticlesForStory = (story: any) => {
     if (!story?.source_links) return [];
     
     try {
@@ -187,16 +236,10 @@ const IndexFunds = () => {
                 
                 if (article) {
                   const compositeHeadline = generateCompositeHeadline(article);
-                  const sourceArticles = getSourceArticles(article);
+                  const sourceArticles = getSourceArticlesForStory(article);
                   
-                  // Get article weights for each fund
-                  const { data: articleWeights, isLoading: weightsLoading } = useArticleWeights({
-                    articles: sourceArticles,
-                    overallSentiment: article.ai_sentiment || 'Neutral',
-                    overallConfidence: article.ai_confidence || 50,
-                    symbol: article.symbol,
-                    enabled: sourceArticles.length > 0 && !article.ai_reasoning?.includes('Historical')
-                  });
+                  // Get the pre-calculated article weights data
+                  const weightsInfo = articleWeightsData[symbol] || { data: null, isLoading: false };
                   
                   return (
                     <div key={article.id} className="w-full">
@@ -222,8 +265,8 @@ const IndexFunds = () => {
                               <SourceArticles 
                                 parsedSourceLinks={sourceArticles}
                                 isHistorical={article.ai_reasoning?.includes('Historical')}
-                                articleWeights={articleWeights}
-                                weightsLoading={weightsLoading}
+                                articleWeights={weightsInfo.data}
+                                weightsLoading={weightsInfo.isLoading}
                               />
                             </div>
                           </div>
