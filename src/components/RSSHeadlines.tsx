@@ -104,6 +104,42 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
     }
   };
 
+  // Helper function to extract source from URL or use source from data
+  const getSource = (headline: any) => {
+    if (headline.source_links) {
+      try {
+        const sourceLinks = JSON.parse(headline.source_links);
+        if (sourceLinks.length > 0 && sourceLinks[0].source) {
+          return sourceLinks[0].source;
+        }
+      } catch {
+        // Fall back to URL extraction
+      }
+    }
+    
+    try {
+      const url = new URL(headline.url);
+      return url.hostname.replace('www.', '');
+    } catch {
+      return 'Unknown Source';
+    }
+  };
+
+  // Remove duplicates based on title similarity and URL
+  const uniqueHeadlines = headlines ? headlines.filter((headline, index, self) => {
+    // Check if this is the first occurrence of this exact URL
+    const firstOccurrenceIndex = self.findIndex(h => h.url === headline.url);
+    if (firstOccurrenceIndex !== index) return false;
+    
+    // Also check for similar titles (to catch duplicates with slightly different URLs)
+    const similarTitle = self.findIndex(h => 
+      h.title.toLowerCase().trim() === headline.title.toLowerCase().trim() &&
+      self.indexOf(h) < index
+    );
+    
+    return similarTitle === -1;
+  }) : [];
+
   return (
     <div className={`bg-white shadow-sm border border-gray-200 dark:bg-slate-800 dark:border-slate-700 rounded-xl ${compact ? 'p-2' : 'p-4 sm:p-6'} ${compact ? 'h-64' : 'h-[400px] sm:h-[600px]'} flex flex-col ${compact ? '' : 'sticky top-6'}`}>
       {!compact && (
@@ -146,10 +182,10 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
         </div>
       )}
       
-      {headlines && headlines.length > 0 && (
+      {uniqueHeadlines && uniqueHeadlines.length > 0 && (
         <ScrollArea className={compact ? "flex-1" : "flex-1"}>
           <div className={compact ? "space-y-2" : "space-y-3"}>
-            {headlines.slice(0, maxItems).map((headline, index) => (
+            {uniqueHeadlines.slice(0, maxItems).map((headline, index) => (
                 <div 
                   key={`${headline.url}-${index}`}
                   className={`group cursor-pointer border-b border-gray-100 dark:border-slate-700 ${compact ? 'pb-2' : 'pb-3'} last:border-b-0`}
@@ -182,6 +218,9 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
                             <Clock className="w-3 h-3" />
                             {formatTimeAgo(headline.published_at)}
                           </div>
+                          <div className={`text-xs font-medium px-2 py-1 rounded-full ${compact ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'}`}>
+                            {getSource(headline)}
+                          </div>
                           {!compact && headline.category && (
                             <div className="text-xs text-gray-500 dark:text-slate-500">
                               • {headline.category}
@@ -198,7 +237,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
         </ScrollArea>
       )}
       
-      {headlines && headlines.length === 0 && (
+      {uniqueHeadlines && uniqueHeadlines.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center px-4">
             <p className="text-gray-600 dark:text-slate-400 text-sm">
