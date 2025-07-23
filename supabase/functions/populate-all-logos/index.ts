@@ -148,13 +148,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 3: Implement faster processing (Finnhub free tier: 60 calls/minute)
-    const RATE_LIMIT = 200; // 200ms between requests (5 requests/second, well under 60/minute limit)
-    const BATCH_INSERT_SIZE = 100; // Insert logos in larger batches to database
+    // Step 3: Optimized processing with robust error handling
+    const RATE_LIMIT = 100; // 100ms between requests (10 requests/second, 600/minute burst allowed)
+    const BATCH_INSERT_SIZE = 200; // Larger batches for better database performance
+    const NETWORK_TIMEOUT = 15000; // 15 second timeout for network requests
+    const MAX_CONSECUTIVE_FAILURES = 15; // Stop if too many consecutive failures
+    const UPSERT_BATCH_SIZE = 50; // Smaller upsert batches to avoid conflicts
+    
     let processed = 0;
     let inserted = 0;
     let failed = 0;
-    let logoQueue: Array<{ symbol: string; logo_url: string }> = [];
+    let consecutiveFailures = 0;
+    let logoQueue: Array<{ symbol: string; logo_url: string; name?: string }> = [];
+    let nameQueue: Array<{ symbol: string; name: string }> = [];
 
     console.log(`⚙️ Processing with strict rate limiting: 1 request per ${RATE_LIMIT}ms`);
     console.log(`📊 Will process ${stocksToProcess.length} stocks in this batch (estimated time: ${Math.round((stocksToProcess.length * RATE_LIMIT) / 1000 / 60)} minutes)`);
@@ -164,13 +170,24 @@ Deno.serve(async (req) => {
     let retryQueue: FinnhubStock[] = [];
     let rateLimitedStocks: FinnhubStock[] = [];
 
-    // Rate-limited processing function with retry logic
-    async function processStockWithRateLimit(stock: FinnhubStock, isRetry = false): Promise<{ success: boolean; logo?: string; error?: string }> {
+    // Enhanced processing function with timeout and robust error handling
+    async function processStockWithRateLimit(stock: FinnhubStock, isRetry = false): Promise<{ success: boolean; logo?: string; name?: string; error?: string }> {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT);
+      
       try {
         console.log(`🔍 Fetching profile for ${stock.symbol}${isRetry ? ' (retry)' : ''}...`);
         
         const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
-        const profileResponse = await fetch(profileUrl);
+        const profileResponse = await fetch(profileUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'LogoPopulator/1.0',
+            'Accept': 'application/json'
+          }
+        });
+
+        clearTimeout(timeoutId);
 
         if (profileResponse.status === 429) {
           console.log(`⚠️ Rate limit hit for ${stock.symbol} - adding to retry queue`);
@@ -182,22 +199,83 @@ Deno.serve(async (req) => {
 
         if (!profileResponse.ok) {
           console.log(`❌ Failed to fetch profile for ${stock.symbol}: ${profileResponse.status} ${profileResponse.statusText}`);
-          return { success: false, error: profileResponse.statusText };
+          return { success: false, error: `${profileResponse.status}: ${profileResponse.statusText}` };
         }
 
         const profile: FinnhubProfile = await profileResponse.json();
         
-        if (profile && profile.logo && profile.logo.trim() !== '') {
-          console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
-          return { success: true, logo: profile.logo.trim() };
+        const hasLogo = profile && profile.logo && profile.logo.trim() !== '';
+        const hasName = profile && profile.name && profile.name.trim() !== '';
+        
+        if (hasLogo || hasName) {
+          const result: any = { success: true };
+          if (hasLogo) {
+            result.logo = profile.logo.trim();
+            console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
+          }
+          if (hasName) {
+            result.name = profile.name.trim();
+            console.log(`📝 Found name for ${stock.symbol}: ${profile.name}`);
+          }
+          return result;
         } else {
-          console.log(`📭 No logo found for ${stock.symbol}`);
-          return { success: false, error: 'no_logo' };
+          console.log(`📭 No logo or name found for ${stock.symbol}`);
+          return { success: false, error: 'no_data' };
         }
         
       } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          console.error(`⏰ Timeout fetching ${stock.symbol}`);
+          return { success: false, error: 'timeout' };
+        }
         console.error(`💥 Error processing ${stock.symbol}:`, error);
         return { success: false, error: error.message };
+      }
+    }
+
+    // Robust database insert with upsert and fallback
+    async function insertLogosRobustly(logos: Array<{ symbol: string; logo_url: string; name?: string }>) {
+      if (logos.length === 0) return true;
+      
+      try {
+        // Try upsert first (handles duplicates gracefully)
+        console.log(`💾 Upserting batch of ${logos.length} logos...`);
+        const { error: upsertError } = await supabaseClient
+          .from('company_logos')
+          .upsert(logos, { onConflict: 'symbol' });
+
+        if (!upsertError) {
+          console.log(`✅ Successfully upserted ${logos.length} logos`);
+          return true;
+        }
+
+        console.log(`⚠️ Upsert failed, trying individual inserts:`, upsertError);
+        
+        // Fallback: insert individually to skip duplicates
+        let successCount = 0;
+        for (const logo of logos) {
+          try {
+            const { error: individualError } = await supabaseClient
+              .from('company_logos')
+              .insert([logo]);
+            
+            if (!individualError) {
+              successCount++;
+            } else if (!individualError.message.includes('duplicate key')) {
+              console.error(`❌ Failed to insert ${logo.symbol}:`, individualError);
+            }
+          } catch (e) {
+            console.error(`❌ Individual insert failed for ${logo.symbol}:`, e);
+          }
+        }
+        
+        console.log(`✅ Individual inserts: ${successCount}/${logos.length} successful`);
+        return successCount > 0;
+        
+      } catch (error) {
+        console.error('❌ Critical database error:', error);
+        return false;
       }
     }
 
@@ -207,8 +285,8 @@ Deno.serve(async (req) => {
       
       console.log(`🔄 Processing ${rateLimitedStocks.length} rate-limited stocks with exponential backoff...`);
       
-      let retryDelay = 5000; // Start with 5 seconds
-      const maxRetries = 3;
+      let retryDelay = 10000; // Start with 10 seconds for rate limits
+      const maxRetries = 5; // More retries for overnight operation
       
       for (let attempt = 1; attempt <= maxRetries && rateLimitedStocks.length > 0; attempt++) {
         console.log(`🔄 Retry attempt ${attempt}/${maxRetries} for ${rateLimitedStocks.length} stocks`);
@@ -218,15 +296,17 @@ Deno.serve(async (req) => {
         
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         
+        let retryLogoQueue: Array<{ symbol: string; logo_url: string; name?: string }> = [];
+        
         for (const stock of stocksToRetry) {
           const result = await processStockWithRateLimit(stock, true);
           
-          if (result.success && result.logo) {
-            logoQueue.push({
-              symbol: stock.symbol,
-              logo_url: result.logo
-            });
-            inserted++;
+          if (result.success && (result.logo || result.name)) {
+            const logoEntry: any = { symbol: stock.symbol };
+            if (result.logo) logoEntry.logo_url = result.logo;
+            if (result.name) logoEntry.name = result.name;
+            
+            retryLogoQueue.push(logoEntry);
           } else if (result.error === 'rate_limit') {
             // Still rate limited, will be retried in next attempt
             console.log(`⚠️ ${stock.symbol} still rate limited on attempt ${attempt}`);
@@ -234,26 +314,17 @@ Deno.serve(async (req) => {
             failed++;
           }
           
-          // Small delay between retry requests
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Delay between retry requests
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         // Insert any logos found in this retry batch
-        if (logoQueue.length > 0) {
-          console.log(`💾 Inserting batch of ${logoQueue.length} retry logos...`);
-          const { error: insertError } = await supabaseClient
-            .from('company_logos')
-            .insert([...logoQueue]);
-
-          if (insertError) {
-            console.error('❌ Error inserting retry batch:', insertError);
-          } else {
-            console.log(`✅ Successfully inserted ${logoQueue.length} retry logos`);
-          }
-          logoQueue = [];
+        if (retryLogoQueue.length > 0) {
+          await insertLogosRobustly(retryLogoQueue);
+          inserted += retryLogoQueue.length;
         }
         
-        retryDelay *= 2; // Exponential backoff
+        retryDelay = Math.min(retryDelay * 1.5, 60000); // Cap at 1 minute
       }
       
       if (rateLimitedStocks.length > 0) {
@@ -261,58 +332,66 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Process stocks one by one with strict rate limiting
+    // Process stocks with optimized batching and error recovery
     for (let i = 0; i < stocksToProcess.length; i++) {
       const stock = stocksToProcess[i];
+      
+      // Check for too many consecutive failures (circuit breaker)
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        console.error(`🛑 Too many consecutive failures (${consecutiveFailures}), stopping batch to prevent resource waste`);
+        break;
+      }
       
       // Process the stock
       const result = await processStockWithRateLimit(stock);
       
-      if (result.success && result.logo) {
-        logoQueue.push({
-          symbol: stock.symbol,
-          logo_url: result.logo
-        });
-      } else {
+      if (result.success && (result.logo || result.name)) {
+        const logoEntry: any = { symbol: stock.symbol };
+        if (result.logo) logoEntry.logo_url = result.logo;
+        if (result.name) logoEntry.name = result.name;
+        
+        logoQueue.push(logoEntry);
+        consecutiveFailures = 0; // Reset failure counter on success
+      } else if (result.error !== 'rate_limit') {
         failed++;
+        consecutiveFailures++;
       }
       
       processed++;
       
-      // Insert logos in batches to reduce database operations
+      // Insert logos in batches with robust error handling
       if (logoQueue.length >= BATCH_INSERT_SIZE || i === stocksToProcess.length - 1) {
         if (logoQueue.length > 0) {
-          console.log(`💾 Inserting batch of ${logoQueue.length} logos into database...`);
-          
-          const { error: insertError } = await supabaseClient
-            .from('company_logos')
-            .insert([...logoQueue]); // Create a copy of the array
-
-          if (insertError) {
-            console.error('❌ Error inserting batch:', insertError);
-            failed += logoQueue.length;
-          } else {
+          const batchSuccess = await insertLogosRobustly([...logoQueue]);
+          if (batchSuccess) {
             inserted += logoQueue.length;
-            console.log(`✅ Successfully inserted ${logoQueue.length} logos`);
+          } else {
+            failed += logoQueue.length;
           }
-          
           logoQueue = []; // Clear the queue
         }
       }
       
-      // Progress reporting every 50 stocks
-      if (processed % 50 === 0 || i === stocksToProcess.length - 1) {
+      // Progress reporting every 25 stocks for better monitoring
+      if (processed % 25 === 0 || i === stocksToProcess.length - 1) {
         const progressPercent = Math.round((processed / stocksToProcess.length) * 100);
         const remainingStocks = stocksToProcess.length - processed;
         const estimatedTimeMinutes = Math.round((remainingStocks * RATE_LIMIT) / 1000 / 60);
         
-        console.log(`📊 Progress: ${processed}/${stocksToProcess.length} (${progressPercent}%) - Inserted: ${inserted}, Failed: ${failed}`);
+        console.log(`📊 Progress: ${processed}/${stocksToProcess.length} (${progressPercent}%) - Inserted: ${inserted}, Failed: ${failed}, Consecutive Failures: ${consecutiveFailures}`);
         console.log(`⏰ Estimated time remaining: ${estimatedTimeMinutes} minutes`);
+        
+        // Auto-recovery: If we're hitting too many failures, slow down
+        if (consecutiveFailures > 5) {
+          console.log(`⚠️ High failure rate detected, implementing adaptive rate limiting`);
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT * 3));
+        }
       }
 
-      // Rate limiting delay (except for the last request)
+      // Adaptive rate limiting based on success/failure
+      const dynamicDelay = consecutiveFailures > 3 ? RATE_LIMIT * 2 : RATE_LIMIT;
       if (i < stocksToProcess.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT));
+        await new Promise(resolve => setTimeout(resolve, dynamicDelay));
       }
     }
 
