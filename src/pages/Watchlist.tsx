@@ -18,6 +18,7 @@ import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import CompanyLogo from "@/components/CompanyLogo";
+import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
 
 interface Stock {
   symbol: string;
@@ -322,6 +323,7 @@ const Watchlist = () => {
                 </div>
               )}
             </div>
+            <LogoPopulationTrigger />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
