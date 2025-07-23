@@ -148,17 +148,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 3: Implement robust processing with proper error handling
-    const RATE_LIMIT = 1100; // 1.1 seconds between requests (safer for overnight run)
-    const BATCH_INSERT_SIZE = 50; // Smaller batches for better error recovery
-    const MAX_CONSECUTIVE_FAILURES = 10; // Stop if too many failures in a row
-    const NETWORK_TIMEOUT = 30000; // 30 second timeout for network requests
-    
+    // Step 3: Implement faster processing (Finnhub free tier: 60 calls/minute)
+    const RATE_LIMIT = 200; // 200ms between requests (5 requests/second, well under 60/minute limit)
+    const BATCH_INSERT_SIZE = 100; // Insert logos in larger batches to database
     let processed = 0;
     let inserted = 0;
     let failed = 0;
-    let consecutiveFailures = 0;
-    let logoQueue: Array<{ symbol: string; logo_url: string; name?: string }> = [];
+    let logoQueue: Array<{ symbol: string; logo_url: string }> = [];
 
     console.log(`⚙️ Processing with strict rate limiting: 1 request per ${RATE_LIMIT}ms`);
     console.log(`📊 Will process ${stocksToProcess.length} stocks in this batch (estimated time: ${Math.round((stocksToProcess.length * RATE_LIMIT) / 1000 / 60)} minutes)`);
@@ -168,73 +164,41 @@ Deno.serve(async (req) => {
     let retryQueue: FinnhubStock[] = [];
     let rateLimitedStocks: FinnhubStock[] = [];
 
-    // Robust processing function with comprehensive error handling
-    async function processStockWithRateLimit(stock: FinnhubStock, isRetry = false): Promise<{ success: boolean; logo?: string; name?: string; error?: string }> {
-      const maxRetries = 3;
-      let attempt = 0;
-      
-      while (attempt < maxRetries) {
-        try {
-          attempt++;
-          console.log(`🔍 Fetching profile for ${stock.symbol}${isRetry ? ' (retry)' : ''} (attempt ${attempt}/${maxRetries})...`);
-          
-          const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
-          
-          // Create AbortController for timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT);
-          
-          const profileResponse = await fetch(profileUrl, {
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
+    // Rate-limited processing function with retry logic
+    async function processStockWithRateLimit(stock: FinnhubStock, isRetry = false): Promise<{ success: boolean; logo?: string; error?: string }> {
+      try {
+        console.log(`🔍 Fetching profile for ${stock.symbol}${isRetry ? ' (retry)' : ''}...`);
+        
+        const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
+        const profileResponse = await fetch(profileUrl);
 
-          if (profileResponse.status === 429) {
-            console.log(`⚠️ Rate limit hit for ${stock.symbol} - adding to retry queue`);
-            if (!rateLimitedStocks.some(s => s.symbol === stock.symbol)) {
-              rateLimitedStocks.push(stock);
-            }
-            return { success: false, error: 'rate_limit' };
+        if (profileResponse.status === 429) {
+          console.log(`⚠️ Rate limit hit for ${stock.symbol} - adding to retry queue`);
+          if (!rateLimitedStocks.some(s => s.symbol === stock.symbol)) {
+            rateLimitedStocks.push(stock);
           }
-
-          if (!profileResponse.ok) {
-            if (attempt === maxRetries) {
-              console.log(`❌ Failed to fetch profile for ${stock.symbol}: ${profileResponse.status} ${profileResponse.statusText}`);
-              return { success: false, error: profileResponse.statusText };
-            }
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
-            continue;
-          }
-
-          const profile: FinnhubProfile = await profileResponse.json();
-          
-          if (profile && profile.logo && profile.logo.trim() !== '') {
-            console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
-            return { 
-              success: true, 
-              logo: profile.logo.trim(),
-              name: profile.name?.trim() || stock.description?.trim() || ''
-            };
-          } else {
-            console.log(`📭 No logo found for ${stock.symbol}`);
-            return { success: false, error: 'no_logo' };
-          }
-          
-        } catch (error) {
-          console.error(`💥 Error processing ${stock.symbol} (attempt ${attempt}):`, error);
-          
-          if (attempt === maxRetries) {
-            return { success: false, error: error.message };
-          }
-          
-          // Wait before retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          return { success: false, error: 'rate_limit' };
         }
+
+        if (!profileResponse.ok) {
+          console.log(`❌ Failed to fetch profile for ${stock.symbol}: ${profileResponse.status} ${profileResponse.statusText}`);
+          return { success: false, error: profileResponse.statusText };
+        }
+
+        const profile: FinnhubProfile = await profileResponse.json();
+        
+        if (profile && profile.logo && profile.logo.trim() !== '') {
+          console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
+          return { success: true, logo: profile.logo.trim() };
+        } else {
+          console.log(`📭 No logo found for ${stock.symbol}`);
+          return { success: false, error: 'no_logo' };
+        }
+        
+      } catch (error) {
+        console.error(`💥 Error processing ${stock.symbol}:`, error);
+        return { success: false, error: error.message };
       }
-      
-      return { success: false, error: 'max_retries_exceeded' };
     }
 
     // Background task to handle rate-limited stocks
@@ -243,8 +207,8 @@ Deno.serve(async (req) => {
       
       console.log(`🔄 Processing ${rateLimitedStocks.length} rate-limited stocks with exponential backoff...`);
       
-      let retryDelay = 30000; // Start with 30 seconds for overnight stability
-      const maxRetries = 5;
+      let retryDelay = 5000; // Start with 5 seconds
+      const maxRetries = 3;
       
       for (let attempt = 1; attempt <= maxRetries && rateLimitedStocks.length > 0; attempt++) {
         console.log(`🔄 Retry attempt ${attempt}/${maxRetries} for ${rateLimitedStocks.length} stocks`);
@@ -260,8 +224,7 @@ Deno.serve(async (req) => {
           if (result.success && result.logo) {
             logoQueue.push({
               symbol: stock.symbol,
-              logo_url: result.logo,
-              name: result.name
+              logo_url: result.logo
             });
             inserted++;
           } else if (result.error === 'rate_limit') {
@@ -271,8 +234,8 @@ Deno.serve(async (req) => {
             failed++;
           }
           
-          // Longer delay between retry requests for stability
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Small delay between retry requests
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
         // Insert any logos found in this retry batch
@@ -308,19 +271,10 @@ Deno.serve(async (req) => {
       if (result.success && result.logo) {
         logoQueue.push({
           symbol: stock.symbol,
-          logo_url: result.logo,
-          name: result.name
+          logo_url: result.logo
         });
-        consecutiveFailures = 0; // Reset failure counter on success
       } else {
         failed++;
-        consecutiveFailures++;
-        
-        // Safety check: stop if too many consecutive failures
-        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-          console.error(`🛑 Stopping due to ${MAX_CONSECUTIVE_FAILURES} consecutive failures. Last error: ${result.error}`);
-          break;
-        }
       }
       
       processed++;
@@ -330,35 +284,13 @@ Deno.serve(async (req) => {
         if (logoQueue.length > 0) {
           console.log(`💾 Inserting batch of ${logoQueue.length} logos into database...`);
           
-          // Robust database insertion with conflict handling
           const { error: insertError } = await supabaseClient
             .from('company_logos')
-            .upsert([...logoQueue], { 
-              onConflict: 'symbol',
-              ignoreDuplicates: false 
-            });
+            .insert([...logoQueue]); // Create a copy of the array
 
           if (insertError) {
-            // Handle specific error types
-            if (insertError.code === '23505') {
-              // Duplicate key error - try individual inserts
-              console.log(`⚠️ Duplicate key conflict, trying individual inserts for ${logoQueue.length} logos`);
-              let individualInserted = 0;
-              for (const logo of logoQueue) {
-                const { error: singleError } = await supabaseClient
-                  .from('company_logos')
-                  .upsert([logo], { onConflict: 'symbol', ignoreDuplicates: true });
-                
-                if (!singleError) {
-                  individualInserted++;
-                }
-              }
-              inserted += individualInserted;
-              console.log(`✅ Successfully inserted ${individualInserted}/${logoQueue.length} logos individually`);
-            } else {
-              console.error('❌ Error inserting batch:', insertError);
-              failed += logoQueue.length;
-            }
+            console.error('❌ Error inserting batch:', insertError);
+            failed += logoQueue.length;
           } else {
             inserted += logoQueue.length;
             console.log(`✅ Successfully inserted ${logoQueue.length} logos`);
