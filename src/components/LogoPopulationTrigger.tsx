@@ -24,22 +24,26 @@ export const LogoPopulationTrigger = () => {
     }
   };
 
-  const triggerPopulation = async (retryCount = 0) => {
+  const triggerPopulation = async (retryCount = 0, isAutoContinue = false) => {
     const maxRetries = 3;
     const timeout = 30000; // 30 second timeout
     
-    setIsPopulating(true);
-    setPopulationResult(null);
-    setCurrentStatus(`Initializing batch population (${batchSize} symbols)... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
+    if (!isAutoContinue) {
+      setIsPopulating(true);
+      setPopulationResult(null);
+    }
+    setCurrentStatus(`Processing batch of ${batchSize} symbols... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
 
     try {
       const initialCount = await checkDatabaseCount();
-      console.log(`Initial logo count: ${initialCount}`);
+      console.log(`Current logo count: ${initialCount}`);
 
-      toast({
-        title: "Starting Logo Population",
-        description: `Processing ${batchSize} symbols at a time. This should complete in 1-2 minutes.`,
-      });
+      if (!isAutoContinue) {
+        toast({
+          title: "Starting Automatic Logo Population",
+          description: `Will automatically process all stocks in batches of ${batchSize}. This may take several minutes.`,
+        });
+      }
 
       setCurrentStatus(`Connecting to populate-all-logos function... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
 
@@ -75,21 +79,41 @@ export const LogoPopulationTrigger = () => {
           setCurrentStatus(`Connection failed, retrying in 3 seconds... (${retryCount + 1}/${maxRetries})`);
           
           await new Promise(resolve => setTimeout(resolve, 3000));
-          return triggerPopulation(retryCount + 1);
+          return triggerPopulation(retryCount + 1, isAutoContinue);
         }
         
         throw error;
       }
 
       console.log('Population function response:', data);
-      setCurrentStatus("Population started successfully!");
       setPopulationResult(data);
 
       if (data?.success) {
+        const remainingStocks = data.remainingStocks || 0;
+        
         toast({
           title: "Batch Complete!",
-          description: `Processed ${data.stocksProcessed} stocks. Inserted ${data.logosInserted} logos. ${data.remainingStocks || 0} stocks remaining.`,
+          description: `Processed ${data.stocksProcessed} stocks. Inserted ${data.logosInserted} logos. ${remainingStocks} stocks remaining.`,
         });
+
+        // If there are more stocks to process, automatically continue
+        if (remainingStocks > 0) {
+          setCurrentStatus(`Batch complete! ${remainingStocks} stocks remaining. Starting next batch in 5 seconds...`);
+          
+          // Wait 5 seconds between batches to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Continue with next batch
+          return triggerPopulation(0, true);
+        } else {
+          // All done!
+          setCurrentStatus("All logos populated successfully!");
+          toast({
+            title: "Population Complete!",
+            description: "All stock logos have been successfully populated.",
+          });
+          setIsPopulating(false);
+        }
       } else if (data?.error) {
         throw new Error(data.error);
       } else {
@@ -98,6 +122,7 @@ export const LogoPopulationTrigger = () => {
           title: "Batch Processing",
           description: "Logo batch processing has been initiated. Check the edge function logs for progress.",
         });
+        setIsPopulating(false);
       }
 
     } catch (error: any) {
@@ -122,7 +147,6 @@ export const LogoPopulationTrigger = () => {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
       setIsPopulating(false);
     }
   };
