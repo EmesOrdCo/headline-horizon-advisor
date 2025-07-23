@@ -71,6 +71,9 @@ const Magnificent7 = () => {
 
   // Focus on all Magnificent 7 stocks
   const MAGNIFICENT_7_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+  
+  // TEST: Only stream one stock to debug WebSocket issues
+  const TEST_SYMBOLS = ['AAPL'];
 
   // Enhanced market hours detection
   const marketStatus = useMemo(() => {
@@ -141,12 +144,12 @@ const Magnificent7 = () => {
     streamData: wsData,
     errorMessage: wsError
   } = useAlpacaStreamSingleton({
-    symbols: MAGNIFICENT_7_SYMBOLS,
+    symbols: TEST_SYMBOLS, // TEST: Only stream AAPL
     enabled: useWebSocket
   });
 
   useEffect(() => {
-    MAGNIFICENT_7_SYMBOLS.forEach(symbol => {
+    TEST_SYMBOLS.forEach(symbol => { // TEST: Only process the symbol we're streaming
       if (wsData[symbol] && useWebSocket) {
         const newDataPoint: PriceHistoryPoint = {
           timestamp: wsData[symbol].timestamp || new Date().toISOString(),
@@ -160,7 +163,7 @@ const Magnificent7 = () => {
         }));
       }
     });
-  }, [wsData, MAGNIFICENT_7_SYMBOLS, useWebSocket]);
+  }, [wsData, TEST_SYMBOLS, useWebSocket]);
 
   const getStockPrice = (symbol: string) => {
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
