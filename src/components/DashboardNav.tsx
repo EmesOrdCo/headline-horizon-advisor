@@ -58,19 +58,19 @@ const DashboardNav = () => {
 
   const DashboardLinks = () => (
     <>
-      <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium">
+      <Link to="/dashboard" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
         Home
       </Link>
       
-      <Link to="/portfolio" className="text-slate-300 hover:text-white transition-colors font-medium">
+      <Link to="/portfolio" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
         Portfolio
       </Link>
       
-      <Link to="/watchlist" className="text-slate-300 hover:text-white transition-colors font-medium">
+      <Link to="/watchlist" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
         Watchlist
       </Link>
       
-      <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium">
+      <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
         Wallet
       </Link>
     </>
@@ -139,7 +139,7 @@ const DashboardNav = () => {
               size="icon"
               className="text-slate-300 hover:text-white hover:bg-slate-800"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-6 h-6" />
             </Button>
 
             {/* Profile Dropdown */}
@@ -150,7 +150,7 @@ const DashboardNav = () => {
                   size="icon"
                   className="text-slate-300 hover:text-white hover:bg-slate-800"
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-6 h-6" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
