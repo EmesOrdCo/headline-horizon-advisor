@@ -293,128 +293,46 @@ const Portfolio = () => {
               </CardContent>
             </Card>
 
-            {/* Portfolio Allocation - Bold Redesign */}
-            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-900/70 border-slate-600 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white text-2xl font-bold flex items-center gap-3">
-                      <div className="w-3 h-8 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full"></div>
-                      Portfolio Allocation
-                    </CardTitle>
-                    <p className="text-slate-400 text-sm mt-1 font-medium">Asset distribution breakdown</p>
-                  </div>
-                </div>
+            {/* Portfolio Allocation */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-8">
-                  {/* Large Pie Chart */}
-                  <div className="flex-1">
-                    <ChartContainer config={{ value: { label: "Value" } }} className="h-[316px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={110}
-                            innerRadius={55}
-                            paddingAngle={3}
-                            dataKey="value"
-                            labelLine={false}
-                            stroke="#1e293b"
-                            strokeWidth={3}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color}
-                                className="hover:opacity-80 transition-opacity cursor-pointer"
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value: number) => [formatCurrency(value), 'Value']}
-                            contentStyle={{ 
-                              backgroundColor: '#0f172a', 
-                              border: '2px solid #334155', 
-                              borderRadius: '12px',
-                              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-                            }}
-                            labelStyle={{ color: '#f1f5f9', fontWeight: 'bold' }}
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                        label={({ name, percentage }) => `${name} ${percentage}%`}
+                        labelLine={false}
+                        stroke="#1e293b"
+                        strokeWidth={2}
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color}
                           />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </div>
-
-                  {/* Bold Legend */}
-                  <div className="flex-1 space-y-3">
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                      <div className="w-2 h-6 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
-                      Holdings
-                    </h3>
-                    <div className="space-y-4">
-                      {pieData.map((entry, index) => (
-                        <div key={`legend-${index}`} className="group">
-                          <div className="flex items-center justify-between p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-slate-600/70 hover:bg-slate-800/60 transition-all duration-200">
-                            <div className="flex items-center gap-4">
-                              {/* Color indicator */}
-                              <div 
-                                className="w-5 h-5 rounded-lg shadow-lg border-2 border-slate-600"
-                                style={{ backgroundColor: entry.color }}
-                              ></div>
-                              
-                              {/* Asset info */}
-                              <div>
-                                <div className="text-white font-bold text-lg tracking-wide">
-                                  {entry.name}
-                                </div>
-                                <div className="text-slate-400 text-sm font-medium">
-                                  {formatCurrency(entry.value)}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Percentage badge */}
-                            <div className="flex items-center gap-2">
-                              <div className="bg-slate-700/60 px-4 py-2 rounded-lg border border-slate-600/50">
-                                <span className="text-white font-bold text-lg">
-                                  {entry.percentage}%
-                                </span>
-                              </div>
-                              <div className="w-16 h-2 bg-slate-700/50 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full rounded-full transition-all duration-500"
-                                  style={{ 
-                                    width: `${entry.percentage}%`,
-                                    backgroundColor: entry.color 
-                                  }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Total allocation summary */}
-                    <div className="mt-6 p-4 bg-gradient-to-r from-emerald-900/30 to-blue-900/30 rounded-xl border border-emerald-500/20">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-emerald-400 font-bold text-lg">Total Portfolio</div>
-                          <div className="text-slate-400 text-sm">All assets combined</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-white font-bold text-2xl">
-                            {formatCurrency(totalValue)}
-                          </div>
-                          <div className="text-emerald-400 text-sm font-medium">100%</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number) => [formatCurrency(value), 'Value']}
+                        contentStyle={{ 
+                          backgroundColor: '#1E293B', 
+                          border: '1px solid #475569', 
+                          borderRadius: '8px' 
+                        }}
+                        labelStyle={{ color: '#F1F5F9' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </CardContent>
             </Card>
           </div>
