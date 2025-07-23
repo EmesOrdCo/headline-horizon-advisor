@@ -69,18 +69,6 @@ const DashboardNav = () => {
       <Link to="/watchlist" className="text-slate-300 hover:text-white transition-colors font-medium">
         Watchlist
       </Link>
-
-      <Link to="/magnificent-7" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Magnificent 7
-      </Link>
-
-      <Link to="/index-funds" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Index Funds
-      </Link>
-
-      <Link to="/predictions" className="text-slate-300 hover:text-white transition-colors font-medium">
-        Predictions
-      </Link>
       
       <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium">
         Wallet
