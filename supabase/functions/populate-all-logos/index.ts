@@ -301,9 +301,11 @@ Deno.serve(async (req) => {
         for (const stock of stocksToRetry) {
           const result = await processStockWithRateLimit(stock, true);
           
-          if (result.success && (result.logo || result.name)) {
-            const logoEntry: any = { symbol: stock.symbol };
-            if (result.logo) logoEntry.logo_url = result.logo;
+          if (result.success && result.logo) {
+            const logoEntry: any = { 
+              symbol: stock.symbol,
+              logo_url: result.logo
+            };
             if (result.name) logoEntry.name = result.name;
             
             retryLogoQueue.push(logoEntry);
@@ -345,9 +347,11 @@ Deno.serve(async (req) => {
       // Process the stock
       const result = await processStockWithRateLimit(stock);
       
-      if (result.success && (result.logo || result.name)) {
-        const logoEntry: any = { symbol: stock.symbol };
-        if (result.logo) logoEntry.logo_url = result.logo;
+      if (result.success && result.logo) {
+        const logoEntry: any = { 
+          symbol: stock.symbol,
+          logo_url: result.logo
+        };
         if (result.name) logoEntry.name = result.name;
         
         logoQueue.push(logoEntry);
