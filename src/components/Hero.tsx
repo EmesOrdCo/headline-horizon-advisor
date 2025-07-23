@@ -54,7 +54,10 @@ const Hero = () => {
           <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4 sm:p-6 hover:border-emerald-500/30 transition-all">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-blue-500 text-white text-xs">AAPL</Badge>
+                <div className="flex items-center gap-2">
+                  <img src="https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.png" alt="Apple Inc." className="w-5 h-5 rounded" />
+                  <Badge className="bg-blue-500 text-white text-xs">AAPL</Badge>
+                </div>
                 <Badge variant="secondary" className="bg-slate-500/20 text-slate-400 text-xs">
                   Stock
                 </Badge>
