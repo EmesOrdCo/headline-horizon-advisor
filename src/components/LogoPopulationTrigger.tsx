@@ -26,7 +26,7 @@ export const LogoPopulationTrigger = () => {
 
   const triggerPopulation = async (retryCount = 0, isAutoContinue = false) => {
     const maxRetries = 3;
-    const timeout = 30000; // 30 second timeout
+    const timeout = 15000; // Shorter 15 second timeout
     
     if (!isAutoContinue) {
       setIsPopulating(true);
@@ -41,7 +41,7 @@ export const LogoPopulationTrigger = () => {
       if (!isAutoContinue) {
         toast({
           title: "Starting Automatic Logo Population",
-          description: `Will automatically process all stocks in batches of ${batchSize}. This may take several minutes.`,
+          description: `Will automatically process all stocks in batches of ${batchSize}. This will run continuously until complete.`,
         });
       }
 
@@ -49,7 +49,7 @@ export const LogoPopulationTrigger = () => {
 
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout - function took too long to respond')), timeout)
+        setTimeout(() => reject(new Error('timeout')), timeout)
       );
 
       // Create the function call promise
@@ -57,8 +57,24 @@ export const LogoPopulationTrigger = () => {
         body: { action: 'populate', batchSize }
       });
 
-      // Race between timeout and function call
-      const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
+      let data, error;
+      
+      try {
+        // Race between timeout and function call
+        const result = await Promise.race([functionPromise, timeoutPromise]) as any;
+        data = result.data;
+        error = result.error;
+      } catch (timeoutError) {
+        // Handle timeout specially - treat as background processing
+        console.log('Function timed out, treating as background processing...');
+        setCurrentStatus(`Batch processing in background... Continuing automatically in 60 seconds.`);
+        
+        // Wait 60 seconds for background processing, then continue automatically
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        
+        // Continue with next batch automatically
+        return triggerPopulation(0, true);
+      }
 
       if (error) {
         console.error('Function invocation error:', error);
@@ -67,7 +83,6 @@ export const LogoPopulationTrigger = () => {
         const isRetryableError = 
           error.message?.includes('fetch') || 
           error.message?.includes('network') || 
-          error.message?.includes('timeout') ||
           error.message?.includes('Load failed') ||
           error.status === 500 ||
           error.status === 502 ||
@@ -75,10 +90,10 @@ export const LogoPopulationTrigger = () => {
           error.status === 504;
 
         if (isRetryableError && retryCount < maxRetries) {
-          console.log(`Retryable error detected, retrying in 3 seconds... (${retryCount + 1}/${maxRetries})`);
-          setCurrentStatus(`Connection failed, retrying in 3 seconds... (${retryCount + 1}/${maxRetries})`);
+          console.log(`Retryable error detected, retrying in 10 seconds... (${retryCount + 1}/${maxRetries})`);
+          setCurrentStatus(`Connection failed, retrying in 10 seconds... (${retryCount + 1}/${maxRetries})`);
           
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 10000));
           return triggerPopulation(retryCount + 1, isAutoContinue);
         }
         
@@ -98,10 +113,10 @@ export const LogoPopulationTrigger = () => {
 
         // If there are more stocks to process, automatically continue
         if (remainingStocks > 0) {
-          setCurrentStatus(`Batch complete! ${remainingStocks} stocks remaining. Starting next batch in 5 seconds...`);
+          setCurrentStatus(`Batch complete! ${remainingStocks} stocks remaining. Starting next batch in 10 seconds...`);
           
-          // Wait 5 seconds between batches to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          // Wait 10 seconds between batches
+          await new Promise(resolve => setTimeout(resolve, 10000));
           
           // Continue with next batch
           return triggerPopulation(0, true);
@@ -117,30 +132,40 @@ export const LogoPopulationTrigger = () => {
       } else if (data?.error) {
         throw new Error(data.error);
       } else {
-        // Function started but no immediate error
-        toast({
-          title: "Batch Processing",
-          description: "Logo batch processing has been initiated. Check the edge function logs for progress.",
-        });
-        setIsPopulating(false);
+        // Function started but no immediate error - continue automatically
+        setCurrentStatus("Batch initiated. Continuing automatically in 60 seconds...");
+        
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        return triggerPopulation(0, true);
       }
 
     } catch (error: any) {
       console.error('Error triggering logo population:', error);
       
+      // For any error, wait and try to continue automatically
+      if (error.message?.includes('timeout') || error.message?.includes('Load failed') || error.message?.includes('fetch')) {
+        setCurrentStatus(`Network issue detected. Continuing automatically in 60 seconds...`);
+        
+        toast({
+          title: "Network Issue - Continuing Automatically",
+          description: "Detected network timeout. Will continue processing automatically.",
+        });
+        
+        // Wait and continue automatically
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        return triggerPopulation(0, true);
+      }
+      
+      // Only stop for non-recoverable errors
       let errorMessage = "Failed to send a request to the Edge Function";
       
-      if (error.message?.includes('timeout')) {
-        errorMessage = "Request timed out - the function is processing in the background. Check edge function logs.";
-      } else if (error.message?.includes('fetch') || error.message?.includes('Load failed')) {
-        errorMessage = "Network connection failed. Please check your internet connection and try again.";
-      } else if (error.message?.includes('Usage limit')) {
+      if (error.message?.includes('Usage limit')) {
         errorMessage = "API usage limit reached. Please wait before retrying.";
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      setCurrentStatus(`Error: ${errorMessage}`);
+      setCurrentStatus(`Critical error: ${errorMessage}`);
       
       toast({
         title: "Population Failed",
