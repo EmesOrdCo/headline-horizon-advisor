@@ -160,17 +160,24 @@ Deno.serve(async (req) => {
     console.log(`📊 Will process ${stocksToProcess.length} stocks in this batch (estimated time: ${Math.round((stocksToProcess.length * RATE_LIMIT) / 1000 / 60)} minutes)`);
     console.log(`📈 ${allStocksToProcess.length - stocksToProcess.length} stocks will remain for future batches`);
 
-    // Rate-limited processing function
-    async function processStockWithRateLimit(stock: FinnhubStock): Promise<{ success: boolean; logo?: string; error?: string }> {
+    // Queues for managing stocks
+    let retryQueue: FinnhubStock[] = [];
+    let rateLimitedStocks: FinnhubStock[] = [];
+
+    // Rate-limited processing function with retry logic
+    async function processStockWithRateLimit(stock: FinnhubStock, isRetry = false): Promise<{ success: boolean; logo?: string; error?: string }> {
       try {
-        console.log(`🔍 Fetching profile for ${stock.symbol}...`);
+        console.log(`🔍 Fetching profile for ${stock.symbol}${isRetry ? ' (retry)' : ''}...`);
         
         const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
         const profileResponse = await fetch(profileUrl);
 
         if (profileResponse.status === 429) {
-          console.log(`⚠️ Rate limit hit for ${stock.symbol} (this shouldn't happen with proper rate limiting)`);
-          return { success: false, error: '429' };
+          console.log(`⚠️ Rate limit hit for ${stock.symbol} - adding to retry queue`);
+          if (!rateLimitedStocks.some(s => s.symbol === stock.symbol)) {
+            rateLimitedStocks.push(stock);
+          }
+          return { success: false, error: 'rate_limit' };
         }
 
         if (!profileResponse.ok) {
@@ -191,6 +198,66 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error(`💥 Error processing ${stock.symbol}:`, error);
         return { success: false, error: error.message };
+      }
+    }
+
+    // Background task to handle rate-limited stocks
+    async function processRateLimitedStocks() {
+      if (rateLimitedStocks.length === 0) return;
+      
+      console.log(`🔄 Processing ${rateLimitedStocks.length} rate-limited stocks with exponential backoff...`);
+      
+      let retryDelay = 5000; // Start with 5 seconds
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries && rateLimitedStocks.length > 0; attempt++) {
+        console.log(`🔄 Retry attempt ${attempt}/${maxRetries} for ${rateLimitedStocks.length} stocks`);
+        
+        const stocksToRetry = [...rateLimitedStocks];
+        rateLimitedStocks = []; // Clear the queue
+        
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        
+        for (const stock of stocksToRetry) {
+          const result = await processStockWithRateLimit(stock, true);
+          
+          if (result.success && result.logo) {
+            logoQueue.push({
+              symbol: stock.symbol,
+              logo_url: result.logo
+            });
+            inserted++;
+          } else if (result.error === 'rate_limit') {
+            // Still rate limited, will be retried in next attempt
+            console.log(`⚠️ ${stock.symbol} still rate limited on attempt ${attempt}`);
+          } else {
+            failed++;
+          }
+          
+          // Small delay between retry requests
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        // Insert any logos found in this retry batch
+        if (logoQueue.length > 0) {
+          console.log(`💾 Inserting batch of ${logoQueue.length} retry logos...`);
+          const { error: insertError } = await supabaseClient
+            .from('company_logos')
+            .insert([...logoQueue]);
+
+          if (insertError) {
+            console.error('❌ Error inserting retry batch:', insertError);
+          } else {
+            console.log(`✅ Successfully inserted ${logoQueue.length} retry logos`);
+          }
+          logoQueue = [];
+        }
+        
+        retryDelay *= 2; // Exponential backoff
+      }
+      
+      if (rateLimitedStocks.length > 0) {
+        console.log(`⚠️ ${rateLimitedStocks.length} stocks still rate limited after ${maxRetries} attempts`);
       }
     }
 
@@ -249,6 +316,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Send immediate response to prevent timeout
     const remainingStocks = allStocksToProcess.length - stocksToProcess.length;
     
     const result = {
@@ -261,11 +329,27 @@ Deno.serve(async (req) => {
       existingLogos: existingLogos?.length || 0,
       remainingStocks,
       batchSize,
+      rateLimitedStocks: rateLimitedStocks.length,
       message: remainingStocks > 0 ? `Batch complete. ${remainingStocks} stocks remaining for future batches.` : 'All stocks processed!'
     };
 
     console.log(`🎉 Batch logo population completed successfully! (${remainingStocks} stocks remaining)`);
     console.log('📊 Final results:', result);
+
+    // Handle rate-limited stocks in background
+    if (rateLimitedStocks.length > 0) {
+      console.log(`🔄 Starting background processing for ${rateLimitedStocks.length} rate-limited stocks`);
+      
+      // Use EdgeRuntime.waitUntil for background processing
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+        EdgeRuntime.waitUntil(processRateLimitedStocks());
+      } else {
+        // Fallback for environments without EdgeRuntime
+        processRateLimitedStocks().catch(error => {
+          console.error('❌ Background processing failed:', error);
+        });
+      }
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
