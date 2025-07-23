@@ -11,7 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
 import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
-import BiggestMovers from "./pages/BiggestMovers";
+
 import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
@@ -54,14 +54,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Watchlist />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/biggest-movers"
-                element={
-                  <ProtectedRoute>
-                    <BiggestMovers />
                   </ProtectedRoute>
                 }
               />
