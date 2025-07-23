@@ -148,9 +148,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 3: Implement proper rate limiting (Finnhub free tier: 60 calls/minute = 1 call/second)
-    const RATE_LIMIT = 1000; // 1 second between requests (strict rate limiting)
-    const BATCH_INSERT_SIZE = 50; // Insert logos in larger batches to database
+    // Step 3: Implement faster processing (Finnhub free tier: 60 calls/minute)
+    const RATE_LIMIT = 200; // 200ms between requests (5 requests/second, well under 60/minute limit)
+    const BATCH_INSERT_SIZE = 100; // Insert logos in larger batches to database
     let processed = 0;
     let inserted = 0;
     let failed = 0;
@@ -207,8 +207,8 @@ Deno.serve(async (req) => {
       
       console.log(`🔄 Processing ${rateLimitedStocks.length} rate-limited stocks with exponential backoff...`);
       
-      let retryDelay = 30000; // Start with 30 seconds
-      const maxRetries = 5;
+      let retryDelay = 5000; // Start with 5 seconds
+      const maxRetries = 3;
       
       for (let attempt = 1; attempt <= maxRetries && rateLimitedStocks.length > 0; attempt++) {
         console.log(`🔄 Retry attempt ${attempt}/${maxRetries} for ${rateLimitedStocks.length} stocks`);
