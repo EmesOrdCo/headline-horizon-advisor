@@ -16,6 +16,7 @@ import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
 import StockDetail from "./pages/StockDetail";
+import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -101,6 +102,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <DashboardShowcase />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/wallet"
+                element={
+                  <ProtectedRoute>
+                    <Wallet />
                   </ProtectedRoute>
                 }
               />

@@ -30,6 +30,11 @@ const Navigation = () => {
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
+          {user && (
+            <Link to="/wallet" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">
+              Wallet
+            </Link>
+          )}
           
           {/* Theme Toggle Button */}
           <Button
@@ -89,43 +94,52 @@ const Navigation = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-slate-900">
-          <div className="flex flex-col h-full">
-            {/* Mobile Menu Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">MarketSensorAI</div>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
-                  BETA
-                </Badge>
+            <div className="flex flex-col h-full">
+              {/* Mobile Menu Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">MarketSensorAI</div>
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+                    BETA
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMobileMenu}
+                  className="text-gray-700 dark:text-slate-300"
+                >
+                  <X size={24} />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMobileMenu}
-                className="text-gray-700 dark:text-slate-300"
-              >
-                <X size={24} />
-              </Button>
-            </div>
 
-            {/* Mobile Menu Content */}
-            <div className="flex flex-col flex-1 p-6 space-y-6">
-              <div className="border-t border-gray-200 dark:border-slate-800 pt-4 space-y-4">
-                <a 
-                  href="#features" 
-                  className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Features
-                </a>
-                <a 
-                  href="#how-it-works" 
-                  className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  How it Works
-                </a>
-              </div>
+              {/* Mobile Menu Content */}
+              <div className="flex flex-col flex-1 p-6 space-y-6">
+                <div className="border-t border-gray-200 dark:border-slate-800 pt-4 space-y-4">
+                  <a 
+                    href="#features" 
+                    className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Features
+                  </a>
+                  <a 
+                    href="#how-it-works" 
+                    className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    How it Works
+                  </a>
+                  {user && (
+                    <Link 
+                      to="/wallet" 
+                      className="block text-lg font-medium text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Wallet
+                    </Link>
+                  )}
+                </div>
               
               {/* Mobile Auth Buttons */}
               <div className="flex flex-col gap-4 pt-6 border-t border-gray-200 dark:border-slate-800">
