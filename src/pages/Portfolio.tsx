@@ -299,15 +299,15 @@ const Portfolio = () => {
                 <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={{ value: { label: "Value" } }} className="h-96">
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={120}
-                        innerRadius={60}
+                        outerRadius={100}
+                        innerRadius={50}
                         paddingAngle={2}
                         dataKey="value"
                         label={({ name, percentage }) => `${name} ${percentage}%`}
@@ -315,7 +315,7 @@ const Portfolio = () => {
                           stroke: '#9CA3AF',
                           strokeWidth: 1,
                         }}
-                        fontSize={12}
+                        fontSize={11}
                         fill="#F1F5F9"
                       >
                         {pieData.map((entry, index) => (
