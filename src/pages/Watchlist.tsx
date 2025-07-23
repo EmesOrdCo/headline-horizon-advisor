@@ -17,6 +17,8 @@ import ChartModal from "@/components/ChartModal";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import { useUserStocks } from "@/hooks/useUserStocks";
+import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
 import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
 import Footer from "@/components/Footer";
@@ -178,130 +180,68 @@ const Watchlist = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
 
-  // Stock symbols from the mock data
-  const watchlistSymbols = ["NVDA", "TSLA", "AMZN", "PLTR", "AAPL", "SOXL", "GOOGL", "MSTR", "META"];
+  // Fetch user's actual stocks from database
+  const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
   
-  // Get real-time stock prices using the user stocks hook
-  const { data: stockPrices, isLoading: pricesLoading } = useUserStockPrices(watchlistSymbols);
+  // Extract symbols from user stocks
+  const watchlistSymbols = userStocks?.map(stock => stock.symbol) || [];
+  
+  // Get real-time stock prices for user's stocks
+  const { data: stockPrices, isLoading: pricesLoading } = useStockPrices(watchlistSymbols);
   
   // Get biggest movers data
   const { data: moversData, isLoading: moversLoading, error: moversError, refetch } = useBiggestMovers();
   
-  // Get company logos
+  // Get company logos for user's stocks
   const { logos, loading: logosLoading, getLogoUrl } = useCompanyLogos(watchlistSymbols);
 
-  const watchlistData: Stock[] = [
-    {
-      symbol: "NVDA",
-      name: "NVIDIA Corporation",
-      price: 789.25,
-      change: 15.75,
-      changePercent: 2.03,
-    },
-    {
-      symbol: "TSLA",
-      name: "Tesla, Inc.",
-      price: 1050.50,
-      change: -22.30,
-      changePercent: -2.07,
-    },
-    {
-      symbol: "AMZN",
-      name: "Amazon.com, Inc.",
-      price: 3420.80,
-      change: 45.20,
-      changePercent: 1.34,
-    },
-    {
-      symbol: "PLTR",
-      name: "Palantir Technologies Inc.",
-      price: 27.50,
-      change: 0.80,
-      changePercent: 3.00,
-    },
-    {
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      price: 150.25,
-      change: -1.20,
-      changePercent: -0.80,
-    },
-    {
-      symbol: "SOXL",
-      name: "Direxion Daily Semiconductor Bull 3x Shares",
-      price: 45.67,
-      change: 1.23,
-      changePercent: 2.76,
-    },
-    {
-      symbol: "GOOGL",
-      name: "Alphabet Inc.",
-      price: 2700.15,
-      change: 30.50,
-      changePercent: 1.14,
-    },
-    {
-      symbol: "MSTR",
-      name: "MicroStrategy Incorporated",
-      price: 650.75,
-      change: -15.25,
-      changePercent: -2.29,
-    },
-    {
-      symbol: "META",
-      name: "Meta Platforms, Inc.",
-      price: 350.20,
-      change: 5.80,
-      changePercent: 1.68,
-    },
-  ];
-
-  const getRealPrice = (symbol: string): number => {
-    const stock = stockPrices?.find((s) => s.symbol === symbol);
-    return stock ? stock.price : watchlistData.find((s) => s.symbol === symbol)?.price || 0;
+  // Get stock names from the API data (fallback names if needed)
+  const getStockName = (symbol: string): string => {
+    const apiStock = stockPrices?.find((s) => s.symbol === symbol);
+    // For now, return a generic name - in the future, we could fetch company names
+    return apiStock?.symbol ? `${symbol} Corporation` : symbol;
   };
 
-  const getRealChange = (symbol: string): number => {
-    const stock = stockPrices?.find((s) => s.symbol === symbol);
-    return stock ? stock.change : watchlistData.find((s) => s.symbol === symbol)?.change || 0;
-  };
+  const filteredData = (): Stock[] => {
+    // Show loading state or empty state
+    if (userStocksLoading) {
+      return [];
+    }
 
-  const getRealChangePercent = (symbol: string): number => {
-    const stock = stockPrices?.find((s) => s.symbol === symbol);
-    return stock ? stock.changePercent : watchlistData.find((s) => s.symbol === symbol)?.changePercent || 0;
-  };
-
-  const filteredData = () => {
-    if (!stockPrices && pricesLoading) {
-      return watchlistData; // Show mock data structure while loading
+    if (!userStocks || userStocks.length === 0) {
+      return [];
     }
 
     if (!stockPrices) {
       return [];
     }
   
-    let data = watchlistData.map(stock => {
-      const realPrice = getRealPrice(stock.symbol);
-      const realChange = getRealChange(stock.symbol);
-      const realChangePercent = getRealChangePercent(stock.symbol);
-  
+    // Create stock data from user's actual stocks and real price data
+    let data: Stock[] = userStocks.map(userStock => {
+      const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
+      
       return {
-        ...stock,
-        price: realPrice,
-        change: realChange,
-        changePercent: realChangePercent,
+        symbol: userStock.symbol,
+        name: getStockName(userStock.symbol),
+        price: priceData?.price || 0,
+        change: priceData?.change || 0,
+        changePercent: priceData?.changePercent || 0,
       };
     });
   
+    // Filter based on active tab
     if (activeTab === "gainers") {
-      data = data.sort((a, b) => b.change - a.change);
-      return data.filter((stock) => stock.change > 0);
+      data = data.filter((stock) => stock.change > 0);
+      data = data.sort((a, b) => b.changePercent - a.changePercent);
     } else if (activeTab === "losers") {
-      data = data.sort((a, b) => a.change - b.change);
-      return data.filter((stock) => stock.change < 0);
+      data = data.filter((stock) => stock.change < 0);
+      data = data.sort((a, b) => a.changePercent - b.changePercent);
     } else {
-      return data;
+      // Sort by symbol for consistent ordering
+      data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
     }
+    
+    return data;
   };
 
   return (
@@ -346,64 +286,114 @@ const Watchlist = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData().map((stock) => (
-                    <TableRow key={stock.symbol} className="border-slate-700 hover:bg-slate-700/30">
-                       <TableCell>
-                         <div className="flex items-center gap-3">
-                           <CompanyLogo 
-                             symbol={stock.symbol} 
-                             logoUrl={getLogoUrl(stock.symbol)} 
-                             size="md" 
-                           />
-                           <div>
-                             <div className="font-medium text-white">{stock.symbol}</div>
-                             <div className="text-slate-400 text-sm">{stock.name}</div>
-                           </div>
-                         </div>
-                       </TableCell>
-                      <TableCell className="text-white font-semibold">
-                        {pricesLoading ? (
-                          <Skeleton className="w-16 h-4 bg-slate-700" />
-                        ) : (
-                          `$${getRealPrice(stock.symbol).toFixed(2)}`
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {pricesLoading ? (
-                          <Skeleton className="w-20 h-4 bg-slate-700" />
-                        ) : (
-                          <div className={`flex items-center gap-1 ${getRealChange(stock.symbol) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {getRealChange(stock.symbol) >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                            <span>{getRealChange(stock.symbol) >= 0 ? '+' : ''}{getRealChangePercent(stock.symbol).toFixed(2)}%</span>
+                  {userStocksLoading ? (
+                    // Loading skeleton rows
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <TableRow key={index} className="border-slate-700">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="w-8 h-8 bg-slate-700 rounded" />
+                            <div>
+                              <Skeleton className="w-16 h-4 bg-slate-700 mb-1" />
+                              <Skeleton className="w-24 h-3 bg-slate-700" />
+                            </div>
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div 
-                          className="w-32 h-16 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => setSelectedChart({ symbol: stock.symbol, stockName: stock.name })}
-                        >
-                          <HistoricalPriceChart 
-                            symbol={stock.symbol} 
-                            timeframe="1Day"
-                            limit={7}
-                            height={64}
-                            showMiniChart={true}
-                          />
+                        </TableCell>
+                        <TableCell><Skeleton className="w-16 h-4 bg-slate-700" /></TableCell>
+                        <TableCell><Skeleton className="w-20 h-4 bg-slate-700" /></TableCell>
+                        <TableCell><Skeleton className="w-32 h-16 bg-slate-700" /></TableCell>
+                        <TableCell><Skeleton className="w-20 h-4 bg-slate-700" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredData().length === 0 ? (
+                    // Empty state
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center">
+                        <div className="flex flex-col items-center gap-3 text-slate-400">
+                          <BarChart3 className="w-12 h-12" />
+                          <div>
+                            <p className="font-medium">No stocks in your watchlist</p>
+                            <p className="text-sm">
+                              {activeTab === "gainers" 
+                                ? "No stocks with positive gains today" 
+                                : activeTab === "losers" 
+                                  ? "No stocks with losses today"
+                                  : "Add some stocks to start tracking your portfolio"
+                              }
+                            </p>
+                          </div>
+                          {activeTab === "all" && (
+                            <Link 
+                              to="/my-stocks" 
+                              className="text-emerald-400 hover:text-emerald-300 underline"
+                            >
+                              Add your first stock →
+                            </Link>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Link 
-                          to={`/stock/${stock.symbol.toLowerCase()}`}
-                          state={{ from: 'watchlist' }}
-                          className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                        >
-                          View Details
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    // Actual stock data
+                    filteredData().map((stock) => (
+                      <TableRow key={stock.symbol} className="border-slate-700 hover:bg-slate-700/30">
+                         <TableCell>
+                           <div className="flex items-center gap-3">
+                             <CompanyLogo 
+                               symbol={stock.symbol} 
+                               logoUrl={getLogoUrl(stock.symbol)} 
+                               size="md" 
+                             />
+                             <div>
+                               <div className="font-medium text-white">{stock.symbol}</div>
+                               <div className="text-slate-400 text-sm">{stock.name}</div>
+                             </div>
+                           </div>
+                         </TableCell>
+                        <TableCell className="text-white font-semibold">
+                          {pricesLoading ? (
+                            <Skeleton className="w-16 h-4 bg-slate-700" />
+                          ) : (
+                            `$${stock.price.toFixed(2)}`
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {pricesLoading ? (
+                            <Skeleton className="w-20 h-4 bg-slate-700" />
+                          ) : (
+                            <div className={`flex items-center gap-1 ${stock.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {stock.change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                              <span>{stock.change >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div 
+                            className="w-32 h-16 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setSelectedChart({ symbol: stock.symbol, stockName: stock.name })}
+                          >
+                            <HistoricalPriceChart 
+                              symbol={stock.symbol} 
+                              timeframe="1Day"
+                              limit={7}
+                              height={64}
+                              showMiniChart={true}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link 
+                            to={`/stock/${stock.symbol.toLowerCase()}`}
+                            state={{ from: 'watchlist' }}
+                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          >
+                            View Details
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
 
