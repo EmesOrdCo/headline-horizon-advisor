@@ -16,6 +16,8 @@ import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
+import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import CompanyLogo from "@/components/CompanyLogo";
 
 interface Stock {
   symbol: string;
@@ -182,6 +184,9 @@ const Watchlist = () => {
   
   // Get biggest movers data
   const { data: moversData, isLoading: moversLoading, error: moversError, refetch } = useBiggestMovers();
+  
+  // Get company logos
+  const { logos, loading: logosLoading, getLogoUrl } = useCompanyLogos(watchlistSymbols);
 
   const watchlistData: Stock[] = [
     {
@@ -340,17 +345,19 @@ const Watchlist = () => {
                 <TableBody>
                   {filteredData().map((stock) => (
                     <TableRow key={stock.symbol} className="border-slate-700 hover:bg-slate-700/30">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">{stock.symbol.slice(0, 2)}</span>
-                          </div>
-                          <div>
-                            <div className="font-medium text-white">{stock.symbol}</div>
-                            <div className="text-slate-400 text-sm">{stock.name}</div>
-                          </div>
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex items-center gap-3">
+                           <CompanyLogo 
+                             symbol={stock.symbol} 
+                             logoUrl={getLogoUrl(stock.symbol)} 
+                             size="md" 
+                           />
+                           <div>
+                             <div className="font-medium text-white">{stock.symbol}</div>
+                             <div className="text-slate-400 text-sm">{stock.name}</div>
+                           </div>
+                         </div>
+                       </TableCell>
                       <TableCell className="text-white font-semibold">
                         {pricesLoading ? (
                           <Skeleton className="w-16 h-4 bg-slate-700" />
@@ -397,15 +404,19 @@ const Watchlist = () => {
                 </TableBody>
               </Table>
 
-              {pricesLoading && (
-                <div className="p-6 text-center border-t border-slate-700">
-                  <div className="flex items-center justify-center gap-2 text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Fetching real-time stock prices from Alpaca API...</span>
-                  </div>
-                  <p className="text-slate-500 text-sm mt-2">This may take up to 10 seconds</p>
-                </div>
-              )}
+               {(pricesLoading || logosLoading) && (
+                 <div className="p-6 text-center border-t border-slate-700">
+                   <div className="flex items-center justify-center gap-2 text-slate-400">
+                     <Loader2 className="w-5 h-5 animate-spin" />
+                     <span>
+                       {pricesLoading && logosLoading ? 'Loading prices and logos...' : 
+                        pricesLoading ? 'Fetching real-time stock prices from Alpaca API...' : 
+                        'Loading company logos...'}
+                     </span>
+                   </div>
+                   <p className="text-slate-500 text-sm mt-2">This may take up to 10 seconds</p>
+                 </div>
+               )}
             </div>
           </Tabs>
         </div>
