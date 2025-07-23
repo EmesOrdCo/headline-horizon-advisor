@@ -207,8 +207,8 @@ Deno.serve(async (req) => {
       
       console.log(`🔄 Processing ${rateLimitedStocks.length} rate-limited stocks with exponential backoff...`);
       
-      let retryDelay = 5000; // Start with 5 seconds
-      const maxRetries = 3;
+      let retryDelay = 30000; // Start with 30 seconds
+      const maxRetries = 5;
       
       for (let attempt = 1; attempt <= maxRetries && rateLimitedStocks.length > 0; attempt++) {
         console.log(`🔄 Retry attempt ${attempt}/${maxRetries} for ${rateLimitedStocks.length} stocks`);
