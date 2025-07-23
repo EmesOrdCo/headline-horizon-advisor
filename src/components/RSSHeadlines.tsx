@@ -38,8 +38,8 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
     // Fetch immediately on mount
     fetchAndRefresh();
 
-    // Set up interval to fetch every 2 minutes (more reasonable interval)
-    const interval = setInterval(fetchAndRefresh, 2 * 60 * 1000);
+    // Set up interval to fetch every 15 minutes (more reasonable interval)
+    const interval = setInterval(fetchAndRefresh, 15 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [fetchRSSNews, queryClient]);
@@ -148,7 +148,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span>Updates every 2min</span>
+              <span>Updates every 15min</span>
             </div>
             <Button
               variant="outline"
