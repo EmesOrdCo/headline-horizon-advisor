@@ -9,6 +9,7 @@ export const LogoPopulationTrigger = () => {
   const [isPopulating, setIsPopulating] = useState(false);
   const [populationResult, setPopulationResult] = useState<any>(null);
   const [currentStatus, setCurrentStatus] = useState<string>("");
+  const [batchSize, setBatchSize] = useState(100); // Default batch size
   const { toast } = useToast();
 
   const checkDatabaseCount = async () => {
@@ -29,7 +30,7 @@ export const LogoPopulationTrigger = () => {
     
     setIsPopulating(true);
     setPopulationResult(null);
-    setCurrentStatus(`Initializing population... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
+    setCurrentStatus(`Initializing batch population (${batchSize} symbols)... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
 
     try {
       const initialCount = await checkDatabaseCount();
@@ -37,7 +38,7 @@ export const LogoPopulationTrigger = () => {
 
       toast({
         title: "Starting Logo Population",
-        description: "This will take 10-15 minutes. Check the edge function logs for detailed progress.",
+        description: `Processing ${batchSize} symbols at a time. This should complete in 1-2 minutes.`,
       });
 
       setCurrentStatus(`Connecting to populate-all-logos function... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
@@ -49,7 +50,7 @@ export const LogoPopulationTrigger = () => {
 
       // Create the function call promise
       const functionPromise = supabase.functions.invoke('populate-all-logos', {
-        body: { action: 'populate' }
+        body: { action: 'populate', batchSize }
       });
 
       // Race between timeout and function call
@@ -86,16 +87,16 @@ export const LogoPopulationTrigger = () => {
 
       if (data?.success) {
         toast({
-          title: "Population Started!",
-          description: `Function initiated successfully. Processing ${data.stocksToProcess || 'thousands of'} stocks. Check logs for progress.`,
+          title: "Batch Complete!",
+          description: `Processed ${data.stocksProcessed} stocks. Inserted ${data.logosInserted} logos. ${data.remainingStocks || 0} stocks remaining.`,
         });
       } else if (data?.error) {
         throw new Error(data.error);
       } else {
         // Function started but no immediate error
         toast({
-          title: "Population Started",
-          description: "Logo population function has been initiated. Check the edge function logs for progress.",
+          title: "Batch Processing",
+          description: "Logo batch processing has been initiated. Check the edge function logs for progress.",
         });
       }
 
@@ -130,26 +131,81 @@ export const LogoPopulationTrigger = () => {
     triggerPopulation();
   };
 
+  const checkStatus = async () => {
+    setCurrentStatus("Checking remaining stocks...");
+    try {
+      const { data, error } = await supabase.functions.invoke('populate-all-logos', {
+        body: { action: 'status', batchSize }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setCurrentStatus(`Status: ${data.stocksNeedingLogos} stocks need logos (next batch: ${data.nextBatchSize})`);
+        toast({
+          title: "Status Check Complete",
+          description: `${data.stocksNeedingLogos} stocks still need logos. ${data.existingLogos} logos already exist. Next batch will process ${data.nextBatchSize} stocks.`,
+        });
+        setPopulationResult({
+          ...data,
+          message: `${data.stocksNeedingLogos} stocks remaining to process`
+        });
+      }
+    } catch (error: any) {
+      console.error('Error checking status:', error);
+      setCurrentStatus(`Error checking status: ${error.message}`);
+      toast({
+        title: "Status Check Failed", 
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Database className="w-5 h-5" />
-          Logo Population
+          Logo Population (Batch)
         </CardTitle>
         <CardDescription>
-          Populate the database with company logos from Finnhub
+          Populate the database with company logos in manageable batches
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button 
-          onClick={handleButtonClick} 
-          disabled={isPopulating}
-          className="w-full"
-        >
-          {isPopulating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
-          {isPopulating ? "Populating..." : "Start Population"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Batch Size:</label>
+          <select 
+            value={batchSize} 
+            onChange={(e) => setBatchSize(Number(e.target.value))}
+            className="flex-1 px-3 py-1 border rounded-md bg-background"
+            disabled={isPopulating}
+          >
+            <option value={50}>50 (Safe & Fast)</option>
+            <option value={100}>100 (Recommended)</option>
+            <option value={250}>250 (Faster)</option>
+            <option value={500}>500 (Risky - may timeout)</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleButtonClick} 
+            disabled={isPopulating}
+            className="flex-1"
+          >
+            {isPopulating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+            {isPopulating ? "Populating..." : "Start Batch"}
+          </Button>
+          <Button 
+            onClick={checkStatus} 
+            disabled={isPopulating}
+            variant="outline"
+            className="flex-shrink-0"
+          >
+            Check Status
+          </Button>
+        </div>
 
         {currentStatus && (
           <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
@@ -164,15 +220,20 @@ export const LogoPopulationTrigger = () => {
           <div className="p-4 rounded-lg bg-secondary">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="font-medium">Population Complete</span>
+              <span className="font-medium">Batch Complete</span>
             </div>
             <div className="text-sm space-y-1">
-              <p><strong>Total stocks found:</strong> {populationResult.totalStocksFound || "N/A"}</p>
-              <p><strong>Valid stocks filtered:</strong> {populationResult.validStocksFiltered || "N/A"}</p>
+              <p><strong>Batch size:</strong> {populationResult.batchSize || "N/A"}</p>
               <p><strong>Stocks processed:</strong> {populationResult.stocksProcessed || "N/A"}</p>
               <p><strong>Logos inserted:</strong> {populationResult.logosInserted || "N/A"}</p>
               <p><strong>Logos failed:</strong> {populationResult.logosFailed || "N/A"}</p>
-              <p><strong>Existing logos:</strong> {populationResult.existingLogos || "N/A"}</p>
+              <p><strong>Remaining stocks:</strong> {populationResult.remainingStocks || "N/A"}</p>
+              <p><strong>Total existing logos:</strong> {populationResult.existingLogos || "N/A"}</p>
+              {populationResult.remainingStocks > 0 && (
+                <p className="text-blue-600 font-medium mt-2">
+                  Run again to process the next batch of {Math.min(batchSize, populationResult.remainingStocks)} stocks.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -181,10 +242,10 @@ export const LogoPopulationTrigger = () => {
           <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium">Processing in background</span>
+              <span className="text-sm font-medium">Processing {batchSize} symbols</span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              This operation processes ~8000 stocks and may take 10-15 minutes.
+              Processing a manageable batch of {batchSize} symbols. Should complete in 1-2 minutes.
               Check the edge function logs for real-time progress.
             </p>
           </div>

@@ -43,6 +43,13 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Parse request body to get batch size and action
+    const requestBody = await req.json();
+    const action = requestBody?.action || 'populate';
+    const batchSize = requestBody?.batchSize || 100; // Default to 100 if not specified
+    console.log(`🎯 Action: ${action}`);
+    console.log(`📦 Batch size set to: ${batchSize}`);
+
     console.log('🔑 Initializing Supabase client...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -56,7 +63,7 @@ Deno.serve(async (req) => {
     }
     console.log('✅ FINNHUB_API_KEY found');
 
-    console.log('📊 Starting bulk logo population process...');
+    console.log(`📊 Starting batch logo population process (${batchSize} symbols)...`);
 
     // Step 1: Get all US stocks from Finnhub
     console.log('📈 Fetching all US stock symbols from Finnhub...');
@@ -98,10 +105,31 @@ Deno.serve(async (req) => {
     }
 
     const existingSymbols = new Set(existingLogos?.map(logo => logo.symbol) || []);
-    const stocksToProcess = validStocks.filter(stock => !existingSymbols.has(stock.symbol));
+    const allStocksToProcess = validStocks.filter(stock => !existingSymbols.has(stock.symbol));
+    
+    // Limit to batch size
+    const stocksToProcess = allStocksToProcess.slice(0, batchSize);
 
     console.log(`📋 Database has ${existingLogos?.length || 0} existing logos`);
-    console.log(`🎯 Need to process ${stocksToProcess.length} new stocks`);
+    console.log(`🎯 Total stocks needing logos: ${allStocksToProcess.length}`);
+    
+    // If this is just a status check, return early
+    if (action === 'status') {
+      console.log('📊 Status check requested - returning current state');
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Status check complete',
+        totalStocksFound: allStocks.length,
+        validStocksFiltered: validStocks.length,
+        existingLogos: existingLogos?.length || 0,
+        stocksNeedingLogos: allStocksToProcess.length,
+        nextBatchSize: Math.min(batchSize, allStocksToProcess.length)
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log(`📦 Processing batch of ${stocksToProcess.length} stocks`);
 
     if (stocksToProcess.length === 0) {
       console.log('✅ All stocks already have logos, nothing to do!');
@@ -112,7 +140,9 @@ Deno.serve(async (req) => {
         validStocksFiltered: validStocks.length,
         stocksProcessed: 0,
         logosInserted: 0,
-        existingLogos: existingLogos?.length || 0
+        existingLogos: existingLogos?.length || 0,
+        remainingStocks: 0,
+        batchSize
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -127,7 +157,8 @@ Deno.serve(async (req) => {
     let logoQueue: Array<{ symbol: string; logo_url: string }> = [];
 
     console.log(`⚙️ Processing with strict rate limiting: 1 request per ${RATE_LIMIT}ms`);
-    console.log(`📊 Will process ${stocksToProcess.length} stocks (estimated time: ${Math.round((stocksToProcess.length * RATE_LIMIT) / 1000 / 60)} minutes)`);
+    console.log(`📊 Will process ${stocksToProcess.length} stocks in this batch (estimated time: ${Math.round((stocksToProcess.length * RATE_LIMIT) / 1000 / 60)} minutes)`);
+    console.log(`📈 ${allStocksToProcess.length - stocksToProcess.length} stocks will remain for future batches`);
 
     // Rate-limited processing function
     async function processStockWithRateLimit(stock: FinnhubStock): Promise<{ success: boolean; logo?: string; error?: string }> {
@@ -218,6 +249,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    const remainingStocks = allStocksToProcess.length - stocksToProcess.length;
+    
     const result = {
       success: true,
       totalStocksFound: allStocks.length,
@@ -225,10 +258,13 @@ Deno.serve(async (req) => {
       stocksProcessed: processed,
       logosInserted: inserted,
       logosFailed: failed,
-      existingLogos: existingLogos?.length || 0
+      existingLogos: existingLogos?.length || 0,
+      remainingStocks,
+      batchSize,
+      message: remainingStocks > 0 ? `Batch complete. ${remainingStocks} stocks remaining for future batches.` : 'All stocks processed!'
     };
 
-    console.log('🎉 Bulk logo population completed successfully!');
+    console.log(`🎉 Batch logo population completed successfully! (${remainingStocks} stocks remaining)`);
     console.log('📊 Final results:', result);
 
     return new Response(JSON.stringify(result), {
