@@ -299,49 +299,91 @@ const Portfolio = () => {
                 <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={{ value: { label: "Value" } }} className="h-72">
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
-                        cx="35%"
+                        cx="25%"
                         cy="50%"
-                        outerRadius={100}
-                        innerRadius={50}
+                        outerRadius={85}
+                        innerRadius={40}
                         paddingAngle={2}
                         dataKey="value"
-                        label={({ name, percentage, x, y, index }) => {
-                          const RADIAN = Math.PI / 180;
-                          const radius = 100 + 60; // Extended radius for labels
-                          const angle = pieData.slice(0, index + 1).reduce((sum, item, i) => {
-                            if (i === index) {
-                              return sum + (item.value / pieData.reduce((total, p) => total + p.value, 0)) * 360 / 2;
-                            }
-                            return sum + (item.value / pieData.reduce((total, p) => total + p.value, 0)) * 360;
-                          }, 0) - 90;
+                        labelLine={false}
+                        label={({ name, percentage, index, ...props }) => {
+                          const chartWidth = 480; // Increased chart width for better spacing
+                          const baseX = chartWidth * 0.60; // Position labels far to the right
+                          const baseY = 50; // Starting Y position
+                          const spacing = 40; // Increased vertical spacing between labels
                           
-                          const labelX = x + Math.cos(-angle * RADIAN) * (radius - 100);
-                          const labelY = y + Math.sin(-angle * RADIAN) * (radius - 100);
+                          const labelY = baseY + (index * spacing);
                           
                           return (
-                            <text 
-                              x={labelX} 
-                              y={labelY} 
-                              fill="#F1F5F9" 
-                              textAnchor="start"
-                              dominantBaseline="central"
-                              fontSize={13}
-                              fontWeight="500"
-                            >
-                              {`${name} ${percentage}%`}
-                            </text>
+                            <g key={`label-${index}`}>
+                              {/* Connecting line from pie edge to label */}
+                              <line
+                                x1={props.x + Math.cos(props.midAngle * Math.PI / 180) * 85}
+                                y1={props.y + Math.sin(props.midAngle * Math.PI / 180) * 85}
+                                x2={baseX - 30}
+                                y2={labelY}
+                                stroke="#64748B"
+                                strokeWidth={1.5}
+                                strokeDasharray="3 3"
+                                opacity={0.8}
+                              />
+                              
+                              {/* Horizontal line to label */}
+                              <line
+                                x1={baseX - 30}
+                                y1={labelY}
+                                x2={baseX - 10}
+                                y2={labelY}
+                                stroke="#64748B"
+                                strokeWidth={1.5}
+                                opacity={0.8}
+                              />
+                              
+                              {/* Label background */}
+                              <rect
+                                x={baseX - 8}
+                                y={labelY - 14}
+                                width={140}
+                                height={28}
+                                fill="rgba(30, 41, 59, 0.9)"
+                                rx={6}
+                                ry={6}
+                                stroke="rgba(100, 116, 139, 0.3)"
+                                strokeWidth={1}
+                              />
+                              
+                              {/* Symbol/Name */}
+                              <text 
+                                x={baseX} 
+                                y={labelY - 3} 
+                                fill="#F8FAFC" 
+                                fontSize={15}
+                                fontWeight="700"
+                                textAnchor="start"
+                              >
+                                {name}
+                              </text>
+                              
+                              {/* Percentage */}
+                              <text 
+                                x={baseX} 
+                                y={labelY + 11} 
+                                fill="#CBD5E1" 
+                                fontSize={13}
+                                fontWeight="500"
+                                textAnchor="start"
+                              >
+                                {percentage}%
+                              </text>
+                            </g>
                           );
                         }}
-                        labelLine={{
-                          stroke: '#9CA3AF',
-                          strokeWidth: 1.5,
-                        }}
-                        fontSize={13}
+                        fontSize={15}
                         fill="#F1F5F9"
                       >
                         {pieData.map((entry, index) => (
