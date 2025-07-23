@@ -302,18 +302,19 @@ const Portfolio = () => {
                 <ChartContainer config={{ value: { label: "Value" } }} className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={104}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({ name, percentage }) => `${name} ${percentage}%`}
-                        labelLine={false}
-                        stroke="#1e293b"
-                        strokeWidth={2}
-                      >
+                       <Pie
+                         data={pieData}
+                         cx="50%"
+                         cy="50%"
+                         innerRadius={45}
+                         outerRadius={104}
+                         paddingAngle={2}
+                         dataKey="value"
+                         label={({ name, percentage }) => `${name} ${percentage}%`}
+                         labelLine={false}
+                         stroke="#1e293b"
+                         strokeWidth={2}
+                       >
                         {pieData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
