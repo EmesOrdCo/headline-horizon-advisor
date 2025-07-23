@@ -147,7 +147,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
       )}
       
       {headlines && headlines.length > 0 && (
-        <ScrollArea className={compact ? "h-auto max-h-64" : "flex-1"}>
+        <ScrollArea className={compact ? "h-64" : "flex-1"}>
           <div className={compact ? "space-y-2" : "space-y-3"}>
             {headlines.slice(0, maxItems).map((headline, index) => (
                 <div 
