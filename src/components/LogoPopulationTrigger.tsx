@@ -23,10 +23,13 @@ export const LogoPopulationTrigger = () => {
     }
   };
 
-  const triggerPopulation = async () => {
+  const triggerPopulation = async (retryCount = 0) => {
+    const maxRetries = 3;
+    const timeout = 30000; // 30 second timeout
+    
     setIsPopulating(true);
     setPopulationResult(null);
-    setCurrentStatus("Initializing population...");
+    setCurrentStatus(`Initializing population... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
 
     try {
       const initialCount = await checkDatabaseCount();
@@ -37,41 +40,94 @@ export const LogoPopulationTrigger = () => {
         description: "This will take 10-15 minutes. Check the edge function logs for detailed progress.",
       });
 
-      setCurrentStatus("Calling populate-all-logos function...");
+      setCurrentStatus(`Connecting to populate-all-logos function... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`);
 
-      const { data, error } = await supabase.functions.invoke('populate-all-logos', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - function took too long to respond')), timeout)
+      );
+
+      // Create the function call promise
+      const functionPromise = supabase.functions.invoke('populate-all-logos', {
         body: { action: 'populate' }
       });
 
+      // Race between timeout and function call
+      const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
+
       if (error) {
         console.error('Function invocation error:', error);
+        
+        // Check if it's a network/connection error that might benefit from retry
+        const isRetryableError = 
+          error.message?.includes('fetch') || 
+          error.message?.includes('network') || 
+          error.message?.includes('timeout') ||
+          error.message?.includes('Load failed') ||
+          error.status === 500 ||
+          error.status === 502 ||
+          error.status === 503 ||
+          error.status === 504;
+
+        if (isRetryableError && retryCount < maxRetries) {
+          console.log(`Retryable error detected, retrying in 3 seconds... (${retryCount + 1}/${maxRetries})`);
+          setCurrentStatus(`Connection failed, retrying in 3 seconds... (${retryCount + 1}/${maxRetries})`);
+          
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          return triggerPopulation(retryCount + 1);
+        }
+        
         throw error;
       }
 
       console.log('Population function response:', data);
-      setCurrentStatus("Population completed!");
+      setCurrentStatus("Population started successfully!");
       setPopulationResult(data);
 
       if (data?.success) {
         toast({
-          title: "Population Complete!",
-          description: `Successfully processed ${data.stocksProcessed || 0} stocks and inserted ${data.logosInserted || 0} logos.`,
+          title: "Population Started!",
+          description: `Function initiated successfully. Processing ${data.stocksToProcess || 'thousands of'} stocks. Check logs for progress.`,
         });
+      } else if (data?.error) {
+        throw new Error(data.error);
       } else {
-        throw new Error(data?.error || 'Unknown error occurred');
+        // Function started but no immediate error
+        toast({
+          title: "Population Started",
+          description: "Logo population function has been initiated. Check the edge function logs for progress.",
+        });
       }
 
     } catch (error: any) {
       console.error('Error triggering logo population:', error);
-      setCurrentStatus(`Error: ${error.message}`);
+      
+      let errorMessage = "Failed to send a request to the Edge Function";
+      
+      if (error.message?.includes('timeout')) {
+        errorMessage = "Request timed out - the function is processing in the background. Check edge function logs.";
+      } else if (error.message?.includes('fetch') || error.message?.includes('Load failed')) {
+        errorMessage = "Network connection failed. Please check your internet connection and try again.";
+      } else if (error.message?.includes('Usage limit')) {
+        errorMessage = "API usage limit reached. Please wait before retrying.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setCurrentStatus(`Error: ${errorMessage}`);
+      
       toast({
         title: "Population Failed",
-        description: error.message || "Failed to trigger logo population. Check the console for details.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsPopulating(false);
     }
+  };
+
+  const handleButtonClick = () => {
+    triggerPopulation();
   };
 
   return (
@@ -87,7 +143,7 @@ export const LogoPopulationTrigger = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <Button 
-          onClick={triggerPopulation} 
+          onClick={handleButtonClick} 
           disabled={isPopulating}
           className="w-full"
         >
