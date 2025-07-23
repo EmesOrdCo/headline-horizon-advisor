@@ -155,9 +155,13 @@ const Dashboard = () => {
     <div className="min-h-screen bg-slate-900">
       <AutoRefreshAnalytics />
       <DashboardNav />
-      <MarketTicker />
       
-      <main className="pt-24 sm:pt-28 p-3 sm:p-4 w-[95%] mx-auto">
+      {/* Market Ticker - positioned below fixed nav */}
+      <div className="pt-16 relative z-40">
+        <MarketTicker />
+      </div>
+      
+      <main className="pt-8 sm:pt-12 p-3 sm:p-4 w-[95%] mx-auto">
 
 
         {/* TOP SECTION - Modified to include breaking news */}
