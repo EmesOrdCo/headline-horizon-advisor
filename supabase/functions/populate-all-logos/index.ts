@@ -118,15 +118,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 3: Process stocks in smaller batches to avoid rate limits
-    const batchSize = 5; // Smaller batches for reliability
-    const delay = 1000; // 1 second delay between batches
+    // Step 3: Process stocks with intelligent retry logic
+    const batchSize = 3; // Even smaller batches for better rate limiting
+    const baseDelay = 2000; // 2 second base delay between batches
+    const requestDelay = 500; // 500ms between individual requests
     let processed = 0;
     let inserted = 0;
     let failed = 0;
+    let retryQueue: FinnhubStock[] = [];
 
-    console.log(`⚙️ Processing in batches of ${batchSize} with ${delay}ms delays`);
+    console.log(`⚙️ Processing in batches of ${batchSize} with ${baseDelay}ms delays and ${requestDelay}ms between requests`);
 
+    // Helper function to fetch with retry logic
+    async function fetchWithRetry(stock: FinnhubStock, retryCount = 0): Promise<{ success: boolean; logo?: string; shouldRetry?: boolean }> {
+      try {
+        console.log(`🔍 Fetching profile for ${stock.symbol}...`);
+        
+        const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
+        const profileResponse = await fetch(profileUrl);
+
+        if (profileResponse.status === 429) {
+          console.log(`⚠️ Rate limit hit for ${stock.symbol}, will retry later`);
+          return { success: false, shouldRetry: true };
+        }
+
+        if (!profileResponse.ok) {
+          console.log(`⚠️ Failed to fetch profile for ${stock.symbol}: ${profileResponse.status} ${profileResponse.statusText}`);
+          return { success: false, shouldRetry: false };
+        }
+
+        const profile: FinnhubProfile = await profileResponse.json();
+        
+        if (profile && profile.logo && profile.logo.trim() !== '') {
+          console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
+          return { success: true, logo: profile.logo.trim() };
+        } else {
+          console.log(`📭 No logo found for ${stock.symbol}`);
+          return { success: false, shouldRetry: false };
+        }
+        
+      } catch (error) {
+        console.error(`💥 Error processing ${stock.symbol}:`, error);
+        return { success: false, shouldRetry: retryCount < 2 }; // Allow retries for network errors
+      }
+    }
+
+    // Process initial batches
     for (let i = 0; i < stocksToProcess.length; i += batchSize) {
       const batch = stocksToProcess.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
@@ -134,42 +171,25 @@ Deno.serve(async (req) => {
       
       console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} stocks)`);
 
-      // Process batch with error handling for each stock
+      // Process batch with intelligent retry handling
       const batchResults = [];
       
       for (const stock of batch) {
-        try {
-          console.log(`🔍 Fetching profile for ${stock.symbol}...`);
-          
-          const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${stock.symbol}&token=${finnhubApiKey}`;
-          const profileResponse = await fetch(profileUrl);
-
-          if (!profileResponse.ok) {
-            console.log(`⚠️ Failed to fetch profile for ${stock.symbol}: ${profileResponse.status} ${profileResponse.statusText}`);
-            failed++;
-            continue;
-          }
-
-          const profile: FinnhubProfile = await profileResponse.json();
-          
-          if (profile && profile.logo && profile.logo.trim() !== '') {
-            console.log(`✅ Found logo for ${stock.symbol}: ${profile.logo}`);
-            batchResults.push({
-              symbol: stock.symbol,
-              logo_url: profile.logo.trim()
-            });
-          } else {
-            console.log(`📭 No logo found for ${stock.symbol}`);
-            failed++;
-          }
-          
-          // Small delay between individual requests within batch
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-        } catch (error) {
-          console.error(`💥 Error processing ${stock.symbol}:`, error);
+        const result = await fetchWithRetry(stock);
+        
+        if (result.success && result.logo) {
+          batchResults.push({
+            symbol: stock.symbol,
+            logo_url: result.logo
+          });
+        } else if (result.shouldRetry) {
+          retryQueue.push(stock);
+        } else {
           failed++;
         }
+        
+        // Delay between individual requests
+        await new Promise(resolve => setTimeout(resolve, requestDelay));
       }
 
       // Insert valid logos into database
@@ -182,7 +202,6 @@ Deno.serve(async (req) => {
 
         if (insertError) {
           console.error('❌ Error inserting batch:', insertError);
-          // Don't throw here, continue with next batch
           failed += batchResults.length;
         } else {
           inserted += batchResults.length;
@@ -193,13 +212,84 @@ Deno.serve(async (req) => {
       processed += batch.length;
       const progressPercent = Math.round((processed / stocksToProcess.length) * 100);
       
-      console.log(`📊 Progress: ${processed}/${stocksToProcess.length} (${progressPercent}%) - Inserted: ${inserted}, Failed: ${failed}`);
+      console.log(`📊 Progress: ${processed}/${stocksToProcess.length} (${progressPercent}%) - Inserted: ${inserted}, Failed: ${failed}, Queued for retry: ${retryQueue.length}`);
 
       // Delay between batches to respect rate limits
       if (i + batchSize < stocksToProcess.length) {
-        console.log(`⏳ Waiting ${delay}ms before next batch...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(`⏳ Waiting ${baseDelay}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, baseDelay));
       }
+    }
+
+    // Process retry queue with exponential backoff
+    if (retryQueue.length > 0) {
+      console.log(`🔄 Processing ${retryQueue.length} stocks from retry queue...`);
+      
+      let retryDelay = 5000; // Start with 5 second delay for retries
+      const maxRetryDelay = 30000; // Max 30 seconds
+      
+      while (retryQueue.length > 0) {
+        console.log(`⏳ Waiting ${retryDelay}ms before retry batch...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        
+        const retryBatch = retryQueue.splice(0, 2); // Even smaller retry batches
+        console.log(`🔄 Retrying batch of ${retryBatch.length} stocks (${retryQueue.length} remaining)`);
+        
+        const retryResults = [];
+        let rateLimitHit = false;
+        
+        for (const stock of retryBatch) {
+          const result = await fetchWithRetry(stock, 1);
+          
+          if (result.success && result.logo) {
+            retryResults.push({
+              symbol: stock.symbol,
+              logo_url: result.logo
+            });
+          } else if (result.shouldRetry) {
+            console.log(`🔄 ${stock.symbol} still rate limited, will try again`);
+            retryQueue.push(stock); // Put back at end of queue
+            rateLimitHit = true;
+          } else {
+            failed++;
+          }
+          
+          // Longer delay between retry requests
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Insert retry results
+        if (retryResults.length > 0) {
+          const { error: insertError } = await supabaseClient
+            .from('company_logos')
+            .insert(retryResults);
+
+          if (insertError) {
+            console.error('❌ Error inserting retry batch:', insertError);
+            failed += retryResults.length;
+          } else {
+            inserted += retryResults.length;
+            console.log(`✅ Successfully inserted ${retryResults.length} logos from retry`);
+          }
+        }
+
+        // Increase delay if we hit rate limits, reset if we didn't
+        if (rateLimitHit) {
+          retryDelay = Math.min(retryDelay * 1.5, maxRetryDelay);
+          console.log(`📈 Increasing retry delay to ${retryDelay}ms due to rate limits`);
+        } else {
+          retryDelay = 5000; // Reset to base delay
+        }
+
+        // Safety valve: don't retry forever
+        if (retryQueue.length > 100) {
+          console.log(`⚠️ Too many stocks still in retry queue (${retryQueue.length}), stopping retries`);
+          failed += retryQueue.length;
+          break;
+        }
+      }
+      
+      console.log(`✅ Retry processing completed. Final queue size: ${retryQueue.length}`);
     }
 
     const result = {
