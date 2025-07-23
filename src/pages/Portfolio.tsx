@@ -178,9 +178,11 @@ const Portfolio = () => {
   // Asset Breakdown and Performance Component
   const AssetBreakdownAndPerformance = () => {
     const allAssets = [...assetCategories.stocks, ...assetCategories.crypto, ...assetCategories.funds];
+    const totalValue = allAssets.reduce((sum, asset) => sum + asset.currentValue, 0);
     const pieData = allAssets.map((asset, index) => ({
       name: asset.symbol,
       value: asset.currentValue,
+      percentage: ((asset.currentValue / totalValue) * 100).toFixed(1),
       color: `hsl(${(index * 45) % 360}, 70%, 60%)`
     }));
 
@@ -308,6 +310,13 @@ const Portfolio = () => {
                         innerRadius={60}
                         paddingAngle={2}
                         dataKey="value"
+                        label={({ name, percentage }) => `${name} ${percentage}%`}
+                        labelLine={{
+                          stroke: '#9CA3AF',
+                          strokeWidth: 1,
+                        }}
+                        fontSize={12}
+                        fill="#F1F5F9"
                       >
                         {pieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
