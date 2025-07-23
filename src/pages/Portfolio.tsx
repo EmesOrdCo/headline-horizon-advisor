@@ -262,7 +262,7 @@ const Portfolio = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-64">
+                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={performanceData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -299,7 +299,7 @@ const Portfolio = () => {
                 <CardTitle className="text-white text-lg">Portfolio Allocation</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={{ value: { label: "Value" } }} className="h-80">
+                <ChartContainer config={{ value: { label: "Value" } }} className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
