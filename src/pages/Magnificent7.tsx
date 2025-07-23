@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 import RealTimePriceChart from "@/components/RealTimePriceChart";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
-import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useMagnificent7Articles, useFetchMagnificent7 } from "@/hooks/useMagnificent7";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useState, useEffect, useMemo } from "react";
@@ -61,9 +61,9 @@ const Magnificent7 = () => {
     }
   });
   
-  const { data: newsData, isLoading, refetch } = useNews();
+  const { data: newsData, isLoading, refetch } = useMagnificent7Articles();
   const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useStockPrices();
-  const fetchNews = useFetchNews();
+  const fetchNews = useFetchMagnificent7();
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});

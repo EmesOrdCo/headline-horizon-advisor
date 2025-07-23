@@ -8,7 +8,7 @@ import NewsCard from "@/components/NewsCard";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
-import { useNews, useFetchNews } from "@/hooks/useNews";
+import { useIndexFundsArticles, useFetchIndexFunds } from "@/hooks/useIndexFunds";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useState } from "react";
@@ -48,9 +48,9 @@ const IndexFunds = () => {
       ]
     }
   });
-  const { data: newsData, isLoading, refetch } = useNews();
+  const { data: newsData, isLoading, refetch } = useIndexFundsArticles();
   const { data: stockPrices } = useStockPrices();
-  const fetchNews = useFetchNews();
+  const fetchNews = useFetchIndexFunds();
   const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
