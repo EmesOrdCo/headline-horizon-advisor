@@ -230,30 +230,13 @@ const Dashboard = () => {
           
           {/* Sidebar */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Market Overview */}
+            {/* Recent Headlines */}
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white text-sm">Market Overview</CardTitle>
+                <CardTitle className="text-white text-sm">Recent Headlines</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-3">
-                  {['SPY', 'QQQ', 'DIA'].map((symbol) => {
-                    const price = getStockPrice(symbol);
-                    return (
-                      <div key={symbol} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg">
-                        <div>
-                          <div className="font-medium text-white">{symbol}</div>
-                          <div className="text-xs text-slate-400">${price?.price.toFixed(2) || '--'}</div>
-                        </div>
-                        <div className={`text-sm font-medium ${
-                          (price?.changePercent || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {(price?.changePercent || 0) >= 0 ? '+' : ''}{price?.changePercent?.toFixed(2) || '0.00'}%
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <CardContent className="space-y-3">
+                <RSSHeadlines />
               </CardContent>
             </Card>
 
