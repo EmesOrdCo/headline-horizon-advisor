@@ -72,8 +72,8 @@ const Magnificent7 = () => {
   // Focus on all Magnificent 7 stocks
   const MAGNIFICENT_7_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
   
-  // TEST: Only stream one stock to debug WebSocket issues
-  const TEST_SYMBOLS = ['AAPL'];
+  // TEST: Only stream one stock to debug WebSocket issues - use useMemo to prevent recreation
+  const TEST_SYMBOLS = useMemo(() => ['AAPL'], []);
 
   // Enhanced market hours detection
   const marketStatus = useMemo(() => {
