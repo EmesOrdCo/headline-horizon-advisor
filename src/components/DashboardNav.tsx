@@ -1,13 +1,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, User, Settings, Zap, Monitor, MessageCircle, LogOut } from "lucide-react";
+import { Menu, Bell, User, Settings, Zap, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import RefreshControlButton from "./RefreshControlButton";
+import FeedbackModal from "./FeedbackModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ import {
 
 const DashboardNav = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const { signOut } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -176,26 +178,23 @@ const DashboardNav = () => {
                   <Zap className="w-4 h-4 mr-3" />
                   Feature Walkthroughs
                 </DropdownMenuItem>
-                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
-                  <Monitor className="w-4 h-4 mr-3" />
-                  Color Theme
-                </DropdownMenuItem>
-                <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
-                  <MessageCircle className="w-4 h-4 mr-3" />
-                  Give Feedback
-                </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={handleSignOut}
+                  onClick={() => setIsFeedbackModalOpen(true)}
                   className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Log Out
+                  <MessageCircle className="w-4 h-4 mr-3" />
+                  Give Feedback
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </nav>
+      
+      <FeedbackModal 
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+      />
     </>
   );
 };
