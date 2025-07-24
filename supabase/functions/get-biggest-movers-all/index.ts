@@ -12,6 +12,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Temporarily disable Marketaux API calls
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: 'Marketaux API calls temporarily disabled',
+      data: []
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+
   try {
     const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
     const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');

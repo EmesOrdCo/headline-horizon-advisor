@@ -20,6 +20,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Temporarily disable Marketaux API calls
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: 'Marketaux API calls temporarily disabled',
+      analyses: [] 
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+
   try {
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');

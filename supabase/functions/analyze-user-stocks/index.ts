@@ -16,6 +16,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Temporarily disable Marketaux API calls
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: 'Marketaux API calls temporarily disabled'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+
   try {
     const { symbols, userId } = await req.json();
     
