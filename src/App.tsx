@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
 import Portfolio from "./pages/Portfolio";
+import Profile from "./pages/Profile";
 import Watchlist from "./pages/Watchlist";
 
 import Magnificent7 from "./pages/Magnificent7";
@@ -48,6 +49,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Portfolio />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />

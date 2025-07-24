@@ -161,8 +161,10 @@ const DashboardNav = () => {
                 className="w-56 bg-slate-800 border-slate-700 text-slate-200"
               >
                 <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
-                  <User className="w-4 h-4 mr-3" />
-                  Profile
+                  <Link to="/profile" className="flex items-center w-full">
+                    <User className="w-4 h-4 mr-3" />
+                    Profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer">
                   <Settings className="w-4 h-4 mr-3" />
