@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Mail, Calendar, Save } from "lucide-react";
+import { ArrowLeft, User, Mail, Calendar, Save, Camera, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -16,11 +16,14 @@ const Profile = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [profileImageUrl, setProfileImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useSEO({
     title: "Profile Settings - MarketSensorAI",
@@ -39,7 +42,7 @@ const Profile = () => {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('first_name, last_name, email, date_of_birth')
+          .select('first_name, last_name, email, date_of_birth, profile_image_url')
           .eq('id', user.id)
           .single();
 
@@ -55,6 +58,7 @@ const Profile = () => {
           setLastName(profile.last_name || '');
           setEmail(profile.email || user.email || '');
           setDateOfBirth(profile.date_of_birth || '');
+          setProfileImageUrl(profile.profile_image_url || '');
         }
       } catch (error) {
         console.error('Profile loading error:', error);
@@ -76,6 +80,48 @@ const Profile = () => {
       return age - 1;
     }
     return age;
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/profile.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_image_url: data.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfileImageUrl(data.publicUrl);
+      toast({
+        title: "Profile image updated",
+        description: "Your profile image has been uploaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +200,7 @@ const Profile = () => {
       <DashboardNav />
       
       <div className="pt-16 p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="mb-6">
             <Button
               variant="ghost"
@@ -182,7 +228,47 @@ const Profile = () => {
             </CardHeader>
             
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Profile Image Section */}
+                <div className="flex flex-col items-center space-y-4 pb-6 border-b border-slate-700">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border-4 border-slate-600">
+                      {profileImageUrl ? (
+                        <img
+                          src={profileImageUrl}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-16 w-16 text-slate-400" />
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 bg-emerald-500 hover:bg-emerald-600 border-4 border-slate-800"
+                    >
+                      {uploading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-slate-300">Profile Photo</p>
+                    <p className="text-xs text-slate-500">Click the camera icon to upload a new photo</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-sm font-medium text-slate-300">
