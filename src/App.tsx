@@ -13,6 +13,11 @@ import DashboardShowcase from "./pages/DashboardShowcase";
 import Portfolio from "./pages/Portfolio";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import DisplaySettings from "./pages/settings/DisplaySettings";
+import NotificationSettings from "./pages/settings/NotificationSettings";
+import PrivacySettings from "./pages/settings/PrivacySettings";
+import RecurringOrdersSettings from "./pages/settings/RecurringOrdersSettings";
+import TradingSettings from "./pages/settings/TradingSettings";
 import Watchlist from "./pages/Watchlist";
 
 import Magnificent7 from "./pages/Magnificent7";
@@ -66,6 +71,46 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/display"
+                element={
+                  <ProtectedRoute>
+                    <DisplaySettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/privacy"
+                element={
+                  <ProtectedRoute>
+                    <PrivacySettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/recurring-orders"
+                element={
+                  <ProtectedRoute>
+                    <RecurringOrdersSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings/trading"
+                element={
+                  <ProtectedRoute>
+                    <TradingSettings />
                   </ProtectedRoute>
                 }
               />

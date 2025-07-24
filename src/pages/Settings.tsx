@@ -69,7 +69,7 @@ const Settings = () => {
       icon: User,
       title: "ACCOUNT",
       description: "Change your account credentials and secure it",
-      href: "/settings/account"
+      href: "/profile"
     },
     {
       icon: ArrowRightLeft,
@@ -154,32 +154,33 @@ const Settings = () => {
             {settingsCards.map((setting, index) => {
               const IconComponent = setting.icon;
               return (
-                <Card 
-                  key={index}
-                  className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group border-muted-foreground/20 h-48 flex flex-col"
-                >
-                  <CardHeader className="pb-4 flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="p-4 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
-                        <IconComponent className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                <Link key={index} to={setting.href}>
+                  <Card 
+                    className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group border-muted-foreground/20 h-48 flex flex-col"
+                  >
+                    <CardHeader className="pb-4 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="p-4 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
+                          <IconComponent className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                        </div>
+                        <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                      <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs font-bold tracking-wide bg-muted/50 text-muted-foreground border-muted-foreground/20 mb-3"
-                      >
-                        {setting.title}
-                      </Badge>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {setting.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardHeader>
+                    <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs font-bold tracking-wide bg-muted/50 text-muted-foreground border-muted-foreground/20 mb-3"
+                        >
+                          {setting.title}
+                        </Badge>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {setting.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>
