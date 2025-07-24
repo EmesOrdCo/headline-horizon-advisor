@@ -46,11 +46,9 @@ Deno.serve(async (req) => {
     // Parse request body to get batch size and action
     const requestBody = await req.json();
     const action = requestBody?.action || 'populate';
-    const batchSize = requestBody?.batchSize || 500; // Larger batch for continuous processing
-    const continuous = requestBody?.continuous !== false; // Default to continuous
+    const batchSize = requestBody?.batchSize || 100; // Default to 100 if not specified
     console.log(`🎯 Action: ${action}`);
     console.log(`📦 Batch size set to: ${batchSize}`);
-    console.log(`🔄 Continuous mode: ${continuous}`);
 
     console.log('🔑 Initializing Supabase client...');
     const supabaseClient = createClient(
@@ -109,12 +107,11 @@ Deno.serve(async (req) => {
     const existingSymbols = new Set(existingLogos?.map(logo => logo.symbol) || []);
     const allStocksToProcess = validStocks.filter(stock => !existingSymbols.has(stock.symbol));
     
-    // For continuous mode, process all stocks; for batch mode, limit to batch size
-    const stocksToProcess = continuous ? allStocksToProcess : allStocksToProcess.slice(0, batchSize);
+    // Limit to batch size
+    const stocksToProcess = allStocksToProcess.slice(0, batchSize);
 
     console.log(`📋 Database has ${existingLogos?.length || 0} existing logos`);
     console.log(`🎯 Total stocks needing logos: ${allStocksToProcess.length}`);
-    console.log(`🔄 Processing ${stocksToProcess.length} stocks in ${continuous ? 'continuous' : 'batch'} mode`);
     
     // If this is just a status check, return early
     if (action === 'status') {
@@ -402,8 +399,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Calculate remaining stocks based on processing mode
-    const remainingStocks = continuous ? 0 : allStocksToProcess.length - stocksToProcess.length;
+    // Send immediate response to prevent timeout
+    const remainingStocks = allStocksToProcess.length - stocksToProcess.length;
     
     const result = {
       success: true,
@@ -416,12 +413,10 @@ Deno.serve(async (req) => {
       remainingStocks,
       batchSize,
       rateLimitedStocks: rateLimitedStocks.length,
-      continuous,
-      message: continuous ? 'Continuous processing completed for all available stocks!' : 
-               remainingStocks > 0 ? `Batch complete. ${remainingStocks} stocks remaining for future batches.` : 'All stocks processed!'
+      message: remainingStocks > 0 ? `Batch complete. ${remainingStocks} stocks remaining for future batches.` : 'All stocks processed!'
     };
 
-    console.log(`🎉 Logo population completed successfully! ${continuous ? 'All stocks processed continuously' : `${remainingStocks} stocks remaining`}`);
+    console.log(`🎉 Batch logo population completed successfully! (${remainingStocks} stocks remaining)`);
     console.log('📊 Final results:', result);
 
     // Handle rate-limited stocks in background

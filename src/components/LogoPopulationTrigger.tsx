@@ -54,7 +54,7 @@ export const LogoPopulationTrigger = () => {
 
       // Create the function call promise
       const functionPromise = supabase.functions.invoke('populate-all-logos', {
-        body: { action: 'populate', batchSize, continuous: true }
+        body: { action: 'populate', batchSize }
       });
 
       let data, error;
@@ -216,10 +216,10 @@ export const LogoPopulationTrigger = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Database className="w-5 h-5" />
-          Logo Population (Continuous)
+          Logo Population (Batch)
         </CardTitle>
         <CardDescription>
-          Populate the database with company logos continuously until complete
+          Populate the database with company logos in manageable batches
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
