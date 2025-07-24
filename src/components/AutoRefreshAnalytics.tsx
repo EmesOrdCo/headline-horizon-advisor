@@ -1,17 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFetchMagnificent7 } from '@/hooks/useMagnificent7';
 import { useFetchIndexFunds } from '@/hooks/useIndexFunds';
 import { useFetchRSSNews } from '@/hooks/useRSSHeadlines';
+import { useRefreshControl } from '@/contexts/RefreshContext';
 
 const AutoRefreshAnalytics = () => {
   const queryClient = useQueryClient();
   const fetchMagnificent7 = useFetchMagnificent7();
   const fetchIndexFunds = useFetchIndexFunds();
   const fetchRSSNews = useFetchRSSNews();
+  const { isRefreshPaused } = useRefreshControl();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const performAllAnalyses = async () => {
+      if (isRefreshPaused) {
+        console.log('🚫 Auto-refresh skipped - globally paused');
+        return;
+      }
+
       console.log('🔄 Auto-refreshing all analytics...');
       
       try {
@@ -49,14 +57,25 @@ const AutoRefreshAnalytics = () => {
       }
     };
 
-    // Run immediately on mount
-    performAllAnalyses();
+    // Clean up existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
-    // Set up interval to run every 2 minutes (120,000 ms)
-    const interval = setInterval(performAllAnalyses, 2 * 60 * 1000);
+    if (!isRefreshPaused) {
+      // Run immediately on mount if not paused
+      performAllAnalyses();
+      
+      // Set up interval to run every 2 minutes (120,000 ms)
+      intervalRef.current = setInterval(performAllAnalyses, 2 * 60 * 1000);
+    }
 
-    return () => clearInterval(interval);
-  }, [fetchMagnificent7, fetchIndexFunds, fetchRSSNews, queryClient]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchMagnificent7, fetchIndexFunds, fetchRSSNews, queryClient, isRefreshPaused]);
 
   return null; // This component doesn't render anything, it just handles auto-refresh
 };

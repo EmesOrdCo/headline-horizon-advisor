@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Clock, RefreshCw } from "lucide-react";
 import { useRSSHeadlines, useFetchRSSNews } from "@/hooks/useRSSHeadlines";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useRefreshControl } from '@/contexts/RefreshContext';
 
 interface RSSHeadlinesProps {
   maxItems?: number;
@@ -16,10 +17,17 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
   const fetchRSSNews = useFetchRSSNews();
   const queryClient = useQueryClient();
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const { isRefreshPaused } = useRefreshControl();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Set up automatic refresh every 2 minutes
+  // Set up automatic refresh every 15 minutes
   useEffect(() => {
     const fetchAndRefresh = async () => {
+      if (isRefreshPaused) {
+        console.log('🚫 RSS auto-refresh skipped - globally paused');
+        return;
+      }
+
       console.log('🔄 Auto-refreshing RSS headlines...');
       try {
         const result = await fetchRSSNews();
@@ -35,14 +43,25 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
       }
     };
 
-    // Fetch immediately on mount
-    fetchAndRefresh();
+    // Clean up existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
 
-    // Set up interval to fetch every 15 minutes (more reasonable interval)
-    const interval = setInterval(fetchAndRefresh, 15 * 60 * 1000);
+    if (!isRefreshPaused) {
+      // Fetch immediately on mount if not paused
+      fetchAndRefresh();
+      
+      // Set up interval to fetch every 15 minutes (more reasonable interval)
+      intervalRef.current = setInterval(fetchAndRefresh, 15 * 60 * 1000);
+    }
 
-    return () => clearInterval(interval);
-  }, [fetchRSSNews, queryClient]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchRSSNews, queryClient, isRefreshPaused]);
 
   const handleManualRefresh = async () => {
     setIsManualRefreshing(true);
