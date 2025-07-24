@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle } from "lucide-react";
+import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import DashboardNav from "@/components/DashboardNav";
@@ -50,6 +50,13 @@ const Settings = () => {
       setResendingEmail(false);
     }
   };
+
+  // Progress steps for account setup
+  const progressSteps = [
+    { label: "Create Account", completed: true },
+    { label: "Verify", completed: isEmailVerified },
+    { label: "Deposit", completed: false, step: 3 }
+  ];
   const settingsCards = [
     {
       icon: Monitor,
@@ -93,83 +100,74 @@ const Settings = () => {
     <div className="min-h-screen bg-background">
       <DashboardNav />
       
-      <div className="pt-16 p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Email Verification Section */}
-          {isEmailVerified ? (
-            <Card className="mb-8 border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  <CardTitle className="text-lg font-semibold text-green-800 dark:text-green-200">
-                    Verification Centre
-                  </CardTitle>
+      <div className="pt-16 p-6 h-[90vh] flex flex-col">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+          {/* Progress Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center space-x-8 mb-6">
+              {progressSteps.map((step, index) => (
+                <div key={index} className="flex items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                      step.completed 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-muted border-2 border-muted-foreground text-muted-foreground'
+                    }`}>
+                      {step.completed ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        step.step || index + 1
+                      )}
+                    </div>
+                    <span className={`font-medium ${
+                      step.completed ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                      {step.label}
+                    </span>
+                  </div>
+                  {index < progressSteps.length - 1 && (
+                    <div className="w-16 h-0.5 bg-muted mx-6"></div>
+                  )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-green-700 dark:text-green-300 font-medium">
-                  Your profile is fully verified!
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="mb-8 border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <div className="flex items-center space-x-3">
-                  <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                  <CardTitle className="text-lg font-semibold text-orange-800 dark:text-orange-200">
-                    Email Verification Required
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-orange-700 dark:text-orange-300">
-                  Please verify your email address to complete your account setup and access all features.
-                </p>
-                <Button 
-                  onClick={handleResendVerificationEmail}
-                  disabled={resendingEmail}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  {resendingEmail ? "Sending..." : "Resend Verification Email"}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+              ))}
+            </div>
+          </div>
 
           {/* Settings Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {settingsCards.map((setting, index) => {
-              const IconComponent = setting.icon;
-              return (
-                <Card 
-                  key={index}
-                  className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group border-muted-foreground/20"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="p-3 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
-                        <IconComponent className="w-6 h-6 text-muted-foreground group-hover:text-primary" />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
+              {settingsCards.map((setting, index) => {
+                const IconComponent = setting.icon;
+                return (
+                  <Card 
+                    key={index}
+                    className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 group border-muted-foreground/20 h-48 flex flex-col"
+                  >
+                    <CardHeader className="pb-4 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="p-4 rounded-lg bg-muted/50 group-hover:bg-primary/10 transition-colors">
+                          <IconComponent className="w-8 h-8 text-muted-foreground group-hover:text-primary" />
+                        </div>
+                        <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs font-bold tracking-wide bg-muted/50 text-muted-foreground border-muted-foreground/20"
-                    >
-                      {setting.title}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {setting.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardHeader>
+                    <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs font-bold tracking-wide bg-muted/50 text-muted-foreground border-muted-foreground/20 mb-3"
+                        >
+                          {setting.title}
+                        </Badge>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {setting.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
