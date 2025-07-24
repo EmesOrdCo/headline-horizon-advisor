@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle, Check } from "lucide-react";
+import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle, Check, Wallet } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import DashboardNav from "@/components/DashboardNav";
@@ -101,37 +102,50 @@ const Settings = () => {
       <DashboardNav />
       
       <div className="pt-16 p-6 h-[90vh] flex flex-col">
-        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
-          {/* Progress Indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-center space-x-8 mb-6">
-              {progressSteps.map((step, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                      step.completed 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-muted border-2 border-muted-foreground text-muted-foreground'
-                    }`}>
-                      {step.completed ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        step.step || index + 1
-                      )}
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col gap-8">
+          {/* Progress Indicator Card */}
+          <Card className="w-full border-muted-foreground/20">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-center space-x-12">
+                {progressSteps.map((step, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-lg ${
+                        step.completed 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-muted border-2 border-muted-foreground text-muted-foreground'
+                      }`}>
+                        {step.completed ? (
+                          <Check className="w-6 h-6" />
+                        ) : (
+                          step.step || index + 1
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={`font-semibold text-lg ${
+                          step.completed ? 'text-foreground' : 'text-muted-foreground'
+                        }`}>
+                          {step.label}
+                        </span>
+                        {step.label === "Deposit" && !step.completed && (
+                          <Link 
+                            to="/wallet"
+                            className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 mt-1"
+                          >
+                            <Wallet className="w-4 h-4" />
+                            Fund your account
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                    <span className={`font-medium ${
-                      step.completed ? 'text-foreground' : 'text-muted-foreground'
-                    }`}>
-                      {step.label}
-                    </span>
+                    {index < progressSteps.length - 1 && (
+                      <div className="w-20 h-0.5 bg-muted mx-8"></div>
+                    )}
                   </div>
-                  {index < progressSteps.length - 1 && (
-                    <div className="w-16 h-0.5 bg-muted mx-6"></div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Settings Grid */}
           <div className="flex-1 flex items-center justify-center">
