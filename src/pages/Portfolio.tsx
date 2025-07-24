@@ -191,53 +191,95 @@ const Portfolio = () => {
         <h2 className="text-2xl font-bold text-white">Portfolio Overview</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Asset Categories - Left Side (Smaller) */}
-          <div className="lg:col-span-2 space-y-4">
-            {Object.entries(assetCategories).map(([category, assets]) => (
-              <Card key={category} className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white capitalize text-lg">{category}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {assets.map((asset) => (
-                      <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{asset.logo}</span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
-                              <span className="text-white text-sm font-medium">{asset.name}</span>
+          {/* Asset Categories - Left Side */}
+          <div className="lg:col-span-2 flex flex-col">
+            {/* Crypto and Stocks sections */}
+            <div className="space-y-4 flex-1">
+              {['stocks', 'crypto'].map((category) => (
+                <Card key={category} className="bg-slate-800/50 border-slate-700">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white capitalize text-lg">{category}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {assetCategories[category as keyof typeof assetCategories].map((asset) => (
+                        <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{asset.logo}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                                <span className="text-white text-sm font-medium">{asset.name}</span>
+                              </div>
+                              <p className="text-xs text-slate-400">
+                                Invested: {formatCurrency(asset.investment)}
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-400">
-                              Invested: {formatCurrency(asset.investment)}
-                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                            <div className="flex items-center gap-2 text-xs mt-1">
+                              <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
+                                {formatPercent(asset.change)}
+                              </span>
+                              <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {formatPercent(asset.dayChange)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
-                          <div className="flex items-center gap-2 text-xs mt-1">
-                            <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                              {formatPercent(asset.change)}
-                            </span>
-                            <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {formatPercent(asset.dayChange)}
-                            </span>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Funds section at bottom */}
+            <Card className="bg-slate-800/50 border-slate-700 mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white capitalize text-lg">Funds</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {assetCategories.funds.map((asset) => (
+                    <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{asset.logo}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                            <span className="text-white text-sm font-medium">{asset.name}</span>
                           </div>
+                          <p className="text-xs text-slate-400">
+                            Invested: {formatCurrency(asset.investment)}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <div className="text-right">
+                        <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                        <div className="flex items-center gap-2 text-xs mt-1">
+                          <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
+                            {formatPercent(asset.change)}
+                          </span>
+                          <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {formatPercent(asset.dayChange)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Performance Chart and Pie Chart - Right Side */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 flex flex-col">
             {/* Performance Chart */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-slate-800/50 border-slate-700 flex-1 mb-6">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white text-lg">Performance Over Time</CardTitle>
@@ -261,8 +303,8 @@ const Portfolio = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-96">
+              <CardContent className="flex-1">
+                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={performanceData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -343,59 +385,6 @@ const Portfolio = () => {
   };
 
 
-  // All-Time Returns Component
-  const AllTimeReturns = () => {
-    const data = portfolioData;
-    const totalDeposited = data.totalDeposited[selectedCurrency];
-    const currentValue = data.totalValue[selectedCurrency];
-    const totalReturn = currentValue - totalDeposited;
-    const returnPercent = (totalReturn / totalDeposited) * 100;
-
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-white">All-Time Returns</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Amount Deposited</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-400">
-                {formatCurrency(totalDeposited)}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Total invested over time</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Current Value</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
-                {formatCurrency(currentValue)}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Portfolio value today</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Total Return</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${totalReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatCurrency(totalReturn)}
-              </div>
-              <p className={`text-xs mt-1 ${returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatPercent(returnPercent)} vs. deposits
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  };
 
   // Trade History Component
   const TradeHistory = () => {
@@ -475,7 +464,6 @@ const Portfolio = () => {
 
           <AccountSummary />
           <AssetBreakdownAndPerformance />
-          <AllTimeReturns />
           <TradeHistory />
         </div>
       </div>
