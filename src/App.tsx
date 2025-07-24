@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
 import Portfolio from "./pages/Portfolio";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Watchlist from "./pages/Watchlist";
 
 import Magnificent7 from "./pages/Magnificent7";
@@ -57,6 +58,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 }
               />
