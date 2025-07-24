@@ -304,9 +304,9 @@ const Portfolio = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-64">
+                <ChartContainer config={{ value: { label: "Portfolio Value" } }} className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={performanceData}>
+                    <LineChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="date" stroke="#9CA3AF" />
                       <YAxis stroke="#9CA3AF" tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
