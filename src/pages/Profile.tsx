@@ -184,7 +184,7 @@ const Profile = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
         title: "Missing information",
         description: "Please fill in all password fields.",
@@ -213,6 +213,23 @@ const Profile = () => {
 
     setLoading(true);
     try {
+      // First, reauthenticate the user with their current password
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword
+      });
+
+      if (reauthError) {
+        toast({
+          title: "Current password incorrect",
+          description: "Please enter your current password correctly.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // If reauthentication succeeds, update the password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -437,6 +454,33 @@ const Profile = () => {
             <CardContent>
               <div className="space-y-6">
                 <div className="space-y-2">
+                  <Label htmlFor="currentPassword" className="text-sm font-medium text-slate-300">
+                    Current Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      autoComplete="off"
+                      data-form-type="other"
+                      className="h-11 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-11 w-10 text-slate-400 hover:text-white"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="newPassword" className="text-sm font-medium text-slate-300">
                     New Password
                   </Label>
@@ -447,6 +491,7 @@ const Profile = () => {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
+                      autoComplete="new-password"
                       className="h-11 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10"
                     />
                     <Button
@@ -475,6 +520,7 @@ const Profile = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm new password"
+                      autoComplete="new-password"
                       className="h-11 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 pr-10"
                     />
                     <Button
@@ -493,7 +539,7 @@ const Profile = () => {
                   <Button 
                     onClick={handlePasswordChange}
                     className="bg-red-500 hover:bg-red-600 text-white font-medium px-6"
-                    disabled={loading || !newPassword || !confirmPassword}
+                    disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                   >
                     <Lock className="h-4 w-4 mr-2" />
                     {loading ? "Updating..." : "Change Password"}
