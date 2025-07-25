@@ -13,7 +13,7 @@ interface ActivitiesHistoryProps {
 const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
   const [activities, setActivities] = useState<any[]>([]);
   const [activityType, setActivityType] = useState('all');
-  const { getActivities, loading } = useAlpacaBroker();
+  const { getActivities, getOrders, loading } = useAlpacaBroker();
 
   useEffect(() => {
     if (accountId) {
@@ -24,8 +24,32 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
   const loadActivities = async () => {
     try {
       const filters = activityType !== 'all' ? { activity_types: activityType } : {};
-      const data = await getActivities(accountId, filters);
-      setActivities(data || []);
+      
+      // Fetch both activities and pending orders
+      const [activitiesData, ordersData] = await Promise.all([
+        getActivities(accountId, filters),
+        getOrders(accountId, { status: 'all', limit: 50 })
+      ]);
+
+      // Convert pending orders to activity format
+      const pendingOrders = (ordersData || [])
+        .filter((order: any) => ['accepted', 'pending_new', 'pending_cancel', 'pending_replace'].includes(order.status))
+        .map((order: any) => ({
+          activity_type: 'PENDING_ORDER',
+          symbol: order.symbol,
+          description: `${order.side.toUpperCase()} ${order.qty} shares - ${order.order_type} order`,
+          qty: order.qty,
+          price: order.limit_price,
+          created_at: order.created_at,
+          status: order.status,
+          side: order.side
+        }));
+
+      // Combine and sort by date
+      const combined = [...(activitiesData || []), ...pendingOrders]
+        .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
+
+      setActivities(combined);
     } catch (error) {
       console.error('Failed to load activities:', error);
     }
@@ -35,6 +59,8 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
     switch (type.toLowerCase()) {
       case 'fill':
         return <TrendingUp className="h-4 w-4" />;
+      case 'pending_order':
+        return <CalendarDays className="h-4 w-4" />;
       case 'deposit':
       case 'journal':
         return <DollarSign className="h-4 w-4" />;
@@ -47,6 +73,8 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
     switch (type.toLowerCase()) {
       case 'fill':
         return 'default';
+      case 'pending_order':
+        return 'destructive';
       case 'deposit':
       case 'journal':
         return 'secondary';
