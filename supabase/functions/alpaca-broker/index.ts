@@ -110,10 +110,17 @@ serve(async (req) => {
 
       case 'place_order':
         url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/orders`;
+        
+        // Clean up the order data - remove empty limit_price for market orders
+        const orderData = { ...data };
+        if (orderData.type === 'market' && orderData.limit_price === '') {
+          delete orderData.limit_price;
+        }
+        
         response = await fetch(url, {
           method: 'POST',
           headers,
-          body: JSON.stringify(data),
+          body: JSON.stringify(orderData),
         });
         break;
 
@@ -197,7 +204,14 @@ serve(async (req) => {
 
     console.log(`Making ${action} request to: ${url}`);
     console.log(`Request headers:`, JSON.stringify(headers, null, 2));
-    console.log(`Request body:`, response ? 'POST' : 'GET');
+    
+    // Log request body for POST requests
+    if (['place_order', 'create_account', 'create_ach_relationship', 'create_transfer', 'create_journal'].includes(action)) {
+      const bodyData = action === 'place_order' ? orderData : data;
+      console.log(`Request body:`, JSON.stringify(bodyData, null, 2));
+    } else {
+      console.log(`Request body: GET request (no body)`);
+    }
     console.log(`Response status: ${response.status}`);
     console.log(`Response headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
 
