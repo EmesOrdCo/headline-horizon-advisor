@@ -117,17 +117,14 @@ const StockAnalysis: React.FC = () => {
       <div className="flex flex-1">
         <div className="flex-1 bg-slate-900 overflow-y-auto">
           <div className="p-6">
-            {(() => {
-              const AIAnalysisCard = require('@/components/StockDetail/AIAnalysisCard').default;
-              return <AIAnalysisCard 
-                symbol={symbol || 'NFLX'} 
-                stockInfo={{
-                  price: 1180.76,
-                  change: 3.98,
-                  changePercent: 0.34
-                }} 
-              />;
-            })()}
+            <AIAnalysisTab 
+              symbol={symbol || 'NFLX'} 
+              stockInfo={{
+                price: 1180.76,
+                change: 3.98,
+                changePercent: 0.34
+              }} 
+            />
           </div>
         </div>
 
