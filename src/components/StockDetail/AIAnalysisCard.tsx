@@ -203,61 +203,65 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
         </CardContent>
       </Card>
 
-      {/* AI Analysis Section */}
-      <div className="bg-slate-800/50 border border-cyan-500/20 rounded-lg p-3 sm:p-4 mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
-          <span className="text-cyan-400 font-semibold text-sm sm:text-base">AI Analysis</span>
-        </div>
-        <p className="text-slate-300 text-xs sm:text-sm mb-3">
-          *Based on historical market analysis and trends for {symbol}.
-        </p>
-        
-        {/* Mobile: Stack weight and confidence vertically */}
-        <div className={`${isMobile ? 'space-y-3' : 'mb-2'}`}>
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400">Confidence Level</span>
-              <ConfidenceDots confidence={analysis.confidence} />
+      {/* AI Analysis and Market Sentiment Container */}
+      <Card className="bg-slate-800/50 border-cyan-500/20">
+        <CardContent className="p-4 space-y-4">
+          {/* AI Analysis Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-cyan-400" />
+              <span className="text-cyan-400 font-semibold text-sm sm:text-base">AI Analysis</span>
+            </div>
+            <p className="text-slate-300 text-xs sm:text-sm mb-3">
+              *Based on historical market analysis and trends for {symbol}.
+            </p>
+            
+            <div className={`${isMobile ? 'space-y-3' : 'mb-4'}`}>
+              <div className="flex justify-between items-center text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">Confidence Level</span>
+                  <ConfidenceDots confidence={analysis.confidence} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Market Sentiment */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-slate-400">Market Sentiment</span>
-          <span className={`font-semibold ${
-            analysis.sentiment === 'Bullish' ? 'text-emerald-400' :
-            analysis.sentiment === 'Bearish' ? 'text-red-400' :
-            'text-gray-400'
-          }`}>{analysis.sentiment}</span>
-        </div>
-        <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-          <span>Bearish</span>
-          <span>Neutral</span>
-          <span>Bullish</span>
-        </div>
-        <div className="w-full bg-slate-700 rounded-full h-2 relative">
-          <div 
-            className={`absolute h-2 rounded-full w-1/3 ${
-              analysis.sentiment === 'Bullish' ? 'right-0 bg-emerald-500' :
-              analysis.sentiment === 'Bearish' ? 'left-0 bg-red-500' :
-              'left-1/3 bg-gray-500'
-            }`}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <Badge className={`${
-          analysis.sentiment === 'Bullish' ? 'bg-emerald-500' :
-          analysis.sentiment === 'Bearish' ? 'bg-red-500' :
-          'bg-gray-500'
-        } text-white text-xs`}>{analysis.sentiment?.toUpperCase()}</Badge>
-        <span className="text-slate-400 text-sm">Technology Stock</span>
-      </div>
+          {/* Market Sentiment */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-400">Market Sentiment</span>
+              <span className={`font-semibold ${
+                analysis.sentiment === 'Bullish' ? 'text-emerald-400' :
+                analysis.sentiment === 'Bearish' ? 'text-red-400' :
+                'text-gray-400'
+              }`}>{analysis.sentiment}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <span>Bearish</span>
+              <span>Neutral</span>
+              <span>Bullish</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2 relative">
+              <div 
+                className={`absolute h-2 rounded-full w-1/3 ${
+                  analysis.sentiment === 'Bullish' ? 'right-0 bg-emerald-500' :
+                  analysis.sentiment === 'Bearish' ? 'left-0 bg-red-500' :
+                  'left-1/3 bg-gray-500'
+                }`}
+              ></div>
+            </div>
+            
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              <Badge className={`${
+                analysis.sentiment === 'Bullish' ? 'bg-emerald-500' :
+                analysis.sentiment === 'Bearish' ? 'bg-red-500' :
+                'bg-gray-500'
+              } text-white text-xs`}>{analysis.sentiment?.toUpperCase()}</Badge>
+              <span className="text-slate-400 text-sm">Technology Stock</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Detailed Analysis */}
       <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mb-4">
