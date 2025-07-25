@@ -94,6 +94,10 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
               <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
                 <Plus className="w-4 h-4" />
               </Button>
+
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-700">
+                <span className="text-xs">Back to Watchlist</span>
+              </Button>
             </div>
 
             <div className="flex items-center space-x-2">
