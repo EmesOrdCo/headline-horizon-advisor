@@ -19,33 +19,33 @@ serve(async (req) => {
 
     const cleanSymbol = encodeURIComponent(symbol.trim());
 
-    // Get proper Alpaca broker credentials from Supabase secrets
-    const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
-    const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+    // Use Trading API credentials (not Broker API) for market data
+    const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
+    const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
-    console.log(`=== DEBUGGING ALPACA API FOR ${cleanSymbol} ===`);
-    console.log('Alpaca Broker API Key exists:', !!alpacaApiKey);
-    console.log('Alpaca Broker Secret Key exists:', !!alpacaSecretKey);
+    console.log(`=== DEBUGGING ALPACA TRADING API FOR ${cleanSymbol} ===`);
+    console.log('Alpaca Trading API Key exists:', !!alpacaApiKey);
+    console.log('Alpaca Trading Secret Key exists:', !!alpacaSecretKey);
     
     if (alpacaApiKey) {
       console.log('API Key first 8 chars:', alpacaApiKey.substring(0, 8) + '...');
     }
 
     if (!alpacaApiKey || !alpacaSecretKey) {
-      console.error('ALPACA_API_KEY or ALPACA_SECRET_KEY not configured in environment');
-      throw new Error('Alpaca broker API credentials not configured');
+      console.error('ALPACA_TRADER_API_KEY or ALPACA_TRADER_SECRET_KEY not configured in environment');
+      throw new Error('Alpaca trading API credentials not configured');
     }
 
-    // Broker API uses HTTP Basic Auth (key:secret format)
-    const basicAuth = btoa(`${alpacaApiKey}:${alpacaSecretKey}`);
+    // Trading API uses header-based authentication (not Basic auth like Broker API)
     const headers = {
-      'Authorization': `Basic ${basicAuth}`,
+      'APCA-API-KEY-ID': alpacaApiKey,
+      'APCA-API-SECRET-KEY': alpacaSecretKey,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
-    // Get current quote data from Broker API
-    const quoteUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/quotes/latest?symbols=${cleanSymbol}`;
+    // Get current quote data from Trading API (not Broker API)
+    const quoteUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
     const quoteResponse = await fetch(quoteUrl, {
@@ -64,8 +64,8 @@ serve(async (req) => {
     const quoteData = JSON.parse(await quoteResponse.text());
     console.log(`Quote data for ${cleanSymbol}:`, quoteData);
 
-    // Get last trade data for actual trading price from Broker API
-    const tradeUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/trades/latest?symbols=${cleanSymbol}`;
+    // Get last trade data for actual trading price from Trading API
+    const tradeUrl = `https://data.alpaca.markets/v2/stocks/trades/latest?symbols=${cleanSymbol}`;
     console.log(`Making trade request to: ${tradeUrl}`);
     
     const tradeResponse = await fetch(tradeUrl, {
@@ -81,7 +81,7 @@ serve(async (req) => {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    const barsUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
     console.log(`Making bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
@@ -92,7 +92,7 @@ serve(async (req) => {
     const barsData = barsResponse.ok ? JSON.parse(await barsResponse.text()) : null;
     console.log(`Bars data for ${cleanSymbol}:`, barsData);
 
-    // Process the data
+    // Process the data (Trading API response format)
     if (!quoteData.quotes || !quoteData.quotes[cleanSymbol]) {
       throw new Error(`No quote data available for symbol: ${cleanSymbol}`);
     }
@@ -101,7 +101,7 @@ serve(async (req) => {
     const symbolTrade = tradeData?.trades?.[cleanSymbol];
     const symbolBars = barsData?.bars?.[cleanSymbol];
     
-    // Get prices
+    // Get prices from Trading API format
     const askPrice = symbolQuote.ap || 0;
     const bidPrice = symbolQuote.bp || 0;
     const lastTradePrice = symbolTrade?.p || askPrice; // Fallback to ask if no trade data
