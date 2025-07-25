@@ -268,12 +268,12 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
               </p>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
+              <ScrollArea className="h-[480px] pr-4">
+                <div className="space-y-3">
                   {newsInsights.map((insight) => (
                     <div
                       key={insight.id}
-                      className="border border-slate-700 rounded-lg p-4 bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
+                      className="border border-slate-700 rounded-lg p-3 bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
                     >
                       {/* Header with source and timestamp */}
                       <div className="flex items-center justify-between mb-2">
