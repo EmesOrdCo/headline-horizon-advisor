@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   X, 
   Menu, 
@@ -29,23 +28,18 @@ import {
   Eye,
   Calendar,
   Star,
-  MoreHorizontal,
-  ArrowLeft
+  MoreHorizontal
 } from "lucide-react";
 import HistoricalPriceChart from "./HistoricalPriceChart";
-import AIAnalysisTab from "./StockDetail/AIAnalysisTab";
-import AllDataTab from "./StockDetail/AllDataTab";
 
 interface TradingViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   symbol: string;
-  stockInfo?: any;
 }
 
-const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, symbol, stockInfo }) => {
+const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, symbol }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
-  const [activeView, setActiveView] = useState('trading'); // 'trading', 'analysis', 'data'
   
   const timeframes = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'];
   
@@ -85,24 +79,13 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
               </Button>
               
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">{symbol.slice(0, 1)}</span>
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">N</span>
                 </div>
                 <span className="text-white font-medium">{symbol}</span>
                 <span className="text-slate-400">1D</span>
                 <span className="text-slate-400">NASDAQ</span>
               </div>
-
-              {/* Back to Watchlist Button */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-slate-300 hover:text-white hover:bg-slate-700"
-                onClick={onClose}
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Watchlist
-              </Button>
 
               <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
                 <Plus className="w-4 h-4" />
@@ -129,92 +112,41 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                 ))}
               </div>
 
-              {/* View Tabs - Trading View, AI Analysis, All Data */}
-              <div className="flex items-center space-x-4">
-                <Tabs value={activeView} onValueChange={setActiveView} className="flex items-center">
-                  <TabsList className="bg-slate-800/50 border-slate-700">
-                    <TabsTrigger 
-                      value="trading" 
-                      className="data-[state=active]:bg-slate-600 data-[state=active]:text-white flex items-center gap-2"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                      Trading View
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="analysis" 
-                      className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-                    >
-                      AI Qualitative Analysis
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="data" 
-                      className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-                    >
-                      All Data
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+              <div className="w-px h-6 bg-slate-600 mx-2" />
 
-              {/* Trading View Controls - Only show when on trading view */}
-              {activeView === 'trading' && (
-                <div className="flex items-center space-x-2">
-                  {/* Timeframe Buttons */}
-                  <div className="flex items-center space-x-1">
-                    {timeframes.map((tf) => (
-                      <Button
-                        key={tf}
-                        variant={selectedTimeframe === tf ? "default" : "ghost"}
-                        size="sm"
-                        className={`h-7 px-2 text-xs ${
-                          selectedTimeframe === tf 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                        }`}
-                        onClick={() => setSelectedTimeframe(tf)}
-                      >
-                        {tf}
-                      </Button>
-                    ))}
-                  </div>
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <BarChart3 className="w-4 h-4" />
+                <span className="ml-1 text-xs">Indicators</span>
+              </Button>
 
-                  <div className="w-px h-6 bg-slate-600 mx-2" />
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="ml-1 text-xs">Alert</span>
+              </Button>
 
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <BarChart3 className="w-4 h-4" />
-                    <span className="ml-1 text-xs">Indicators</span>
-                  </Button>
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <RotateCcw className="w-4 h-4" />
+                <span className="ml-1 text-xs">Replay</span>
+              </Button>
 
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="ml-1 text-xs">Alert</span>
-                  </Button>
+              <div className="w-px h-6 bg-slate-600 mx-2" />
 
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <RotateCcw className="w-4 h-4" />
-                    <span className="ml-1 text-xs">Replay</span>
-                  </Button>
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <Save className="w-4 h-4" />
+                <span className="ml-1 text-xs">Save</span>
+              </Button>
 
-                  <div className="w-px h-6 bg-slate-600 mx-2" />
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <Share className="w-4 h-4" />
+              </Button>
 
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <Save className="w-4 h-4" />
-                    <span className="ml-1 text-xs">Save</span>
-                  </Button>
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                <Camera className="w-4 h-4" />
+              </Button>
 
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <Share className="w-4 h-4" />
-                  </Button>
-
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <Camera className="w-4 h-4" />
-                  </Button>
-
-                  <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <span className="text-xs">Publish</span>
-                  </Button>
-                </div>
-              )}
+              <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <span className="text-xs">Publish</span>
+              </Button>
 
               <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-300 hover:text-white">
                 <X className="w-4 h-4" />
@@ -222,197 +154,132 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
             </div>
           </div>
 
-          {/* Main Content - Tabbed Views */}
+          {/* Main Content Area */}
           <div className="flex flex-1 overflow-hidden">
-            <Tabs value={activeView} onValueChange={setActiveView} className="flex flex-1 flex-col">
-              <TabsContent value="trading" className="flex-1 mt-0 h-full">
-                <div className="flex h-full">
-                  {/* Left Sidebar - Tools */}
-                  <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
-                    {leftSidebarTools.map((tool, index) => (
-                      <Button
-                        key={index}
-                        variant="ghost"
-                        size="sm"
-                        className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                        title={tool.label}
-                      >
-                        <tool.icon className="w-4 h-4" />
-                      </Button>
-                    ))}
+            {/* Left Sidebar - Tools */}
+            <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
+              {leftSidebarTools.map((tool, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
+                  title={tool.label}
+                >
+                  <tool.icon className="w-4 h-4" />
+                </Button>
+              ))}
+            </div>
+
+            {/* Main Chart Area */}
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Stock Price Header */}
+              <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white text-lg font-bold">1,180.76</span>
+                    <span className="text-green-400 text-sm">+3.98 (+0.34%)</span>
                   </div>
+                  <div className="flex space-x-4 text-sm text-slate-400">
+                    <div>O <span className="text-white">1,177.80</span></div>
+                    <div>H <span className="text-white">1,183.50</span></div>
+                    <div>L <span className="text-white">1,162.66</span></div>
+                    <div>C <span className="text-white">1,180.76</span></div>
+                  </div>
+                  <div className="text-sm text-slate-400">
+                    Vol <span className="text-blue-400">3.85M</span>
+                  </div>
+                </div>
+              </div>
 
-                  {/* Main Chart Area */}
-                  <div className="flex-1 flex flex-col">
-                    {/* Stock Price Header */}
-                    <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-white text-lg font-bold">267.93</span>
-                          <span className="text-green-400 text-sm">+0.23 (+0.09%)</span>
-                        </div>
-                        <div className="flex space-x-4 text-sm text-slate-400">
-                          <div>O <span className="text-white">267.70</span></div>
-                          <div>H <span className="text-white">268.50</span></div>
-                          <div>L <span className="text-white">266.66</span></div>
-                          <div>C <span className="text-white">267.93</span></div>
-                        </div>
-                        <div className="text-sm text-slate-400">
-                          Vol <span className="text-blue-400">6.71M</span>
-                        </div>
-                      </div>
+              {/* Chart Container - Full Height */}
+              <div className="flex-1 bg-slate-900 min-h-0">
+                <HistoricalPriceChart
+                  symbol={symbol}
+                  timeframe="1Day"
+                  limit={100}
+                  showMiniChart={false}
+                  fullHeight={true}
+                />
+              </div>
+            </div>
+
+            {/* Right Sidebar - Watchlist */}
+            <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
+              {/* Watchlist Header */}
+              <div className="p-4 border-b border-slate-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-medium">Watchlist</h3>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                      <Settings className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                      <MoreHorizontal className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2">
+                  <span className="flex-1">Symbol</span>
+                  <span className="w-16 text-right">Last</span>
+                  <span className="w-16 text-right">Chg</span>
+                  <span className="w-16 text-right">Chg%</span>
+                </div>
+              </div>
+
+              {/* Watchlist Items */}
+              <div className="flex-1 overflow-y-auto">
+                {watchlistStocks.map((stock, index) => (
+                  <div
+                    key={stock.symbol}
+                    className={`flex items-center space-x-2 px-4 py-2 hover:bg-slate-700/50 cursor-pointer text-xs ${
+                      stock.symbol === symbol ? 'bg-slate-700' : ''
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{stock.symbol}</div>
                     </div>
-
-                    {/* Chart Title and Controls */}
-                    <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-white font-medium">CRM Live Performance</h3>
-                          <p className="text-xs text-slate-400">24 data points</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          {/* Time Period Buttons */}
-                          <div className="flex items-center space-x-1">
-                            {['1D', '1W', '1M', '3M', '1Y'].map((period) => (
-                              <Button
-                                key={period}
-                                variant={period === '1D' ? "default" : "ghost"}
-                                size="sm"
-                                className={`h-7 px-2 text-xs ${
-                                  period === '1D'
-                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                                }`}
-                              >
-                                {period}
-                              </Button>
-                            ))}
-                          </div>
-                          
-                          <div className="flex items-center space-x-1">
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-7 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
-                            >
-                              Line
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs text-slate-300 hover:text-white hover:bg-slate-700"
-                            >
-                              Candles
-                            </Button>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-emerald-400 text-sm font-medium">+7.07(+2.71%)</div>
-                            <div className="text-xs text-slate-400">1M change</div>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="w-16 text-right text-white">{stock.price}</div>
+                    <div className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                      {stock.change}
                     </div>
-
-                    {/* Chart Container - Full Height */}
-                    <div className="flex-1 bg-slate-900">
-                      <HistoricalPriceChart
-                        symbol={symbol}
-                        timeframe="1Day"
-                        limit={100}
-                        showMiniChart={false}
-                        fullHeight={true}
-                      />
+                    <div className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                      {stock.changePercent}
                     </div>
                   </div>
+                ))}
+              </div>
 
-                  {/* Right Sidebar - Watchlist */}
-                  <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col flex-shrink-0">
-                    {/* Watchlist Header */}
-                    <div className="p-4 border-b border-slate-700">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-white font-medium">Watchlist</h3>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                            <Settings className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                            <MoreHorizontal className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2">
-                        <span className="flex-1">Symbol</span>
-                        <span className="w-16 text-right">Last</span>
-                        <span className="w-16 text-right">Chg</span>
-                        <span className="w-16 text-right">Chg%</span>
-                      </div>
+              {/* Stock Detail Panel */}
+              <div className="p-4 border-t border-slate-700">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400">Netflix, Inc.</span>
+                    <Star className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <div className="text-slate-400 text-xs">NASDAQ • Real-time • Pre market</div>
+                  <div className="text-white text-lg font-bold">1,180.76 <span className="text-xs text-slate-400">USD</span></div>
+                  <div className="text-green-400 text-sm">+3.98 +0.34%</div>
+                  <div className="text-slate-400 text-xs">Last update at 00:59 GMT+1</div>
+                  
+                  <div className="pt-2 space-y-1">
+                    <div className="text-slate-400 text-xs">Key stats</div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Market Cap</span>
+                      <span className="text-white">505.8B</span>
                     </div>
-
-                    {/* Watchlist Items */}
-                    <div className="flex-1 overflow-y-auto">
-                      {watchlistStocks.map((stock, index) => (
-                        <div
-                          key={stock.symbol}
-                          className={`flex items-center space-x-2 px-4 py-2 hover:bg-slate-700/50 cursor-pointer text-xs ${
-                            stock.symbol === symbol ? 'bg-slate-700' : ''
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <div className="text-white font-medium">{stock.symbol}</div>
-                          </div>
-                          <div className="w-16 text-right text-white">{stock.price}</div>
-                          <div className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                            {stock.change}
-                          </div>
-                          <div className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                            {stock.changePercent}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Stock Detail Panel */}
-                    <div className="p-4 border-t border-slate-700">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Netflix, Inc.</span>
-                          <Star className="w-3 h-3 text-slate-400" />
-                        </div>
-                        <div className="text-slate-400 text-xs">NASDAQ • Real-time • Pre market</div>
-                        <div className="text-white text-lg font-bold">1,180.76 <span className="text-xs text-slate-400">USD</span></div>
-                        <div className="text-green-400 text-sm">+3.98 +0.34%</div>
-                        <div className="text-slate-400 text-xs">Last update at 00:59 GMT+1</div>
-                        
-                        <div className="pt-2 space-y-1">
-                          <div className="text-slate-400 text-xs">Key stats</div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-400">Market Cap</span>
-                            <span className="text-white">505.8B</span>
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-400">P/E Ratio</span>
-                            <span className="text-white">45.2</span>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">P/E Ratio</span>
+                      <span className="text-white">45.2</span>
                     </div>
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="analysis" className="flex-1 mt-0 p-6 overflow-y-auto">
-                <AIAnalysisTab symbol={symbol} stockInfo={stockInfo} />
-              </TabsContent>
-
-              <TabsContent value="data" className="flex-1 mt-0 p-6 overflow-y-auto">
-                <AllDataTab symbol={symbol} stockInfo={stockInfo} />
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
