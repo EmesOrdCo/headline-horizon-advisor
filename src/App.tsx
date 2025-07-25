@@ -24,6 +24,9 @@ import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
 import StockDetail from "./pages/StockDetail";
+import StockChart from "./pages/StockChart";
+import StockAnalysis from "./pages/StockAnalysis";
+import StockData from "./pages/StockData";
 import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -167,6 +170,30 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Wallet />
+                  </ProtectedRoute>
+                }
+                />
+              <Route
+                path="/stock-chart/:symbol"
+                element={
+                  <ProtectedRoute>
+                    <StockChart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock-analysis/:symbol"
+                element={
+                  <ProtectedRoute>
+                    <StockAnalysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock-data/:symbol"
+                element={
+                  <ProtectedRoute>
+                    <StockData />
                   </ProtectedRoute>
                 }
               />
