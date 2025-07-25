@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAlpacaBroker, AlpacaAccount, AlpacaAsset, AlpacaOrder, AlpacaPosition } from '@/hooks/useAlpacaBroker';
+import DashboardNav from '@/components/DashboardNav';
 import SandboxBanner from '@/components/SandboxBanner';
 import AccountCreation from '@/components/broker/AccountCreation';
 import FundingSimulation from '@/components/broker/FundingSimulation';
@@ -88,8 +89,10 @@ const BrokerDashboard = () => {
                    'trade';
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <SandboxBanner />
+    <>
+      <DashboardNav />
+      <div className="container mx-auto p-6 space-y-8 pt-20">
+        <SandboxBanner />
       
       {/* Header with User-Centered Welcome */}
       <div className="text-center space-y-4">
@@ -320,7 +323,8 @@ const BrokerDashboard = () => {
           </Tabs>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
