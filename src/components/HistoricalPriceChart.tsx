@@ -77,12 +77,27 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
 
   // For mini charts, use the passed limit prop. For full charts, use the selected period
-  const currentLimit = showMiniChart ? limit : (TIME_PERIODS.find(p => p.value === selectedPeriod)?.days || 30);
+  // For fullHeight mode (TradingView), always use the passed limit prop
+  const currentLimit = (showMiniChart || fullHeight) ? limit : (TIME_PERIODS.find(p => p.value === selectedPeriod)?.days || 30);
   
   const { data: historicalData, isLoading, error } = useHistoricalPrices(symbol, timeframe, currentLimit);
 
   const chartData = useMemo(() => {
     if (!historicalData?.data) return [];
+    
+    console.log(`Chart data processing for ${symbol}:`, {
+      totalPoints: historicalData.data.length,
+      dateRange: {
+        first: historicalData.data[0]?.date,
+        last: historicalData.data[historicalData.data.length - 1]?.date
+      },
+      priceRange: {
+        min: Math.min(...historicalData.data.map(d => d.close)),
+        max: Math.max(...historicalData.data.map(d => d.close))
+      },
+      requestedLimit: currentLimit,
+      fullHeight: fullHeight
+    });
     
     return historicalData.data.map(point => ({
       date: new Date(point.date).toLocaleDateString('en-US', { 
@@ -99,7 +114,7 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
       isGreen: point.close >= point.open,
       bodyHeight: Math.abs(point.close - point.open),
     }));
-  }, [historicalData]);
+  }, [historicalData, symbol, currentLimit, fullHeight]);
 
   const chartConfig = {
     close: {
@@ -315,10 +330,10 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
         </div>
       )}
       
-      <ChartContainer config={chartConfig} className={fullHeight ? "flex-1 w-full" : "h-64 w-full"}>
+      <ChartContainer config={chartConfig} className={fullHeight ? "flex-1 w-full min-h-0" : "h-64 w-full"}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
-            <LineChart data={chartData}>
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis 
                 dataKey="date" 
@@ -330,7 +345,8 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
                 stroke="#9CA3AF"
                 fontSize={12}
                 tick={{ fill: '#9CA3AF' }}
-                domain={['dataMin - 1', 'dataMax + 1']}
+                domain={['auto', 'auto']}
+                scale="linear"
               />
               <ChartTooltip 
                 content={({ active, payload, label }) => {
