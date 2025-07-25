@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
   X, 
   Menu, 
@@ -31,6 +32,8 @@ import {
   MoreHorizontal
 } from "lucide-react";
 import HistoricalPriceChart from "./HistoricalPriceChart";
+import AIAnalysisTab from "./StockDetail/AIAnalysisTab";
+import AllDataTab from "./StockDetail/AllDataTab";
 
 interface TradingViewModalProps {
   isOpen: boolean;
@@ -40,6 +43,7 @@ interface TradingViewModalProps {
 
 const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, symbol }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
+  const [activeTab, setActiveTab] = useState('trading-view');
   
   const timeframes = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'];
   
@@ -131,22 +135,29 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
 
               <div className="w-px h-6 bg-slate-600 mx-2" />
 
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Save className="w-4 h-4" />
-                <span className="ml-1 text-xs">Save</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Share className="w-4 h-4" />
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Camera className="w-4 h-4" />
-              </Button>
-
-              <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <span className="text-xs">Publish</span>
-              </Button>
+              {/* Tab Navigation */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="bg-slate-700/50 border border-slate-600 h-8">
+                  <TabsTrigger 
+                    value="trading-view" 
+                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                  >
+                    Trading View
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="ai-analysis" 
+                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                  >
+                    AI Analysis
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="all-data" 
+                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                  >
+                    All Data
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
               <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-300 hover:text-white">
                 <X className="w-4 h-4" />
@@ -192,15 +203,50 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                 </div>
               </div>
 
-              {/* Chart Container - Full Height */}
+              {/* Tab Content */}
               <div className="flex-1 bg-slate-900 min-h-0">
-                <HistoricalPriceChart
-                  symbol={symbol}
-                  timeframe="1Day"
-                  limit={100}
-                  showMiniChart={false}
-                  fullHeight={true}
-                />
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsContent value="trading-view" className="h-full m-0">
+                    <HistoricalPriceChart
+                      symbol={symbol}
+                      timeframe="1Day"
+                      limit={100}
+                      showMiniChart={false}
+                      fullHeight={true}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="ai-analysis" className="h-full m-0 overflow-y-auto">
+                    <div className="p-4">
+                      <AIAnalysisTab 
+                        symbol={symbol} 
+                        stockInfo={{
+                          price: 1180.76,
+                          change: 3.98,
+                          changePercent: 0.34
+                        }} 
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="all-data" className="h-full m-0 overflow-y-auto">
+                    <div className="p-4">
+                      <AllDataTab 
+                        symbol={symbol}
+                        stockInfo={{
+                          price: 1180.76,
+                          change: 3.98,
+                          changePercent: 0.34,
+                          askPrice: 1181.00,
+                          bidPrice: 1180.50,
+                          previousClose: 1176.78,
+                          volume: "3.85M",
+                          marketCap: "505.8B"
+                        }}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
 
