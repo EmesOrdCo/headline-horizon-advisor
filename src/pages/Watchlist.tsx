@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building, Banknote } from "lucide-react";
 import MarketTicker from "@/components/MarketTicker";
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
@@ -179,6 +179,7 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
 const Watchlist = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
+  const [moversFilter, setMoversFilter] = useState("overview");
 
   // Fetch user's actual stocks from database
   const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
@@ -448,6 +449,116 @@ const Watchlist = () => {
               </span>
             )}
           </div>
+
+          {/* Filter Bar */}
+          <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-1 mt-6 overflow-x-auto">
+            <div className="flex items-center gap-1 min-w-max">
+              <Button
+                variant={moversFilter === "overview" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("overview")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "overview" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <BarChart className="w-4 h-4 mr-2" />
+                Overview
+              </Button>
+              <Button
+                variant={moversFilter === "stocks" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("stocks")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "stocks" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Stocks
+              </Button>
+              <Button
+                variant={moversFilter === "crypto" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("crypto")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "crypto" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <Bitcoin className="w-4 h-4 mr-2" />
+                Crypto
+              </Button>
+              <Button
+                variant={moversFilter === "indices" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("indices")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "indices" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Indices
+              </Button>
+              <Button
+                variant={moversFilter === "commodities" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("commodities")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "commodities" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Commodities
+              </Button>
+              <Button
+                variant={moversFilter === "currencies" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("currencies")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "currencies" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <DollarSign className="w-4 h-4 mr-2" />
+                Currencies
+              </Button>
+              <Button
+                variant={moversFilter === "etfs" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("etfs")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "etfs" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <Building className="w-4 h-4 mr-2" />
+                ETFs
+              </Button>
+              <Button
+                variant={moversFilter === "portfolios" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("portfolios")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "portfolios" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <Banknote className="w-4 h-4 mr-2" />
+                Smart Portfolios
+              </Button>
+            </div>
+          </div>
         </div>
 
         {moversLoading && (
@@ -466,40 +577,63 @@ const Watchlist = () => {
 
         {moversData && !moversLoading && (
           <>
-            {/* Top Gainers Section */}
-            {moversData.gainers.length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <TrendingUp className="w-6 h-6 text-emerald-400" />
-                  <h3 className="text-2xl font-bold text-white">Top 3 Gainers</h3>
-                  <Badge className="bg-emerald-500 text-white">
-                    Ranked by % gain
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {moversData.gainers.map((stock, index) => (
-                    <MoverCard key={stock.symbol} stock={stock} isGainer={true} rank={index + 1} />
-                  ))}
-                </div>
-              </div>
-            )}
+            {moversFilter === "overview" || moversFilter === "stocks" ? (
+              <>
+                {/* Top Gainers Section */}
+                {moversData.gainers.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <TrendingUp className="w-6 h-6 text-emerald-400" />
+                      <h3 className="text-2xl font-bold text-white">Top 3 Gainers</h3>
+                      <Badge className="bg-emerald-500 text-white">
+                        Ranked by % gain
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {moversData.gainers.map((stock, index) => (
+                        <MoverCard key={stock.symbol} stock={stock} isGainer={true} rank={index + 1} />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Top Losers Section */}
-            {moversData.losers.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <TrendingDown className="w-6 h-6 text-red-400" />
-                  <h3 className="text-2xl font-bold text-white">Top 3 Losers</h3>
-                  <Badge className="bg-red-500 text-white">
-                    Ranked by % loss
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {moversData.losers.map((stock, index) => (
-                    <MoverCard key={stock.symbol} stock={stock} isGainer={false} rank={index + 1} />
-                  ))}
+                {/* Top Losers Section */}
+                {moversData.losers.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <TrendingDown className="w-6 h-6 text-red-400" />
+                      <h3 className="text-2xl font-bold text-white">Top 3 Losers</h3>
+                      <Badge className="bg-red-500 text-white">
+                        Ranked by % loss
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {moversData.losers.map((stock, index) => (
+                        <MoverCard key={stock.symbol} stock={stock} isGainer={false} rank={index + 1} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Placeholder for other asset types */
+              <div className="text-center py-16">
+                <div className="max-w-md mx-auto">
+                  <div className="text-6xl mb-4">🚧</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
+                  <p className="text-slate-400">
+                    {moversFilter === "crypto" && "Cryptocurrency movers will be available soon."}
+                    {moversFilter === "indices" && "Index fund movers will be available soon."}
+                    {moversFilter === "commodities" && "Commodities movers will be available soon."}
+                    {moversFilter === "currencies" && "Currency pair movers will be available soon."}
+                    {moversFilter === "etfs" && "ETF movers will be available soon."}
+                    {moversFilter === "portfolios" && "Smart portfolio movers will be available soon."}
+                  </p>
+                  <p className="text-slate-500 text-sm mt-2">
+                    Currently showing stock market data only. More asset types coming in future updates.
+                  </p>
                 </div>
               </div>
             )}
