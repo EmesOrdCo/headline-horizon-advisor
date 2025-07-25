@@ -87,6 +87,26 @@ const StockAnalysis: React.FC = () => {
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
+          {/* Timeframe Options */}
+          <div className="flex items-center space-x-1">
+            {['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'].map((timeframe) => (
+              <Button
+                key={timeframe}
+                variant="ghost"
+                size="sm"
+                className={`text-xs px-2 py-1 h-7 ${
+                  timeframe === '1D' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                {timeframe}
+              </Button>
+            ))}
+          </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
           {/* Tab Navigation */}
           <Tabs value="ai-analysis" onValueChange={handleTabChange}>
             <TabsList className="bg-slate-700/50 border border-slate-600 h-8">
