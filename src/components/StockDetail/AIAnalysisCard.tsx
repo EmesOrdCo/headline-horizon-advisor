@@ -263,12 +263,6 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
         </CardContent>
       </Card>
 
-      {/* Detailed Analysis */}
-      <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 mb-4">
-        <p className="text-xs text-slate-300 dark:text-slate-400 leading-relaxed">
-          <span className="text-cyan-400 font-medium">Detailed Analysis:</span> {analysis.detailedAnalysis}
-        </p>
-      </div>
 
       {/* AI-Powered News Insights */}
       <Card className="bg-slate-800/50 border-slate-700">
@@ -341,15 +335,6 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
         </CardContent>
       </Card>
 
-      {/* Detailed Analysis */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardContent className="p-6">
-          <h3 className="text-cyan-400 font-semibold text-lg mb-4">In-Depth Analysis</h3>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            {analysis.detailedAnalysis}
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };
