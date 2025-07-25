@@ -268,7 +268,7 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
               </p>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[480px] pr-4">
+              <ScrollArea className="h-[600px] pr-4">
                 <div className="space-y-3">
                   {newsInsights.map((insight) => (
                     <div
@@ -333,15 +333,19 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
 
         {/* Detailed Analysis - 40% */}
         <div className="w-2/5">
-          <Card className="bg-slate-800/50 border-slate-700 h-fit">
-            <CardContent className="p-6">
-              <h3 className="text-cyan-400 font-semibold text-lg mb-3">Detailed Analysis</h3>
-              <p className="text-slate-400 text-sm mb-4 italic">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-cyan-400 text-lg">Detailed Analysis</CardTitle>
+              <p className="text-slate-400 text-sm italic">
                 *This will summarise in depth what is going on with the stock so they know the full picture if they read it all
               </p>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                {analysis.detailedAnalysis}
-              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  {analysis.detailedAnalysis}
+                </p>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
