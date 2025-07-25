@@ -19,8 +19,8 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const alpacaApiKey = Deno.env.get("ALPACA_BROKER_API_KEY");
-  const alpacaSecretKey = Deno.env.get("ALPACA_BROKER_SECRET_KEY");
+  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
   console.log('WebSocket connection request received');
   console.log('Broker API Key exists:', !!alpacaApiKey);
@@ -59,7 +59,7 @@ serve(async (req) => {
         alpacaSocket.close();
       }
       
-      alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+      alpacaSocket = new WebSocket("wss://broker-api.sandbox.alpaca.markets/stream");
       
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca data stream');
