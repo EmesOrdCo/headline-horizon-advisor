@@ -150,7 +150,7 @@ serve(async (req) => {
         break;
 
       case 'get_activities':
-        url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/activities`;
+        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/activities`;
         const activityParams = new URLSearchParams();
         if (data?.activity_types) activityParams.append('activity_types', data.activity_types);
         if (data?.date) activityParams.append('date', data.date);
