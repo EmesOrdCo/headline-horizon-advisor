@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,13 @@ const BrokerDashboard = () => {
     getOrders, 
     getPositions 
   } = useAlpacaBroker();
+
+  const { signOut } = useAuth();
+
+  // Automatically sign out to show login/signup experience
+  useEffect(() => {
+    signOut();
+  }, [signOut]);
 
   useEffect(() => {
     loadInitialData();
