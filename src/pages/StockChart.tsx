@@ -32,17 +32,18 @@ const StockChart: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   
-  // Fetch current stock data and historical data
-  const { data: stockPrices } = useStockPrices([symbol || 'AAPL']);
-  const { data: historicalData } = useHistoricalPrices(symbol || 'AAPL', '1Day', 1);
+  // Fetch current stock data and historical data - use SPY as it has extended hours trading
+  const activeSymbol = symbol || 'SPY';
+  const { data: stockPrices } = useStockPrices([activeSymbol]);
+  const { data: historicalData } = useHistoricalPrices(activeSymbol, '1Day', 1);
   
-  // Fetch watchlist data
-  const watchlistSymbols = ['SPY', 'QQQ', 'DIA', 'VIX', 'AAPL', 'TSLA', 'NFLX'];
+  // Fetch watchlist data - include globally traded assets
+  const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
   // Set up Alpaca WebSocket for real-time updates
   const { streamData, isConnected } = useAlpacaStreamSingleton({
-    symbols: [symbol || 'AAPL'],
+    symbols: [activeSymbol],
     enabled: true
   });
   
@@ -74,11 +75,11 @@ const StockChart: React.FC = () => {
     const displayNames: { [key: string]: string } = {
       'SPY': 'S&P 500 ETF',
       'QQQ': 'NASDAQ ETF', 
-      'DIA': 'Dow Jones ETF',
-      'VIX': 'Volatility Index',
-      'AAPL': 'Apple Inc.',
-      'TSLA': 'Tesla Inc.',
-      'NFLX': 'Netflix Inc.'
+      'GLD': 'Gold ETF',
+      'TLT': 'Treasury ETF',
+      'EEM': 'Emerging Markets',
+      'IWM': 'Russell 2000 ETF',
+      'XLF': 'Financial Sector'
     };
     
     return {
@@ -100,8 +101,8 @@ const StockChart: React.FC = () => {
   };
 
   // Get current stock info 
-  const currentStock = stockPrices?.find(s => s.symbol === symbol);
-  const streamPrice = streamData?.[symbol || 'AAPL'];
+  const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
+  const streamPrice = streamData?.[activeSymbol];
   
   // Use real-time data if available, otherwise fall back to API data
   const currentPrice = streamPrice?.price || currentStock?.price || 0;
@@ -142,8 +143,8 @@ const StockChart: React.FC = () => {
     'NVDA': 'NVIDIA Corporation'
   };
   
-  const companyName = companyNames[symbol || ''] || `${symbol} Corporation`;
-  const exchange = 'NASDAQ'; // Most stocks are NASDAQ, could be enhanced with real exchange data
+  const companyName = companyNames[activeSymbol] || `${activeSymbol} ETF`;
+  const exchange = activeSymbol.startsWith('SPY') || activeSymbol.startsWith('QQQ') ? 'NYSE Arca' : 'NASDAQ';
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col">
@@ -154,16 +155,16 @@ const StockChart: React.FC = () => {
             variant="ghost" 
             size="sm" 
             className="text-slate-300 hover:text-white"
-            onClick={() => navigate(`/stock/${symbol}`)}
+            onClick={() => navigate(`/stock/${activeSymbol}`)}
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>
           
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">{symbol?.charAt(0) || 'A'}</span>
+              <span className="text-white text-xs font-bold">{activeSymbol?.charAt(0) || 'S'}</span>
             </div>
-            <span className="text-white font-medium">{symbol}</span>
+            <span className="text-white font-medium">{activeSymbol}</span>
             <span className="text-slate-400">{selectedTimeframe}</span>
             <span className="text-slate-400">{exchange}</span>
             {isConnected && (
@@ -284,7 +285,7 @@ const StockChart: React.FC = () => {
           {/* Chart Content */}
           <div className="flex-1 bg-slate-900 min-h-0">
             <HistoricalPriceChart
-              symbol={symbol || 'NFLX'}
+              symbol={activeSymbol}
               timeframe="1Day"
               limit={100}
               showMiniChart={false}
@@ -326,7 +327,7 @@ const StockChart: React.FC = () => {
               <div
                 key={stock.symbol}
                 className={`flex items-center space-x-2 px-4 py-2 hover:bg-slate-700/50 cursor-pointer text-xs ${
-                  stock.symbol === symbol ? 'bg-slate-700' : ''
+                  stock.symbol === activeSymbol ? 'bg-slate-700' : ''
                 }`}
                 onClick={() => navigate(`/stock-chart/${stock.symbol}`)}
               >
@@ -372,7 +373,7 @@ const StockChart: React.FC = () => {
               </div>
               
               <div className="text-xs text-slate-500 text-center">
-                Real-time bid/ask prices for {symbol}
+                Real-time bid/ask prices for {activeSymbol}
               </div>
             </div>
           </div>
