@@ -30,11 +30,7 @@ const StockDetail = () => {
   const cameFromWatchlist = location.state?.from === 'watchlist' || document.referrer.includes('/watchlist');
   
   const handleBackClick = () => {
-    if (cameFromWatchlist) {
-      navigate('/watchlist');
-    } else {
-      navigate(-1); // Go back to previous page
-    }
+    navigate('/watchlist');
   };
   
   useSEO({
