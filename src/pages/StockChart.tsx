@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
-  Menu, 
+  ArrowLeft, 
   Plus, 
   BarChart3, 
   TrendingUp, 
@@ -68,8 +68,13 @@ const StockChart: React.FC = () => {
       {/* Top Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-            <Menu className="w-4 h-4" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-slate-300 hover:text-white"
+            onClick={() => navigate(`/stock/${symbol}`)}
+          >
+            <ArrowLeft className="w-4 h-4" />
           </Button>
           
           <div className="flex items-center space-x-2">
@@ -83,15 +88,6 @@ const StockChart: React.FC = () => {
 
           <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
             <Plus className="w-4 h-4" />
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-slate-300 hover:text-white hover:bg-slate-700"
-            onClick={() => navigate('/dashboard')}
-          >
-            <span className="text-sm">Back to Watchlist</span>
           </Button>
         </div>
 
