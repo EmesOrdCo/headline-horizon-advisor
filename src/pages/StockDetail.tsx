@@ -19,6 +19,7 @@ import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
 import { useSEO } from "@/hooks/useSEO";
 import { getCompanyName } from "@/utils/stockUtils";
+import TradingViewModal from "@/components/TradingViewModal";
 
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -44,6 +45,7 @@ const StockDetail = () => {
   });
 
   const [activeTab, setActiveTab] = useState("analysis");
+  const [isTradingViewOpen, setIsTradingViewOpen] = useState(false);
 
   // Debug: Load Finnhub data immediately to see what's happening
   const { metrics: debugFinnhubMetrics, loading: debugFinnhubLoading, error: debugFinnhubError } = useFinnhubMetrics(stockSymbol);
@@ -169,10 +171,7 @@ const StockDetail = () => {
                 <Button 
                   variant="outline"
                   className="bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 transition-all duration-200"
-                  onClick={() => {
-                    // Open TradingView or external trading platform
-                    window.open(`https://www.tradingview.com/chart/?symbol=${stockSymbol}`, '_blank');
-                  }}
+                  onClick={() => setIsTradingViewOpen(true)}
                 >
                   <Maximize2 className="w-4 h-4 mr-2" />
                   Trading View
@@ -258,6 +257,13 @@ const StockDetail = () => {
       
       {/* Footer */}
       <Footer />
+
+      {/* Trading View Modal */}
+      <TradingViewModal 
+        isOpen={isTradingViewOpen}
+        onClose={() => setIsTradingViewOpen(false)}
+        symbol={stockSymbol}
+      />
     </div>
   );
 };
