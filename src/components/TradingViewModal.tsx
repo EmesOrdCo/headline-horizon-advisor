@@ -101,40 +101,36 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
             </div>
 
             <div className="flex items-center space-x-2">
-              {/* Timeframe Buttons */}
-              <div className="flex items-center space-x-1">
-                {timeframes.map((tf) => (
-                  <Button
-                    key={tf}
-                    variant={selectedTimeframe === tf ? "default" : "ghost"}
-                    size="sm"
-                    className={`h-7 px-2 text-xs ${
-                      selectedTimeframe === tf 
-                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                    }`}
-                    onClick={() => setSelectedTimeframe(tf)}
-                  >
-                    {tf}
-                  </Button>
-                ))}
+              {/* Timeframe Dropdown */}
+              <div className="relative">
+                <select 
+                  value={selectedTimeframe}
+                  onChange={(e) => setSelectedTimeframe(e.target.value)}
+                  className="bg-slate-700 text-white text-sm px-3 py-1 rounded border border-slate-600 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {timeframes.map((tf) => (
+                    <option key={tf} value={tf} className="bg-slate-700 text-white">
+                      {tf}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="w-px h-6 bg-slate-600 mx-2" />
 
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white text-sm">
                 <BarChart3 className="w-4 h-4" />
-                <span className="ml-1 text-xs">Indicators</span>
+                <span className="ml-1">Indicators</span>
               </Button>
 
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white text-sm">
                 <AlertTriangle className="w-4 h-4" />
-                <span className="ml-1 text-xs">Alert</span>
+                <span className="ml-1">Alert</span>
               </Button>
 
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white text-sm">
                 <RotateCcw className="w-4 h-4" />
-                <span className="ml-1 text-xs">Replay</span>
+                <span className="ml-1">Replay</span>
               </Button>
 
               <div className="w-px h-6 bg-slate-600 mx-2" />
@@ -144,28 +140,24 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                 <TabsList className="bg-slate-700/50 border border-slate-600 h-8">
                   <TabsTrigger 
                     value="trading-view" 
-                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     Trading View
                   </TabsTrigger>
                   <TabsTrigger 
                     value="ai-analysis" 
-                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     AI Analysis
                   </TabsTrigger>
                   <TabsTrigger 
                     value="all-data" 
-                    className="text-xs px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
                   >
                     All Data
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-
-              <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-300 hover:text-white">
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </div>
 
