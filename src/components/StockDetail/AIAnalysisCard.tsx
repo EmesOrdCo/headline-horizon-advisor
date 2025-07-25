@@ -264,76 +264,96 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
       </Card>
 
 
-      {/* AI-Powered News Insights */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-white text-xl">AI-Powered News Insights</CardTitle>
-          <p className="text-slate-400 text-sm">
-            Real-time analysis of news sentiment and market impact for {symbol}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-4">
-              {newsInsights.map((insight) => (
-                <div
-                  key={insight.id}
-                  className="border border-slate-700 rounded-lg p-4 bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
-                >
-                  {/* Header with source and timestamp */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <span className="font-medium">{insight.source}</span>
-                      <span>·</span>
-                      <span>{insight.timestamp}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {renderImpactScore(insight.impactScore)}
-                      <Badge className={getSentimentColor(insight.sentiment)}>
-                        {insight.sentiment}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Headline */}
-                  <h3 className="text-white font-semibold text-base mb-3 leading-tight">
-                    {insight.headline}
-                  </h3>
-
-                  {/* AI TLDR */}
-                  <div className="mb-3">
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      <span className="text-cyan-400 font-medium">AI Summary:</span> {insight.tldr}
-                    </p>
-                  </div>
-
-                  {/* Why this matters */}
-                  {insight.whyMatters && (
-                    <div className="mb-3">
-                      <p className="text-slate-300 text-sm">
-                        <span className="text-amber-400 font-medium">Why this matters:</span> {insight.whyMatters}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* View Full Article */}
-                  <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-cyan-400 hover:text-cyan-300 hover:bg-slate-700/50 text-xs"
-                      onClick={() => window.open(insight.articleUrl, '_blank')}
+      {/* AI-Powered News Insights and Detailed Analysis Layout */}
+      <div className="flex gap-6">
+        {/* AI-Powered News Insights - 60% */}
+        <div className="w-3/5">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white text-xl">AI-Powered News Insights</CardTitle>
+              <p className="text-slate-400 text-sm">
+                Real-time analysis of news sentiment and market impact for {symbol}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {newsInsights.map((insight) => (
+                    <div
+                      key={insight.id}
+                      className="border border-slate-700 rounded-lg p-4 bg-slate-800/30 hover:bg-slate-800/50 transition-colors"
                     >
-                      <span>View Full Article</span>
-                      <ExternalLink className="w-3 h-3 ml-1" />
-                    </Button>
-                  </div>
+                      {/* Header with source and timestamp */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm text-slate-400">
+                          <span className="font-medium">{insight.source}</span>
+                          <span>·</span>
+                          <span>{insight.timestamp}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {renderImpactScore(insight.impactScore)}
+                          <Badge className={getSentimentColor(insight.sentiment)}>
+                            {insight.sentiment}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Headline */}
+                      <h3 className="text-white font-semibold text-base mb-3 leading-tight">
+                        {insight.headline}
+                      </h3>
+
+                      {/* AI TLDR */}
+                      <div className="mb-3">
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          <span className="text-cyan-400 font-medium">AI Summary:</span> {insight.tldr}
+                        </p>
+                      </div>
+
+                      {/* Why this matters */}
+                      {insight.whyMatters && (
+                        <div className="mb-3">
+                          <p className="text-slate-300 text-sm">
+                            <span className="text-amber-400 font-medium">Why this matters:</span> {insight.whyMatters}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* View Full Article */}
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-cyan-400 hover:text-cyan-300 hover:bg-slate-700/50 text-xs"
+                          onClick={() => window.open(insight.articleUrl, '_blank')}
+                        >
+                          <span>View Full Article</span>
+                          <ExternalLink className="w-3 h-3 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Analysis - 40% */}
+        <div className="w-2/5">
+          <Card className="bg-slate-800/50 border-slate-700 h-fit">
+            <CardContent className="p-6">
+              <h3 className="text-cyan-400 font-semibold text-lg mb-3">Detailed Analysis</h3>
+              <p className="text-slate-400 text-sm mb-4 italic">
+                *This will summarise in depth what is going on with the stock so they know the full picture if they read it all
+              </p>
+              <p className="text-slate-300 text-sm leading-relaxed">
+                {analysis.detailedAnalysis}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
     </div>
   );
