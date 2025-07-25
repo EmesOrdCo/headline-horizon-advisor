@@ -29,6 +29,12 @@ import StockChart from "./pages/StockChart";
 import StockAnalysis from "./pages/StockAnalysis";
 import StockData from "./pages/StockData";
 import Wallet from "./pages/Wallet";
+import Onboarding from "./pages/Onboarding";
+import OnboardingWelcome from "./pages/onboarding/OnboardingWelcome";
+import OnboardingDetails from "./pages/onboarding/OnboardingDetails";
+import OnboardingEmail from "./pages/onboarding/OnboardingEmail";
+import OnboardingStocks from "./pages/onboarding/OnboardingStocks";
+import OnboardingLoading from "./pages/onboarding/OnboardingLoading";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -206,6 +212,13 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              {/* Onboarding Routes */}
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
+              <Route path="/onboarding/details" element={<OnboardingDetails />} />
+              <Route path="/onboarding/email" element={<OnboardingEmail />} />
+              <Route path="/onboarding/stocks" element={<OnboardingStocks />} />
+              <Route path="/onboarding/loading" element={<OnboardingLoading />} />
               <Route
                 path="/stock-data/:symbol"
                 element={

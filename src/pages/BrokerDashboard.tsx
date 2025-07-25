@@ -36,10 +36,6 @@ const BrokerDashboard = () => {
 
   const { signOut } = useAuth();
 
-  // Automatically sign out to show login/signup experience
-  useEffect(() => {
-    signOut();
-  }, [signOut]);
 
   useEffect(() => {
     loadInitialData();
