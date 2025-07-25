@@ -225,10 +225,10 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
           {/* Main Content - Tabbed Views */}
           <div className="flex flex-1 overflow-hidden">
             <Tabs value={activeView} onValueChange={setActiveView} className="flex flex-1 flex-col">
-              <TabsContent value="trading" className="flex-1 mt-0">
+              <TabsContent value="trading" className="flex-1 mt-0 h-full">
                 <div className="flex h-full">
                   {/* Left Sidebar - Tools */}
-                  <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
+                  <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
                     {leftSidebarTools.map((tool, index) => (
                       <Button
                         key={index}
@@ -243,7 +243,7 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                   </div>
 
                   {/* Main Chart Area */}
-                  <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex-1 flex flex-col">
                     {/* Stock Price Header */}
                     <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
                       <div className="flex items-center space-x-4">
@@ -263,8 +263,59 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                       </div>
                     </div>
 
+                    {/* Chart Title and Controls */}
+                    <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-white font-medium">CRM Live Performance</h3>
+                          <p className="text-xs text-slate-400">24 data points</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          {/* Time Period Buttons */}
+                          <div className="flex items-center space-x-1">
+                            {['1D', '1W', '1M', '3M', '1Y'].map((period) => (
+                              <Button
+                                key={period}
+                                variant={period === '1D' ? "default" : "ghost"}
+                                size="sm"
+                                className={`h-7 px-2 text-xs ${
+                                  period === '1D'
+                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                                }`}
+                              >
+                                {period}
+                              </Button>
+                            ))}
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-7 px-2 text-xs bg-emerald-600 text-white hover:bg-emerald-700"
+                            >
+                              Line
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-slate-300 hover:text-white hover:bg-slate-700"
+                            >
+                              Candles
+                            </Button>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-emerald-400 text-sm font-medium">+7.07(+2.71%)</div>
+                            <div className="text-xs text-slate-400">1M change</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Chart Container - Full Height */}
-                    <div className="flex-1 bg-slate-900 min-h-0">
+                    <div className="flex-1 bg-slate-900">
                       <HistoricalPriceChart
                         symbol={symbol}
                         timeframe="1Day"
@@ -276,7 +327,7 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                   </div>
 
                   {/* Right Sidebar - Watchlist */}
-                  <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
+                  <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col flex-shrink-0">
                     {/* Watchlist Header */}
                     <div className="p-4 border-b border-slate-700">
                       <div className="flex items-center justify-between mb-4">
@@ -329,12 +380,12 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                     <div className="p-4 border-t border-slate-700">
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">{symbol} Corp.</span>
+                          <span className="text-slate-400">Netflix, Inc.</span>
                           <Star className="w-3 h-3 text-slate-400" />
                         </div>
                         <div className="text-slate-400 text-xs">NASDAQ • Real-time • Pre market</div>
-                        <div className="text-white text-lg font-bold">267.93 <span className="text-xs text-slate-400">USD</span></div>
-                        <div className="text-green-400 text-sm">+0.23 +0.09%</div>
+                        <div className="text-white text-lg font-bold">1,180.76 <span className="text-xs text-slate-400">USD</span></div>
+                        <div className="text-green-400 text-sm">+3.98 +0.34%</div>
                         <div className="text-slate-400 text-xs">Last update at 00:59 GMT+1</div>
                         
                         <div className="pt-2 space-y-1">
