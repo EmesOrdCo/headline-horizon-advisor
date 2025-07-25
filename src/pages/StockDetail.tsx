@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, ArrowLeft } from "lucide-react";
+import { BarChart3, ArrowLeft, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
@@ -163,8 +163,21 @@ const StockDetail = () => {
                 </div>
               </div>
 
-              {/* Right side - Tabs */}
+              {/* Right side - Trading View Button and Tabs */}
               <div className="flex items-center space-x-4">
+                {/* Trading View Button */}
+                <Button 
+                  variant="outline"
+                  className="bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 transition-all duration-200"
+                  onClick={() => {
+                    // Open TradingView or external trading platform
+                    window.open(`https://www.tradingview.com/chart/?symbol=${stockSymbol}`, '_blank');
+                  }}
+                >
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Trading View
+                </Button>
+                
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="bg-slate-800/50 border-slate-700">
                     <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
