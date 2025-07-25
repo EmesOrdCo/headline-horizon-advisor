@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAlpacaBroker, AlpacaAsset } from '@/hooks/useAlpacaBroker';
+import TradingChart from './TradingChart';
 import { toast } from 'sonner';
 
 interface TradingInterfaceProps {
@@ -65,7 +66,8 @@ const TradingInterface = ({ accountId, assets, onOrderPlaced }: TradingInterface
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Trading Form */}
       <Card>
         <CardHeader>
           <CardTitle>Place Order</CardTitle>
@@ -191,6 +193,12 @@ const TradingInterface = ({ accountId, assets, onOrderPlaced }: TradingInterface
           </form>
         </CardContent>
       </Card>
+
+      {/* Stock Chart and Analysis */}
+      <TradingChart 
+        symbol={orderData.symbol} 
+        quantity={orderData.qty}
+      />
     </div>
   );
 };

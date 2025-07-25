@@ -36,18 +36,21 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
+    // Broker API uses HTTP Basic Auth (key:secret format)
+    const basicAuth = btoa(`${alpacaApiKey}:${alpacaSecretKey}`);
+    const headers = {
+      'Authorization': `Basic ${basicAuth}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
     // Get current quote data from Broker API
     const quoteUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
     const quoteResponse = await fetch(quoteUrl, {
       method: 'GET',
-      headers: {
-        'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaSecretKey,
-        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
-        'Accept': 'application/json',
-      },
+      headers,
     });
     
     console.log(`Quote response status for ${cleanSymbol}:`, quoteResponse.status);
@@ -67,12 +70,7 @@ serve(async (req) => {
     
     const tradeResponse = await fetch(tradeUrl, {
       method: 'GET',
-      headers: {
-        'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaSecretKey,
-        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
-        'Accept': 'application/json',
-      },
+      headers,
     });
     
     const tradeData = tradeResponse.ok ? JSON.parse(await tradeResponse.text()) : null;
@@ -88,12 +86,7 @@ serve(async (req) => {
     
     const barsResponse = await fetch(barsUrl, {
       method: 'GET',
-      headers: {
-        'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaSecretKey,
-        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
-        'Accept': 'application/json',
-      },
+      headers,
     });
     
     const barsData = barsResponse.ok ? JSON.parse(await barsResponse.text()) : null;
