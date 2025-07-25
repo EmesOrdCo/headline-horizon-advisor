@@ -28,14 +28,19 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
       console.log('Loading activities for account:', accountId);
       console.log('Activity filters:', filters);
       
-      // Fetch both activities and pending orders
-      const [activitiesData, ordersData] = await Promise.all([
-        getActivities(accountId, filters),
-        getOrders(accountId, { status: 'all', limit: 50 })
-      ]);
-
-      console.log('Activities data received:', activitiesData);
+      // Fetch orders first (this works)
+      const ordersData = await getOrders(accountId, { status: 'all', limit: 50 });
       console.log('Orders data received:', ordersData);
+
+      // Try to fetch activities, but don't fail if it doesn't work
+      let activitiesData = [];
+      try {
+        activitiesData = await getActivities(accountId, filters);
+        console.log('Activities data received:', activitiesData);
+      } catch (activitiesError) {
+        console.warn('Activities API failed, showing only orders:', activitiesError);
+        activitiesData = [];
+      }
 
       // Convert pending orders to activity format
       const pendingOrders = (ordersData || [])
@@ -61,6 +66,25 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
       setActivities(combined);
     } catch (error) {
       console.error('Failed to load activities:', error);
+      // Even if everything fails, try to at least show pending orders
+      try {
+        const ordersData = await getOrders(accountId, { status: 'all', limit: 50 });
+        const pendingOrders = (ordersData || [])
+          .filter((order: any) => ['accepted', 'pending_new', 'pending_cancel', 'pending_replace'].includes(order.status))
+          .map((order: any) => ({
+            activity_type: 'PENDING_ORDER',
+            symbol: order.symbol,
+            description: `${order.side.toUpperCase()} ${order.qty} shares - ${order.order_type} order`,
+            qty: order.qty,
+            price: order.limit_price,
+            created_at: order.created_at,
+            status: order.status,
+            side: order.side
+          }));
+        setActivities(pendingOrders);
+      } catch (fallbackError) {
+        console.error('Complete failure to load any data:', fallbackError);
+      }
     }
   };
 
