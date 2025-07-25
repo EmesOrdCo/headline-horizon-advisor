@@ -57,10 +57,10 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
 
   if (!accountId) {
     return (
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Account Activities</CardTitle>
-          <CardDescription>Please select an account to view activities</CardDescription>
+          <CardTitle className="text-white">Account Activities</CardTitle>
+          <CardDescription className="text-slate-400">Please select an account to view activities</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -68,10 +68,10 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Account Activities</CardTitle>
-          <CardDescription>Transaction history and account events</CardDescription>
+          <CardTitle className="text-white">Account Activities</CardTitle>
+          <CardDescription className="text-slate-400">Transaction history and account events</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-6">
@@ -94,54 +94,54 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
           </div>
 
           {activities.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-slate-400">
               {loading ? 'Loading activities...' : 'No activities found'}
             </div>
           ) : (
             <div className="space-y-4">
               {activities.map((activity, index) => (
-                <Card key={index} className="p-4">
+                <Card key={index} className="p-4 bg-slate-700/30 border-slate-600 hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 rounded-full bg-muted">
-                        {getActivityIcon(activity.activity_type)}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={getActivityColor(activity.activity_type)}>
-                            {activity.activity_type}
-                          </Badge>
-                          {activity.symbol && (
-                            <Badge variant="outline">{activity.symbol}</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.description || 'No description available'}
-                        </p>
-                        {activity.qty && (
-                          <p className="text-sm">
-                            Quantity: {activity.qty} 
-                            {activity.price && ` @ $${parseFloat(activity.price).toFixed(2)}`}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {activity.net_amount && (
-                        <p className={`font-semibold ${
-                          parseFloat(activity.net_amount) >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {parseFloat(activity.net_amount) >= 0 ? '+' : ''}
-                          ${parseFloat(activity.net_amount).toFixed(2)}
-                        </p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(activity.date || activity.created_at).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(activity.date || activity.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
+                     <div className="flex items-start space-x-3">
+                       <div className="p-2 rounded-full bg-slate-600">
+                         {getActivityIcon(activity.activity_type)}
+                       </div>
+                       <div className="space-y-1">
+                         <div className="flex items-center space-x-2">
+                           <Badge variant={getActivityColor(activity.activity_type)}>
+                             {activity.activity_type}
+                           </Badge>
+                           {activity.symbol && (
+                             <Badge variant="outline">{activity.symbol}</Badge>
+                           )}
+                         </div>
+                         <p className="text-sm text-slate-400">
+                           {activity.description || 'No description available'}
+                         </p>
+                         {activity.qty && (
+                           <p className="text-sm text-white">
+                             Quantity: {activity.qty} 
+                             {activity.price && ` @ $${parseFloat(activity.price).toFixed(2)}`}
+                           </p>
+                         )}
+                       </div>
+                     </div>
+                     <div className="text-right">
+                       {activity.net_amount && (
+                         <p className={`font-semibold ${
+                           parseFloat(activity.net_amount) >= 0 ? 'text-emerald-400' : 'text-red-400'
+                         }`}>
+                           {parseFloat(activity.net_amount) >= 0 ? '+' : ''}
+                           ${parseFloat(activity.net_amount).toFixed(2)}
+                         </p>
+                       )}
+                       <p className="text-sm text-slate-400">
+                         {new Date(activity.date || activity.created_at).toLocaleDateString()}
+                       </p>
+                       <p className="text-xs text-slate-400">
+                         {new Date(activity.date || activity.created_at).toLocaleTimeString()}
+                       </p>
+                     </div>
                   </div>
                 </Card>
               ))}
