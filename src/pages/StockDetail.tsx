@@ -146,7 +146,7 @@ const StockDetail = () => {
                   </div>
                   <div className="flex items-center space-x-4">
                     <span className="text-3xl font-bold text-white">
-                      ${stockInfo.price.toFixed(2)}
+                      ${stockInfo.isLoading ? '...' : stockInfo.price.toFixed(2)}
                     </span>
                     <span className={`flex items-center text-lg font-medium ${
                       stockInfo.change >= 0 ? 'text-emerald-400' : 'text-red-400'

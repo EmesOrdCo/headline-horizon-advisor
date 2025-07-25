@@ -38,13 +38,13 @@ const PriceAlerts = ({ symbol, currentPrice }: PriceAlertsProps) => {
           Set Price Alert
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 text-slate-400 text-sm mb-4">
+      <CardContent className="py-4">
+        <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
           <Info className="w-4 h-4" />
           <span>Get notified when price hits target</span>
         </div>
         
-        <div className="flex flex-wrap gap-3 mb-4">
+        <div className="flex flex-wrap gap-3 mb-3">
           {['-10%', '-5%', '+5%', '+10%'].map((option) => (
             <Button
               key={option}
@@ -74,7 +74,7 @@ const PriceAlerts = ({ symbol, currentPrice }: PriceAlertsProps) => {
         </div>
 
         {selectedAlertType === 'Custom' && (
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-3">
             <Label htmlFor="custom-alert" className="text-slate-300 text-sm">
               Target Price
             </Label>
