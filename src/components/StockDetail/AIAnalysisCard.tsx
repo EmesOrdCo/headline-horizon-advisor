@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TrendingUp, ExternalLink, Flame } from "lucide-react";
 import { ConfidenceDots } from "@/components/NewsCard/ConfidenceDots";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AIAnalysisCardProps {
   symbol: string;
@@ -22,7 +23,7 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
         title: `${symbol}: Mixed signals in current market`,
         description: `Historical market analysis for ${symbol} based on recent trends and market patterns.`,
         sentiment: "Neutral",
-        confidence: 3,
+        confidence: 60, // Change to percentage instead of 1-5 scale
         detailedAnalysis: `Mixed signals for ${symbol} with neutral market impact expected. Analysis suggests balanced risk-reward profile in current environment. The stock has been trading within a consolidation pattern over the past several weeks, indicating market indecision about the company's near-term direction. Technical indicators are providing mixed signals, with the RSI showing neutral momentum while moving averages suggest a sideways trend. From a fundamental perspective, recent earnings reports have been in line with expectations, neither significantly beating nor missing analyst forecasts. The broader market environment remains supportive for technology stocks, though sector rotation patterns suggest investors are becoming more selective. Risk factors include potential regulatory headwinds and competitive pressures, while upside catalysts include new product launches and expanding market opportunities. Overall, the risk-reward profile appears balanced at current levels, making this an appropriate holding for diversified portfolios but not necessarily a strong conviction buy or sell.`,
         tldr: `Based on recent market patterns and technical indicators, ${symbol} is showing mixed signals with neutral sentiment. The stock appears to be consolidating in a tight range, suggesting potential for either direction based on broader market catalysts. Current analysis indicates a balanced risk-reward profile with moderate confidence in near-term stability.`
       },
@@ -30,7 +31,7 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
         title: `${symbol}: Strong fundamentals support bullish outlook`,
         description: `Comprehensive analysis of ${symbol} based on financial metrics and market positioning.`,
         sentiment: "Bullish",
-        confidence: 4,
+        confidence: 85, // Change to percentage instead of 1-5 scale
         detailedAnalysis: `Strong fundamentals and positive market sentiment indicate bullish outlook for ${symbol}. Technical indicators support continued upward momentum. The company has demonstrated consistent revenue growth over the past four quarters, with expanding profit margins that reflect operational efficiency improvements. Recent strategic partnerships and product innovations position the company well for continued market share gains in its core segments. Technical analysis reveals a strong uptrend with key support levels holding firm, while momentum indicators suggest the stock has room for further appreciation. The broader sector tailwinds, including increased digitalization trends and favorable regulatory environment, provide additional support for the bullish thesis. Management's forward guidance has been consistently conservative and achievable, building investor confidence in execution capabilities. While valuation metrics have expanded, they remain reasonable relative to growth prospects and peer comparisons. Key risks include potential market volatility and execution challenges, but the overall fundamental picture supports a constructive outlook for the next 6-12 months.`,
         tldr: `${symbol} demonstrates strong fundamental metrics and positive market momentum, indicating a bullish outlook in the near term. Recent earnings performance and sector leadership position the stock well for continued growth. Technical analysis confirms bullish sentiment with high confidence levels across multiple indicators.`
       }
@@ -129,6 +130,10 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
 
   const analysis = getAnalysisContent(symbol);
   const isPositive = stockInfo.change >= 0;
+  const isMobile = useIsMobile();
+  
+  console.log('AIAnalysisCard - Analysis data:', analysis);
+  console.log('AIAnalysisCard - Symbol:', symbol, 'Confidence:', analysis.confidence);
 
   const getSentimentColorSimple = (sentiment: string) => {
     switch (sentiment) {
@@ -208,11 +213,12 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
           *Based on historical market analysis and trends for {symbol}.
         </p>
         
-        <div className="mb-2">
+        {/* Mobile: Stack weight and confidence vertically */}
+        <div className={`${isMobile ? 'space-y-3' : 'mb-2'}`}>
           <div className="flex justify-between items-center text-sm">
             <div className="flex items-center gap-2">
               <span className="text-slate-400">Confidence Level</span>
-              <ConfidenceDots confidence={analysis.confidence * 20} />
+              <ConfidenceDots confidence={analysis.confidence} />
             </div>
           </div>
         </div>
