@@ -49,18 +49,8 @@ const AIAnalysisTab = ({ symbol, stockInfo }: AIAnalysisTabProps) => {
   }
 
   if (!newsArticles || newsArticles.length === 0) {
-    return (
-      <div className="space-y-6">
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardContent className="text-center py-12">
-            <p className="text-slate-400 mb-4">No news analysis available for {symbol}</p>
-            <p className="text-sm text-slate-500">
-              The MarketAux API has reached its usage limit. Historical analysis will appear here when new data is available.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    const AIAnalysisCard = require('./AIAnalysisCard').default;
+    return <AIAnalysisCard symbol={symbol} stockInfo={stockInfo} />;
   }
 
   return (
