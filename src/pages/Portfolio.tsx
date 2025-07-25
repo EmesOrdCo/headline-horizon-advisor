@@ -3,6 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
+import CompanyLogo from "@/components/CompanyLogo";
+import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,13 @@ const Portfolio = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'GBP' | 'EUR'>('USD');
   const [showBenchmark, setShowBenchmark] = useState(false);
   const [benchmarkType, setBenchmarkType] = useState<'sp500' | 'nasdaq' | 'btc'>('sp500');
+  
+  // Get all stock symbols for logo loading
+  const allStockSymbols = [
+    ...assetCategories.stocks.map(stock => stock.symbol),
+    ...assetCategories.funds.map(fund => fund.symbol)
+  ];
+  const { getLogoUrl } = useCompanyLogos(allStockSymbols);
   
   useSEO({
     title: "Portfolio - Investment Tracker",
@@ -205,7 +214,15 @@ const Portfolio = () => {
                       {assetCategories[category as keyof typeof assetCategories].map((asset) => (
                         <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{asset.logo}</span>
+                            {category === 'crypto' ? (
+                              <span className="text-lg">{asset.logo}</span>
+                            ) : (
+                              <CompanyLogo 
+                                symbol={asset.symbol} 
+                                logoUrl={getLogoUrl(asset.symbol)} 
+                                size="sm" 
+                              />
+                            )}
                             <div>
                               <div className="flex items-center gap-2">
                                 <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
@@ -244,9 +261,13 @@ const Portfolio = () => {
               <CardContent>
                 <div className="space-y-2">
                   {assetCategories.funds.map((asset) => (
-                    <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{asset.logo}</span>
+                     <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                       <div className="flex items-center gap-2">
+                         <CompanyLogo 
+                           symbol={asset.symbol} 
+                           logoUrl={getLogoUrl(asset.symbol)} 
+                           size="sm" 
+                         />
                         <div>
                           <div className="flex items-center gap-2">
                             <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
