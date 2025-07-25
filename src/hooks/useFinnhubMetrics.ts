@@ -26,9 +26,10 @@ export const useFinnhubMetrics = (symbol: string) => {
         console.log('useFinnhubMetrics: Received data:', data);
         setMetrics(data);
       } catch (err) {
-        const errorMessage = 'Failed to fetch financial metrics';
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch financial metrics';
         setError(errorMessage);
         console.error('useFinnhubMetrics: Fetch error:', err);
+        // Don't reset metrics to empty object on error, keep previous state
       } finally {
         console.log('useFinnhubMetrics: Setting loading to false');
         setLoading(false);

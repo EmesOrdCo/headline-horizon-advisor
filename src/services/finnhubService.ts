@@ -49,16 +49,23 @@ export const fetchFinnhubMetrics = async (symbol: string): Promise<FinnhubMetric
       body: { symbol }
     });
 
+    console.log('Finnhub Service: Edge function response - data:', data, 'error:', error);
+
     if (error) {
       console.error('Finnhub Service: Supabase function error:', error);
+      throw new Error(`Supabase function error: ${error.message}`);
+    }
+
+    if (!data) {
+      console.warn('Finnhub Service: No data returned from edge function');
       return {};
     }
 
     console.log('Finnhub Service: Received data from edge function:', data);
-    return data || {};
+    return data;
 
   } catch (error) {
     console.error('Finnhub Service: Error calling edge function:', error);
-    return {};
+    throw error;
   }
 };
