@@ -176,18 +176,26 @@ const TradingChart = ({ symbol, quantity }: TradingChartProps) => {
             <p className="text-sm text-slate-400 mb-2">Price Movement</p>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={priceHistory}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgb(71 85 105)" />
                 <XAxis 
                   dataKey="time" 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'rgb(148 163 184)' }}
                   interval="preserveStartEnd"
+                  stroke="rgb(71 85 105)"
                 />
                 <YAxis 
                   domain={['dataMin - 0.1', 'dataMax + 0.1']}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'rgb(148 163 184)' }}
+                  stroke="rgb(71 85 105)"
                 />
                 <Tooltip 
                   formatter={(value: number) => [`$${value}`, 'Price']}
+                  contentStyle={{
+                    backgroundColor: 'rgb(30 41 59)',
+                    border: '1px solid rgb(71 85 105)',
+                    borderRadius: '6px',
+                    color: 'rgb(248 250 252)'
+                  }}
                 />
                 <Line 
                   type="monotone" 
