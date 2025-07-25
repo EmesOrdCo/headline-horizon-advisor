@@ -71,86 +71,47 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-slate-900 border-none">
         <div className="flex flex-col h-full">
-          {/* Top Toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Menu className="w-4 h-4" />
-              </Button>
-              
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">N</span>
+          {/* Close button in top right */}
+          <div className="absolute top-4 right-4 z-50">
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-300 hover:text-white">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Stock Header Section - Consistent with stock details page */}
+          <div className="py-6 border-b border-slate-700/50 px-6">
+            <div className="flex items-center justify-between">
+              {/* Left side - Stock info */}
+              <div className="flex items-center space-x-4">
+                {/* Stock Icon */}
+                <div className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{symbol.slice(0, 2)}</span>
                 </div>
-                <span className="text-white font-medium">{symbol}</span>
-                <span className="text-slate-400">1D</span>
-                <span className="text-slate-400">NASDAQ</span>
+                
+                {/* Stock Details */}
+                <div>
+                  <div className="flex items-center space-x-3 mb-1">
+                    <h1 className="text-2xl font-bold text-white">{symbol}</h1>
+                    <span className="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium">
+                      {symbol} Corp.
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-3xl font-bold text-white">
+                      $267.93
+                    </span>
+                    <span className="flex items-center text-lg font-medium text-emerald-400">
+                      +0.23 (+0.09%)
+                    </span>
+                    <span className="text-slate-400 text-sm">At Close</span>
+                  </div>
+                </div>
               </div>
 
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Timeframe Buttons */}
-              <div className="flex items-center space-x-1">
-                {timeframes.map((tf) => (
-                  <Button
-                    key={tf}
-                    variant={selectedTimeframe === tf ? "default" : "ghost"}
-                    size="sm"
-                    className={`h-7 px-2 text-xs ${
-                      selectedTimeframe === tf 
-                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                    }`}
-                    onClick={() => setSelectedTimeframe(tf)}
-                  >
-                    {tf}
-                  </Button>
-                ))}
+              {/* Right side - Trading View title */}
+              <div className="flex items-center space-x-4">
+                <h2 className="text-xl font-semibold text-white">Trading View</h2>
               </div>
-
-              <div className="w-px h-6 bg-slate-600 mx-2" />
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <BarChart3 className="w-4 h-4" />
-                <span className="ml-1 text-xs">Indicators</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="ml-1 text-xs">Alert</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <RotateCcw className="w-4 h-4" />
-                <span className="ml-1 text-xs">Replay</span>
-              </Button>
-
-              <div className="w-px h-6 bg-slate-600 mx-2" />
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Save className="w-4 h-4" />
-                <span className="ml-1 text-xs">Save</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Share className="w-4 h-4" />
-              </Button>
-
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                <Camera className="w-4 h-4" />
-              </Button>
-
-              <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <span className="text-xs">Publish</span>
-              </Button>
-
-              <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-300 hover:text-white">
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </div>
 
@@ -173,21 +134,83 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
 
             {/* Main Chart Area */}
             <div className="flex-1 flex flex-col min-h-0">
-              {/* Stock Price Header */}
-              <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white text-lg font-bold">1,180.76</span>
-                    <span className="text-green-400 text-sm">+3.98 (+0.34%)</span>
+              {/* TradingView Controls - Above chart */}
+              <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {/* Stock Price Info */}
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white text-lg font-bold">267.93</span>
+                        <span className="text-green-400 text-sm">+0.23 (+0.09%)</span>
+                      </div>
+                      <div className="flex space-x-4 text-sm text-slate-400">
+                        <div>O <span className="text-white">267.70</span></div>
+                        <div>H <span className="text-white">268.50</span></div>
+                        <div>L <span className="text-white">266.66</span></div>
+                        <div>C <span className="text-white">267.93</span></div>
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        Vol <span className="text-blue-400">6.71M</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex space-x-4 text-sm text-slate-400">
-                    <div>O <span className="text-white">1,177.80</span></div>
-                    <div>H <span className="text-white">1,183.50</span></div>
-                    <div>L <span className="text-white">1,162.66</span></div>
-                    <div>C <span className="text-white">1,180.76</span></div>
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    Vol <span className="text-blue-400">3.85M</span>
+
+                  <div className="flex items-center space-x-4">
+                    {/* Timeframe Buttons */}
+                    <div className="flex items-center space-x-1">
+                      {timeframes.map((tf) => (
+                        <Button
+                          key={tf}
+                          variant={selectedTimeframe === tf ? "default" : "ghost"}
+                          size="sm"
+                          className={`h-7 px-2 text-xs ${
+                            selectedTimeframe === tf 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                          }`}
+                          onClick={() => setSelectedTimeframe(tf)}
+                        >
+                          {tf}
+                        </Button>
+                      ))}
+                    </div>
+
+                    <div className="w-px h-6 bg-slate-600 mx-2" />
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="ml-1 text-xs">Indicators</span>
+                    </Button>
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="ml-1 text-xs">Alert</span>
+                    </Button>
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <RotateCcw className="w-4 h-4" />
+                      <span className="ml-1 text-xs">Replay</span>
+                    </Button>
+
+                    <div className="w-px h-6 bg-slate-600 mx-2" />
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <Save className="w-4 h-4" />
+                      <span className="ml-1 text-xs">Save</span>
+                    </Button>
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <Share className="w-4 h-4" />
+                    </Button>
+
+                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                      <Camera className="w-4 h-4" />
+                    </Button>
+
+                    <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      <span className="text-xs">Publish</span>
+                    </Button>
                   </div>
                 </div>
               </div>
