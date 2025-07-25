@@ -34,7 +34,7 @@ serve(async (req) => {
     startDate.setDate(startDate.getDate() - bufferDays);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
+    const barsUrl = `https://paper-api.alpaca.markets/v2/stocks/${symbol}/bars?timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
     console.log(`Making historical bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
@@ -42,7 +42,6 @@ serve(async (req) => {
       headers: {
         'APCA-API-KEY-ID': alpacaApiKey,
         'APCA-API-SECRET-KEY': alpacaSecretKey,
-        'User-Agent': 'Mozilla/5.0 (compatible; StockApp/1.0)',
         'Accept': 'application/json',
       },
     });
@@ -56,11 +55,11 @@ serve(async (req) => {
     const barsData = await barsResponse.json();
     console.log(`Historical data response:`, barsData);
 
-    if (!barsData.bars || !barsData.bars[symbol] || barsData.bars[symbol].length === 0) {
+    if (!barsData.bars || barsData.bars.length === 0) {
       throw new Error(`No historical data available for symbol: ${symbol}`);
     }
     
-    let bars = barsData.bars[symbol];
+    let bars = barsData.bars;
     
     // For 1-week mini charts, take only the last 7 data points
     if (limit === 7 && timeframe === '1Day') {
