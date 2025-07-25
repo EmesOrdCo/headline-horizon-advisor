@@ -5,7 +5,7 @@ import { Info } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NewsCard from "@/components/NewsCard";
-import AINewsInsights from "./AINewsInsights";
+import AIAnalysisCard from "./AIAnalysisCard";
 
 interface AIAnalysisTabProps {
   symbol: string;
@@ -52,7 +52,7 @@ const AIAnalysisTab = ({ symbol, stockInfo }: AIAnalysisTabProps) => {
   if (!newsArticles || newsArticles.length === 0) {
     return (
       <div className="space-y-6">
-        <AINewsInsights symbol={symbol} />
+        <AIAnalysisCard symbol={symbol} stockInfo={stockInfo} />
       </div>
     );
   }

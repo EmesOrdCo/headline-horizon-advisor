@@ -14,6 +14,7 @@ import {
   Star
 } from "lucide-react";
 import AIAnalysisTab from "@/components/StockDetail/AIAnalysisTab";
+import AIAnalysisCard from "@/components/StockDetail/AIAnalysisCard";
 
 const StockAnalysis: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -117,7 +118,7 @@ const StockAnalysis: React.FC = () => {
       <div className="flex flex-1">
         <div className="flex-1 bg-slate-900 overflow-y-auto">
           <div className="p-6">
-            <AIAnalysisTab 
+            <AIAnalysisCard 
               symbol={symbol || 'NFLX'} 
               stockInfo={{
                 price: 1180.76,
