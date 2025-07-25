@@ -140,37 +140,6 @@ const BrokerDashboard = () => {
             </Card>
           )}
 
-          {/* Progress Steps */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white text-lg">Getting Started</CardTitle>
-              <CardDescription className="text-slate-400">Follow these steps to start trading</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 sm:space-x-8">
-                <div className={`flex items-center space-x-3 ${accounts.length > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${accounts.length > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
-                    1
-                  </div>
-                  <span className="font-medium">Create Account</span>
-                </div>
-                <div className="hidden sm:block w-12 h-px bg-slate-600"></div>
-                <div className={`flex items-center space-x-3 ${userStep !== 'create' && userStep !== 'fund' ? 'text-emerald-400' : 'text-slate-500'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${userStep !== 'create' && userStep !== 'fund' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
-                    2
-                  </div>
-                  <span className="font-medium">Fund Account</span>
-                </div>
-                <div className="hidden sm:block w-12 h-px bg-slate-600"></div>
-                <div className={`flex items-center space-x-3 ${userStep === 'trade' ? 'text-emerald-400' : 'text-slate-500'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${userStep === 'trade' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
-                    3
-                  </div>
-                  <span className="font-medium">Start Trading</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Step 1: Create Account */}
           {userStep === 'create' && (

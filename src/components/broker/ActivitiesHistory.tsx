@@ -25,11 +25,17 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
     try {
       const filters = activityType !== 'all' ? { activity_types: activityType } : {};
       
+      console.log('Loading activities for account:', accountId);
+      console.log('Activity filters:', filters);
+      
       // Fetch both activities and pending orders
       const [activitiesData, ordersData] = await Promise.all([
         getActivities(accountId, filters),
         getOrders(accountId, { status: 'all', limit: 50 })
       ]);
+
+      console.log('Activities data received:', activitiesData);
+      console.log('Orders data received:', ordersData);
 
       // Convert pending orders to activity format
       const pendingOrders = (ordersData || [])
@@ -45,10 +51,13 @@ const ActivitiesHistory = ({ accountId }: ActivitiesHistoryProps) => {
           side: order.side
         }));
 
+      console.log('Pending orders converted:', pendingOrders);
+
       // Combine and sort by date
       const combined = [...(activitiesData || []), ...pendingOrders]
         .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
 
+      console.log('Combined activities:', combined);
       setActivities(combined);
     } catch (error) {
       console.error('Failed to load activities:', error);
