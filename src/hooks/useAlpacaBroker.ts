@@ -1,0 +1,216 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface AlpacaAccount {
+  id: string;
+  account_number: string;
+  status: string;
+  currency: string;
+  created_at: string;
+  last_equity?: string;
+  buying_power?: string;
+}
+
+export interface AlpacaAsset {
+  id: string;
+  symbol: string;
+  name: string;
+  exchange: string;
+  tradable: boolean;
+  marginable: boolean;
+  shortable: boolean;
+  status: string;
+  asset_class: string;
+}
+
+export interface AlpacaOrder {
+  id: string;
+  symbol: string;
+  qty: string;
+  side: 'buy' | 'sell';
+  order_type: 'market' | 'limit';
+  time_in_force: 'day' | 'gtc' | 'ioc' | 'fok';
+  status: string;
+  filled_qty?: string;
+  filled_avg_price?: string;
+  created_at: string;
+  updated_at: string;
+  limit_price?: string;
+}
+
+export interface AlpacaPosition {
+  symbol: string;
+  qty: string;
+  side: 'long' | 'short';
+  market_value: string;
+  cost_basis: string;
+  unrealized_pl: string;
+  unrealized_plpc: string;
+  current_price: string;
+}
+
+export interface CreateAccountData {
+  contact: {
+    email_address: string;
+    phone_number: string;
+    street_address: string[];
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  };
+  identity: {
+    given_name: string;
+    family_name: string;
+    date_of_birth: string;
+    tax_id: string;
+    tax_id_type: string;
+    country_of_citizenship: string;
+    country_of_birth: string;
+    country_of_tax_residence: string;
+    funding_source: string[];
+  };
+  disclosures: {
+    is_control_person: boolean;
+    is_affiliated_exchange_or_finra: boolean;
+    is_politically_exposed: boolean;
+    immediate_family_exposed: boolean;
+  };
+  agreements: Array<{
+    agreement: string;
+    signed_at: string;
+    ip_address: string;
+  }>;
+}
+
+export const useAlpacaBroker = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const callBrokerAPI = async (action: string, account_id?: string, data?: any) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: response, error: apiError } = await supabase.functions.invoke('alpaca-broker', {
+        body: { action, account_id, data },
+      });
+
+      if (apiError) {
+        throw new Error(apiError.message);
+      }
+
+      if (!response.success) {
+        throw new Error(response.error || 'API request failed');
+      }
+
+      return response.data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Account Management
+  const createAccount = async (accountData: CreateAccountData) => {
+    return callBrokerAPI('create_account', undefined, accountData);
+  };
+
+  const getAccounts = async (): Promise<AlpacaAccount[]> => {
+    return callBrokerAPI('get_accounts');
+  };
+
+  const getAccount = async (accountId: string): Promise<AlpacaAccount> => {
+    return callBrokerAPI('get_account', accountId);
+  };
+
+  // Funding
+  const createACHRelationship = async (accountId: string, achData: any) => {
+    return callBrokerAPI('create_ach_relationship', accountId, achData);
+  };
+
+  const createTransfer = async (accountId: string, transferData: any) => {
+    return callBrokerAPI('create_transfer', accountId, transferData);
+  };
+
+  const createJournal = async (journalData: any) => {
+    return callBrokerAPI('create_journal', undefined, journalData);
+  };
+
+  // Assets
+  const getAssets = async (filters?: { status?: string; asset_class?: string; exchange?: string }): Promise<AlpacaAsset[]> => {
+    return callBrokerAPI('get_assets', undefined, filters);
+  };
+
+  // Trading
+  const placeOrder = async (accountId: string, orderData: {
+    symbol: string;
+    qty: string;
+    side: 'buy' | 'sell';
+    type: 'market' | 'limit';
+    time_in_force: 'day' | 'gtc' | 'ioc' | 'fok';
+    limit_price?: string;
+  }): Promise<AlpacaOrder> => {
+    return callBrokerAPI('place_order', accountId, orderData);
+  };
+
+  const getOrders = async (accountId: string, filters?: { status?: string; limit?: number }): Promise<AlpacaOrder[]> => {
+    return callBrokerAPI('get_orders', accountId, filters);
+  };
+
+  const getPositions = async (accountId: string): Promise<AlpacaPosition[]> => {
+    return callBrokerAPI('get_positions', accountId);
+  };
+
+  // Activities
+  const getActivities = async (accountId: string, filters?: { activity_types?: string; date?: string }) => {
+    return callBrokerAPI('get_activities', accountId, filters);
+  };
+
+  const getPortfolioHistory = async (accountId: string, options?: { period?: string; timeframe?: string }) => {
+    return callBrokerAPI('get_portfolio_history', accountId, options);
+  };
+
+  // Market Data
+  const getMarketData = async (symbols: string | string[]) => {
+    return callBrokerAPI('get_market_data', undefined, { symbols });
+  };
+
+  const getHistoricalBars = async (options: {
+    symbols: string;
+    timeframe: string;
+    start?: string;
+    end?: string;
+    limit?: number;
+  }) => {
+    return callBrokerAPI('get_historical_bars', undefined, options);
+  };
+
+  return {
+    loading,
+    error,
+    // Account Management
+    createAccount,
+    getAccounts,
+    getAccount,
+    // Funding
+    createACHRelationship,
+    createTransfer,
+    createJournal,
+    // Assets
+    getAssets,
+    // Trading
+    placeOrder,
+    getOrders,
+    getPositions,
+    // Activities
+    getActivities,
+    getPortfolioHistory,
+    // Market Data
+    getMarketData,
+    getHistoricalBars,
+  };
+};

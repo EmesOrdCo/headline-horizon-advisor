@@ -10,7 +10,7 @@ import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
-import Portfolio from "./pages/Portfolio";
+import BrokerDashboard from "./pages/BrokerDashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import DisplaySettings from "./pages/settings/DisplaySettings";
@@ -54,10 +54,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/portfolio"
+                path="/broker"
                 element={
                   <ProtectedRoute>
-                    <Portfolio />
+                    <BrokerDashboard />
                   </ProtectedRoute>
                 }
               />
