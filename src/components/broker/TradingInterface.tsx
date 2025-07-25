@@ -47,7 +47,9 @@ const TradingInterface = ({ accountId, assets, onOrderPlaced }: TradingInterface
         limit_price: '',
       });
     } catch (error) {
-      toast.error('Failed to place order');
+      // Show specific error message from the API
+      const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
+      toast.error(errorMessage);
       console.error('Order placement error:', error);
     }
   };

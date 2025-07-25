@@ -225,7 +225,33 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`Alpaca ${action} API error: ${response.status} - ${errorText}`);
       console.error(`Full error response:`, errorText);
-      throw new Error(`${action} API request failed: ${response.status} - ${errorText}`);
+      
+      // Try to parse JSON error response for better error messages
+      let errorMessage = `API request failed: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) {
+          errorMessage = errorJson.message;
+        } else if (errorJson.error) {
+          errorMessage = errorJson.error;
+        }
+        
+        // Map common error codes to user-friendly messages
+        if (errorJson.code === 40010000) {
+          errorMessage = "Invalid order format. Please check your order details.";
+        } else if (errorMessage.toLowerCase().includes('insufficient')) {
+          errorMessage = "Insufficient buying power. You don't have enough funds for this trade.";
+        } else if (errorMessage.toLowerCase().includes('not_tradable')) {
+          errorMessage = "This stock is not available for trading.";
+        } else if (errorMessage.toLowerCase().includes('market_closed')) {
+          errorMessage = "Market is currently closed. Orders will be queued for next trading session.";
+        }
+      } catch (parseError) {
+        // If parsing fails, use the original error text
+        errorMessage = errorText || errorMessage;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
