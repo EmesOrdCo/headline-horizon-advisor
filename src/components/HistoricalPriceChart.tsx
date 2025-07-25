@@ -128,16 +128,17 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   if (error) {
     if (showMiniChart) {
       return (
-        <div className="w-full h-12 flex items-center justify-center text-red-400 text-xs">
-          Error
+        <div className="w-full h-12 flex items-center justify-center text-slate-500">
+          <BarChart3 className="w-4 h-4" />
         </div>
       );
     }
     return (
-      <div className="h-64 flex items-center justify-center text-red-400">
+      <div className="h-64 flex items-center justify-center text-slate-400">
         <div className="text-center">
-          <p className="mb-2">Failed to load historical data</p>
-          <p className="text-sm text-slate-500">{error.message}</p>
+          <BarChart3 className="w-8 h-8 mx-auto mb-3 text-slate-500" />
+          <p className="mb-2">Chart temporarily unavailable</p>
+          <p className="text-sm text-slate-500">Data service is currently experiencing issues</p>
         </div>
       </div>
     );
