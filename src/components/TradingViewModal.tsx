@@ -172,9 +172,9 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
             </div>
 
             {/* Main Chart Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {/* Stock Price Header */}
-              <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700">
+              <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <span className="text-white text-lg font-bold">1,180.76</span>
@@ -193,15 +193,14 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
               </div>
 
               {/* Chart Container - Full Height */}
-              <div className="flex-1 bg-slate-900">
-                <div className="h-full w-full">
-                  <HistoricalPriceChart
-                    symbol={symbol}
-                    timeframe="1Day"
-                    limit={100}
-                    showMiniChart={false}
-                  />
-                </div>
+              <div className="flex-1 bg-slate-900 min-h-0">
+                <HistoricalPriceChart
+                  symbol={symbol}
+                  timeframe="1Day"
+                  limit={100}
+                  showMiniChart={false}
+                  fullHeight={true}
+                />
               </div>
             </div>
 

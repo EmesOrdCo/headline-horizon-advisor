@@ -11,6 +11,7 @@ interface HistoricalPriceChartProps {
   limit?: number;
   height?: number;
   showMiniChart?: boolean;
+  fullHeight?: boolean; // New prop for TradingView modal
 }
 
 type TimePeriod = '1D' | '1W' | '1M' | '3M' | '1Y';
@@ -71,7 +72,7 @@ const Candlestick = (props: any) => {
   );
 };
 
-const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, showMiniChart = false }: HistoricalPriceChartProps) => {
+const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, showMiniChart = false, fullHeight = false }: HistoricalPriceChartProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('1M');
   const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
 
@@ -247,72 +248,74 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">
-              {symbol} Live Performance
-            </h3>
-            <p className="text-sm text-slate-400">
-              {chartData.length} data points
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Time Period Buttons */}
-            <div className="flex gap-1">
-              {TIME_PERIODS.map((period) => (
-                <Button
-                  key={period.value}
-                  onClick={() => setSelectedPeriod(period.value)}
-                  variant={selectedPeriod === period.value ? 'default' : 'outline'}
-                  size="sm"
-                  className={selectedPeriod === period.value 
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-                  }
-                >
-                  {period.label}
-                </Button>
-              ))}
+    <div className={fullHeight ? "w-full h-full flex flex-col" : "w-full"}>
+      {!fullHeight && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {symbol} Live Performance
+              </h3>
+              <p className="text-sm text-slate-400">
+                {chartData.length} data points
+              </p>
             </div>
-            
-            {/* Chart Type Buttons */}
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setChartType('line')}
-                variant={chartType === 'line' ? 'default' : 'outline'}
-                size="sm"
-                className={chartType === 'line' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
-              >
-                <TrendingUp className="w-4 h-4 mr-1" />
-                Line
-              </Button>
-              <Button
-                onClick={() => setChartType('candlestick')}
-                variant={chartType === 'candlestick' ? 'default' : 'outline'}
-                size="sm"
-                className={chartType === 'candlestick' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
-              >
-                <BarChart3 className="w-4 h-4 mr-1" />
-                Candles
-              </Button>
-            </div>
-            
-            <div className="text-right">
-              <div className={`text-lg font-semibold ${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)} 
-                ({totalChange >= 0 ? '+' : ''}{totalChangePercent.toFixed(2)}%)
+            <div className="flex items-center gap-4">
+              {/* Time Period Buttons */}
+              <div className="flex gap-1">
+                {TIME_PERIODS.map((period) => (
+                  <Button
+                    key={period.value}
+                    onClick={() => setSelectedPeriod(period.value)}
+                    variant={selectedPeriod === period.value ? 'default' : 'outline'}
+                    size="sm"
+                    className={selectedPeriod === period.value 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                      : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                    }
+                  >
+                    {period.label}
+                  </Button>
+                ))}
               </div>
-              <div className="text-sm text-slate-400">
-                {selectedPeriod} change
+              
+              {/* Chart Type Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setChartType('line')}
+                  variant={chartType === 'line' ? 'default' : 'outline'}
+                  size="sm"
+                  className={chartType === 'line' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
+                >
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  Line
+                </Button>
+                <Button
+                  onClick={() => setChartType('candlestick')}
+                  variant={chartType === 'candlestick' ? 'default' : 'outline'}
+                  size="sm"
+                  className={chartType === 'candlestick' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}
+                >
+                  <BarChart3 className="w-4 h-4 mr-1" />
+                  Candles
+                </Button>
+              </div>
+              
+              <div className="text-right">
+                <div className={`text-lg font-semibold ${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)} 
+                  ({totalChange >= 0 ? '+' : ''}{totalChangePercent.toFixed(2)}%)
+                </div>
+                <div className="text-sm text-slate-400">
+                  {selectedPeriod} change
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       
-      <ChartContainer config={chartConfig} className="h-64 w-full">
+      <ChartContainer config={chartConfig} className={fullHeight ? "flex-1 w-full" : "h-64 w-full"}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
             <LineChart data={chartData}>
