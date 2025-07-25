@@ -32,13 +32,13 @@ const PriceAlerts = ({ symbol, currentPrice }: PriceAlertsProps) => {
 
   return (
     <Card className="bg-slate-800/50 border-slate-700">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="text-white flex items-center gap-2">
           <Bell className="w-5 h-5" />
           Set Price Alert
         </CardTitle>
       </CardHeader>
-      <CardContent className="py-4">
+      <CardContent className="py-3">
         <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
           <Info className="w-4 h-4" />
           <span>Get notified when price hits target</span>

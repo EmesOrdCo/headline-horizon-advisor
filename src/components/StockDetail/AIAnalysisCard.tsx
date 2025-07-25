@@ -170,14 +170,6 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
             HISTORICAL*
           </Badge>
         </div>
-        <div className="text-right">
-          <div className="text-white text-xl font-bold">
-            ${stockInfo.price.toFixed(2)}
-          </div>
-          <div className={`text-sm ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive ? '+' : ''}{stockInfo.change.toFixed(2)} ({isPositive ? '+' : ''}{stockInfo.changePercent.toFixed(2)}%)
-          </div>
-        </div>
       </div>
 
       {/* Main Analysis Title */}
