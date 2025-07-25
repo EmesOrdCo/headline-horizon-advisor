@@ -263,6 +263,7 @@ const StockDetail = () => {
         isOpen={isTradingViewOpen}
         onClose={() => setIsTradingViewOpen(false)}
         symbol={stockSymbol}
+        stockInfo={stockInfo}
       />
     </div>
   );
