@@ -106,10 +106,10 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                 <select 
                   value={selectedTimeframe}
                   onChange={(e) => setSelectedTimeframe(e.target.value)}
-                  className="bg-slate-700 text-white text-sm px-3 py-1 rounded border border-slate-600 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-slate-800 text-slate-300 text-sm px-3 py-1 border border-slate-600 hover:bg-slate-700 hover:text-white focus:outline-none appearance-none cursor-pointer"
                 >
                   {timeframes.map((tf) => (
-                    <option key={tf} value={tf} className="bg-slate-700 text-white">
+                    <option key={tf} value={tf} className="bg-slate-800 text-slate-300">
                       {tf}
                     </option>
                   ))}
