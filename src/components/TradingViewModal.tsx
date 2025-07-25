@@ -192,9 +192,9 @@ const TradingViewModal: React.FC<TradingViewModalProps> = ({ isOpen, onClose, sy
                 </div>
               </div>
 
-              {/* Chart Container */}
-              <div className="flex-1 p-4 bg-slate-900">
-                <div className="h-full">
+              {/* Chart Container - Full Height */}
+              <div className="flex-1 bg-slate-900">
+                <div className="h-full w-full">
                   <HistoricalPriceChart
                     symbol={symbol}
                     timeframe="1Day"
