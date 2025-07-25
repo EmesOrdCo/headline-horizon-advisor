@@ -21,13 +21,17 @@ import {
   Settings,
   MoreHorizontal,
   Star
-} from "lucide-react";
+ } from "lucide-react";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
+import { useStockPrices } from "@/hooks/useStockPrices";
 
 const StockChart: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
+  
+  // Fetch current stock data for bid/ask spread
+  const { data: stockPrices } = useStockPrices([symbol || 'NFLX']);
   
   const timeframes = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'];
   
@@ -62,6 +66,13 @@ const StockChart: React.FC = () => {
       navigate(`/stock-data/${symbol}`);
     }
   };
+
+  // Get current stock info for bid/ask spread
+  const currentStock = stockPrices?.find(s => s.symbol === symbol);
+  const bidPrice = currentStock?.bidPrice || 0;
+  const askPrice = currentStock?.askPrice || 0;
+  const spread = askPrice - bidPrice;
+  const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col">
@@ -255,6 +266,39 @@ const StockChart: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Bid/Ask Spread Component */}
+          <div className="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div className="space-y-3">
+              <h4 className="text-white font-medium text-sm">Buy/Sell Spread</h4>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-green-900/20 border border-green-500/20 rounded-lg p-3">
+                  <div className="text-green-400 text-xs font-medium mb-1">BID (Sell)</div>
+                  <div className="text-white font-bold text-lg">${bidPrice.toFixed(2)}</div>
+                </div>
+                
+                <div className="bg-red-900/20 border border-red-500/20 rounded-lg p-3">
+                  <div className="text-red-400 text-xs font-medium mb-1">ASK (Buy)</div>
+                  <div className="text-white font-bold text-lg">${askPrice.toFixed(2)}</div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-700/30 rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">Spread</span>
+                  <div className="text-right">
+                    <div className="text-white font-semibold">${spread.toFixed(4)}</div>
+                    <div className="text-slate-400 text-xs">{spreadPercent.toFixed(3)}%</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-xs text-slate-500 text-center">
+                Real-time bid/ask prices for {symbol}
+              </div>
+            </div>
           </div>
 
           {/* Stock Detail Panel */}
