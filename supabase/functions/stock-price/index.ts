@@ -36,8 +36,8 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
-    // Get current quote data from Broker API sandbox
-    const quoteUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/quotes/latest?symbols=${cleanSymbol}`;
+    // Get current quote data from Alpaca Market Data API
+    const quoteUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
     const quoteResponse = await fetch(quoteUrl, {
@@ -53,15 +53,16 @@ serve(async (req) => {
     console.log(`Quote response status for ${cleanSymbol}:`, quoteResponse.status);
     
     if (!quoteResponse.ok) {
-      console.error(`Alpaca quote API error for ${cleanSymbol}: ${quoteResponse.status}`);
+      const errorText = await quoteResponse.text();
+      console.error(`Alpaca quote API error for ${cleanSymbol}: ${quoteResponse.status} - ${errorText}`);
       throw new Error(`Quote API request failed: ${quoteResponse.status}`);
     }
     
     const quoteData = JSON.parse(await quoteResponse.text());
     console.log(`Quote data for ${cleanSymbol}:`, quoteData);
 
-    // Get last trade data for actual trading price from Broker API sandbox
-    const tradeUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/trades/latest?symbols=${cleanSymbol}`;
+    // Get last trade data for actual trading price from Market Data API
+    const tradeUrl = `https://data.alpaca.markets/v2/stocks/trades/latest?symbols=${cleanSymbol}`;
     console.log(`Making trade request to: ${tradeUrl}`);
     
     const tradeResponse = await fetch(tradeUrl, {
@@ -77,12 +78,12 @@ serve(async (req) => {
     const tradeData = tradeResponse.ok ? JSON.parse(await tradeResponse.text()) : null;
     console.log(`Trade data for ${cleanSymbol}:`, tradeData);
 
-    // Get previous day's closing price for proper percentage calculation from Broker API sandbox
+    // Get previous day's closing price for proper percentage calculation from Market Data API
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    const barsUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
     console.log(`Making bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {

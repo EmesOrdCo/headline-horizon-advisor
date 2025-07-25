@@ -20,6 +20,9 @@ serve(async (req) => {
     const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
     const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
+    console.log(`Using API key: ${alpacaApiKey ? alpacaApiKey.substring(0, 5) + '...' : 'undefined'}`);
+    console.log(`Using secret key: ${alpacaSecretKey ? 'defined' : 'undefined'}`);
+
     if (!alpacaApiKey || !alpacaSecretKey) {
       throw new Error('Alpaca API credentials not configured');
     }
@@ -45,7 +48,8 @@ serve(async (req) => {
     });
     
     if (!barsResponse.ok) {
-      console.error(`Alpaca historical API error: ${barsResponse.status}`);
+      const errorText = await barsResponse.text();
+      console.error(`Alpaca historical API error: ${barsResponse.status} - ${errorText}`);
       throw new Error(`Historical API request failed: ${barsResponse.status}`);
     }
     
