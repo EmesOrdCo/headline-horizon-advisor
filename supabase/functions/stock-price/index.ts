@@ -36,8 +36,8 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
-    // Get current quote data from Broker API v1
-    const quoteUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/quotes/latest?symbols=${cleanSymbol}`;
+    // Get current quote data from Paper API
+    const quoteUrl = `https://paper-api.alpaca.markets/v2/stocks/quotes/latest?symbols=${cleanSymbol}`;
     console.log(`Making quote request to: ${quoteUrl}`);
     
     const quoteResponse = await fetch(quoteUrl, {
@@ -61,8 +61,8 @@ serve(async (req) => {
     const quoteData = JSON.parse(await quoteResponse.text());
     console.log(`Quote data for ${cleanSymbol}:`, quoteData);
 
-    // Get last trade data for actual trading price from Broker API v1
-    const tradeUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/trades/latest?symbols=${cleanSymbol}`;
+    // Get last trade data for actual trading price from Paper API
+    const tradeUrl = `https://paper-api.alpaca.markets/v2/stocks/trades/latest?symbols=${cleanSymbol}`;
     console.log(`Making trade request to: ${tradeUrl}`);
     
     const tradeResponse = await fetch(tradeUrl, {
@@ -83,7 +83,7 @@ serve(async (req) => {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    const barsUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
+    const barsUrl = `https://paper-api.alpaca.markets/v2/stocks/bars?symbols=${cleanSymbol}&timeframe=1Day&start=${yesterdayStr}&limit=1`;
     console.log(`Making bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
