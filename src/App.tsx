@@ -24,6 +24,9 @@ import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
 import StockDetail from "./pages/StockDetail";
+import TradingView from "./pages/TradingView";
+import AIQualitativeAnalysis from "./pages/AIQualitativeAnalysis";
+import AllData from "./pages/AllData";
 import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -47,6 +50,30 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <StockDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock/:symbol/trading"
+                element={
+                  <ProtectedRoute>
+                    <TradingView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock/:symbol/analysis"
+                element={
+                  <ProtectedRoute>
+                    <AIQualitativeAnalysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/stock/:symbol/data"
+                element={
+                  <ProtectedRoute>
+                    <AllData />
                   </ProtectedRoute>
                 }
               />
