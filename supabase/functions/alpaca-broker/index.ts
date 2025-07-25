@@ -22,8 +22,11 @@ serve(async (req) => {
     console.log(`=== ALPACA BROKER API ${action.toUpperCase()} ===`);
     console.log('API Key exists:', !!apiKey);
     console.log('Secret Key exists:', !!secretKey);
+    console.log('API Key prefix:', apiKey ? apiKey.substring(0, 8) + '...' : 'undefined');
+    console.log('Request data:', JSON.stringify(data, null, 2));
 
     if (!apiKey || !secretKey) {
+      console.error('Missing API credentials');
       throw new Error('Alpaca broker API credentials not configured');
     }
 
@@ -192,11 +195,15 @@ serve(async (req) => {
     }
 
     console.log(`Making ${action} request to: ${url}`);
+    console.log(`Request headers:`, JSON.stringify(headers, null, 2));
+    console.log(`Request body:`, response ? 'POST' : 'GET');
     console.log(`Response status: ${response.status}`);
+    console.log(`Response headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Alpaca ${action} API error: ${response.status} - ${errorText}`);
+      console.error(`Full error response:`, errorText);
       throw new Error(`${action} API request failed: ${response.status} - ${errorText}`);
     }
 
