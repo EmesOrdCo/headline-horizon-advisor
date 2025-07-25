@@ -20,7 +20,7 @@ import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useUserStocks } from "@/hooks/useUserStocks";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
-
+import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
 import Footer from "@/components/Footer";
 
 interface Stock {
@@ -264,7 +264,7 @@ const Watchlist = () => {
                 </div>
               )}
             </div>
-            
+            <LogoPopulationTrigger />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
