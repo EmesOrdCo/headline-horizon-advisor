@@ -174,10 +174,10 @@ const StockDetail = () => {
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="bg-slate-800/50 border-slate-700">
                     <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                      AI Qualitative Analysis
+                      Analysis
                     </TabsTrigger>
                     <TabsTrigger value="data" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-                      All Data
+                      Data
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>

@@ -87,13 +87,13 @@ const StockData: React.FC = () => {
                 value="ai-analysis" 
                 className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
-                AI Analysis
+                Analysis
               </TabsTrigger>
               <TabsTrigger 
                 value="all-data" 
                 className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
               >
-                All Data
+                Data
               </TabsTrigger>
             </TabsList>
           </Tabs>
