@@ -75,15 +75,15 @@ const TradingChart = ({ symbol, quantity }: TradingChartProps) => {
 
   if (loading && !stockData) {
     return (
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Stock Information</CardTitle>
-          <CardDescription>Loading price data...</CardDescription>
+          <CardTitle className="text-white">Stock Information</CardTitle>
+          <CardDescription className="text-slate-400">Loading price data...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-            <div className="h-32 bg-muted rounded"></div>
+            <div className="h-4 bg-slate-700 rounded w-1/2"></div>
+            <div className="h-32 bg-slate-700 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -92,13 +92,13 @@ const TradingChart = ({ symbol, quantity }: TradingChartProps) => {
 
   if (error) {
     return (
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Stock Information</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
+          <CardTitle className="text-white">Stock Information</CardTitle>
+          <CardDescription className="text-slate-400">Error loading data</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-destructive text-sm">{error}</p>
+          <p className="text-red-400 text-sm">{error}</p>
         </CardContent>
       </Card>
     );
@@ -106,29 +106,29 @@ const TradingChart = ({ symbol, quantity }: TradingChartProps) => {
 
   if (!stockData) {
     return (
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Stock Information</CardTitle>
-          <CardDescription>Select a symbol to view price data</CardDescription>
+          <CardTitle className="text-white">Stock Information</CardTitle>
+          <CardDescription className="text-slate-400">Select a symbol to view price data</CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between text-white">
           <span>{stockData.symbol}</span>
           {loading && <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>}
         </CardTitle>
-        <CardDescription>Real-time market data</CardDescription>
+        <CardDescription className="text-slate-400">Real-time market data</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Current Price */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold">${stockData.price}</p>
+            <p className="text-2xl font-bold text-white">${stockData.price}</p>
             <div className="flex items-center space-x-2">
               <Badge variant={stockData.change >= 0 ? 'default' : 'destructive'} className="flex items-center space-x-1">
                 {stockData.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -139,41 +139,41 @@ const TradingChart = ({ symbol, quantity }: TradingChartProps) => {
         </div>
 
         {/* Bid/Ask Spread */}
-        <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
+        <div className="grid grid-cols-2 gap-4 p-3 bg-slate-700/50 rounded-lg">
           <div>
-            <p className="text-sm text-muted-foreground">Bid</p>
-            <p className="font-semibold text-green-600">${stockData.bidPrice}</p>
+            <p className="text-sm text-slate-400">Bid</p>
+            <p className="font-semibold text-emerald-400">${stockData.bidPrice}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Ask</p>
-            <p className="font-semibold text-red-600">${stockData.askPrice}</p>
+            <p className="text-sm text-slate-400">Ask</p>
+            <p className="font-semibold text-red-400">${stockData.askPrice}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-muted-foreground">Spread</p>
-            <p className="font-medium">${spread.toFixed(2)} ({spreadPercent.toFixed(2)}%)</p>
+            <p className="text-slate-400">Spread</p>
+            <p className="font-medium text-white">${spread.toFixed(2)} ({spreadPercent.toFixed(2)}%)</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Previous Close</p>
-            <p className="font-medium">${stockData.previousClose}</p>
+            <p className="text-slate-400">Previous Close</p>
+            <p className="font-medium text-white">${stockData.previousClose}</p>
           </div>
         </div>
 
         {/* Estimated Cost */}
         {quantity && parseFloat(quantity) > 0 && (
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <p className="text-sm text-muted-foreground">Estimated Cost ({quantity} shares)</p>
-            <p className="text-lg font-bold">${estimatedCost.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Based on current ask price</p>
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+            <p className="text-sm text-slate-400">Estimated Cost ({quantity} shares)</p>
+            <p className="text-lg font-bold text-white">${estimatedCost.toFixed(2)}</p>
+            <p className="text-xs text-slate-400">Based on current ask price</p>
           </div>
         )}
 
         {/* Mini Price Chart */}
         {priceHistory.length > 1 && (
           <div className="h-32">
-            <p className="text-sm text-muted-foreground mb-2">Price Movement</p>
+            <p className="text-sm text-slate-400 mb-2">Price Movement</p>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={priceHistory}>
                 <CartesianGrid strokeDasharray="3 3" />

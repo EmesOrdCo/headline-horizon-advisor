@@ -68,10 +68,10 @@ const TradingInterface = ({ accountId, assets, onOrderPlaced }: TradingInterface
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Trading Form */}
-      <Card>
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle>Place Order</CardTitle>
-          <CardDescription>Simulate order placement in sandbox environment</CardDescription>
+          <CardTitle className="text-white">Place Order</CardTitle>
+          <CardDescription className="text-slate-400">Simulate order placement in sandbox environment</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
