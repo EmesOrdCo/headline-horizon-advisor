@@ -31,7 +31,7 @@ serve(async (req) => {
     startDate.setDate(startDate.getDate() - bufferDays);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const barsUrl = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/data/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
     console.log(`Making historical bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
