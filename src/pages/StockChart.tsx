@@ -24,14 +24,27 @@ import {
  } from "lucide-react";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import { useStockPrices } from "@/hooks/useStockPrices";
+import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
+import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 
 const StockChart: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   
-  // Fetch current stock data for bid/ask spread
-  const { data: stockPrices } = useStockPrices([symbol || 'NFLX']);
+  // Fetch current stock data and historical data
+  const { data: stockPrices } = useStockPrices([symbol || 'AAPL']);
+  const { data: historicalData } = useHistoricalPrices(symbol || 'AAPL', '1Day', 1);
+  
+  // Fetch watchlist data
+  const watchlistSymbols = ['SPY', 'QQQ', 'DIA', 'VIX', 'AAPL', 'TSLA', 'NFLX'];
+  const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
+  
+  // Set up Alpaca WebSocket for real-time updates
+  const { streamData, isConnected } = useAlpacaStreamSingleton({
+    symbols: [symbol || 'AAPL'],
+    enabled: true
+  });
   
   const timeframes = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'];
   
@@ -49,15 +62,34 @@ const StockChart: React.FC = () => {
     { icon: Settings, label: 'Settings' }
   ];
 
-  const watchlistStocks = [
-    { symbol: 'SPX', name: 'S&P 500', price: '6,363.36', change: '+4.46', changePercent: '+0.07%', positive: true },
-    { symbol: 'NDQ', name: 'NASDAQ', price: '23,219.88', change: '+57.46', changePercent: '+0.25%', positive: true },
-    { symbol: 'DJI', name: 'Dow Jones', price: '44,693.95', change: '-316.38', changePercent: '-0.70%', positive: false },
-    { symbol: 'VIX', name: 'Volatility Index', price: '15.24', change: '-0.15', changePercent: '-0.97%', positive: false },
-    { symbol: 'AAPL', name: 'Apple Inc.', price: '213.76', change: '-0.39', changePercent: '-0.18%', positive: false },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: '305.30', change: '-27.26', changePercent: '-8.20%', positive: false },
-    { symbol: 'NFLX', name: 'Netflix Inc.', price: '1,180.76', change: '+3.98', changePercent: '+0.34%', positive: true }
-  ];
+  // Create watchlist with real data
+  const watchlistStocks = watchlistSymbols.map(sym => {
+    const price = watchlistPrices?.find(p => p.symbol === sym);
+    const streamPrice = streamData?.[sym];
+    
+    const currentPrice = streamPrice?.price || price?.price || 0;
+    const change = price?.change || 0;
+    const changePercent = price?.changePercent || 0;
+    
+    const displayNames: { [key: string]: string } = {
+      'SPY': 'S&P 500 ETF',
+      'QQQ': 'NASDAQ ETF', 
+      'DIA': 'Dow Jones ETF',
+      'VIX': 'Volatility Index',
+      'AAPL': 'Apple Inc.',
+      'TSLA': 'Tesla Inc.',
+      'NFLX': 'Netflix Inc.'
+    };
+    
+    return {
+      symbol: sym,
+      name: displayNames[sym] || sym,
+      price: currentPrice.toFixed(2),
+      change: change >= 0 ? `+${change.toFixed(2)}` : change.toFixed(2),
+      changePercent: change >= 0 ? `+${changePercent.toFixed(2)}%` : `${changePercent.toFixed(2)}%`,
+      positive: change >= 0
+    };
+  });
 
   const handleTabChange = (value: string) => {
     if (value === 'ai-analysis') {
@@ -67,12 +99,51 @@ const StockChart: React.FC = () => {
     }
   };
 
-  // Get current stock info for bid/ask spread
+  // Get current stock info 
   const currentStock = stockPrices?.find(s => s.symbol === symbol);
+  const streamPrice = streamData?.[symbol || 'AAPL'];
+  
+  // Use real-time data if available, otherwise fall back to API data
+  const currentPrice = streamPrice?.price || currentStock?.price || 0;
   const bidPrice = currentStock?.bidPrice || 0;
   const askPrice = currentStock?.askPrice || 0;
   const spread = askPrice - bidPrice;
   const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
+  
+  // Get OHLC data from historical data
+  const todayData = historicalData?.data?.[0];
+  const openPrice = todayData?.open || 0;
+  const highPrice = todayData?.high || 0;
+  const lowPrice = todayData?.low || 0;
+  const closePrice = todayData?.close || currentPrice;
+  const volume = todayData?.volume || 0;
+  
+  // Calculate change
+  const change = currentStock?.change || 0;
+  const changePercent = currentStock?.changePercent || 0;
+  
+  // Format volume
+  const formatVolume = (vol: number) => {
+    if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
+    if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
+    if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
+    return vol.toString();
+  };
+  
+  // Get company name mapping
+  const companyNames: { [key: string]: string } = {
+    'AAPL': 'Apple Inc.',
+    'TSLA': 'Tesla, Inc.',
+    'NFLX': 'Netflix, Inc.',
+    'GOOGL': 'Alphabet Inc.',
+    'MSFT': 'Microsoft Corporation',
+    'AMZN': 'Amazon.com Inc.',
+    'META': 'Meta Platforms, Inc.',
+    'NVDA': 'NVIDIA Corporation'
+  };
+  
+  const companyName = companyNames[symbol || ''] || `${symbol} Corporation`;
+  const exchange = 'NASDAQ'; // Most stocks are NASDAQ, could be enhanced with real exchange data
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col">
@@ -89,12 +160,15 @@ const StockChart: React.FC = () => {
           </Button>
           
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">N</span>
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">{symbol?.charAt(0) || 'A'}</span>
             </div>
             <span className="text-white font-medium">{symbol}</span>
-            <span className="text-slate-400">1D</span>
-            <span className="text-slate-400">NASDAQ</span>
+            <span className="text-slate-400">{selectedTimeframe}</span>
+            <span className="text-slate-400">{exchange}</span>
+            {isConnected && (
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Live data" />
+            )}
           </div>
 
           <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
@@ -190,17 +264,19 @@ const StockChart: React.FC = () => {
           <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700 flex-shrink-0">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-white text-lg font-bold">1,180.76</span>
-                <span className="text-green-400 text-sm">+3.98 (+0.34%)</span>
+                <span className="text-white text-lg font-bold">{currentPrice.toFixed(2)}</span>
+                <span className={`text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+                </span>
               </div>
               <div className="flex space-x-4 text-sm text-slate-400">
-                <div>O <span className="text-white">1,177.80</span></div>
-                <div>H <span className="text-white">1,183.50</span></div>
-                <div>L <span className="text-white">1,162.66</span></div>
-                <div>C <span className="text-white">1,180.76</span></div>
+                <div>O <span className="text-white">{openPrice.toFixed(2)}</span></div>
+                <div>H <span className="text-white">{highPrice.toFixed(2)}</span></div>
+                <div>L <span className="text-white">{lowPrice.toFixed(2)}</span></div>
+                <div>C <span className="text-white">{closePrice.toFixed(2)}</span></div>
               </div>
               <div className="text-sm text-slate-400">
-                Vol <span className="text-blue-400">3.85M</span>
+                Vol <span className="text-blue-400">{formatVolume(volume)}</span>
               </div>
             </div>
           </div>
@@ -305,23 +381,33 @@ const StockChart: React.FC = () => {
           <div className="p-4 border-t border-slate-700">
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Netflix, Inc.</span>
+                <span className="text-slate-400">{companyName}</span>
                 <Star className="w-3 h-3 text-slate-400" />
               </div>
-              <div className="text-slate-400 text-xs">NASDAQ • Real-time • Pre market</div>
-              <div className="text-white text-lg font-bold">1,180.76 <span className="text-xs text-slate-400">USD</span></div>
-              <div className="text-green-400 text-sm">+3.98 +0.34%</div>
-              <div className="text-slate-400 text-xs">Last update at 00:59 GMT+1</div>
+              <div className="text-slate-400 text-xs">{exchange} • Real-time • {isConnected ? 'Live' : 'Delayed'}</div>
+              <div className="text-white text-lg font-bold">{currentPrice.toFixed(2)} <span className="text-xs text-slate-400">USD</span></div>
+              <div className={`text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {change >= 0 ? '+' : ''}{change.toFixed(2)} {change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
+              </div>
+              <div className="text-slate-400 text-xs">Last update: {new Date().toLocaleTimeString()}</div>
               
               <div className="pt-2 space-y-1">
                 <div className="text-slate-400 text-xs">Key stats</div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-400">Market Cap</span>
-                  <span className="text-white">505.8B</span>
+                  <span className="text-white">N/A</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-400">P/E Ratio</span>
-                  <span className="text-white">45.2</span>
+                  <span className="text-white">N/A</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">52W High</span>
+                  <span className="text-white">N/A</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">52W Low</span>
+                  <span className="text-white">N/A</span>
                 </div>
               </div>
             </div>
