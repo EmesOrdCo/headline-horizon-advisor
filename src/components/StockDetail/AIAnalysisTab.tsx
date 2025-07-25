@@ -5,7 +5,6 @@ import { Info } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NewsCard from "@/components/NewsCard";
-import AINewsInsights from "./AINewsInsights";
 
 interface AIAnalysisTabProps {
   symbol: string;
@@ -52,7 +51,14 @@ const AIAnalysisTab = ({ symbol, stockInfo }: AIAnalysisTabProps) => {
   if (!newsArticles || newsArticles.length === 0) {
     return (
       <div className="space-y-6">
-        <AINewsInsights symbol={symbol} />
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="text-center py-12">
+            <p className="text-slate-400 mb-4">No news analysis available for {symbol}</p>
+            <p className="text-sm text-slate-500">
+              The MarketAux API has reached its usage limit. Historical analysis will appear here when new data is available.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
