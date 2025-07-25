@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building, Banknote } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building } from "lucide-react";
 import MarketTicker from "@/components/MarketTicker";
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
@@ -544,19 +544,6 @@ const Watchlist = () => {
                 <Building className="w-4 h-4 mr-2" />
                 ETFs
               </Button>
-              <Button
-                variant={moversFilter === "portfolios" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setMoversFilter("portfolios")}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                  moversFilter === "portfolios" 
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <Banknote className="w-4 h-4 mr-2" />
-                Smart Portfolios
-              </Button>
             </div>
           </div>
         </div>
@@ -629,7 +616,6 @@ const Watchlist = () => {
                     {moversFilter === "commodities" && "Commodities movers will be available soon."}
                     {moversFilter === "currencies" && "Currency pair movers will be available soon."}
                     {moversFilter === "etfs" && "ETF movers will be available soon."}
-                    {moversFilter === "portfolios" && "Smart portfolio movers will be available soon."}
                   </p>
                   <p className="text-slate-500 text-sm mt-2">
                     Currently showing stock market data only. More asset types coming in future updates.
