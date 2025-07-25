@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, TrendingDown, BarChart3, Activity, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useAlpacaBroker, AlpacaAccount, AlpacaAsset, AlpacaOrder, AlpacaPosition } from '@/hooks/useAlpacaBroker';
 import DashboardNav from '@/components/DashboardNav';
 import SandboxBanner from '@/components/SandboxBanner';
@@ -12,6 +13,7 @@ import AssetExplorer from '@/components/broker/AssetExplorer';
 import TradingInterface from '@/components/broker/TradingInterface';
 import ActivitiesHistory from '@/components/broker/ActivitiesHistory';
 import DeveloperTools from '@/components/broker/DeveloperTools';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
 const BrokerDashboard = () => {
@@ -91,238 +93,316 @@ const BrokerDashboard = () => {
   return (
     <>
       <DashboardNav />
-      <div className="container mx-auto p-6 space-y-8 pt-20">
-        <SandboxBanner />
-      
-      {/* Header with User-Centered Welcome */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Start Your Trading Journey
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Follow these simple steps to create your account, add funds, and start trading
-        </p>
-      </div>
-
-      {error && (
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-destructive">Error: {error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Progress Steps */}
-      <div className="flex justify-center mb-8">
-        <div className="flex items-center space-x-4">
-          <div className={`flex items-center space-x-2 ${accounts.length > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${accounts.length > 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              1
+      <div className="min-h-screen bg-background">
+        {/* Market Ticker */}
+        <div className="border-b border-border bg-card">
+          <div className="container mx-auto">
+            <div className="py-2">
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+                  SANDBOX TRADING
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Alpaca Broker API Simulation Environment
+                </span>
+              </div>
             </div>
-            <span className="font-medium">Create Account</span>
-          </div>
-          <div className="w-8 h-px bg-border"></div>
-          <div className={`flex items-center space-x-2 ${userStep !== 'create' && userStep !== 'fund' ? 'text-primary' : 'text-muted-foreground'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${userStep !== 'create' && userStep !== 'fund' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              2
-            </div>
-            <span className="font-medium">Fund Account</span>
-          </div>
-          <div className="w-8 h-px bg-border"></div>
-          <div className={`flex items-center space-x-2 ${userStep === 'trade' ? 'text-primary' : 'text-muted-foreground'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${userStep === 'trade' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              3
-            </div>
-            <span className="font-medium">Start Trading</span>
           </div>
         </div>
-      </div>
 
-      {/* Step 1: Create Account */}
-      {userStep === 'create' && (
-        <div className="max-w-2xl mx-auto">
-          <Card className="border-primary/50">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Step 1: Create Your Trading Account</CardTitle>
-              <CardDescription>Set up your brokerage account with dummy KYC data for testing</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AccountCreation onAccountCreated={refreshData} />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          {/* Header Section */}
+          <div className="space-y-4">
+            <div className="flex flex-col space-y-2">
+              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Trading Dashboard
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Practice trading with real market data in a safe sandbox environment
+              </p>
+            </div>
+          </div>
 
-      {/* Step 2: Fund Account */}
-      {userStep === 'fund' && accounts.length > 0 && (
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Account Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Account</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                {accounts.map((account) => (
-                  <Card 
-                    key={account.id} 
-                    className={`cursor-pointer transition-colors ${
-                      selectedAccount === account.id ? 'border-primary' : ''
-                    }`}
-                    onClick={() => setSelectedAccount(account.id)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm">{account.account_number}</CardTitle>
-                        <Badge variant={account.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                          {account.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-sm text-muted-foreground">
-                        Currency: {account.currency}
-                      </p>
-                      {account.last_equity && (
-                        <p className="text-sm font-semibold">
-                          Balance: ${parseFloat(account.last_equity).toFixed(2)}
-                        </p>
-                      )}
-                      {account.buying_power && (
-                        <p className="text-sm text-muted-foreground">
-                          Buying Power: ${parseFloat(account.buying_power).toFixed(2)}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/50">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Step 2: Fund Your Account</CardTitle>
-              <CardDescription>Add money to your account to start trading</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FundingSimulation 
-                accountId={selectedAccount} 
-                accountData={selectedAccountData}
-                onFundingComplete={refreshData}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Step 3: Trading Dashboard */}
-      {userStep === 'trade' && (
-        <div className="space-y-6">
-          {/* Account Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Trading Account</CardTitle>
-              <div className="flex justify-between items-center">
-                <CardDescription>Account: {selectedAccountData?.account_number}</CardDescription>
-                <Button onClick={refreshData} disabled={loading} variant="outline" size="sm">
-                  {loading ? 'Loading...' : 'Refresh'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Account Balance</p>
-                  <p className="text-2xl font-bold">
-                    ${selectedAccountData?.last_equity ? parseFloat(selectedAccountData.last_equity).toFixed(2) : '0.00'}
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Buying Power</p>
-                  <p className="text-2xl font-bold">
-                    ${selectedAccountData?.buying_power ? parseFloat(selectedAccountData.buying_power).toFixed(2) : '0.00'}
-                  </p>
-                </div>
-                <div className="text-center p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Positions</p>
-                  <p className="text-2xl font-bold">{positions.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Trading Interface */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TradingInterface 
-              accountId={selectedAccount}
-              assets={assets}
-              onOrderPlaced={refreshData}
-            />
-
-            {/* Positions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Positions</CardTitle>
-                <CardDescription>Current stock holdings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {positions.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No positions yet</p>
-                    <p className="text-sm text-muted-foreground">Place your first trade to get started!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {positions.map((position, index) => (
-                      <div key={index} className="border rounded-lg p-3">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">{position.symbol}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {position.qty} shares
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">${parseFloat(position.market_value).toFixed(2)}</p>
-                            <p className={`text-sm ${
-                              parseFloat(position.unrealized_pl) >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {parseFloat(position.unrealized_pl) >= 0 ? '+' : ''}
-                              ${parseFloat(position.unrealized_pl).toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {error && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardContent className="pt-6">
+                <p className="text-destructive font-medium">Error: {error}</p>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          {/* Additional Tools */}
-          <Tabs defaultValue="activities" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="activities">Trade History</TabsTrigger>
-              <TabsTrigger value="assets">Browse Stocks</TabsTrigger>
-              <TabsTrigger value="developer">Advanced</TabsTrigger>
-            </TabsList>
+          {/* Progress Steps */}
+          <Card className="bg-gradient-to-r from-card to-accent/20">
+            <CardHeader>
+              <CardTitle className="text-lg">Getting Started</CardTitle>
+              <CardDescription>Follow these steps to start trading</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 sm:space-x-8">
+                <div className={`flex items-center space-x-3 ${accounts.length > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${accounts.length > 0 ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900' : 'bg-muted text-muted-foreground'}`}>
+                    1
+                  </div>
+                  <span className="font-medium">Create Account</span>
+                </div>
+                <div className="hidden sm:block w-12 h-px bg-border"></div>
+                <div className={`flex items-center space-x-3 ${userStep !== 'create' && userStep !== 'fund' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${userStep !== 'create' && userStep !== 'fund' ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900' : 'bg-muted text-muted-foreground'}`}>
+                    2
+                  </div>
+                  <span className="font-medium">Fund Account</span>
+                </div>
+                <div className="hidden sm:block w-12 h-px bg-border"></div>
+                <div className={`flex items-center space-x-3 ${userStep === 'trade' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${userStep === 'trade' ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900' : 'bg-muted text-muted-foreground'}`}>
+                    3
+                  </div>
+                  <span className="font-medium">Start Trading</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <TabsContent value="activities">
-              <ActivitiesHistory accountId={selectedAccount} />
-            </TabsContent>
+          {/* Step 1: Create Account */}
+          {userStep === 'create' && (
+            <div className="animate-fade-in">
+              <Card className="border-emerald-200/50 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-500/5">
+                <CardHeader className="text-center space-y-2">
+                  <div className="mx-auto w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">1</span>
+                  </div>
+                  <CardTitle className="text-2xl">Create Your Trading Account</CardTitle>
+                  <CardDescription className="text-base">Set up your brokerage account with demo data for testing</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AccountCreation onAccountCreated={refreshData} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-            <TabsContent value="assets">
-              <AssetExplorer assets={assets} />
-            </TabsContent>
+          {/* Step 2: Fund Account */}
+          {userStep === 'fund' && accounts.length > 0 && (
+            <div className="animate-fade-in space-y-6">
+              {/* Account Selection */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <span>Your Trading Account</span>
+                    <Badge className="bg-emerald-500 text-white">Active</Badge>
+                  </CardTitle>
+                  <CardDescription>Manage your trading account settings and balance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {accounts.map((account) => (
+                      <Card 
+                        key={account.id} 
+                        className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                          selectedAccount === account.id 
+                            ? 'ring-2 ring-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10' 
+                            : 'hover:bg-accent/50'
+                        }`}
+                        onClick={() => setSelectedAccount(account.id)}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-base">{account.account_number}</CardTitle>
+                            <Badge variant={account.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                              {account.status}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Balance</span>
+                            <span className="text-sm font-semibold">
+                              ${account.last_equity ? parseFloat(account.last_equity).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Buying Power</span>
+                            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                              ${account.buying_power ? parseFloat(account.buying_power).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-            <TabsContent value="developer">
-              <DeveloperTools />
-            </TabsContent>
-          </Tabs>
+              <Card className="border-emerald-200/50 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-500/5">
+                <CardHeader className="text-center space-y-2">
+                  <div className="mx-auto w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">2</span>
+                  </div>
+                  <CardTitle className="text-2xl">Fund Your Account</CardTitle>
+                  <CardDescription className="text-base">Add virtual funds to start trading</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FundingSimulation 
+                    accountId={selectedAccount} 
+                    accountData={selectedAccountData}
+                    onFundingComplete={refreshData}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 3: Trading Dashboard */}
+          {userStep === 'trade' && (
+            <div className="animate-fade-in space-y-6">
+              {/* Account Overview */}
+              <Card className="bg-gradient-to-r from-card to-accent/20">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-xl">Account Overview</CardTitle>
+                      <CardDescription>Account: {selectedAccountData?.account_number}</CardDescription>
+                    </div>
+                    <Button onClick={refreshData} disabled={loading} variant="outline" size="sm" className="hover-scale">
+                      {loading ? 'Loading...' : 'Refresh'}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-500/10 dark:to-emerald-500/20 rounded-lg border border-emerald-200/50 dark:border-emerald-500/30">
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-1">Account Balance</p>
+                      <p className="text-3xl font-bold text-emerald-800 dark:text-emerald-200">
+                        ${selectedAccountData?.last_equity ? parseFloat(selectedAccountData.last_equity).toFixed(2) : '0.00'}
+                      </p>
+                    </div>
+                    <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-500/20 rounded-lg border border-blue-200/50 dark:border-blue-500/30">
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Buying Power</p>
+                      <p className="text-3xl font-bold text-blue-800 dark:text-blue-200">
+                        ${selectedAccountData?.buying_power ? parseFloat(selectedAccountData.buying_power).toFixed(2) : '0.00'}
+                      </p>
+                    </div>
+                    <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-500/10 dark:to-purple-500/20 rounded-lg border border-purple-200/50 dark:border-purple-500/30">
+                      <p className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">Open Positions</p>
+                      <p className="text-3xl font-bold text-purple-800 dark:text-purple-200">{positions.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Main Trading Interface */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <TradingInterface 
+                  accountId={selectedAccount}
+                  assets={assets}
+                  onOrderPlaced={refreshData}
+                />
+
+                {/* Positions */}
+                <Card className="h-fit">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <span>Your Positions</span>
+                      {positions.length > 0 && (
+                        <Badge variant="secondary">{positions.length}</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>Current stock holdings and performance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {positions.length === 0 ? (
+                      <div className="text-center py-12 space-y-4">
+                        <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                          <BarChart3 className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-medium text-muted-foreground">No positions yet</p>
+                          <p className="text-sm text-muted-foreground">Place your first trade to get started!</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {positions.map((position, index) => (
+                          <Card key={index} className="border-l-4 border-l-emerald-500 hover:shadow-sm transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <h3 className="font-semibold text-lg">{position.symbol}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {position.qty} shares
+                                  </p>
+                                </div>
+                                <div className="text-right space-y-1">
+                                  <p className="font-semibold text-lg">${parseFloat(position.market_value).toFixed(2)}</p>
+                                  <div className="flex items-center space-x-1">
+                                    {parseFloat(position.unrealized_pl) >= 0 ? (
+                                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                                    ) : (
+                                      <TrendingDown className="w-4 h-4 text-red-600" />
+                                    )}
+                                    <span className={`text-sm font-medium ${
+                                      parseFloat(position.unrealized_pl) >= 0 ? 'text-emerald-600' : 'text-red-600'
+                                    }`}>
+                                      {parseFloat(position.unrealized_pl) >= 0 ? '+' : ''}
+                                      ${parseFloat(position.unrealized_pl).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Additional Tools */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trading Tools & History</CardTitle>
+                  <CardDescription>Access advanced features and view your trading activity</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="activities" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="activities" className="flex items-center space-x-2">
+                        <Activity className="w-4 h-4" />
+                        <span>Trade History</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="assets" className="flex items-center space-x-2">
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Browse Stocks</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="developer" className="flex items-center space-x-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Advanced</span>
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="activities" className="space-y-4">
+                      <ActivitiesHistory accountId={selectedAccount} />
+                    </TabsContent>
+
+                    <TabsContent value="assets" className="space-y-4">
+                      <AssetExplorer assets={assets} />
+                    </TabsContent>
+
+                    <TabsContent value="developer" className="space-y-4">
+                      <DeveloperTools />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Footer */}
+        <div className="mt-16">
+          <Footer />
+        </div>
       </div>
     </>
   );
