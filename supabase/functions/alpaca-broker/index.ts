@@ -117,6 +117,10 @@ serve(async (req) => {
           delete orderData.limit_price;
         }
         
+        console.log(`Making ${action} request to: ${url}`);
+        console.log(`Request headers:`, JSON.stringify(headers, null, 2));
+        console.log(`Cleaned order data:`, JSON.stringify(orderData, null, 2));
+        
         response = await fetch(url, {
           method: 'POST',
           headers,
@@ -146,7 +150,7 @@ serve(async (req) => {
         break;
 
       case 'get_activities':
-        url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/activities`;
+        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/activities`;
         const activityParams = new URLSearchParams();
         if (data?.activity_types) activityParams.append('activity_types', data.activity_types);
         if (data?.date) activityParams.append('date', data.date);
@@ -202,15 +206,17 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
-    console.log(`Making ${action} request to: ${url}`);
-    console.log(`Request headers:`, JSON.stringify(headers, null, 2));
-    
-    // Log request body for POST requests
-    if (['place_order', 'create_account', 'create_ach_relationship', 'create_transfer', 'create_journal'].includes(action)) {
-      const bodyData = action === 'place_order' ? orderData : data;
-      console.log(`Request body:`, JSON.stringify(bodyData, null, 2));
-    } else {
-      console.log(`Request body: GET request (no body)`);
+    // Log request info for other actions (place_order has its own logging)
+    if (action !== 'place_order') {
+      console.log(`Making ${action} request to: ${url}`);
+      console.log(`Request headers:`, JSON.stringify(headers, null, 2));
+      
+      // Log request body for POST requests
+      if (['create_account', 'create_ach_relationship', 'create_transfer', 'create_journal'].includes(action)) {
+        console.log(`Request body:`, JSON.stringify(data, null, 2));
+      } else {
+        console.log(`Request body: GET request (no body)`);
+      }
     }
     console.log(`Response status: ${response.status}`);
     console.log(`Response headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
