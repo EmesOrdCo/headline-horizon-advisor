@@ -250,7 +250,7 @@ const TradingView = () => {
             <HistoricalPriceChart
               symbol={symbol || 'NVDA'}
               timeframe="1Day"
-              limit={100}
+              limit={365}
               showMiniChart={false}
               fullHeight={true}
             />
