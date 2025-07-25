@@ -260,15 +260,15 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
       <div className="flex gap-6">
         {/* AI-Powered News Insights - 60% */}
         <div className="w-3/5">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-4">
+          <Card className="bg-slate-800/50 border-slate-700 h-[600px] flex flex-col">
+            <CardHeader className="pb-4 flex-shrink-0">
               <CardTitle className="text-white text-xl">AI-Powered News Insights</CardTitle>
               <p className="text-slate-400 text-sm">
                 Real-time analysis of news sentiment and market impact for {symbol}
               </p>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px] pr-4">
+            <CardContent className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full pr-4">
                 <div className="space-y-3">
                   {newsInsights.map((insight) => (
                     <div
@@ -333,15 +333,15 @@ const AIAnalysisCard = ({ symbol, stockInfo }: AIAnalysisCardProps) => {
 
         {/* Detailed Analysis - 40% */}
         <div className="w-2/5">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="pb-4">
+          <Card className="bg-slate-800/50 border-slate-700 h-[600px] flex flex-col">
+            <CardHeader className="pb-4 flex-shrink-0">
               <CardTitle className="text-cyan-400 text-lg">Detailed Analysis</CardTitle>
               <p className="text-slate-400 text-sm italic">
                 *This will summarise in depth what is going on with the stock so they know the full picture if they read it all
               </p>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px] pr-4">
+            <CardContent className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full pr-4">
                 <p className="text-slate-300 text-sm leading-relaxed">
                   {analysis.detailedAnalysis}
                 </p>
