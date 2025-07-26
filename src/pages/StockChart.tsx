@@ -144,9 +144,9 @@ const StockChart: React.FC = () => {
   const exchange = activeSymbol.startsWith('SPY') || activeSymbol.startsWith('QQQ') ? 'NYSE Arca' : 'NASDAQ';
 
   return (
-    <div className="h-screen bg-slate-900 flex flex-col">
+    <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
       {/* Top Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
           <Button 
             variant="ghost" 
@@ -243,9 +243,9 @@ const StockChart: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0">
         {/* Left Sidebar - Tools */}
-        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
+        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
           {leftSidebarTools.map((tool, index) => (
             <Button
               key={index}
@@ -282,16 +282,14 @@ const StockChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Chart Content - Live Apple Chart */}
-          <div className="flex-1 bg-slate-900 min-h-0">
-            {/* Live Apple Chart */}
-            <div className="h-full w-full">
+          {/* Chart Content - Takes full remaining height */}
+          <div className="flex-1 bg-slate-900 relative min-h-0">
+            <div className="absolute inset-0">
               <StockLineChart currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" />
             </div>
             
-
             {/* WebSocket Monitor */}
-            <div className="absolute bottom-4 right-4">
+            <div className="absolute bottom-4 right-4 z-10">
               <div className="scale-75 origin-bottom-right">
                 <WebSocketMonitor />
               </div>
