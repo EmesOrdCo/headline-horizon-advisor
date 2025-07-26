@@ -28,29 +28,13 @@ const performanceData = [
   { date: '2024-07', value: 125847, sp500: 5100, nasdaq: 16000, btc: 67000 },
 ];
 
-// Demo crypto and funds data - keeping as Alpaca doesn't support crypto/ETFs in sandbox
+// Note: Alpaca sandbox doesn't support crypto/ETFs, showing empty for real data
 const assetCategories = {
-  crypto: [
-    { symbol: "BTC", name: "Bitcoin", investment: 8000, currentValue: 9120, change: 14.0, dayChange: -2.3, logo: "₿" },
-    { symbol: "ETH", name: "Ethereum", investment: 5000, currentValue: 5650, change: 13.0, dayChange: -1.8, logo: "Ξ" },
-    { symbol: "SOL", name: "Solana", investment: 3000, currentValue: 3720, change: 24.0, dayChange: 4.2, logo: "◎" },
-  ],
-  funds: [
-    { symbol: "SPY", name: "SPDR S&P 500 ETF", investment: 10000, currentValue: 10800, change: 8.0, dayChange: -0.3, logo: "📊" },
-    { symbol: "QQQ", name: "Invesco QQQ Trust", investment: 8000, currentValue: 8720, change: 9.0, dayChange: 0.2, logo: "📈" },
-  ]
+  crypto: [],
+  funds: []
 };
 
-// Demo trade history - keeping as Alpaca activity endpoint has issues
-const tradeHistory = [
-  { asset: "AAPL", type: "BUY", quantity: 50, price: 180.50, date: "2024-07-15", time: "09:30", gainLoss: 750.00 },
-  { asset: "GOOGL", type: "BUY", quantity: 10, price: 2650.00, date: "2024-07-12", time: "14:22", gainLoss: 400.00 },
-  { asset: "BTC", type: "BUY", quantity: 0.2, price: 62000.00, date: "2024-07-10", time: "16:45", gainLoss: 340.00 },
-  { asset: "TSLA", type: "SELL", quantity: 25, price: 267.90, date: "2024-07-08", time: "11:15", gainLoss: -125.00 },
-  { asset: "MSFT", type: "BUY", quantity: 30, price: 342.18, date: "2024-07-05", time: "10:30", gainLoss: 580.00 },
-  { asset: "ETH", type: "BUY", quantity: 2.5, price: 3200.00, date: "2024-07-03", time: "13:20", gainLoss: 200.00 },
-  { asset: "NVDA", type: "BUY", quantity: 15, price: 498.72, date: "2024-07-01", time: "15:45", gainLoss: 920.00 },
-];
+// Trade history is now loaded from real Alpaca activities data
 
 const Portfolio = () => {
   const { user } = useAuth();
@@ -61,6 +45,7 @@ const Portfolio = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
   const [accountData, setAccountData] = useState<AlpacaAccount | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const { 
@@ -68,7 +53,8 @@ const Portfolio = () => {
     error, 
     getAccounts, 
     getAccount,
-    getPositions 
+    getPositions,
+    getActivities
   } = useAlpacaBroker();
   
   // Get all stock symbols for logo loading (including live positions)
@@ -96,10 +82,11 @@ const Portfolio = () => {
       if (accountsData.length > 0) {
         setSelectedAccount(accountsData[0].id);
         
-        // Load account details and positions using same logic as BrokerDashboard
-        const [accountDetails, positionsData] = await Promise.all([
+        // Load account details, positions, and activities using same logic as BrokerDashboard
+        const [accountDetails, positionsData, activitiesData] = await Promise.all([
           getAccount(accountsData[0].id),
-          getPositions(accountsData[0].id)
+          getPositions(accountsData[0].id),
+          getActivities(accountsData[0].id).catch(() => []) // Handle 404 error gracefully
         ]);
         
         console.log('Raw account details from API:', accountDetails);
@@ -129,6 +116,7 @@ const Portfolio = () => {
         
         setAccountData(enhancedAccountData);
         setPositions(positionsData);
+        setActivities(activitiesData || []);
       }
     } catch (err) {
       console.error('Failed to load portfolio data:', err);
@@ -554,7 +542,7 @@ const Portfolio = () => {
 
 
 
-  // Trade History Component
+  // Trade History Component - Using real Alpaca activities data
   const TradeHistory = () => {
     return (
       <div className="space-y-6">
@@ -570,36 +558,70 @@ const Portfolio = () => {
                     <th className="p-4 text-slate-400 font-medium">Quantity</th>
                     <th className="p-4 text-slate-400 font-medium">Price</th>
                     <th className="p-4 text-slate-400 font-medium">Date/Time</th>
-                    <th className="p-4 text-slate-400 font-medium">Gain/Loss</th>
+                    <th className="p-4 text-slate-400 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tradeHistory.map((trade, index) => (
-                    <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
-                      <td className="p-4">
-                        <Badge className="bg-emerald-600 text-white">{trade.asset}</Badge>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant={trade.type === 'BUY' ? 'default' : 'destructive'}>
-                          {trade.type}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-white">{trade.quantity}</td>
-                      <td className="p-4 text-white">{formatCurrency(trade.price)}</td>
-                      <td className="p-4 text-slate-300">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-3 h-3" />
-                          <span>{trade.date} {trade.time}</span>
-                        </div>
-                      </td>
-                      <td className={`p-4 font-medium ${trade.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        <div className="flex items-center gap-1">
-                          {trade.gainLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                          {formatCurrency(Math.abs(trade.gainLoss))}
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center">
+                        <div className="animate-pulse space-y-2">
+                          <div className="bg-slate-600 h-4 w-3/4 mx-auto rounded"></div>
+                          <div className="bg-slate-600 h-4 w-1/2 mx-auto rounded"></div>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : activities.length > 0 ? (
+                    activities.map((activity, index) => {
+                      // Map Alpaca activity data to display format
+                      const activityDate = new Date(activity.date || activity.created_at || activity.filled_at || '');
+                      const formattedDate = activityDate.toLocaleDateString();
+                      const formattedTime = activityDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                      return (
+                        <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                          <td className="p-4">
+                            <Badge className="bg-emerald-600 text-white">
+                              {activity.symbol || activity.instrument || 'N/A'}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            <Badge variant={activity.side === 'buy' || activity.activity_type === 'FILL' ? 'default' : 'destructive'}>
+                              {activity.side?.toUpperCase() || activity.activity_type || 'N/A'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-white">
+                            {activity.qty || activity.quantity || 'N/A'}
+                          </td>
+                          <td className="p-4 text-white">
+                            {activity.price || activity.filled_avg_price ? 
+                              formatCurrency(parseFloat(activity.price || activity.filled_avg_price)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="p-4 text-slate-300">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              <span>{formattedDate} {formattedTime}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-slate-300">
+                            <Badge variant="outline" className="text-slate-300 border-slate-600">
+                              {activity.status || 'Completed'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-400">
+                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No trade history found</p>
+                        <p className="text-xs mt-1">Your trading activities will appear here</p>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
