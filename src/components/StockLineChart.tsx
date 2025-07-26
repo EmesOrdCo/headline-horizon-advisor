@@ -185,10 +185,19 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   // Add new data points immediately from WebSocket - NO DELAYS
   useEffect(() => {
     const streamPrice = streamData[symbol];
+    console.log(`🔍 Chart useEffect triggered for ${symbol}:`, streamPrice);
+    
+    if (!streamPrice?.price) {
+      console.log(`❌ No price data for ${symbol}`);
+      return;
+    }
+
     const now = Date.now();
+    const timeSinceLastUpdate = now - lastDataPointRef.current;
+    console.log(`⏱️ Time since last update: ${timeSinceLastUpdate}ms`);
     
     // Only add if we have new WebSocket data and haven't added too recently (prevent spam)
-    if (streamPrice?.price && (now - lastDataPointRef.current) > 500) {
+    if (timeSinceLastUpdate > 500) {
       lastDataPointRef.current = now;
       
       addDataPoint(streamPrice.price, {
@@ -198,7 +207,9 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         close: streamPrice.close || streamPrice.price,
         volume: streamPrice.volume || Math.floor(Math.random() * 10000),
       });
-      console.log(`📡 INSTANT WebSocket data: $${streamPrice.price}`);
+      console.log(`📡 INSTANT WebSocket data added: $${streamPrice.price}`);
+    } else {
+      console.log(`⏭️ Skipping update - too recent (${timeSinceLastUpdate}ms < 500ms)`);
     }
   }, [streamData, symbol, addDataPoint]);
 
