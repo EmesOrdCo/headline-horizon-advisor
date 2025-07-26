@@ -46,6 +46,7 @@ const Portfolio = () => {
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
   const [accountData, setAccountData] = useState<AlpacaAccount | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const { 
@@ -54,7 +55,8 @@ const Portfolio = () => {
     getAccounts, 
     getAccount,
     getPositions,
-    getActivities
+    getActivities,
+    getOrders
   } = useAlpacaBroker();
   
   // Get all stock symbols for logo loading (including live positions)
@@ -82,15 +84,17 @@ const Portfolio = () => {
       if (accountsData.length > 0) {
         setSelectedAccount(accountsData[0].id);
         
-        // Load account details, positions, and activities using same logic as BrokerDashboard
-        const [accountDetails, positionsData, activitiesData] = await Promise.all([
+        // Load account details, positions, orders, and activities using same logic as BrokerDashboard
+        const [accountDetails, positionsData, ordersData, activitiesData] = await Promise.all([
           getAccount(accountsData[0].id),
           getPositions(accountsData[0].id),
+          getOrders(accountsData[0].id, { status: 'all', limit: 50 }),
           getActivities(accountsData[0].id).catch(() => []) // Handle 404 error gracefully
         ]);
         
         console.log('Raw account details from API:', accountDetails);
         console.log('Positions data:', positionsData);
+        console.log('Orders data:', ordersData);
         
         // Use the detailed metrics directly from the API (same as BrokerDashboard)
         const enhancedAccountData = {
@@ -116,7 +120,42 @@ const Portfolio = () => {
         
         setAccountData(enhancedAccountData);
         setPositions(positionsData);
-        setActivities(activitiesData || []);
+        setOrders(ordersData || []);
+        
+        // Combine orders and activities like ActivitiesHistory does
+        const filledOrders = (ordersData || [])
+          .filter((order: any) => order.status === 'filled')
+          .map((order: any) => ({
+            activity_type: 'FILL',
+            symbol: order.symbol,
+            description: `${order.side.toUpperCase()} ${order.filled_qty || order.qty} shares`,
+            qty: order.filled_qty || order.qty,
+            price: order.filled_avg_price || order.limit_price,
+            created_at: order.updated_at || order.created_at,
+            status: 'filled',
+            side: order.side,
+            order_id: order.id
+          }));
+
+        const pendingOrders = (ordersData || [])
+          .filter((order: any) => ['accepted', 'pending_new', 'pending_cancel', 'pending_replace'].includes(order.status))
+          .map((order: any) => ({
+            activity_type: 'PENDING_ORDER',
+            symbol: order.symbol,
+            description: `${order.side.toUpperCase()} ${order.qty} shares - ${order.order_type} order`,
+            qty: order.qty,
+            price: order.limit_price,
+            created_at: order.created_at,
+            status: order.status,
+            side: order.side,
+            order_id: order.id
+          }));
+
+        // Combine all activities and sort by date
+        const combinedActivities = [...(activitiesData || []), ...filledOrders, ...pendingOrders]
+          .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
+        
+        setActivities(combinedActivities);
       }
     } catch (err) {
       console.error('Failed to load portfolio data:', err);
@@ -553,18 +592,20 @@ const Portfolio = () => {
               <table className="w-full">
                 <thead className="border-b border-slate-700">
                   <tr className="text-left">
-                    <th className="p-4 text-slate-400 font-medium">Asset</th>
-                    <th className="p-4 text-slate-400 font-medium">Type</th>
-                    <th className="p-4 text-slate-400 font-medium">Quantity</th>
-                    <th className="p-4 text-slate-400 font-medium">Price</th>
-                    <th className="p-4 text-slate-400 font-medium">Date/Time</th>
-                    <th className="p-4 text-slate-400 font-medium">Status</th>
+                    <th className="p-4 text-slate-400 font-medium">ACCOUNT</th>
+                    <th className="p-4 text-slate-400 font-medium">ORDER ID</th>
+                    <th className="p-4 text-slate-400 font-medium">SIDE</th>
+                    <th className="p-4 text-slate-400 font-medium">SYMBOL</th>
+                    <th className="p-4 text-slate-400 font-medium">FILLED QTY</th>
+                    <th className="p-4 text-slate-400 font-medium">PRICE</th>
+                    <th className="p-4 text-slate-400 font-medium">STATUS</th>
+                    <th className="p-4 text-slate-400 font-medium">SUBMITTED AT</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center">
+                      <td colSpan={8} className="p-8 text-center">
                         <div className="animate-pulse space-y-2">
                           <div className="bg-slate-600 h-4 w-3/4 mx-auto rounded"></div>
                           <div className="bg-slate-600 h-4 w-1/2 mx-auto rounded"></div>
@@ -573,49 +614,83 @@ const Portfolio = () => {
                     </tr>
                   ) : activities.length > 0 ? (
                     activities.map((activity, index) => {
-                      // Map Alpaca activity data to display format
+                      // Map Alpaca activity data to display format similar to the screenshot
                       const activityDate = new Date(activity.date || activity.created_at || activity.filled_at || '');
-                      const formattedDate = activityDate.toLocaleDateString();
-                      const formattedTime = activityDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      const formattedDate = activityDate.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit' 
+                      });
+                      const formattedTime = activityDate.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true
+                      });
+
+                      // Get account number (truncated)
+                      const accountNumber = selectedAccount ? 
+                        accounts.find(acc => acc.id === selectedAccount)?.account_number || 'N/A' : 'N/A';
 
                       return (
-                        <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                        <tr key={activity.order_id || index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
                           <td className="p-4">
-                            <Badge className="bg-emerald-600 text-white">
-                              {activity.symbol || activity.instrument || 'N/A'}
+                            <span className="text-yellow-400 font-mono text-sm">
+                              {accountNumber}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-yellow-400 font-mono text-sm">
+                              {activity.order_id ? activity.order_id.substring(0, 8) + '...' : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <Badge 
+                              variant={activity.side === 'buy' ? 'default' : 'destructive'}
+                              className={activity.side === 'buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
+                            >
+                              {activity.side?.charAt(0).toUpperCase() + activity.side?.slice(1) || 'N/A'}
                             </Badge>
                           </td>
                           <td className="p-4">
-                            <Badge variant={activity.side === 'buy' || activity.activity_type === 'FILL' ? 'default' : 'destructive'}>
-                              {activity.side?.toUpperCase() || activity.activity_type || 'N/A'}
+                            <Badge className="bg-slate-600 text-white">
+                              {activity.symbol || 'N/A'}
                             </Badge>
                           </td>
-                          <td className="p-4 text-white">
-                            {activity.qty || activity.quantity || 'N/A'}
+                          <td className="p-4 text-white font-mono">
+                            {activity.qty || activity.quantity || '0'}
                           </td>
-                          <td className="p-4 text-white">
+                          <td className="p-4 text-white font-mono">
                             {activity.price || activity.filled_avg_price ? 
-                              formatCurrency(parseFloat(activity.price || activity.filled_avg_price)) : 
+                              `$${parseFloat(activity.price || activity.filled_avg_price).toFixed(2)}` : 
                               'N/A'
                             }
                           </td>
-                          <td className="p-4 text-slate-300">
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-3 h-3" />
-                              <span>{formattedDate} {formattedTime}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-slate-300">
-                            <Badge variant="outline" className="text-slate-300 border-slate-600">
-                              {activity.status || 'Completed'}
+                          <td className="p-4">
+                            <Badge 
+                              variant={activity.status === 'filled' ? 'default' : 'outline'}
+                              className={
+                                activity.status === 'filled' 
+                                  ? 'bg-green-600 text-white' 
+                                  : activity.status === 'accepted' 
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-slate-300 border-slate-600'
+                              }
+                            >
+                              {activity.status === 'filled' ? '✓ Filled' : 
+                               activity.status === 'accepted' ? 'Accepted' : 
+                               activity.status || 'Completed'}
                             </Badge>
+                          </td>
+                          <td className="p-4 text-slate-300 font-mono text-sm">
+                            <div>{formattedDate}</div>
+                            <div className="text-xs text-slate-400">{formattedTime}</div>
                           </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400">
+                      <td colSpan={8} className="p-8 text-center text-slate-400">
                         <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p>No trade history found</p>
                         <p className="text-xs mt-1">Your trading activities will appear here</p>
