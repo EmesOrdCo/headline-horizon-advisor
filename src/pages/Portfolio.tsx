@@ -75,22 +75,32 @@ const Portfolio = () => {
   const loadPortfolioData = async () => {
     try {
       setIsLoading(true);
+      console.log('🔍 Starting portfolio data load...');
       
       // Get user's account number from profile
       let userAccountNumber = null;
       if (user) {
-        console.log('Current user ID:', user.id);
+        console.log('✅ Current user ID:', user.id);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('alpaca_account_number, alpaca_account_id, alpaca_account_status')
           .eq('id', user.id)
           .maybeSingle();
         
-        console.log('Profile query result:', { profile, error: profileError });
+        console.log('📊 Profile query result:', { profile, error: profileError });
         userAccountNumber = profile?.alpaca_account_number;
-        console.log('User account number from profile:', userAccountNumber);
+        console.log('🏦 User account number from profile:', userAccountNumber);
+        
+        if (!userAccountNumber) {
+          console.error('❌ No account number found in profile! User needs to complete onboarding.');
+          toast.error('No Alpaca account found. Please complete account setup.');
+          setIsLoading(false);
+          return;
+        }
       } else {
-        console.log('No user found');
+        console.error('❌ No user found');
+        setIsLoading(false);
+        return;
       }
       
       // Load accounts
