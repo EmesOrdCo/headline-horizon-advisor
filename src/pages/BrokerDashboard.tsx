@@ -30,6 +30,7 @@ const BrokerDashboard = () => {
     loading, 
     error, 
     getAccounts, 
+    getAccount,
     getAssets, 
     getOrders, 
     getPositions 
@@ -67,10 +68,16 @@ const BrokerDashboard = () => {
     if (!accountId) return;
     
     try {
-      const [ordersData, positionsData] = await Promise.all([
+      const [accountDetails, ordersData, positionsData] = await Promise.all([
+        getAccount(accountId),
         getOrders(accountId, { limit: 50 }),
         getPositions(accountId)
       ]);
+      
+      // Update the selected account with detailed data
+      setAccounts(prev => prev.map(acc => 
+        acc.id === accountId ? { ...acc, ...accountDetails } : acc
+      ));
       
       setOrders(ordersData);
       setPositions(positionsData);
