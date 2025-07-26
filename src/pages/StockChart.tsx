@@ -34,6 +34,7 @@ const StockChart: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
+  const [chartType, setChartType] = useState<'line' | 'candles'>('line');
   
   // Fetch current stock data and historical data - use SPY as it has extended hours trading
   const activeSymbol = symbol || 'SPY';
@@ -175,6 +176,36 @@ const StockChart: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* Chart Type Options */}
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-xs px-2 py-1 h-7 ${
+                chartType === 'line' 
+                  ? 'bg-green-600 text-white' 
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+              onClick={() => setChartType('line')}
+            >
+              Line
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-xs px-2 py-1 h-7 ${
+                chartType === 'candles' 
+                  ? 'bg-green-600 text-white' 
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+              onClick={() => setChartType('candles')}
+            >
+              Candles
+            </Button>
+          </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
           {/* Timeframe Options */}
           <div className="flex items-center space-x-1">
             {['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'].map((timeframe) => (
@@ -285,7 +316,7 @@ const StockChart: React.FC = () => {
           {/* Chart Content - Takes full remaining height */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
             <div className="absolute inset-0">
-              <StockLineChart currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" />
+              <StockLineChart currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" chartType={chartType} />
             </div>
             
             {/* WebSocket Monitor */}

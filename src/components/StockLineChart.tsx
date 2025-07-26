@@ -26,7 +26,8 @@ interface PricePoint {
 
 interface StockLineChartProps {
   currentPrice?: number;
-  symbol?: string;
+  symbol: string;
+  chartType?: 'line' | 'candles';
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -118,7 +119,8 @@ const CandlestickBar = (props: any) => {
 
 const StockLineChart: React.FC<StockLineChartProps> = ({ 
   currentPrice: parentPrice = 214.73, 
-  symbol = 'AAPL' 
+  symbol = 'AAPL',
+  chartType: propChartType = 'line'
 }) => {
   const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
     symbols: [symbol], 
@@ -138,9 +140,14 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const [displayData, setDisplayData] = useState<PricePoint[]>([]);
   const [viewportStart, setViewportStart] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const [chartType, setChartType] = useState<'line' | 'candles'>('line');
+  const [chartType, setChartType] = useState<'line' | 'candles'>(propChartType);
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sync chart type with prop
+  useEffect(() => {
+    setChartType(propChartType);
+  }, [propChartType]);
 
   // Fixed viewport size - always show exactly this many points
   const VIEWPORT_SIZE = 25;
@@ -211,9 +218,6 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
   
   const currentPrice = parentPrice;
-  const firstPrice = displayData[0]?.price || currentPrice;
-  const priceChange = currentPrice - firstPrice;
-  const priceChangePercent = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
 
   // Scroll controls
   const canScrollLeft = viewportStart > 0;
@@ -238,90 +242,8 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-gray-900 rounded-lg border border-gray-700 overflow-hidden flex flex-col">
-      <div className="p-3 border-b border-gray-700 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-white">AAPL Stock Chart</h2>
-            <div className="flex items-center gap-4 mt-1">
-              <span className="text-xl font-bold text-white">
-                ${currentPrice.toFixed(2)}
-              </span>
-              <span className={`text-sm font-medium ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-xs text-gray-400">
-              {isConnected ? 'Live' : 'Sim'}
-            </span>
-            <span className="text-xs text-gray-400">
-              {dataCount}pts
-            </span>
-            {isAutoScrolling && (
-              <span className="text-xs text-blue-400">Auto</span>
-            )}
-          </div>
-        </div>
-        
-        {/* Chart Type and Scroll Controls */}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setChartType('line')}
-              className={`px-2 py-1 text-xs rounded ${
-                chartType === 'line' 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-gray-700 text-white hover:bg-gray-600'
-              }`}
-            >
-              Line
-            </button>
-            <button
-              onClick={() => setChartType('candles')}
-              className={`px-2 py-1 text-xs rounded ${
-                chartType === 'candles' 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-gray-700 text-white hover:bg-gray-600'
-              }`}
-            >
-              Candles
-            </button>
-          </div>
-          <div className="border-l border-gray-600 h-4"></div>
-          <button
-            onClick={scrollLeft}
-            disabled={!canScrollLeft}
-            className="px-2 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50"
-          >
-            ← Earlier
-          </button>
-          <button
-            onClick={scrollRight}
-            disabled={!canScrollRight}
-            className="px-2 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50"
-          >
-            Later →
-          </button>
-          <button
-            onClick={scrollToLatest}
-            className={`px-2 py-1 text-xs rounded ${
-              isAutoScrolling 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-600 text-white'
-            }`}
-          >
-            Latest {isAutoScrolling ? '●' : '○'}
-          </button>
-          <span className="text-xs text-gray-400">
-            {viewportStart + 1}-{Math.min(viewportStart + VIEWPORT_SIZE, displayData.length)} of {displayData.length}
-          </span>
-        </div>
-      </div>
-      
-      <div ref={chartContainerRef} className="flex-1 p-2 w-full min-h-0">
+    <div className="w-full h-full bg-gray-900">
+      <div className="flex-1 p-2 w-full min-h-0 h-full">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
             <LineChart 
