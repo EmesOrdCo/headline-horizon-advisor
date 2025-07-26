@@ -65,14 +65,16 @@ serve(async (req) => {
       
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca sandbox test data stream');
+        console.log('Sending authentication to sandbox...');
         
+        // For the sandbox test stream, send auth immediately
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication to sandbox...');
+        console.log('Sending auth message:', JSON.stringify(authMessage, null, 2));
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
@@ -94,16 +96,7 @@ serve(async (req) => {
               console.log('Processing message:', JSON.stringify(message, null, 2));
               
               if (message.T === 'success' && message.msg === 'connected') {
-                console.log('Connected to Alpaca, now authenticating...');
-                
-                // Send auth message
-                const authMessage = {
-                  action: "auth",
-                  key: alpacaApiKey,
-                  secret: alpacaSecretKey
-                };
-                console.log('Sending auth message:', JSON.stringify(authMessage, null, 2));
-                alpacaSocket!.send(JSON.stringify(authMessage));
+                console.log('Connected to Alpaca - authentication should have been sent already');
                 
               } else if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
