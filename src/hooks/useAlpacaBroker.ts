@@ -197,6 +197,7 @@ export const useAlpacaBroker = () => {
   };
 
   const createJournal = async (journalData: any) => {
+    console.log('🏦 useAlpacaBroker: createJournal called with:', journalData);
     return callBrokerAPI('create_journal', undefined, journalData);
   };
 

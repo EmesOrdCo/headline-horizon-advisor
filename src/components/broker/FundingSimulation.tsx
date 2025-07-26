@@ -14,7 +14,7 @@ interface FundingSimulationProps {
 }
 
 const FundingSimulation = ({ accountId, accountData, onFundingComplete }: FundingSimulationProps) => {
-  const [fundingType, setFundingType] = useState<'ach' | 'journal' | 'mock'>('mock');
+  const [fundingType, setFundingType] = useState<'ach' | 'journal' | 'mock'>('journal');
   const [amount, setAmount] = useState('10000');
   
   const { createACHRelationship, createTransfer, createJournal, loading } = useAlpacaBroker();
@@ -84,8 +84,14 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
         amount: amount
       };
 
-      console.log('Creating journal transfer:', journalData);
-      await createJournal(journalData);
+      console.log('🚀 JOURNAL TRANSFER DEBUG:');
+      console.log('- Account ID:', accountId);
+      console.log('- Journal Data:', journalData);
+      console.log('- About to call createJournal...');
+      
+      const result = await createJournal(journalData);
+      console.log('✅ Journal transfer result:', result);
+      
       toast.success(`Journal transfer of $${amount} completed successfully!`);
       onFundingComplete();
     } catch (error) {
@@ -135,9 +141,9 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="mock">Mock Funding (Recommended for Demo)</SelectItem>
+                <SelectItem value="journal">🏦 Journal Transfer (Updates Alpaca Database)</SelectItem>
                 <SelectItem value="ach">ACH Transfer Simulation</SelectItem>
-                <SelectItem value="journal">Journal Transfer (Limited)</SelectItem>
+                <SelectItem value="mock">Mock Funding (Demo Only)</SelectItem>
               </SelectContent>
             </Select>
           </div>
