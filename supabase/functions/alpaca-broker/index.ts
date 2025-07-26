@@ -44,11 +44,20 @@ serve(async (req) => {
     switch (action) {
       case 'create_account':
         url = `${BROKER_BASE_URL}/v1/accounts`;
+        console.log(`=== ACCOUNT CREATION REQUEST ===`);
+        console.log(`URL: ${url}`);
+        console.log(`Headers:`, JSON.stringify(headers, null, 2));
+        console.log(`Account Data:`, JSON.stringify(data, null, 2));
+        
         response = await fetch(url, {
           method: 'POST',
           headers,
           body: JSON.stringify(data),
         });
+        
+        console.log(`=== ACCOUNT CREATION RESPONSE ===`);
+        console.log(`Status: ${response.status}`);
+        console.log(`StatusText: ${response.statusText}`);
         break;
 
       case 'get_accounts':
@@ -160,6 +169,18 @@ serve(async (req) => {
           method: 'GET',
           headers,
         });
+        
+        // Handle 404 for activities as it's common for new accounts
+        if (response.status === 404) {
+          console.log('Activities endpoint returned 404 - returning empty array for new account');
+          return new Response(JSON.stringify({
+            success: true,
+            action,
+            data: [] // Return empty activities array for new accounts
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
         break;
 
       case 'get_portfolio_history':
@@ -231,8 +252,10 @@ serve(async (req) => {
       let errorCode = null;
       
       try {
-        const errorJson = JSON.parse(errorText);
-        console.log(`Parsed error JSON:`, errorJson);
+        // Only try to parse as JSON if the content looks like JSON
+        if (errorText.trim().startsWith('{') || errorText.trim().startsWith('[')) {
+          const errorJson = JSON.parse(errorText);
+          console.log(`Parsed error JSON:`, errorJson);
         
         if (errorJson.message) {
           errorMessage = errorJson.message;
@@ -242,7 +265,7 @@ serve(async (req) => {
           errorMessage = errorJson.detail;
         }
         
-        errorCode = errorJson.code;
+          errorCode = errorJson.code;
         
         // Map common error codes to user-friendly messages
         if (errorCode === 40010000) {
@@ -267,6 +290,15 @@ serve(async (req) => {
           errorMessage = "Please provide a valid Tax ID/SSN.";
         } else if (errorMessage.toLowerCase().includes('kyc')) {
           errorMessage = "KYC verification failed. Please check your personal information.";
+        }
+        } else {
+          // If it's not JSON, treat it as plain text error
+          console.log(`Plain text error response:`, errorText);
+          if (errorText.toLowerCase().includes('not found')) {
+            errorMessage = `Resource not found (${response.status}). This may be normal for some operations.`;
+          } else {
+            errorMessage = errorText || `API request failed with status ${response.status}`;
+          }
         }
       } catch (parseError) {
         console.error(`Failed to parse error JSON:`, parseError);
