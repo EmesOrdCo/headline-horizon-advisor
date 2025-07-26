@@ -238,8 +238,8 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   return (
-    <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-      <div className="p-3 border-b border-gray-700">
+    <div className="w-full h-full bg-gray-900 rounded-lg border border-gray-700 overflow-hidden flex flex-col">
+      <div className="p-3 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-white">AAPL Stock Chart</h2>
@@ -321,7 +321,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         </div>
       </div>
       
-      <div ref={chartContainerRef} className="h-[500px] p-2 w-full">
+      <div ref={chartContainerRef} className="flex-1 p-2 w-full min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
             <LineChart 
