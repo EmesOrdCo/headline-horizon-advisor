@@ -76,45 +76,68 @@ const CandlestickBar = (props: any) => {
   const actualHigh = high || price;
   const actualLow = low || price;
   
-  const isGreen = actualClose >= actualOpen;
-  const color = isGreen ? '#10B981' : '#EF4444';
+  // Determine if bullish (green) or bearish (red)
+  const isBullish = actualClose >= actualOpen;
+  const color = isBullish ? '#10B981' : '#EF4444'; // Green for bullish, red for bearish
   
-  // Calculate positions based on price range
+  // Calculate the scale factor for price to pixels
   const priceRange = actualHigh - actualLow;
-  const pixelsPerDollar = height / priceRange;
+  if (priceRange === 0) return null; // Avoid division by zero
   
-  // Calculate wick positions
-  const wickTop = y;
-  const wickBottom = y + height;
-  const wickX = x + width / 2;
+  const pixelsPerPrice = height / priceRange;
   
-  // Calculate body positions
-  const bodyTop = y + (actualHigh - Math.max(actualOpen, actualClose)) * pixelsPerDollar;
-  const bodyHeight = Math.abs(actualClose - actualOpen) * pixelsPerDollar;
-  const bodyWidth = width * 0.3; // Make body much thinner
-  const bodyX = x + (width - bodyWidth) / 2;
+  // Calculate positions
+  const centerX = x + width / 2;
+  const bodyWidth = Math.max(2, width * 0.7); // 70% of available width, minimum 2px
+  const bodyLeft = centerX - bodyWidth / 2;
+  
+  // Calculate Y positions (remember Y increases downward)
+  const highY = y;
+  const lowY = y + height;
+  
+  const openY = y + ((actualHigh - actualOpen) * pixelsPerPrice);
+  const closeY = y + ((actualHigh - actualClose) * pixelsPerPrice);
+  
+  // Body coordinates
+  const bodyTop = Math.min(openY, closeY);
+  const bodyBottom = Math.max(openY, closeY);
+  const bodyHeight = Math.max(1, bodyBottom - bodyTop); // Minimum 1px height
   
   return (
     <g>
-      {/* High-Low Wick (thin line) */}
+      {/* High-Low Wick (thin vertical line) */}
       <line
-        x1={wickX}
-        y1={wickTop}
-        x2={wickX}
-        y2={wickBottom}
+        x1={centerX}
+        y1={highY}
+        x2={centerX}
+        y2={lowY}
         stroke={color}
         strokeWidth={1}
+        opacity={0.8}
       />
-      {/* Open-Close Body (thick rectangle) */}
+      
+      {/* Open-Close Body (rectangle) */}
       <rect
-        x={bodyX}
+        x={bodyLeft}
         y={bodyTop}
         width={bodyWidth}
-        height={Math.max(bodyHeight, 2)} // Minimum height of 2px
-        fill={isGreen ? color : color}
+        height={bodyHeight}
+        fill={isBullish ? color : color}
         stroke={color}
         strokeWidth={1}
+        opacity={isBullish ? 0.8 : 1}
       />
+      
+      {/* For hollow/filled appearance */}
+      {isBullish && (
+        <rect
+          x={bodyLeft + 1}
+          y={bodyTop + 1}
+          width={Math.max(0, bodyWidth - 2)}
+          height={Math.max(0, bodyHeight - 2)}
+          fill="rgba(255, 255, 255, 0.3)"
+        />
+      )}
     </g>
   );
 };
@@ -530,7 +553,13 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                domain={[(dataMin: number) => dataMin * 0.998, (dataMax: number) => dataMax * 1.002]} // Auto-scale to visible range
+                domain={[(dataMin: number) => {
+                  const minPrice = Math.min(...viewportData.map(d => Math.min(d.low || d.price, d.high || d.price, d.open || d.price, d.close || d.price)));
+                  return minPrice * 0.999;
+                }, (dataMax: number) => {
+                  const maxPrice = Math.max(...viewportData.map(d => Math.max(d.low || d.price, d.high || d.price, d.open || d.price, d.close || d.price)));
+                  return maxPrice * 1.001;
+                }]} // Auto-scale to visible OHLC range
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
