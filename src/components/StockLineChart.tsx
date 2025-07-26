@@ -344,15 +344,17 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
               <Line 
                 type="monotone" 
                 dataKey="price" 
                 stroke="#10B981" 
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
+                activeDot={false}
                 connectNulls={false}
+                isAnimationActive={false}
+                animationDuration={0}
               />
             </LineChart>
           ) : (
@@ -379,11 +381,12 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
               <Bar 
                 dataKey="high" 
                 shape={<CandlestickBar />}
                 isAnimationActive={false}
+                animationDuration={0}
               />
             </ComposedChart>
           )}
