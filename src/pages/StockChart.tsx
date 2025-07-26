@@ -43,9 +43,9 @@ const StockChart: React.FC = () => {
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
-  // Set up Alpaca WebSocket for real-time updates
+  // Set up Alpaca WebSocket for real-time updates - include AAPL for Live Data Flow
   const { streamData, isConnected } = useAlpacaStreamSingleton({
-    symbols: [activeSymbol],
+    symbols: [activeSymbol, 'AAPL'],
     enabled: true
   });
   
@@ -313,8 +313,135 @@ const StockChart: React.FC = () => {
                 />
               </TabsContent>
               
-              <TabsContent value="live-flow" className="flex-1 m-0 p-4">
-                <LiveTimeGraph currentPrice={currentPrice} symbol={activeSymbol} />
+              <TabsContent value="live-flow" className="flex-1 m-0 p-0">
+                <div className="h-full flex flex-col overflow-y-auto bg-slate-900">
+                  {/* CRM Chart */}
+                  <div className="flex flex-col h-[400px]">
+                    {/* Stock Chart Header - matching Price Chart style */}
+                    <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700/50 flex-shrink-0">
+                      <div className="flex items-center space-x-6">
+                        <div className="flex flex-col">
+                          <h2 className="text-white text-xl font-bold mb-1">{activeSymbol} Stock Chart</h2>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white text-2xl font-bold">${currentPrice.toFixed(2)}</span>
+                            <span className={`text-lg ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+                            </span>
+                            {isConnected && (
+                              <div className="flex items-center space-x-2 ml-4">
+                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                <span className="text-green-400 text-sm">Live</span>
+                                <span className="text-slate-400 text-sm">30pts</span>
+                                <span className="text-blue-400 text-sm">Auto</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chart Controls - matching Price Chart style */}
+                    <div className="px-4 py-2 bg-slate-800/20 border-b border-slate-700/30 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <button className="px-3 py-1 text-sm bg-slate-700 text-white rounded">
+                            Line
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-green-600 text-white rounded">
+                            Candles
+                          </button>
+                          <button className="px-3 py-1 text-sm text-slate-400 hover:text-white">
+                            ← Earlier
+                          </button>
+                          <button className="px-3 py-1 text-sm text-slate-400 hover:text-white">
+                            Later →
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded">
+                            Latest •
+                          </button>
+                          <span className="text-slate-400 text-sm">1-8 of 8</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-slate-400">
+                          <div>O <span className="text-white">{openPrice.toFixed(2)}</span></div>
+                          <div>H <span className="text-green-400">{highPrice.toFixed(2)}</span></div>
+                          <div>L <span className="text-red-400">{lowPrice.toFixed(2)}</span></div>
+                          <div>C <span className="text-white">{closePrice.toFixed(2)}</span></div>
+                          <div>Vol <span className="text-blue-400">{formatVolume(volume)}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Chart Content */}
+                    <div className="flex-1 bg-slate-900 min-h-0">
+                      <LiveTimeGraph currentPrice={currentPrice} symbol={activeSymbol} />
+                    </div>
+                  </div>
+
+                  {/* AAPL Chart */}
+                  <div className="flex flex-col h-[400px]">
+                    {/* AAPL Chart Header */}
+                    <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700/50 flex-shrink-0">
+                      <div className="flex items-center space-x-6">
+                        <div className="flex flex-col">
+                          <h2 className="text-white text-xl font-bold mb-1">AAPL Stock Chart</h2>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white text-2xl font-bold">${(streamData?.['AAPL']?.price || 214.73).toFixed(2)}</span>
+                            <span className={`text-lg ${((streamData?.['AAPL']?.price || 214.73) - (streamData?.['AAPL']?.open || 213.95)) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {((streamData?.['AAPL']?.price || 214.73) - (streamData?.['AAPL']?.open || 213.95)) >= 0 ? '+' : ''}{((streamData?.['AAPL']?.price || 214.73) - (streamData?.['AAPL']?.open || 213.95)).toFixed(2)} 
+                              ({((streamData?.['AAPL']?.price || 214.73) - (streamData?.['AAPL']?.open || 213.95)) >= 0 ? '+' : ''}{(((streamData?.['AAPL']?.price || 214.73) - (streamData?.['AAPL']?.open || 213.95)) / (streamData?.['AAPL']?.open || 213.95) * 100).toFixed(2)}%)
+                            </span>
+                            {isConnected && (
+                              <div className="flex items-center space-x-2 ml-4">
+                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                <span className="text-green-400 text-sm">Live</span>
+                                <span className="text-slate-400 text-sm">180pts</span>
+                                <span className="text-blue-400 text-sm">Auto</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AAPL Chart Controls */}
+                    <div className="px-4 py-2 bg-slate-800/20 border-b border-slate-700/30 flex-shrink-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <button className="px-3 py-1 text-sm bg-slate-700 text-white rounded">
+                            Line
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-green-600 text-white rounded">
+                            Candles
+                          </button>
+                          <button className="px-3 py-1 text-sm text-slate-400 hover:text-white">
+                            ← Earlier
+                          </button>
+                          <button className="px-3 py-1 text-sm text-slate-400 hover:text-white">
+                            Later →
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded">
+                            Latest •
+                          </button>
+                          <span className="text-slate-400 text-sm">1-24 of 24</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-slate-400">
+                          <div>O <span className="text-white">{(streamData?.['AAPL']?.open || 213.95).toFixed(2)}</span></div>
+                          <div>H <span className="text-green-400">{(streamData?.['AAPL']?.high || 214.95).toFixed(2)}</span></div>
+                          <div>L <span className="text-red-400">{(streamData?.['AAPL']?.low || 212.95).toFixed(2)}</span></div>
+                          <div>C <span className="text-white">{(streamData?.['AAPL']?.close || streamData?.['AAPL']?.price || 214.73).toFixed(2)}</span></div>
+                          <div>Vol <span className="text-blue-400">{formatVolume(streamData?.['AAPL']?.volume || 57580)}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AAPL Chart Content */}
+                    <div className="flex-1 bg-slate-900 min-h-0">
+                      <LiveTimeGraph currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" />
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
