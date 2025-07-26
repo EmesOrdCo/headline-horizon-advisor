@@ -143,14 +143,86 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const [activeChartType, setActiveChartType] = useState<'line' | 'candles'>(chartType);
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Zoom functionality state
+  const [zoomLevel, setZoomLevel] = useState(1); // 1 = default, >1 = zoomed in, <1 = zoomed out
+  const [isHovering, setIsHovering] = useState(false);
+  
+  // Zoom configuration
+  const MIN_ZOOM = 0.1; // Max zoom out (10x more data visible)
+  const MAX_ZOOM = 10;  // Max zoom in (10x less data visible)
+  const ZOOM_SENSITIVITY = 0.15; // 15% change per scroll
+  const BASE_VIEWPORT_SIZE = 25; // Base number of data points to show
 
   // Sync chart type with prop
   useEffect(() => {
     setActiveChartType(chartType);
   }, [chartType]);
 
-  // Fixed viewport size - always show exactly this many points
-  const VIEWPORT_SIZE = 25;
+  // Calculate dynamic viewport size based on zoom level
+  const getViewportSize = () => {
+    // Inverse relationship: higher zoom = smaller viewport (more detailed view)
+    return Math.max(5, Math.floor(BASE_VIEWPORT_SIZE / zoomLevel));
+  };
+
+  // Zoom indicator text
+  const getZoomIndicator = () => {
+    const timeRange = getViewportSize();
+    if (timeRange <= 5) return "Viewing: 1-2m range";
+    if (timeRange <= 15) return "Viewing: 5m range";
+    if (timeRange <= 30) return "Viewing: 15m range";
+    if (timeRange <= 60) return "Viewing: 30m range";
+    if (timeRange <= 120) return "Viewing: 1h range";
+    if (timeRange <= 250) return "Viewing: 3h range";
+    return "Viewing: 6h+ range";
+  };
+
+  // Handle wheel event for zooming
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!isHovering || !chartContainerRef.current) return;
+      
+      e.preventDefault(); // Prevent page scrolling
+      e.stopPropagation();
+      
+      const delta = e.deltaY;
+      const zoomDirection = delta > 0 ? 1 : -1; // Scroll down = zoom in, scroll up = zoom out
+      
+      setZoomLevel(prevZoom => {
+        const newZoom = prevZoom * (1 + (zoomDirection * ZOOM_SENSITIVITY));
+        const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+        
+        // Calculate new viewport start to maintain center position
+        const currentViewportSize = getViewportSize();
+        const newViewportSize = Math.max(5, Math.floor(BASE_VIEWPORT_SIZE / clampedZoom));
+        const centerPoint = viewportStart + currentViewportSize / 2;
+        const newViewportStart = Math.max(0, centerPoint - newViewportSize / 2);
+        
+        // Update viewport start with the new centered position
+        setViewportStart(Math.floor(newViewportStart));
+        
+        // Disable auto-scrolling when manually zooming
+        setIsAutoScrolling(false);
+        
+        console.log(`🔍 Zoom: ${clampedZoom.toFixed(2)}x, Viewport: ${newViewportSize} points`);
+        
+        return clampedZoom;
+      });
+    };
+
+    const chartElement = chartContainerRef.current;
+    if (chartElement) {
+      chartElement.addEventListener('wheel', handleWheel, { passive: false });
+      
+      return () => {
+        chartElement.removeEventListener('wheel', handleWheel);
+      };
+    }
+  }, [isHovering, viewportStart, getViewportSize]);
+
+  // Mouse enter/leave handlers for hover detection
+  const handleMouseEnter = () => setIsHovering(true);
+  const handleMouseLeave = () => setIsHovering(false);
 
   // Convert historical data points to chart format
   const convertToChartData = (historicalData: any[]): PricePoint[] => {
@@ -177,9 +249,10 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         console.log(`📊 Updated display data: ${chartData.length} points`);
         
         // Auto-scroll to latest data if auto-scrolling is enabled
-        if (isAutoScrolling && chartData.length > VIEWPORT_SIZE) {
+        const currentViewportSize = getViewportSize();
+        if (isAutoScrolling && chartData.length > currentViewportSize) {
           setTimeout(() => {
-            setViewportStart(Math.max(0, chartData.length - VIEWPORT_SIZE));
+            setViewportStart(Math.max(0, chartData.length - currentViewportSize));
           }, 100);
         }
         
@@ -187,7 +260,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       }
       return prevData;
     });
-  }, [dataCount, getDataForMinutes, isAutoScrolling]);
+  }, [dataCount, getDataForMinutes, isAutoScrolling, zoomLevel]);
 
   // Add new data points from WebSocket and real price data
   useEffect(() => {
@@ -215,14 +288,15 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     }
   }, [streamData, symbol, addDataPoint, parentPrice]);
 
-  // Get viewport data for smooth scrolling
-  const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
+  // Get viewport data for smooth scrolling with dynamic viewport size
+  const currentViewportSize = getViewportSize();
+  const viewportData = displayData.slice(viewportStart, viewportStart + currentViewportSize);
   
   const currentPrice = parentPrice;
 
-  // Scroll controls
+  // Scroll controls (updated for dynamic viewport)
   const canScrollLeft = viewportStart > 0;
-  const canScrollRight = viewportStart + VIEWPORT_SIZE < displayData.length;
+  const canScrollRight = viewportStart + currentViewportSize < displayData.length;
 
   const scrollLeft = () => {
     setIsAutoScrolling(false);
@@ -230,21 +304,32 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   const scrollRight = () => {
-    setViewportStart(Math.min(displayData.length - VIEWPORT_SIZE, viewportStart + 5));
+    setViewportStart(Math.min(displayData.length - currentViewportSize, viewportStart + 5));
     // Re-enable auto-scrolling if we're at the latest data
-    if (viewportStart + VIEWPORT_SIZE >= displayData.length - 5) {
+    if (viewportStart + currentViewportSize >= displayData.length - 5) {
       setIsAutoScrolling(true);
     }
   };
 
   const scrollToLatest = () => {
     setIsAutoScrolling(true);
-    setViewportStart(Math.max(0, displayData.length - VIEWPORT_SIZE));
+    setViewportStart(Math.max(0, displayData.length - currentViewportSize));
   };
 
   return (
-    <div className="w-full h-full bg-gray-900">
-      <div className="flex-1 p-2 w-full min-h-0 h-full">
+    <div className="w-full h-full bg-gray-900 relative">
+      {/* Zoom Indicator */}
+      <div className="absolute top-2 right-2 z-10 bg-gray-800/80 px-2 py-1 rounded text-xs text-gray-300 pointer-events-none">
+        {getZoomIndicator()} • Zoom: {zoomLevel.toFixed(1)}x
+      </div>
+      
+      <div 
+        ref={chartContainerRef}
+        className="flex-1 p-2 w-full min-h-0 h-full"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{ cursor: isHovering ? 'grab' : 'default' }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           {activeChartType === 'line' ? (
             <LineChart 
