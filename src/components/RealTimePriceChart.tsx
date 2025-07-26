@@ -80,6 +80,7 @@ const RealTimePriceChart = ({ data, symbol }: RealTimePriceChartProps) => {
               stroke="hsl(var(--muted-foreground))"
               fontSize={12}
               domain={['dataMin - 0.01', 'dataMax + 0.01']}
+              orientation="right"
             />
             <ChartTooltip 
               content={<ChartTooltipContent />}
