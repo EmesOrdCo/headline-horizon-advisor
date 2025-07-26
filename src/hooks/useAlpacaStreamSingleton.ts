@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { alpacaCleanup } from '@/utils/alpacaConnectionManager';
 
 interface StreamData {
   type: string;
@@ -34,12 +35,19 @@ class AlpacaStreamManager {
   private isAuthenticated = false;
   private errorMessage = '';
   private connectionAttempts = 0;
-  private maxAttempts = 1;
+  private maxAttempts = 1; // Allow one attempt per manual connect
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
   static getInstance(): AlpacaStreamManager {
     if (!AlpacaStreamManager.instance) {
       AlpacaStreamManager.instance = new AlpacaStreamManager();
+      
+      // Add global cleanup on page unload
+      if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', () => {
+          AlpacaStreamManager.instance?.disconnect();
+        });
+      }
     }
     return AlpacaStreamManager.instance;
   }
@@ -52,8 +60,8 @@ class AlpacaStreamManager {
     const newSymbols = symbols.filter(symbol => !this.subscribedSymbols.has(symbol));
     newSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
 
-    // Only connect if we don't have a connection and haven't exceeded attempts
-    if (!this.socket && this.connectionStatus !== 'connecting' && this.connectionAttempts < this.maxAttempts) {
+    // Only connect if we don't have a connection and are not in error state
+    if (!this.socket && this.connectionStatus !== 'connecting' && this.connectionStatus !== 'error') {
       this.connect();
     } else if (this.socket && this.isAuthenticated && newSymbols.length > 0) {
       // Subscribe to new symbols if already connected
@@ -106,13 +114,8 @@ class AlpacaStreamManager {
       return;
     }
 
-    if (this.connectionAttempts >= this.maxAttempts) {
-      console.log('Singleton: Max connection attempts reached');
-      this.connectionStatus = 'error';
-      this.errorMessage = 'Max connection attempts reached';
-      this.notifySubscribers();
-      return;
-    }
+    // Always allow manual reconnection
+    console.log('Singleton: Starting connection attempt...');
 
     this.connectionAttempts++;
     this.connectionStatus = 'connecting';
@@ -126,6 +129,9 @@ class AlpacaStreamManager {
     
     try {
       this.socket = new WebSocket(wsUrl);
+      
+      // Register connection for cleanup
+      alpacaCleanup.addConnection(this.socket);
 
       this.socket.onopen = () => {
         console.log('Singleton: WebSocket connected successfully');
@@ -256,6 +262,9 @@ class AlpacaStreamManager {
     }
     
     if (this.socket) {
+      // Unregister from cleanup manager
+      alpacaCleanup.removeConnection(this.socket);
+      
       this.socket.onopen = null;
       this.socket.onmessage = null;
       this.socket.onerror = null;
@@ -301,13 +310,28 @@ export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaS
     };
   }, [symbols.join(','), enabled]); // Use symbols.join(',') to prevent array reference issues
 
+  // Manual connect function to retry connections
+  const manualConnect = useCallback(() => {
+    console.log('Manual connect requested');
+    const manager = managerRef.current;
+    
+    // Reset connection state and force reconnect
+    manager['connectionStatus'] = 'disconnected';
+    manager['connectionAttempts'] = 0;
+    manager['errorMessage'] = '';
+    
+    if (symbols.length > 0) {
+      manager.subscribe(subscriberIdRef.current, updateStatus, symbols);
+    }
+  }, [symbols, updateStatus]);
+
   return {
     isConnected: status.connectionStatus === 'connected',
     isAuthenticated: status.isAuthenticated,
     connectionStatus: status.connectionStatus,
     streamData: status.streamData,
     errorMessage: status.errorMessage,
-    connect: () => managerRef.current.subscribe(subscriberIdRef.current, updateStatus, symbols),
+    connect: manualConnect,
     disconnect: () => managerRef.current.unsubscribe(subscriberIdRef.current, symbols)
   };
 };

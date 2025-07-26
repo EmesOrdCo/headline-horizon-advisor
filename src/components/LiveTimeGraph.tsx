@@ -14,6 +14,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 
 interface StreamData {
   type: string;
@@ -40,7 +41,7 @@ interface LiveTimeGraphProps {
 
 const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
   // Use the hook directly to get real data
-  const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
+  const { streamData, isConnected, errorMessage, connect } = useAlpacaStreamSingleton({ 
     symbols: ['AAPL'], 
     enabled: true 
   });
@@ -361,10 +362,19 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
               Real-time websocket data visualization • {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
             </p>
             {errorMessage && (
-              <p className="text-xs text-red-500 mt-1">{errorMessage}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-red-500">{errorMessage}</p>
+                <button 
+                  onClick={connect}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  Retry
+                </button>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
+            <WebSocketMonitor />
             <span className="text-xs px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30 font-medium">
               📊 Sandbox Test Data (FAKEPACA → AAPL)
             </span>
