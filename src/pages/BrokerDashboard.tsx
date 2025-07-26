@@ -74,6 +74,9 @@ const BrokerDashboard = () => {
         getPositions(accountId)
       ]);
       
+      console.log('Raw account details from API:', accountDetails);
+      console.log('long_market_value:', accountDetails.long_market_value);
+      
       // Update the selected account with detailed data
       setAccounts(prev => prev.map(acc => 
         acc.id === accountId ? { ...acc, ...accountDetails } : acc
