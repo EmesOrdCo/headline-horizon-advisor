@@ -22,7 +22,7 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
   const [amount, setAmount] = useState('1000.00');
   const [journalId, setJournalId] = useState<string | null>(null);
   
-  const { createJournal, loading } = useAlpacaBroker();
+  const { createJournal, createACHRelationship, createTransfer, loading } = useAlpacaBroker();
 
   const resetForm = () => {
     setStep('form');
@@ -42,16 +42,16 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
       console.log('🏦 Creating journal transfer for instant deposit...');
       
       // Use Journal API to simulate an instant deposit
-      // In sandbox mode, this creates a transfer between accounts to simulate adding funds
+      // Based on official Alpaca documentation: https://docs.alpaca.markets/reference/createjournal
       const journalData = {
         entry_type: 'JNLC', // Journal Cash
-        from_account: 'test-sandbox-funding', // Sandbox funding source
+        from_account: 'alpaca-funding-source', // Need a pre-funded account
         to_account: accountId,
-        amount: amount,
+        amount: amount, // Amount as string
         description: `Simulated deposit of $${amount}`,
-        symbol: 'USD', // Currency
+        // Travel Rule fields (optional but recommended)
         transmitter_name: 'MarketSensorAI Sandbox',
-        transmitter_id: 'sandbox_simulator_001'
+        currency: 'USD'
       };
 
       const journalResult = await createJournal(journalData);
