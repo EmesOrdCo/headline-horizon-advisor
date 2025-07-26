@@ -34,7 +34,6 @@ const Auth = () => {
   // Auth fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   
   // Alpaca fields (only for signup)
   const [firstName, setFirstName] = useState('');
@@ -59,7 +58,7 @@ const Auth = () => {
   }, [user, navigate]);
 
   const validateSignUpForm = () => {
-    if (!fullName || !email || !password) return false;
+    if (!email || !password) return false;
     if (!firstName || !lastName || !dateOfBirth) return false;
     if (!phoneNumber || !streetAddress || !city || !state || !postalCode) return false;
     if (password.length < 6) return false;
@@ -85,6 +84,7 @@ const Auth = () => {
 
         // Step 1: Create Supabase user account
         console.log('Creating Supabase user account...');
+        const fullName = `${firstName} ${lastName}`.trim();
         const authResult = await signUp(email, password, fullName);
         
         if (authResult.error) {
@@ -278,20 +278,6 @@ const Auth = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Basic Auth Fields */}
-            {isSignUp && (
-              <div>
-                <Label>Full Name *</Label>
-                <Input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Enter your full name"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            )}
-
             <div>
               <Label>Email Address *</Label>
               <Input
