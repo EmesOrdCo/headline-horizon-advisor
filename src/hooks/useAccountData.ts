@@ -13,7 +13,7 @@ interface AccountData {
 }
 
 export const useAccountData = () => {
-  const { getAccounts, getPositions, getAccount, loading, error } = useAlpacaBroker();
+  const { getAccounts, getPositions, getTradingAccount, loading, error } = useAlpacaBroker();
   const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AlpacaAccount | null>(null);
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
@@ -42,14 +42,14 @@ export const useAccountData = () => {
           setPositions([]);
         }
 
-        // Load detailed account data with real-time equity
+        // Load real-time trading account data with current equity
         try {
-          console.log('🔄 Loading detailed account data for real-time equity:', activeAccount.id);
-          const detailedAccountData = await getAccount(activeAccount.id);
-          console.log('📊 Detailed account data:', detailedAccountData);
-          setTradingAccount(detailedAccountData);
-        } catch (accountErr) {
-          console.error('Failed to load detailed account data:', accountErr);
+          console.log('🔄 Loading real-time trading account data for equity:', activeAccount.id);
+          const tradingAccountData = await getTradingAccount(activeAccount.id);
+          console.log('📊 Real-time trading account data:', tradingAccountData);
+          setTradingAccount(tradingAccountData);
+        } catch (tradingErr) {
+          console.error('Failed to load real-time trading account data:', tradingErr);
           setTradingAccount(null);
         }
       }
