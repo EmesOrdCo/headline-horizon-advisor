@@ -88,7 +88,7 @@ const CandlestickBar = (props: any) => {
   // Calculate body positions
   const bodyTop = y + (actualHigh - Math.max(actualOpen, actualClose)) * pixelsPerDollar;
   const bodyHeight = Math.abs(actualClose - actualOpen) * pixelsPerDollar;
-  const bodyWidth = width * 0.7; // Make body thicker
+  const bodyWidth = width * 0.3; // Make body much thinner
   const bodyX = x + (width - bodyWidth) / 2;
   
   return (
@@ -253,7 +253,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   return (
-    <div className="w-full h-[400px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
       <div className="p-3 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div>
@@ -336,7 +336,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         </div>
       </div>
       
-      <div ref={chartContainerRef} className="h-[300px] p-2 w-full">
+      <div ref={chartContainerRef} className="h-[500px] p-2 w-full">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
             <LineChart 
