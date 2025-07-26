@@ -256,7 +256,7 @@ const Auth = () => {
     if (user) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user]);
 
   const updateOnboardingData = (updates: Partial<OnboardingData>) => {
     setOnboardingData(prev => ({ ...prev, ...updates }));
