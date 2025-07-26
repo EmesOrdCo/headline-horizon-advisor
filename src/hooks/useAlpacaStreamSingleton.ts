@@ -143,7 +143,7 @@ class AlpacaStreamManager {
       this.socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          console.log('Singleton: Received message:', message);
+          console.log('🔥 Singleton: Received message:', message.type, message);
           
           switch (message.type) {
             case 'auth_success':

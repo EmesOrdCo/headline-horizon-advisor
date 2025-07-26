@@ -85,6 +85,33 @@ serve(async (req) => {
       return Promise.resolve();
     }
 
+    // CRITICAL: Wait 60 seconds before attempting ANY new connections
+    const now = Date.now();
+    const timeSinceLastConnection = now - lastConnectionTime;
+    const MANDATORY_WAIT = 60000; // 60 seconds mandatory wait
+    
+    if (timeSinceLastConnection < MANDATORY_WAIT) {
+      const waitTime = MANDATORY_WAIT - timeSinceLastConnection;
+      console.log(`🛑 MANDATORY WAIT: ${Math.round(waitTime/1000)}s remaining before next connection attempt`);
+      
+      broadcastToSubscribers({
+        type: 'error',
+        message: `Waiting ${Math.round(waitTime/1000)}s to avoid connection limits`,
+        code: 'RATE_LIMIT_WAIT'
+      });
+      
+      // Schedule connection after wait period
+      setTimeout(async () => {
+        try {
+          await connectToAlpaca();
+        } catch (error) {
+          console.error('❌ Delayed connection failed:', error);
+        }
+      }, waitTime);
+      
+      return Promise.resolve();
+    }
+
     // Check if connection is already in progress
     if (globalConnectionPromise) {
       console.log('⏳ Connection already in progress, waiting...');
