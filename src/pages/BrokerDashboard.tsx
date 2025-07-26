@@ -225,6 +225,14 @@ const BrokerDashboard = () => {
             <Card className="bg-red-900/50 border-red-500/50">
               <CardContent className="pt-6">
                 <p className="text-red-200 font-medium">Error: {error}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="mt-2"
+                  variant="outline"
+                  size="sm"
+                >
+                  Retry
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -246,6 +254,19 @@ const BrokerDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Test Account Creation Button - for testing purposes */}
+          {accounts.length > 0 && (
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Test Account Creation</CardTitle>
+                <CardDescription className="text-slate-400">Create a new test account (for testing purposes)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AccountCreation onAccountCreated={refreshData} />
+              </CardContent>
+            </Card>
           )}
 
           {/* Step 2: Fund Account */}

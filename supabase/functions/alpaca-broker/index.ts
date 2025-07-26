@@ -49,6 +49,24 @@ serve(async (req) => {
         console.log(`Headers:`, JSON.stringify(headers, null, 2));
         console.log(`Account Data:`, JSON.stringify(data, null, 2));
         
+        // Validate required fields before sending
+        const requiredFields = ['account_type', 'contact', 'identity', 'disclosures', 'agreements'];
+        for (const field of requiredFields) {
+          if (!data[field]) {
+            console.error(`Missing required field: ${field}`);
+            throw new Error(`Missing required field: ${field}`);
+          }
+        }
+        
+        // Validate contact fields
+        const requiredContactFields = ['email_address', 'phone_number', 'street_address', 'city', 'state', 'postal_code', 'country'];
+        for (const field of requiredContactFields) {
+          if (!data.contact[field]) {
+            console.error(`Missing required contact field: ${field}`);
+            throw new Error(`Missing required contact field: contact.${field}`);
+          }
+        }
+        
         response = await fetch(url, {
           method: 'POST',
           headers,

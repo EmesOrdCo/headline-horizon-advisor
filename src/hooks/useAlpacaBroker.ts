@@ -158,7 +158,10 @@ export const useAlpacaBroker = () => {
 
   // Account Management
   const createAccount = async (accountData: CreateAccountData) => {
-    return callBrokerAPI('create_account', undefined, accountData);
+    console.log('useAlpacaBroker: createAccount called with:', JSON.stringify(accountData, null, 2));
+    const result = await callBrokerAPI('create_account', undefined, accountData);
+    console.log('useAlpacaBroker: createAccount result:', result);
+    return result;
   };
 
   const getAccounts = async (): Promise<AlpacaAccount[]> => {

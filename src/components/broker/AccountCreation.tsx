@@ -22,7 +22,7 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
 
   const generateUniquePhone = () => {
     const randomNum = Math.floor(Math.random() * 9000) + 1000;
-    return `+1555${randomNum}`;
+    return `${randomNum.toString().substring(0,3)}-555-${randomNum.toString().substring(1)}`;
   };
 
   const [formData, setFormData] = useState({
@@ -33,9 +33,9 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
     city: 'San Mateo',
     state: 'CA',
     postal_code: '94401',
-    given_name: 'Test',
-    family_name: 'User',
-    date_of_birth: '1990-01-01',
+    given_name: 'Laughing',
+    family_name: 'Austin',
+    date_of_birth: '1970-01-01',
     tax_id: '123456789',
     funding_source: 'employment_income',
   });
@@ -90,8 +90,14 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
       }
     };
 
+    console.log('=== SUBMITTING ACCOUNT CREATION ===');
+    console.log('Form data:', formData);
+    console.log('Account data being sent:', JSON.stringify(accountData, null, 2));
+
     try {
-      await createAccount(accountData);
+      console.log('Calling createAccount...');
+      const result = await createAccount(accountData);
+      console.log('Account creation successful:', result);
       toast.success('Account created successfully!');
       onAccountCreated();
     } catch (error) {
