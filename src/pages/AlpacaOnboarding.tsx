@@ -78,18 +78,18 @@ const fundingSources = [
 const AlpacaOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [personalDetails, setPersonalDetails] = useState<PersonalDetails>({
-    firstName: '',
-    lastName: '',
-    dateOfBirth: undefined,
+    firstName: 'Harry',
+    lastName: 'Emes',
+    dateOfBirth: new Date(2004, 9, 14), // October 14th, 2004
     countryOfCitizenship: 'USA',
     countryOfBirth: 'USA',
     countryOfTaxResidence: 'USA',
-    email: '',
-    phoneNumber: '',
-    streetAddress: '',
-    city: '',
-    state: '',
-    postalCode: '',
+    email: 'harry.emes@worc.ox.ac.uk',
+    phoneNumber: '07375827675',
+    streetAddress: 'The Plough, Jockey End',
+    city: 'Gaddesden Row',
+    state: 'Hertfordshire',
+    postalCode: 'HP2 6HR',
     country: 'USA',
     fundingSource: ['employment_income']
   });
