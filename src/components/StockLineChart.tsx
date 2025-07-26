@@ -67,32 +67,50 @@ const CandlestickBar = (props: any) => {
   const { payload, x, y, width, height } = props;
   if (!payload) return null;
   
-  const { open, close, high, low } = payload;
-  const isGreen = close >= open;
+  const { open, close, high, low, price } = payload;
+  const actualOpen = open || price;
+  const actualClose = close || price;
+  const actualHigh = high || price;
+  const actualLow = low || price;
+  
+  const isGreen = actualClose >= actualOpen;
   const color = isGreen ? '#10B981' : '#EF4444';
   
-  const bodyHeight = Math.abs(close - open) * (height / (payload.high - payload.low));
-  const bodyY = y + (Math.max(high - Math.max(open, close)) * (height / (high - low)));
+  // Calculate positions based on price range
+  const priceRange = actualHigh - actualLow;
+  const pixelsPerDollar = height / priceRange;
+  
+  // Calculate wick positions
+  const wickTop = y;
+  const wickBottom = y + height;
+  const wickX = x + width / 2;
+  
+  // Calculate body positions
+  const bodyTop = y + (actualHigh - Math.max(actualOpen, actualClose)) * pixelsPerDollar;
+  const bodyHeight = Math.abs(actualClose - actualOpen) * pixelsPerDollar;
+  const bodyWidth = width * 0.7; // Make body thicker
+  const bodyX = x + (width - bodyWidth) / 2;
   
   return (
     <g>
-      {/* Wick */}
+      {/* High-Low Wick (thin line) */}
       <line
-        x1={x + width / 2}
-        y1={y}
-        x2={x + width / 2}
-        y2={y + height}
+        x1={wickX}
+        y1={wickTop}
+        x2={wickX}
+        y2={wickBottom}
         stroke={color}
         strokeWidth={1}
       />
-      {/* Body */}
+      {/* Open-Close Body (thick rectangle) */}
       <rect
-        x={x + width * 0.2}
-        y={bodyY}
-        width={width * 0.6}
-        height={Math.max(bodyHeight, 1)}
-        fill={color}
+        x={bodyX}
+        y={bodyTop}
+        width={bodyWidth}
+        height={Math.max(bodyHeight, 2)} // Minimum height of 2px
+        fill={isGreen ? color : color}
         stroke={color}
+        strokeWidth={1}
       />
     </g>
   );
