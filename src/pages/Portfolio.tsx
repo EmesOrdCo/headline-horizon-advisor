@@ -17,15 +17,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ChartContainer } from "@/components/ui/chart";
 import { toast } from 'sonner';
 
-// Demo performance data - keeping this as no Alpaca equivalent exists
-const performanceData = [
-  { date: '2024-01', value: 95000, sp500: 4200, nasdaq: 13000, btc: 42000 },
-  { date: '2024-02', value: 98500, sp500: 4350, nasdaq: 13500, btc: 48000 },
-  { date: '2024-03', value: 102000, sp500: 4500, nasdaq: 14000, btc: 52000 },
-  { date: '2024-04', value: 106500, sp500: 4650, nasdaq: 14500, btc: 58000 },
-  { date: '2024-05', value: 112000, sp500: 4800, nasdaq: 15000, btc: 62000 },
-  { date: '2024-06', value: 118500, sp500: 4950, nasdaq: 15500, btc: 65000 },
-  { date: '2024-07', value: 125847, sp500: 5100, nasdaq: 16000, btc: 67000 },
+// Real performance data will be loaded from Alpaca portfolio history
+const defaultPerformanceData = [
+  { date: new Date().toISOString().slice(0, 7), value: 0, sp500: 4200, nasdaq: 13000, btc: 42000 }
 ];
 
 // Note: Alpaca sandbox doesn't support crypto/ETFs, showing empty for real data
@@ -47,6 +41,7 @@ const Portfolio = () => {
   const [accountData, setAccountData] = useState<AlpacaAccount | null>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any[]>(defaultPerformanceData);
   const [isLoading, setIsLoading] = useState(true);
   
   const { 
@@ -56,7 +51,8 @@ const Portfolio = () => {
     getAccount,
     getPositions,
     getActivities,
-    getOrders
+    getOrders,
+    getPortfolioHistory
   } = useAlpacaBroker();
   
   // Get all stock symbols for logo loading (including live positions)
@@ -84,17 +80,19 @@ const Portfolio = () => {
       if (accountsData.length > 0) {
         setSelectedAccount(accountsData[0].id);
         
-        // Load account details, positions, orders, and activities using same logic as BrokerDashboard
-        const [accountDetails, positionsData, ordersData, activitiesData] = await Promise.all([
+        // Load account details, positions, orders, portfolio history, and activities
+        const [accountDetails, positionsData, ordersData, portfolioHistoryData, activitiesData] = await Promise.all([
           getAccount(accountsData[0].id),
           getPositions(accountsData[0].id),
           getOrders(accountsData[0].id, { status: 'all', limit: 50 }),
+          getPortfolioHistory(accountsData[0].id, { period: '1M', timeframe: '1D' }).catch(() => null),
           getActivities(accountsData[0].id).catch(() => []) // Handle 404 error gracefully
         ]);
         
         console.log('Raw account details from API:', accountDetails);
         console.log('Positions data:', positionsData);
         console.log('Orders data:', ordersData);
+        console.log('Portfolio history data:', portfolioHistoryData);
         
         // Use the detailed metrics directly from the API (same as BrokerDashboard)
         const enhancedAccountData = {
@@ -156,6 +154,27 @@ const Portfolio = () => {
           .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
         
         setActivities(combinedActivities);
+        
+        // Process portfolio history data
+        if (portfolioHistoryData && portfolioHistoryData.timestamp && portfolioHistoryData.equity) {
+          const formattedHistoryData = portfolioHistoryData.timestamp.map((timestamp: number, index: number) => ({
+            date: new Date(timestamp * 1000).toISOString().slice(0, 10), // Convert to YYYY-MM-DD
+            value: portfolioHistoryData.equity[index] || 0,
+            sp500: 4200 + (index * 50), // Demo benchmark data
+            nasdaq: 13000 + (index * 100), // Demo benchmark data  
+            btc: 42000 + (index * 1000) // Demo benchmark data
+          }));
+          setPerformanceData(formattedHistoryData);
+        } else {
+          // Fallback to current account value
+          setPerformanceData([{
+            date: new Date().toISOString().slice(0, 10),
+            value: parseFloat(accountDetails.last_equity || '0'),
+            sp500: 4200,
+            nasdaq: 13000,
+            btc: 42000
+          }]);
+        }
       }
     } catch (err) {
       console.error('Failed to load portfolio data:', err);
