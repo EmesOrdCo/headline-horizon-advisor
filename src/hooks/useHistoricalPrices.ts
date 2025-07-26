@@ -41,8 +41,9 @@ export const useHistoricalPrices = (symbol: string, timeframe: string = '1Day', 
       console.log(`Successfully fetched ${data?.count || 0} historical data points for ${symbol}`);
       return data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 15 * 60 * 1000, // Refetch every 15 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - cache data longer
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (new name for cacheTime)
+    refetchInterval: false, // Don't auto-refetch to reduce API calls
     retry: 1,
     retryDelay: 30000,
     enabled: !!symbol,

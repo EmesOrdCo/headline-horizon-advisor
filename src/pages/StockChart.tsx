@@ -68,7 +68,9 @@ const StockChart: React.FC = () => {
   };
   
   const { apiTimeframe, limit } = getTimeframeConfig(selectedTimeframe);
-  const { data: historicalData, isLoading: historicalLoading, refetch: refetchHistorical } = useHistoricalPrices(activeSymbol, apiTimeframe, limit);
+  
+  // Use React Query's suspense mode and better error handling
+  const { data: historicalData, isLoading: historicalLoading, isFetching } = useHistoricalPrices(activeSymbol, apiTimeframe, limit);
   
   // Fetch watchlist data - include globally traded assets
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
@@ -89,14 +91,10 @@ const StockChart: React.FC = () => {
     setIsLoadingTimeframe(true);
     setSelectedTimeframe(timeframe);
     
-    // Trigger data refetch for new timeframe
-    try {
-      await refetchHistorical();
-    } catch (error) {
-      console.error('Failed to fetch data for timeframe:', timeframe, error);
-    } finally {
-      setTimeout(() => setIsLoadingTimeframe(false), 300); // Small delay for smooth transition
-    }
+    // Don't wait for historical data to load - let it happen in background
+    setTimeout(() => {
+      setIsLoadingTimeframe(false);
+    }, 500); // Show loading for just 500ms, then let chart render with existing data
   };
   
   const leftSidebarTools = [

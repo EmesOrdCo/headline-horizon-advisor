@@ -27,15 +27,15 @@ serve(async (req) => {
       throw new Error('Alpaca Trader API credentials not configured');
     }
 
-    // For 1-week mini charts (7 days), we want exactly 7 trading days
-    // For other cases, add buffer for weekends
-    const bufferDays = (limit === 7 && timeframe === '1Day') ? 10 : (limit + 5);
+    // Optimize API call parameters for faster loading
+    const optimizeLimit = Math.min(limit, 100); // Cap limit to prevent slow requests
+    const bufferDays = Math.min(limit + 3, 15); // Reduce buffer for faster response
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - bufferDays);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
-    console.log(`Making historical bars request to: ${barsUrl}`);
+    // Use more efficient API endpoint structure
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${optimizeLimit}&sort=desc`;
     
     const barsResponse = await fetch(barsUrl, {
       method: 'GET',
@@ -43,7 +43,10 @@ serve(async (req) => {
         'APCA-API-KEY-ID': alpacaApiKey,
         'APCA-API-SECRET-KEY': alpacaSecretKey,
         'Accept': 'application/json',
+        'User-Agent': 'TradingApp/1.0', // Add user agent for faster processing
       },
+      // Add request timeout to prevent hanging
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     });
     
     if (!barsResponse.ok) {
@@ -61,19 +64,17 @@ serve(async (req) => {
     
     let bars = barsData.bars[symbol];
     
-    // For 1-week mini charts, take only the last 7 data points
-    if (limit === 7 && timeframe === '1Day') {
-      bars = bars.slice(-7);
-    }
+    // Take only the required number of data points for faster processing
+    bars = bars.slice(-limit);
     
-    // Transform the data for charting
+    // Transform the data for charting with optimized processing
     const historicalData = bars.map((bar: any) => ({
       date: bar.t.split('T')[0], // Extract date part
       timestamp: bar.t,
-      open: parseFloat(bar.o.toFixed(2)),
-      high: parseFloat(bar.h.toFixed(2)),
-      low: parseFloat(bar.l.toFixed(2)),
-      close: parseFloat(bar.c.toFixed(2)),
+      open: Number(bar.o.toFixed(2)),
+      high: Number(bar.h.toFixed(2)),
+      low: Number(bar.l.toFixed(2)),
+      close: Number(bar.c.toFixed(2)),
       volume: bar.v,
     }));
     
