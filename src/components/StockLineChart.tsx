@@ -182,45 +182,30 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     });
   }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
-  // Add new data points from WebSocket or simulate them - INSTANT UPDATES
+  // Add new data points from WebSocket ONLY - no demo data
   useEffect(() => {
-    const interval = setInterval(() => {
-      const streamPrice = streamData[symbol];
+    const streamPrice = streamData[symbol];
+    
+    if (streamPrice?.price) {
       const now = Date.now();
       
-      // Much faster updates for real-time feel - every 1 second
+      // Throttle updates to prevent spam
       if (now - lastDataPointRef.current < 1000) return;
       lastDataPointRef.current = now;
       
-      if (streamPrice?.price) {
-        // Use real WebSocket data
-        addDataPoint(streamPrice.price, {
-          open: streamPrice.open || streamPrice.price,
-          high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
-          low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
-          close: streamPrice.close || streamPrice.price,
-          volume: streamPrice.volume || Math.floor(Math.random() * 10000),
-        });
-        console.log(`📡 INSTANT: Real WebSocket data: $${streamPrice.price}`);
-      } else {
-        // Generate realistic price movement based on current price
-        const variation = (Math.random() - 0.5) * 0.25;
-        const newPrice = parentPrice + variation;
-        const openPrice = parentPrice + (Math.random() - 0.5) * 0.1;
-        
-        addDataPoint(newPrice, {
-          open: openPrice,
-          high: Math.max(newPrice, openPrice) + Math.random() * 0.1,
-          low: Math.min(newPrice, openPrice) - Math.random() * 0.1,
-          close: newPrice,
-          volume: Math.floor(Math.random() * 50000 + 10000),
-        });
-        console.log(`🎲 INSTANT: Simulated data: $${newPrice.toFixed(2)}`);
-      }
-    }, 1000); // INSTANT updates every 1 second
-
-    return () => clearInterval(interval);
-  }, [streamData, symbol, parentPrice, addDataPoint]);
+      // Use real WebSocket data only
+      addDataPoint(streamPrice.price, {
+        open: streamPrice.open || streamPrice.price,
+        high: streamPrice.high || streamPrice.price,
+        low: streamPrice.low || streamPrice.price,
+        close: streamPrice.close || streamPrice.price,
+        volume: streamPrice.volume || 0,
+      });
+      console.log(`📡 Real WebSocket data: $${streamPrice.price}`);
+    } else if (!isConnected) {
+      console.log(`❌ WebSocket not connected - no data updates`);
+    }
+  }, [streamData, symbol, isConnected, addDataPoint]);
 
   // Get viewport data for smooth scrolling
   const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
