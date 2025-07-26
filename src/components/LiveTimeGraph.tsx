@@ -13,10 +13,12 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <WebSocketMonitor />
-      </div>
       <StockLineChart currentPrice={currentPrice} symbol={symbol} />
+      <div className="flex justify-end">
+        <div className="scale-75 origin-bottom-right">
+          <WebSocketMonitor />
+        </div>
+      </div>
     </div>
   );
 };
