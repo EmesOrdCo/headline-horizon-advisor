@@ -357,6 +357,15 @@ export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaS
   useEffect(() => {
     if (enabled && symbols.length > 0) {
       console.log('Hook: Starting subscription for symbols:', symbols);
+      
+      // Force connection attempt if not connected
+      const currentStatus = managerRef.current.getStatus();
+      if (currentStatus.connectionStatus === 'disconnected') {
+        console.log('🔄 Connection is disconnected, forcing reconnect...');
+        managerRef.current['connectionStatus'] = 'disconnected';
+        managerRef.current['connectionAttempts'] = 0;
+      }
+      
       managerRef.current.subscribe(subscriberIdRef.current, updateStatus, symbols);
     }
 
@@ -366,7 +375,7 @@ export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaS
         managerRef.current.unsubscribe(subscriberIdRef.current, symbols);
       }
     };
-  }, [symbols.join(','), enabled]); // Use symbols.join(',') to prevent array reference issues
+  }, [symbols.join(','), enabled, updateStatus]); // Use symbols.join(',') to prevent array reference issues
 
   // Manual connect function to retry connections
   const manualConnect = useCallback(() => {
