@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.alpaca-polling]
 verify_jwt = false
+
+[functions.admin-delete-account]
+verify_jwt = false
