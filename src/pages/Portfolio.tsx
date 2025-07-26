@@ -132,26 +132,9 @@ const Portfolio = () => {
         console.log('Orders data:', ordersData);
         console.log('Portfolio history data:', portfolioHistoryData);
         
-        // Use the detailed metrics directly from the API (same as BrokerDashboard)
+        // Use ONLY the real data from Alpaca API - NO FALLBACK VALUES
         const enhancedAccountData = {
-          ...accountDetails,
-          // Use actual Alpaca values
-          cash: accountDetails.cash || '1020.35',
-          equity: accountDetails.equity || '1234.23',
-          long_market_value: accountDetails.long_market_value || '213.88',
-          short_market_value: accountDetails.short_market_value || '0.00',
-          position_market_value: accountDetails.position_market_value || '213.88',
-          initial_margin: accountDetails.initial_margin || '1069.89',
-          maintenance_margin: accountDetails.maintenance_margin || '64.16',
-          regt_buying_power: accountDetails.regt_buying_power || '164.34',
-          daytrading_buying_power: accountDetails.daytrading_buying_power || accountDetails.dtbp_buying_power || '0.00',
-          effective_buying_power: accountDetails.effective_buying_power || '164.34',
-          sma: accountDetails.sma || '1234.11',
-          daytrade_count: accountDetails.daytrade_count || 0,
-          multiplier: accountDetails.multiplier || '1',
-          trade_cash: accountDetails.trade_cash || accountDetails.cash || '1020.35',
-          settled_cash: accountDetails.settled_cash || '1020.35',
-          non_marginable_buying_power: accountDetails.non_marginable_buying_power || '164.34'
+          ...accountDetails
         };
         
         setAccountData(enhancedAccountData);
@@ -459,45 +442,11 @@ const Portfolio = () => {
                         );
                       })
                     ) : (
-                      // Demo positions when no real positions exist
-                      [
-                        { symbol: 'AAPL', shares: 75, price: 200.00, value: 15000, change: 2.5 },
-                        { symbol: 'MSFT', shares: 40, price: 300.00, value: 12000, change: 1.8 },
-                        { symbol: 'GOOGL', shares: 30, price: 266.67, value: 8000, change: -1.2 },
-                        { symbol: 'TSLA', shares: 25, price: 240.00, value: 6000, change: 3.1 },
-                        { symbol: 'NVDA', shares: 20, price: 200.00, value: 4000, change: -2.4 }
-                      ].map((stock) => (
-                        <div key={stock.symbol} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <CompanyLogo 
-                              symbol={stock.symbol} 
-                              logoUrl={getLogoUrl(stock.symbol)} 
-                              size="sm" 
-                            />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Badge className="bg-emerald-600 text-white text-xs">{stock.symbol}</Badge>
-                                <span className="text-white text-sm font-medium">${stock.price.toFixed(2)}</span>
-                                <Badge className="bg-blue-600 text-white text-xs">Demo</Badge>
-                              </div>
-                              <p className="text-xs text-slate-400">{stock.shares} shares</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-white font-medium">${stock.value.toLocaleString()}</p>
-                            <div className="flex items-center gap-1">
-                              {stock.change >= 0 ? (
-                                <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-                              ) : (
-                                <ArrowDownRight className="w-3 h-3 text-red-400" />
-                              )}
-                              <span className={`text-xs ${stock.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(1)}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                      <div className="text-center py-8 text-slate-400">
+                        <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No stock positions</p>
+                        <p className="text-xs mt-1">Account #{accountData?.account_number || 'Unknown'} - Real Alpaca data</p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
