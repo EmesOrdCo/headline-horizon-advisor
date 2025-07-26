@@ -17,14 +17,14 @@ serve(async (req) => {
 
     console.log(`Fetching historical data for ${symbol} with timeframe ${timeframe} and limit ${limit}`);
 
-    const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
-    const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+    const alpacaApiKey = Deno.env.get("ALPACA_TRADING_API_KEY");
+    const alpacaSecretKey = Deno.env.get("ALPACA_TRADING_SECRET_KEY");
 
-    console.log(`Using API key: ${alpacaApiKey ? alpacaApiKey.substring(0, 5) + '...' : 'undefined'}`);
-    console.log(`Using secret key: ${alpacaSecretKey ? 'defined' : 'undefined'}`);
+    console.log(`Using Trading API key: ${alpacaApiKey ? alpacaApiKey.substring(0, 5) + '...' : 'undefined'}`);
+    console.log(`Using Trading secret key: ${alpacaSecretKey ? 'defined' : 'undefined'}`);
 
     if (!alpacaApiKey || !alpacaSecretKey) {
-      throw new Error('Alpaca API credentials not configured');
+      throw new Error('Alpaca Trading API credentials not configured');
     }
 
     // For 1-week mini charts (7 days), we want exactly 7 trading days
@@ -34,7 +34,7 @@ serve(async (req) => {
     startDate.setDate(startDate.getDate() - bufferDays);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const barsUrl = `https://paper-api.alpaca.markets/v2/stocks/${symbol}/bars?timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${Math.max(limit, 10)}`;
     console.log(`Making historical bars request to: ${barsUrl}`);
     
     const barsResponse = await fetch(barsUrl, {
@@ -55,11 +55,11 @@ serve(async (req) => {
     const barsData = await barsResponse.json();
     console.log(`Historical data response:`, barsData);
 
-    if (!barsData.bars || barsData.bars.length === 0) {
+    if (!barsData.bars || !barsData.bars[symbol] || barsData.bars[symbol].length === 0) {
       throw new Error(`No historical data available for symbol: ${symbol}`);
     }
     
-    let bars = barsData.bars;
+    let bars = barsData.bars[symbol];
     
     // For 1-week mini charts, take only the last 7 data points
     if (limit === 7 && timeframe === '1Day') {
