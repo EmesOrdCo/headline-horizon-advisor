@@ -322,9 +322,9 @@ const Dashboard = () => {
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 h-full">
                     {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 h-full">
                       <NewsCard 
                         symbol={topMagnificent7Story.symbol}
                         title={generateCompositeHeadline(topMagnificent7Story)}
@@ -338,7 +338,7 @@ const Dashboard = () => {
                       />
                     </div>
                     {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 max-h-[600px] overflow-hidden">
+                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-hidden">
                       <AINewsInsights symbol={topMagnificent7Story.symbol} />
                     </div>
                   </div>
@@ -366,9 +366,9 @@ const Dashboard = () => {
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 h-full">
                     {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 h-full">
                       <NewsCard 
                         symbol={topIndexFundStory.symbol}
                         title={generateCompositeHeadline(topIndexFundStory)}
@@ -383,7 +383,7 @@ const Dashboard = () => {
                     </div>
                     
                     {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 max-h-[600px] overflow-hidden">
+                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-hidden">
                       <AINewsInsights symbol={topIndexFundStory.symbol} />
                     </div>
                   </div>
