@@ -13,11 +13,10 @@ interface AccountData {
 }
 
 export const useAccountData = () => {
-  const { getAccounts, getPositions, getAccount, loading, error } = useAlpacaBroker();
+  const { getAccounts, getPositions, loading, error } = useAlpacaBroker();
   const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AlpacaAccount | null>(null);
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
-  const [tradingAccount, setTradingAccount] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const loadAccounts = async () => {
@@ -32,7 +31,7 @@ export const useAccountData = () => {
       
       setSelectedAccount(activeAccount || null);
       
-      // Load positions and detailed account data for the selected account
+      // Load positions for the selected account
       if (activeAccount) {
         try {
           const positionsData = await getPositions(activeAccount.id);
@@ -40,17 +39,6 @@ export const useAccountData = () => {
         } catch (positionsErr) {
           console.error('Failed to load positions:', positionsErr);
           setPositions([]);
-        }
-
-        // Load account data with real-time equity using APCA headers
-        try {
-          console.log('🔄 Loading account data with APCA headers for real-time equity:', activeAccount.id);
-          const accountData = await getAccount(activeAccount.id);
-          console.log('📊 Account data with APCA headers:', accountData);
-          setTradingAccount(accountData);
-        } catch (accountErr) {
-          console.error('Failed to load account data with APCA headers:', accountErr);
-          setTradingAccount(null);
         }
       }
       
@@ -71,22 +59,11 @@ export const useAccountData = () => {
   };
 
   const accountData: AccountData = {
-    // Prioritize real-time equity field over last_equity for accurate real-time values
-    totalValue: tradingAccount?.equity ? parseFloat(tradingAccount.equity) : 
-                (tradingAccount?.last_equity ? parseFloat(tradingAccount.last_equity) : 
-                 (selectedAccount?.equity ? parseFloat(selectedAccount.equity) :
-                  (selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0))),
-    availableCash: tradingAccount?.buying_power ? parseFloat(tradingAccount.buying_power) : 
-                   (selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0),
-    investedAmount: (() => {
-      const equity = tradingAccount?.equity ? parseFloat(tradingAccount.equity) : 
-                     (tradingAccount?.last_equity ? parseFloat(tradingAccount.last_equity) : 
-                      (selectedAccount?.equity ? parseFloat(selectedAccount.equity) :
-                       (selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0)));
-      const buyingPower = tradingAccount?.buying_power ? parseFloat(tradingAccount.buying_power) : 
-                          (selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0);
-      return equity - buyingPower;
-    })(),
+    totalValue: selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0,
+    availableCash: selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0,
+    investedAmount: selectedAccount?.last_equity && selectedAccount?.buying_power 
+      ? parseFloat(selectedAccount.last_equity) - parseFloat(selectedAccount.buying_power)
+      : 0,
     isLoading: loading || !isInitialized,
     error: error,
     accounts,

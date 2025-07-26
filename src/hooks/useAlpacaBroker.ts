@@ -8,12 +8,12 @@ export interface AlpacaAccount {
   currency: string;
   created_at: string;
   last_equity?: string;
-  equity?: string; // Real-time equity value (preferred over last_equity)
   account_type?: string;
   trading_type?: string;
   
   // Detailed Trading Metrics
   cash?: string;
+  equity?: string;
   buying_power?: string;
   long_market_value?: string;
   short_market_value?: string;
@@ -187,10 +187,6 @@ export const useAlpacaBroker = () => {
     return callBrokerAPI('get_account', accountId);
   };
 
-  const getTradingAccount = async (accountId: string): Promise<any> => {
-    return callBrokerAPI('get_trading_account', accountId);
-  };
-
   // Funding
   const createACHRelationship = async (accountId: string, achData: any) => {
     return callBrokerAPI('create_ach_relationship', accountId, achData);
@@ -261,7 +257,6 @@ export const useAlpacaBroker = () => {
     createAccount,
     getAccounts,
     getAccount,
-    getTradingAccount,
     // Funding
     createACHRelationship,
     createTransfer,

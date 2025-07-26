@@ -30,10 +30,10 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
-    // Use APCA headers for real-time account data as specified
+    // Broker API uses HTTP Basic Auth (key:secret format)
+    const basicAuth = btoa(`${apiKey}:${secretKey}`);
     const headers = {
-      'APCA-API-KEY-ID': apiKey,
-      'APCA-API-SECRET-KEY': secretKey,
+      'Authorization': `Basic ${basicAuth}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
@@ -88,15 +88,6 @@ serve(async (req) => {
 
       case 'get_account':
         url = `${BROKER_BASE_URL}/v1/accounts/${account_id}`;
-        response = await fetch(url, {
-          method: 'GET',
-          headers,
-        });
-        break;
-
-      case 'get_trading_account':
-        // Get real-time trading account data with current equity and buying power
-        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}`;
         response = await fetch(url, {
           method: 'GET',
           headers,
