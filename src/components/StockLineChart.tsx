@@ -182,32 +182,28 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     });
   }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
-  // Add new data points ONLY from WebSocket - NO SIMULATION
+  // Add new data points IMMEDIATELY when WebSocket data changes
   useEffect(() => {
-    const interval = setInterval(() => {
-      const streamPrice = streamData[symbol];
+    const streamPrice = streamData[symbol];
+    
+    // Add data IMMEDIATELY when new WebSocket data arrives
+    if (streamPrice?.price) {
       const now = Date.now();
       
-      // Rate limit WebSocket updates
-      if (now - lastDataPointRef.current < 1000) return;
+      // Prevent duplicate adds for the exact same data point
+      if (now - lastDataPointRef.current < 500) return;
       lastDataPointRef.current = now;
       
-      // ONLY use real WebSocket data - no simulation fallback
-      if (streamPrice?.price) {
-        addDataPoint(streamPrice.price, {
-          open: streamPrice.open || streamPrice.price,
-          high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
-          low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
-          close: streamPrice.close || streamPrice.price,
-          volume: streamPrice.volume || Math.floor(Math.random() * 10000),
-        });
-        console.log(`📡 REAL WebSocket data: $${streamPrice.price}`);
-      }
-      // NO ELSE CLAUSE - no simulation when WebSocket is down
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [streamData, symbol, addDataPoint]);
+      addDataPoint(streamPrice.price, {
+        open: streamPrice.open || streamPrice.price,
+        high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
+        low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
+        close: streamPrice.close || streamPrice.price,
+        volume: streamPrice.volume || Math.floor(Math.random() * 10000),
+      });
+      console.log(`⚡ INSTANT WebSocket update: $${streamPrice.price}`);
+    }
+  }, [streamData, symbol, addDataPoint]); // Trigger immediately when streamData changes
 
   // Get viewport data for smooth scrolling
   const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
