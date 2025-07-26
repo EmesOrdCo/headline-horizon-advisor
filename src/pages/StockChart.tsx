@@ -313,11 +313,7 @@ const StockChart: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="live-flow" className="flex-1 m-0 p-4">
-                <LiveTimeGraph
-                  streamData={streamData}
-                  symbols={[activeSymbol]}
-                  isConnected={isConnected}
-                />
+                <LiveTimeGraph />
               </TabsContent>
             </Tabs>
           </div>
