@@ -30,6 +30,21 @@ interface PersonalDetails {
   postalCode: string;
   country: string;
   fundingSource: string[];
+  // Financial profile fields
+  annualIncomeMin: string;
+  annualIncomeMax: string;
+  totalNetWorthMin: string;
+  totalNetWorthMax: string;
+  liquidNetWorthMin: string;
+  liquidNetWorthMax: string;
+  liquidityNeeds: string;
+  investmentExperienceStocks: string;
+  investmentExperienceOptions: string;
+  riskTolerance: string;
+  investmentObjective: string;
+  investmentTimeHorizon: string;
+  maritalStatus: string;
+  numberOfDependents: number;
 }
 
 interface Disclosures {
@@ -91,7 +106,22 @@ const AlpacaOnboarding = () => {
     state: 'CA', // Valid US state
     postalCode: '94102', // US ZIP code format
     country: 'USA',
-    fundingSource: ['employment_income']
+    fundingSource: ['employment_income'],
+    // Financial profile fields with safe defaults
+    annualIncomeMin: '50000',
+    annualIncomeMax: '75000',
+    totalNetWorthMin: '100000',
+    totalNetWorthMax: '150000',
+    liquidNetWorthMin: '50000',
+    liquidNetWorthMax: '75000',
+    liquidityNeeds: 'does_not_matter',
+    investmentExperienceStocks: 'over_5_years',
+    investmentExperienceOptions: 'over_5_years',
+    riskTolerance: 'conservative',
+    investmentObjective: 'market_speculation',
+    investmentTimeHorizon: 'more_than_10_years',
+    maritalStatus: 'SINGLE',
+    numberOfDependents: 0
   });
   
   const [disclosures, setDisclosures] = useState<Disclosures>({
@@ -195,20 +225,20 @@ const AlpacaOnboarding = () => {
           country_of_tax_residence: 'USA', // Force USA for Alpaca API
           funding_source: personalDetails.fundingSource,
           // Required financial profile fields from Alpaca docs
-          annual_income_min: "50000",
-          annual_income_max: "75000",
-          total_net_worth_min: "100000",
-          total_net_worth_max: "150000",
-          liquid_net_worth_min: "50000",
-          liquid_net_worth_max: "75000",
-          liquidity_needs: "does_not_matter",
-          investment_experience_with_stocks: "over_5_years",
-          investment_experience_with_options: "over_5_years",
-          risk_tolerance: "conservative",
-          investment_objective: "market_speculation",
-          investment_time_horizon: "more_than_10_years",
-          marital_status: "SINGLE",
-          number_of_dependents: 0,
+          annual_income_min: personalDetails.annualIncomeMin,
+          annual_income_max: personalDetails.annualIncomeMax,
+          total_net_worth_min: personalDetails.totalNetWorthMin,
+          total_net_worth_max: personalDetails.totalNetWorthMax,
+          liquid_net_worth_min: personalDetails.liquidNetWorthMin,
+          liquid_net_worth_max: personalDetails.liquidNetWorthMax,
+          liquidity_needs: personalDetails.liquidityNeeds,
+          investment_experience_with_stocks: personalDetails.investmentExperienceStocks,
+          investment_experience_with_options: personalDetails.investmentExperienceOptions,
+          risk_tolerance: personalDetails.riskTolerance,
+          investment_objective: personalDetails.investmentObjective,
+          investment_time_horizon: personalDetails.investmentTimeHorizon,
+          marital_status: personalDetails.maritalStatus,
+          number_of_dependents: personalDetails.numberOfDependents,
           party_type: 'natural_person'
         },
         disclosures: {
@@ -488,6 +518,178 @@ const AlpacaOnboarding = () => {
                     </label>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Financial Profile Section */}
+            <div className="border-t pt-6 mt-6">
+              <h3 className="text-lg font-semibold mb-4">Financial Profile</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="annualIncomeMin">Annual Income (Min) *</Label>
+                  <Select value={personalDetails.annualIncomeMin} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, annualIncomeMin: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select minimum income" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10000">$10,000</SelectItem>
+                      <SelectItem value="25000">$25,000</SelectItem>
+                      <SelectItem value="50000">$50,000</SelectItem>
+                      <SelectItem value="75000">$75,000</SelectItem>
+                      <SelectItem value="100000">$100,000</SelectItem>
+                      <SelectItem value="150000">$150,000</SelectItem>
+                      <SelectItem value="200000">$200,000+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="annualIncomeMax">Annual Income (Max) *</Label>
+                  <Select value={personalDetails.annualIncomeMax} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, annualIncomeMax: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select maximum income" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25000">$25,000</SelectItem>
+                      <SelectItem value="50000">$50,000</SelectItem>
+                      <SelectItem value="75000">$75,000</SelectItem>
+                      <SelectItem value="100000">$100,000</SelectItem>
+                      <SelectItem value="150000">$150,000</SelectItem>
+                      <SelectItem value="200000">$200,000</SelectItem>
+                      <SelectItem value="500000">$500,000+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="liquidNetWorthMin">Liquid Net Worth (Min) *</Label>
+                  <Select value={personalDetails.liquidNetWorthMin} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, liquidNetWorthMin: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select minimum liquid net worth" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10000">$10,000</SelectItem>
+                      <SelectItem value="25000">$25,000</SelectItem>
+                      <SelectItem value="50000">$50,000</SelectItem>
+                      <SelectItem value="100000">$100,000</SelectItem>
+                      <SelectItem value="250000">$250,000</SelectItem>
+                      <SelectItem value="500000">$500,000+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="liquidNetWorthMax">Liquid Net Worth (Max) *</Label>
+                  <Select value={personalDetails.liquidNetWorthMax} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, liquidNetWorthMax: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select maximum liquid net worth" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25000">$25,000</SelectItem>
+                      <SelectItem value="50000">$50,000</SelectItem>
+                      <SelectItem value="75000">$75,000</SelectItem>
+                      <SelectItem value="100000">$100,000</SelectItem>
+                      <SelectItem value="250000">$250,000</SelectItem>
+                      <SelectItem value="500000">$500,000</SelectItem>
+                      <SelectItem value="1000000">$1,000,000+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="investmentExperienceStocks">Stock Investment Experience *</Label>
+                  <Select value={personalDetails.investmentExperienceStocks} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, investmentExperienceStocks: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="limited">Limited (1-2 years)</SelectItem>
+                      <SelectItem value="good">Good (3-5 years)</SelectItem>
+                      <SelectItem value="over_5_years">Extensive (5+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="riskTolerance">Risk Tolerance *</Label>
+                  <Select value={personalDetails.riskTolerance} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, riskTolerance: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select risk tolerance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="conservative">Conservative</SelectItem>
+                      <SelectItem value="moderate">Moderate</SelectItem>
+                      <SelectItem value="aggressive">Aggressive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="investmentObjective">Investment Objective *</Label>
+                  <Select value={personalDetails.investmentObjective} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, investmentObjective: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select investment objective" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="preservation_of_capital">Capital Preservation</SelectItem>
+                      <SelectItem value="income">Income Generation</SelectItem>
+                      <SelectItem value="growth">Growth</SelectItem>
+                      <SelectItem value="market_speculation">Speculation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="investmentTimeHorizon">Investment Time Horizon *</Label>
+                  <Select value={personalDetails.investmentTimeHorizon} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, investmentTimeHorizon: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time horizon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="short_term">Short Term (&lt; 1 year)</SelectItem>
+                      <SelectItem value="medium_term">Medium Term (1-5 years)</SelectItem>
+                      <SelectItem value="long_term">Long Term (5-10 years)</SelectItem>
+                      <SelectItem value="more_than_10_years">Very Long Term (10+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="maritalStatus">Marital Status *</Label>
+                  <Select value={personalDetails.maritalStatus} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, maritalStatus: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select marital status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SINGLE">Single</SelectItem>
+                      <SelectItem value="MARRIED">Married</SelectItem>
+                      <SelectItem value="DIVORCED">Divorced</SelectItem>
+                      <SelectItem value="WIDOWED">Widowed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="numberOfDependents">Number of Dependents *</Label>
+                  <Select value={personalDetails.numberOfDependents.toString()} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, numberOfDependents: parseInt(value) }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select number of dependents" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
