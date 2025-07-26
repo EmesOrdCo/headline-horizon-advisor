@@ -1,14 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TradingChart } from '@/components/chart/TradingChart';
 import DashboardNav from '@/components/DashboardNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { TrendingUp, BarChart3, Activity, Zap } from 'lucide-react';
+import { useAlpacaBroker, AlpacaAsset } from '@/hooks/useAlpacaBroker';
+import { useAccountData } from '@/hooks/useAccountData';
+import { toast } from 'sonner';
 
 const AdvancedTradingView: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
+  const [orderData, setOrderData] = useState({
+    qty: '10',
+    side: 'buy' as 'buy' | 'sell',
+    type: 'market' as 'market' | 'limit',
+    time_in_force: 'day' as 'day' | 'gtc' | 'ioc' | 'fok',
+    limit_price: '',
+  });
+  const [assets, setAssets] = useState<AlpacaAsset[]>([]);
+
+  const { placeOrder, getAssets, loading } = useAlpacaBroker();
+  const { selectedAccount, refreshData } = useAccountData();
+
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const assetList = await getAssets({ status: 'active', asset_class: 'us_equity' });
+        setAssets(assetList);
+      } catch (error) {
+        console.error('Failed to load assets:', error);
+      }
+    };
+    loadAssets();
+  }, [getAssets]);
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedAccount?.id) {
+      toast.error('Please connect your Alpaca account first');
+      return;
+    }
+
+    try {
+      const order = await placeOrder(selectedAccount.id, {
+        symbol: selectedSymbol,
+        qty: orderData.qty,
+        side: orderData.side,
+        type: orderData.type,
+        time_in_force: orderData.time_in_force,
+        limit_price: orderData.type === 'limit' ? orderData.limit_price : undefined,
+      });
+      toast.success(`Order placed successfully! Order ID: ${order.id}`);
+      refreshData();
+      
+      // Reset form
+      setOrderData({
+        ...orderData,
+        qty: '10',
+        limit_price: '',
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
+      toast.error(errorMessage);
+      console.error('Order placement error:', error);
+    }
+  };
   
   const popularSymbols = [
     { symbol: 'AAPL', name: 'Apple Inc.' },
@@ -42,8 +103,8 @@ const AdvancedTradingView: React.FC = () => {
     },
     {
       icon: <Zap className="h-5 w-5" />,
-      title: "High Performance",
-      description: "GPU-accelerated Canvas rendering"
+      title: "Live Trading",
+      description: "Real-time order placement via Alpaca"
     }
   ];
 
@@ -58,12 +119,12 @@ const AdvancedTradingView: React.FC = () => {
             <div>
               <h1 className="text-4xl font-bold mb-2">Advanced Trading View</h1>
               <p className="text-muted-foreground text-lg">
-                Professional-grade charting with real-time data and advanced technical analysis
+                Professional-grade charting with real-time data and live trading capabilities
               </p>
             </div>
             <Badge variant="default" className="px-3 py-1">
               <Zap className="h-4 w-4 mr-1" />
-              Live Data
+              Live Trading
             </Badge>
           </div>
 
@@ -90,7 +151,7 @@ const AdvancedTradingView: React.FC = () => {
 
             {/* Quick Symbol Buttons */}
             <div className="flex gap-2">
-              {['AAPL', 'GOOGL', 'TSLA', 'BTC-USD'].map((symbol) => (
+              {['AAPL', 'GOOGL', 'TSLA', 'NVDA'].map((symbol) => (
                 <Button
                   key={symbol}
                   variant={selectedSymbol === symbol ? "default" : "outline"}
@@ -121,12 +182,146 @@ const AdvancedTradingView: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Chart */}
-        <TradingChart 
-          symbol={selectedSymbol} 
-          initialTimeFrame="1h"
-          className="mb-8"
-        />
+        {/* Main Chart and Trading Interface */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+          <div className="xl:col-span-2">
+            <TradingChart 
+              symbol={selectedSymbol} 
+              initialTimeFrame="1h"
+            />
+          </div>
+          
+          {/* Order Placement Interface */}
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Place Order</CardTitle>
+              <p className="text-slate-400 text-sm">
+                Simulate order placement in sandbox environment
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePlaceOrder} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="symbol" className="text-white">Symbol</Label>
+                    <div className="mt-1 p-3 bg-slate-700 rounded-md border border-slate-600">
+                      <span className="text-white font-mono">{selectedSymbol}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="qty" className="text-white">Quantity</Label>
+                    <Input
+                      id="qty"
+                      type="number"
+                      value={orderData.qty}
+                      onChange={(e) => setOrderData({ ...orderData, qty: e.target.value })}
+                      min="1"
+                      required
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="side" className="text-white">Side</Label>
+                    <Select value={orderData.side} onValueChange={(value: 'buy' | 'sell') => setOrderData({ ...orderData, side: value })}>
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="buy">Buy</SelectItem>
+                        <SelectItem value="sell">Sell</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="type" className="text-white">Order Type</Label>
+                    <Select value={orderData.type} onValueChange={(value: 'market' | 'limit') => setOrderData({ ...orderData, type: value })}>
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="market">Market</SelectItem>
+                        <SelectItem value="limit">Limit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {orderData.type === 'limit' && (
+                  <div>
+                    <Label htmlFor="limit_price" className="text-white">Limit Price ($)</Label>
+                    <Input
+                      id="limit_price"
+                      type="number"
+                      step="0.01"
+                      value={orderData.limit_price}
+                      onChange={(e) => setOrderData({ ...orderData, limit_price: e.target.value })}
+                      placeholder="0.00"
+                      required={orderData.type === 'limit'}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="time_in_force" className="text-white">Time in Force</Label>
+                  <Select value={orderData.time_in_force} onValueChange={(value: any) => setOrderData({ ...orderData, time_in_force: value })}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Day</SelectItem>
+                      <SelectItem value="gtc">Good Till Canceled</SelectItem>
+                      <SelectItem value="ioc">Immediate or Cancel</SelectItem>
+                      <SelectItem value="fok">Fill or Kill</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                  <h4 className="font-semibold mb-2 text-white">Order Summary</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Action:</span>
+                      <Badge variant={orderData.side === 'buy' ? 'default' : 'destructive'}>
+                        {orderData.side.toUpperCase()} {orderData.qty} shares
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Symbol:</span>
+                      <span className="font-mono text-white">{selectedSymbol}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Type:</span>
+                      <span className="text-white">{orderData.type.toUpperCase()}</span>
+                    </div>
+                    {orderData.type === 'limit' && orderData.limit_price && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-300">Limit Price:</span>
+                        <span className="text-white">${orderData.limit_price}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={loading || !selectedAccount?.id} 
+                  className="w-full"
+                  variant={orderData.side === 'buy' ? 'default' : 'destructive'}
+                >
+                  {loading ? 'Placing Order...' : 
+                   !selectedAccount?.id ? 'Connect Alpaca Account' :
+                   `Place ${orderData.side.toUpperCase()} Order`}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Additional Information */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -192,29 +387,29 @@ const AdvancedTradingView: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Performance</CardTitle>
+              <CardTitle>Live Trading</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  GPU-accelerated rendering
+                  Real-time order placement
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  &lt;16ms frame times
+                  Alpaca sandbox integration
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Virtualized data windows
+                  Market & limit orders
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  Memory-efficient structures
+                  Buy & sell functionality
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
-                  High-DPI display support
+                  Live price data integration
                 </li>
               </ul>
             </CardContent>
