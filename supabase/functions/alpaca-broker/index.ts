@@ -96,7 +96,7 @@ serve(async (req) => {
 
       case 'get_trading_account':
         // Get real-time trading account data with current equity and buying power
-        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/account`;
+        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}`;
         response = await fetch(url, {
           method: 'GET',
           headers,

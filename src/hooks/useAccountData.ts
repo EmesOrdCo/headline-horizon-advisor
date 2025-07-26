@@ -13,7 +13,7 @@ interface AccountData {
 }
 
 export const useAccountData = () => {
-  const { getAccounts, getPositions, getTradingAccount, loading, error } = useAlpacaBroker();
+  const { getAccounts, getPositions, getAccount, loading, error } = useAlpacaBroker();
   const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AlpacaAccount | null>(null);
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
@@ -32,7 +32,7 @@ export const useAccountData = () => {
       
       setSelectedAccount(activeAccount || null);
       
-      // Load positions and real-time trading account data for the selected account
+      // Load positions and detailed account data for the selected account
       if (activeAccount) {
         try {
           const positionsData = await getPositions(activeAccount.id);
@@ -42,14 +42,14 @@ export const useAccountData = () => {
           setPositions([]);
         }
 
-        // Load real-time trading account data
+        // Load detailed account data with real-time equity
         try {
-          console.log('🔄 Loading real-time trading account data for:', activeAccount.id);
-          const tradingAccountData = await getTradingAccount(activeAccount.id);
-          console.log('📊 Real-time trading account data:', tradingAccountData);
-          setTradingAccount(tradingAccountData);
-        } catch (tradingErr) {
-          console.error('Failed to load trading account data:', tradingErr);
+          console.log('🔄 Loading detailed account data for real-time equity:', activeAccount.id);
+          const detailedAccountData = await getAccount(activeAccount.id);
+          console.log('📊 Detailed account data:', detailedAccountData);
+          setTradingAccount(detailedAccountData);
+        } catch (accountErr) {
+          console.error('Failed to load detailed account data:', accountErr);
           setTradingAccount(null);
         }
       }
@@ -71,16 +71,22 @@ export const useAccountData = () => {
   };
 
   const accountData: AccountData = {
-    // Use real-time trading account data if available, fallback to static account data
+    // Prioritize real-time equity field over last_equity for accurate real-time values
     totalValue: tradingAccount?.equity ? parseFloat(tradingAccount.equity) : 
-                (selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0),
+                (tradingAccount?.last_equity ? parseFloat(tradingAccount.last_equity) : 
+                 (selectedAccount?.equity ? parseFloat(selectedAccount.equity) :
+                  (selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0))),
     availableCash: tradingAccount?.buying_power ? parseFloat(tradingAccount.buying_power) : 
                    (selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0),
-    investedAmount: tradingAccount?.equity && tradingAccount?.buying_power 
-      ? parseFloat(tradingAccount.equity) - parseFloat(tradingAccount.buying_power)
-      : (selectedAccount?.last_equity && selectedAccount?.buying_power 
-         ? parseFloat(selectedAccount.last_equity) - parseFloat(selectedAccount.buying_power)
-         : 0),
+    investedAmount: (() => {
+      const equity = tradingAccount?.equity ? parseFloat(tradingAccount.equity) : 
+                     (tradingAccount?.last_equity ? parseFloat(tradingAccount.last_equity) : 
+                      (selectedAccount?.equity ? parseFloat(selectedAccount.equity) :
+                       (selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0)));
+      const buyingPower = tradingAccount?.buying_power ? parseFloat(tradingAccount.buying_power) : 
+                          (selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0);
+      return equity - buyingPower;
+    })(),
     isLoading: loading || !isInitialized,
     error: error,
     accounts,

@@ -8,12 +8,12 @@ export interface AlpacaAccount {
   currency: string;
   created_at: string;
   last_equity?: string;
+  equity?: string; // Real-time equity value (preferred over last_equity)
   account_type?: string;
   trading_type?: string;
   
   // Detailed Trading Metrics
   cash?: string;
-  equity?: string;
   buying_power?: string;
   long_market_value?: string;
   short_market_value?: string;
