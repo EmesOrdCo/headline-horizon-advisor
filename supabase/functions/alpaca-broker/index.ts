@@ -228,16 +228,24 @@ serve(async (req) => {
       
       // Try to parse JSON error response for better error messages
       let errorMessage = `API request failed: ${response.status}`;
+      let errorCode = null;
+      
       try {
         const errorJson = JSON.parse(errorText);
+        console.log(`Parsed error JSON:`, errorJson);
+        
         if (errorJson.message) {
           errorMessage = errorJson.message;
         } else if (errorJson.error) {
           errorMessage = errorJson.error;
+        } else if (errorJson.detail) {
+          errorMessage = errorJson.detail;
         }
         
+        errorCode = errorJson.code;
+        
         // Map common error codes to user-friendly messages
-        if (errorJson.code === 40010000) {
+        if (errorCode === 40010000) {
           errorMessage = "Invalid order format. Please check your order details.";
         } else if (errorMessage.toLowerCase().includes('insufficient')) {
           errorMessage = "Insufficient buying power. You don't have enough funds for this trade.";
@@ -245,8 +253,23 @@ serve(async (req) => {
           errorMessage = "This stock is not available for trading.";
         } else if (errorMessage.toLowerCase().includes('market_closed')) {
           errorMessage = "Market is currently closed. Orders will be queued for next trading session.";
+        } else if (errorMessage.toLowerCase().includes('already exists') || 
+                   errorMessage.toLowerCase().includes('duplicate email') ||
+                   errorMessage.toLowerCase().includes('email already used') ||
+                   response.status === 409) {
+          errorMessage = "An account with this email already exists. Please use a different email address.";
+        } else if (errorMessage.toLowerCase().includes('invalid email')) {
+          errorMessage = "Please provide a valid email address.";
+        } else if (errorMessage.toLowerCase().includes('invalid phone')) {
+          errorMessage = "Please provide a valid phone number.";
+        } else if (errorMessage.toLowerCase().includes('invalid tax id') || 
+                   errorMessage.toLowerCase().includes('invalid ssn')) {
+          errorMessage = "Please provide a valid Tax ID/SSN.";
+        } else if (errorMessage.toLowerCase().includes('kyc')) {
+          errorMessage = "KYC verification failed. Please check your personal information.";
         }
       } catch (parseError) {
+        console.error(`Failed to parse error JSON:`, parseError);
         // If parsing fails, use the original error text
         errorMessage = errorText || errorMessage;
       }
