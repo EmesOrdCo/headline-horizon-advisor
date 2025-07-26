@@ -13,6 +13,9 @@ interface StreamData {
   high?: number;
   low?: number;
   close?: number;
+  sandbox?: boolean;
+  simulated?: boolean;
+  source?: string;
 }
 
 interface UseAlpacaStreamProps {
@@ -169,7 +172,10 @@ class AlpacaStreamManager {
                         open: item.o,
                         high: item.h,
                         low: item.l,
-                        close: item.c
+                        close: item.c,
+                        sandbox: item.sandbox || true,
+                        simulated: item.simulated || true,
+                        source: item.source || 'alpaca_sandbox_test'
                       };
                     }
                   }

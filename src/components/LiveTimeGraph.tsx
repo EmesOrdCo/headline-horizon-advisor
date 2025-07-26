@@ -292,10 +292,22 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
   return (
     <div className="w-full h-[600px] border border-border rounded-lg bg-background">
       <div className="p-4 border-b border-border">
-        <h3 className="text-lg font-semibold">Live Market Data Flow</h3>
-        <p className="text-sm text-muted-foreground">
-          Real-time websocket data visualization • {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Live Market Data Flow</h3>
+            <p className="text-sm text-muted-foreground">
+              Real-time websocket data visualization • {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30 font-medium">
+              📊 Sandbox Test Data (FAKEPACA)
+            </span>
+            <span className="text-xs px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/30 font-medium">
+              ⚠️ Simulated
+            </span>
+          </div>
+        </div>
       </div>
       <div className="h-[540px]">
         <ReactFlow

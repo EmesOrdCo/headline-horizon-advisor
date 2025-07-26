@@ -19,10 +19,11 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
-  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+  // Use Alpaca Broker API credentials for sandbox environment
+  const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
-  console.log('WebSocket connection request received');
+  console.log('WebSocket connection request received for sandbox test stream');
   console.log('Broker API Key exists:', !!alpacaApiKey);
   console.log('Broker Secret Key exists:', !!alpacaSecretKey);
   console.log('API Key prefix:', alpacaApiKey ? alpacaApiKey.substring(0, 8) + '...' : 'None');
@@ -60,10 +61,10 @@ serve(async (req) => {
         alpacaSocket.close();
       }
       
-      alpacaSocket = new WebSocket("wss://stream.data.alpaca.markets/v2/test");
+      alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/test");
       
       alpacaSocket.onopen = () => {
-        console.log('Connected to Alpaca data stream');
+        console.log('Connected to Alpaca sandbox test data stream');
         
         const authMessage = {
           action: "auth",
@@ -71,7 +72,7 @@ serve(async (req) => {
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication...');
+        console.log('Sending authentication to sandbox...');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
@@ -107,21 +108,22 @@ serve(async (req) => {
               } else if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
                 connectionAttempts = 0; // Reset on successful auth
-                console.log('Successfully authenticated with Alpaca');
+                console.log('Successfully authenticated with Alpaca sandbox');
                 
-                // Subscribe to FAKEPACA for test stream
+                // Subscribe to FAKEPACA test symbol for simulated data
                 const subscribeMessage = {
                   action: "subscribe",
                   trades: ["FAKEPACA"],
-                  quotes: ["FAKEPACA"]
+                  quotes: ["FAKEPACA"],
+                  bars: ["FAKEPACA"]
                 };
-                console.log('Subscribing to FAKEPACA:', JSON.stringify(subscribeMessage, null, 2));
+                console.log('Subscribing to FAKEPACA test symbol:', JSON.stringify(subscribeMessage, null, 2));
                 alpacaSocket!.send(JSON.stringify(subscribeMessage));
                 
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_success',
-                    message: 'Connected to Alpaca test stream'
+                    message: 'Connected to Alpaca sandbox test stream - simulated data'
                   }));
                 }
               } else if (message.T === 'error') {
@@ -139,12 +141,21 @@ serve(async (req) => {
                   }));
                 }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
-                // Forward market data
-                console.log('Forwarding market data:', JSON.stringify(message, null, 2));
+                // Forward sandbox test market data
+                console.log('Forwarding sandbox test data:', JSON.stringify(message, null, 2));
+                
+                // Add sandbox markers to the data
+                const sandboxData = {
+                  ...message,
+                  sandbox: true,
+                  simulated: true,
+                  source: 'alpaca_sandbox_test'
+                };
+                
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'market_data',
-                    data: [message]
+                    data: [sandboxData]
                   }));
                 }
               } else {
@@ -223,7 +234,7 @@ serve(async (req) => {
           socket.send(JSON.stringify({
             type: 'subscribed',
             symbols: testSymbols,
-            message: 'Subscribed to test stream'
+            message: 'Subscribed to FAKEPACA sandbox test stream - simulated data'
           }));
         } else {
           console.log('Cannot subscribe: not authenticated or connection not ready');
