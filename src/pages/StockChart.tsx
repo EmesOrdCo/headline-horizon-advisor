@@ -108,22 +108,22 @@ const StockChart: React.FC = () => {
   
   // Use real-time data if available, otherwise fall back to API data
   const currentPrice = streamPrice?.price || currentStock?.price || 0;
-  const bidPrice = currentStock?.bidPrice || 0;
-  const askPrice = currentStock?.askPrice || 0;
+  const bidPrice = streamPrice?.bid || currentStock?.bidPrice || 0;
+  const askPrice = streamPrice?.ask || currentStock?.askPrice || 0;
   const spread = askPrice - bidPrice;
   const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
   
-  // Get OHLC data from historical data
+  // Get OHLC data from historical data, but use stream data when available
   const todayData = historicalData?.data?.[0];
-  const openPrice = todayData?.open || 0;
-  const highPrice = todayData?.high || 0;
-  const lowPrice = todayData?.low || 0;
-  const closePrice = todayData?.close || currentPrice;
-  const volume = todayData?.volume || 0;
+  const openPrice = streamPrice?.open || todayData?.open || 0;
+  const highPrice = streamPrice?.high || todayData?.high || 0;
+  const lowPrice = streamPrice?.low || todayData?.low || 0;
+  const closePrice = streamPrice?.close || todayData?.close || currentPrice;
+  const volume = streamPrice?.volume || todayData?.volume || 0;
   
-  // Calculate change
-  const change = currentStock?.change || 0;
-  const changePercent = currentStock?.changePercent || 0;
+  // Calculate change - use stream data if available
+  const change = streamPrice ? (currentPrice - openPrice) : (currentStock?.change || 0);
+  const changePercent = openPrice > 0 ? ((change / openPrice) * 100) : (currentStock?.changePercent || 0);
   
   // Format volume
   const formatVolume = (vol: number) => {
