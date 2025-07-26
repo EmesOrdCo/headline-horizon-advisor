@@ -234,9 +234,13 @@ const AlpacaOnboarding = () => {
 
       console.log('Submitting account data:', accountData);
       
+      console.log('About to call createAccount...');
       const result = await createAccount(accountData);
-      
       console.log('Account creation result:', result);
+      
+      if (!result) {
+        throw new Error('No result returned from createAccount');
+      }
       
       setAccountResult({
         accountNumber: result.account_number || 'PENDING',

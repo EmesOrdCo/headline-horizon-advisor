@@ -134,16 +134,31 @@ export const useAlpacaBroker = () => {
     setError(null);
 
     try {
+      console.log('=== CALLING BROKER API ===');
+      console.log('Action:', action);
+      console.log('Account ID:', account_id);
+      console.log('Data:', data);
+
       const { data: response, error: apiError } = await supabase.functions.invoke('alpaca-broker', {
         body: { action, account_id, data },
       });
 
+      console.log('=== BROKER API RESPONSE ===');
+      console.log('Response:', response);
+      console.log('API Error:', apiError);
+
       if (apiError) {
-        throw new Error(apiError.message);
+        console.error('Supabase function error:', apiError);
+        throw new Error(`API Error: ${apiError.message}`);
+      }
+
+      if (!response) {
+        throw new Error('No response received from edge function');
       }
 
       if (!response.success) {
-        throw new Error(response.error || 'API request failed');
+        console.error('Broker API failed:', response);
+        throw new Error(response.error || response.details || 'API request failed');
       }
 
       return response.data;
