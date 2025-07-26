@@ -195,6 +195,14 @@ export const useAlpacaBroker = () => {
     return callBrokerAPI('create_transfer', accountId, transferData);
   };
 
+  const getTransfers = async (accountId: string) => {
+    return callBrokerAPI('get_transfers', accountId);
+  };
+
+  const getTransfer = async (accountId: string, transferId: string) => {
+    return callBrokerAPI('get_transfer', accountId, { transfer_id: transferId });
+  };
+
   const createJournal = async (journalData: any) => {
     console.log('🏦 useAlpacaBroker: createJournal called with:', journalData);
     return callBrokerAPI('create_journal', undefined, journalData);
@@ -259,6 +267,8 @@ export const useAlpacaBroker = () => {
     // Funding
     createACHRelationship,
     createTransfer,
+    getTransfers,
+    getTransfer,
     createJournal,
     // Assets
     getAssets,
