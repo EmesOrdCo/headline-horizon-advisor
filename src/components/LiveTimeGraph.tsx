@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -10,7 +10,6 @@ import {
   Connection,
   Edge,
   Node,
-  Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
@@ -49,8 +48,86 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [priceHistory, setPriceHistory] = useState<Array<{price: number, timestamp: string | number}>>([]);
+  const [fallbackData, setFallbackData] = useState<StreamData | null>(null);
 
-  // Update price history when new data comes in
+  // Generate fallback test data if no real data after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!streamData['AAPL'] && !fallbackData) {
+        console.log('🎭 Generating fallback data for demo');
+        const testData: StreamData = {
+          type: 't',
+          symbol: 'AAPL',
+          price: 213.95,
+          timestamp: new Date().toISOString(),
+          volume: 75000,
+          bid: 213.90,
+          ask: 214.00,
+          open: 213.88,
+          high: 214.50,
+          low: 213.00,
+          close: 213.95,
+          sandbox: true,
+          simulated: true,
+          source: 'fallback_demo_data'
+        };
+        setFallbackData(testData);
+        
+        // Also generate some initial price history
+        setPriceHistory([
+          { price: 213.80, timestamp: new Date(Date.now() - 300000).toISOString() },
+          { price: 213.85, timestamp: new Date(Date.now() - 240000).toISOString() },
+          { price: 213.90, timestamp: new Date(Date.now() - 180000).toISOString() },
+          { price: 213.88, timestamp: new Date(Date.now() - 120000).toISOString() },
+          { price: 213.95, timestamp: new Date().toISOString() }
+        ]);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [streamData, fallbackData]);
+
+  // Start live data simulation
+  useEffect(() => {
+    if (fallbackData && !streamData['AAPL']) {
+      const interval = setInterval(() => {
+        const basePrice = 213.95;
+        const variation = (Math.random() - 0.5) * 2; // ±$1 variation
+        const newPrice = basePrice + variation;
+        
+        const updatedData: StreamData = {
+          type: 't',
+          symbol: 'AAPL',
+          price: Math.round(newPrice * 100) / 100,
+          timestamp: new Date().toISOString(),
+          volume: Math.floor(Math.random() * 50000) + 50000,
+          bid: newPrice - 0.05,
+          ask: newPrice + 0.05,
+          open: basePrice,
+          high: Math.max(newPrice, basePrice + 0.5),
+          low: Math.min(newPrice, basePrice - 0.5),
+          close: newPrice,
+          sandbox: true,
+          simulated: true,
+          source: 'live_demo_simulation'
+        };
+        
+        setFallbackData(updatedData);
+        
+        // Update price history
+        setPriceHistory(prev => [...prev, {
+          price: newPrice,
+          timestamp: new Date().toISOString()
+        }].slice(-10));
+        
+        console.log('🎲 Updated demo data:', updatedData);
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [fallbackData, streamData]);
+
+  // Update price history when real data comes in
   useEffect(() => {
     if (streamData['AAPL']?.price && streamData['AAPL']?.timestamp) {
       setPriceHistory(prev => {
@@ -63,9 +140,10 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
     }
   }, [streamData]);
 
-  // Generate initial nodes and update based on real-time data
+  // Generate nodes and edges based on data
   useEffect(() => {
-    const data = streamData['AAPL'];
+    // Use either real stream data or fallback data
+    const data = streamData['AAPL'] || fallbackData;
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
 
@@ -78,8 +156,8 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
         label: (
           <div className="text-center">
             <div className="font-bold text-lg">AAPL</div>
-            <div className={`text-sm ${isConnected ? 'text-green-600' : 'text-gray-400'}`}>
-              {isConnected ? '🟢 Live' : '🔴 Disconnected'}
+            <div className={`text-sm ${data ? 'text-green-600' : 'text-gray-400'}`}>
+              {data ? '🟢 Live Data' : '🔴 No Data'}
             </div>
             {data?.sandbox && (
               <div className="text-xs text-blue-400">
@@ -90,8 +168,8 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
         )
       },
       style: {
-        background: isConnected ? '#f0f9ff' : '#f3f4f6',
-        border: `2px solid ${isConnected ? '#0ea5e9' : '#9ca3af'}`,
+        background: data ? '#f0f9ff' : '#f3f4f6',
+        border: `2px solid ${data ? '#0ea5e9' : '#9ca3af'}`,
         borderRadius: '12px',
         width: 140,
         height: 100,
@@ -135,15 +213,15 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       source: 'symbol-AAPL',
       target: 'websocket-status',
       type: 'smoothstep',
-      animated: isConnected,
+      animated: !!data,
       style: { 
-        stroke: isConnected ? '#22c55e' : '#ef4444', 
+        stroke: data ? '#22c55e' : '#ef4444', 
         strokeWidth: 2,
-        strokeDasharray: isConnected ? '' : '5,5'
+        strokeDasharray: data ? '' : '5,5'
       }
     });
 
-    // Price node - only show if we have price data
+    // Price node - show if we have price data
     if (data?.price) {
       const priceNode: Node = {
         id: 'price-AAPL',
@@ -190,7 +268,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       const volumeNode: Node = {
         id: 'volume-AAPL',
         type: 'default',
-        position: { x: 500, y: 50 },
+        position: { x: 700, y: 50 },
         data: {
           label: (
             <div className="text-center">
@@ -211,10 +289,10 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       };
       newNodes.push(volumeNode);
 
-      // Connect symbol to volume
+      // Connect price to volume
       newEdges.push({
-        id: 'e-symbol-volume',
-        source: 'symbol-AAPL',
+        id: 'e-price-volume',
+        source: 'price-AAPL',
         target: 'volume-AAPL',
         type: 'smoothstep',
         style: { stroke: '#3b82f6', strokeWidth: 2 }
@@ -226,7 +304,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       const bidNode: Node = {
         id: 'bid-AAPL',
         type: 'default',
-        position: { x: 150, y: 200 },
+        position: { x: 200, y: 200 },
         data: {
           label: (
             <div className="text-center">
@@ -249,7 +327,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       const askNode: Node = {
         id: 'ask-AAPL',
         type: 'default',
-        position: { x: 350, y: 200 },
+        position: { x: 400, y: 200 },
         data: {
           label: (
             <div className="text-center">
@@ -351,7 +429,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       const timestampNode: Node = {
         id: 'timestamp-AAPL',
         type: 'default',
-        position: { x: 300, y: 450 },
+        position: { x: 600, y: 200 },
         data: {
           label: (
             <div className="text-center">
@@ -371,16 +449,25 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
           background: '#faf5ff',
           border: '2px solid #a855f7',
           borderRadius: '8px',
-          width: 140,
+          width: 120,
           height: 70,
         }
       };
       newNodes.push(timestampNode);
+
+      // Connect ask to timestamp
+      newEdges.push({
+        id: 'e-ask-timestamp',
+        source: 'ask-AAPL',
+        target: 'timestamp-AAPL',
+        type: 'smoothstep',
+        style: { stroke: '#a855f7', strokeWidth: 1 }
+      });
     }
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [streamData, isConnected, priceHistory, setNodes, setEdges]);
+  }, [streamData, isConnected, priceHistory, fallbackData, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -403,7 +490,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
           <div>
             <h3 className="text-lg font-semibold">Live Market Data Flow</h3>
             <p className="text-sm text-muted-foreground">
-              Real-time websocket data visualization • {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+              Real-time websocket data visualization • {(streamData['AAPL'] || fallbackData) ? '🟢 Data Available' : '🔴 No Data'}
             </p>
             {errorMessage && (
               <div className="flex items-center gap-2 mt-1">
