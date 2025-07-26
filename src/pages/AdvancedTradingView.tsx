@@ -1,98 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TradingChart } from '@/components/chart/TradingChart';
 import DashboardNav from '@/components/DashboardNav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { TrendingUp, BarChart3, Activity, Zap } from 'lucide-react';
-import { useAlpacaBroker, AlpacaAsset } from '@/hooks/useAlpacaBroker';
-import { useAccountData } from '@/hooks/useAccountData';
-import { toast } from 'sonner';
 
 const AdvancedTradingView: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
-  const [orderData, setOrderData] = useState({
-    qty: '10',
-    side: 'buy' as 'buy' | 'sell',
-    type: 'market' as 'market' | 'limit',
-    time_in_force: 'day' as 'day' | 'gtc' | 'ioc' | 'fok',
-    limit_price: '',
-  });
-  const [assets, setAssets] = useState<AlpacaAsset[]>([]);
-
-  const { placeOrder, getAssets, loading } = useAlpacaBroker();
-  const { selectedAccount, refreshData } = useAccountData();
-
-  useEffect(() => {
-    const loadAssets = async () => {
-      try {
-        const assetList = await getAssets({ status: 'active', asset_class: 'us_equity' });
-        setAssets(assetList);
-      } catch (error) {
-        console.error('Failed to load assets:', error);
-      }
-    };
-    loadAssets();
-  }, [getAssets]);
-
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    console.log('🚀 Order submission started');
-    console.log('Selected Account:', selectedAccount);
-    console.log('Order Data:', orderData);
-    
-    // Validation checks
-    if (!selectedAccount?.id) {
-      console.error('❌ No Alpaca account found');
-      toast.error('Please connect your Alpaca account first. Go to Broker Dashboard to link your account.');
-      return;
-    }
-
-    if (!orderData.qty || parseFloat(orderData.qty) <= 0) {
-      toast.error('Please enter a valid quantity');
-      return;
-    }
-
-    if (orderData.type === 'limit' && (!orderData.limit_price || parseFloat(orderData.limit_price) <= 0)) {
-      toast.error('Please enter a valid limit price');
-      return;
-    }
-
-    try {
-      console.log('📡 Placing order...');
-      const orderPayload = {
-        symbol: selectedSymbol,
-        qty: orderData.qty,
-        side: orderData.side,
-        type: orderData.type,
-        time_in_force: orderData.time_in_force,
-        limit_price: orderData.type === 'limit' ? orderData.limit_price : undefined,
-      };
-      
-      console.log('Order payload:', orderPayload);
-      
-      const order = await placeOrder(selectedAccount.id, orderPayload);
-      
-      console.log('✅ Order placed successfully:', order);
-      toast.success(`${orderData.side.toUpperCase()} order placed successfully! Order ID: ${order.id}`);
-      refreshData();
-      
-      // Reset form
-      setOrderData({
-        ...orderData,
-        qty: '10',
-        limit_price: '',
-      });
-    } catch (error) {
-      console.error('❌ Order placement error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
-      toast.error(`Order failed: ${errorMessage}`);
-    }
-  };
   
   const popularSymbols = [
     { symbol: 'AAPL', name: 'Apple Inc.' },
@@ -126,8 +42,8 @@ const AdvancedTradingView: React.FC = () => {
     },
     {
       icon: <Zap className="h-5 w-5" />,
-      title: "Live Trading",
-      description: "Real-time order placement via Alpaca"
+      title: "High Performance",
+      description: "GPU-accelerated Canvas rendering"
     }
   ];
 
@@ -142,12 +58,12 @@ const AdvancedTradingView: React.FC = () => {
             <div>
               <h1 className="text-4xl font-bold mb-2">Advanced Trading View</h1>
               <p className="text-muted-foreground text-lg">
-                Professional-grade charting with real-time data and live trading capabilities
+                Professional-grade charting with real-time data and advanced technical analysis
               </p>
             </div>
             <Badge variant="default" className="px-3 py-1">
               <Zap className="h-4 w-4 mr-1" />
-              Live Trading
+              Live Data
             </Badge>
           </div>
 
@@ -174,7 +90,7 @@ const AdvancedTradingView: React.FC = () => {
 
             {/* Quick Symbol Buttons */}
             <div className="flex gap-2">
-              {['AAPL', 'GOOGL', 'TSLA', 'NVDA'].map((symbol) => (
+              {['AAPL', 'GOOGL', 'TSLA', 'BTC-USD'].map((symbol) => (
                 <Button
                   key={symbol}
                   variant={selectedSymbol === symbol ? "default" : "outline"}
@@ -205,164 +121,12 @@ const AdvancedTradingView: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Chart and Trading Interface */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-          <div className="xl:col-span-2">
-            <TradingChart 
-              symbol={selectedSymbol} 
-              initialTimeFrame="1h"
-            />
-          </div>
-          
-          {/* Order Placement Interface */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Live Order Placement
-              </CardTitle>
-              <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">
-                  Place real trades via Alpaca (Sandbox Mode)
-                </p>
-                {selectedAccount ? (
-                  <div className="text-xs text-green-600 flex items-center gap-1">
-                    ✓ Account: {selectedAccount.account_number}
-                  </div>
-                ) : (
-                  <div className="text-xs text-destructive">
-                    ⚠ No Alpaca account connected
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePlaceOrder} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="symbol">Symbol</Label>
-                    <div className="mt-1 p-3 bg-muted rounded-md border">
-                      <span className="font-mono font-semibold">{selectedSymbol}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="qty">Quantity</Label>
-                    <Input
-                      id="qty"
-                      type="number"
-                      value={orderData.qty}
-                      onChange={(e) => setOrderData({ ...orderData, qty: e.target.value })}
-                      min="1"
-                      step="1"
-                      required
-                      placeholder="Number of shares"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="side">Side</Label>
-                    <Select value={orderData.side} onValueChange={(value: 'buy' | 'sell') => setOrderData({ ...orderData, side: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="buy">Buy</SelectItem>
-                        <SelectItem value="sell">Sell</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="type">Order Type</Label>
-                    <Select value={orderData.type} onValueChange={(value: 'market' | 'limit') => setOrderData({ ...orderData, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="market">Market</SelectItem>
-                        <SelectItem value="limit">Limit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {orderData.type === 'limit' && (
-                  <div>
-                    <Label htmlFor="limit_price">Limit Price ($)</Label>
-                    <Input
-                      id="limit_price"
-                      type="number"
-                      step="0.01"
-                      value={orderData.limit_price}
-                      onChange={(e) => setOrderData({ ...orderData, limit_price: e.target.value })}
-                      placeholder="Enter limit price"
-                      required={orderData.type === 'limit'}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="time_in_force">Time in Force</Label>
-                  <Select value={orderData.time_in_force} onValueChange={(value: any) => setOrderData({ ...orderData, time_in_force: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="day">Day</SelectItem>
-                      <SelectItem value="gtc">Good Till Canceled</SelectItem>
-                      <SelectItem value="ioc">Immediate or Cancel</SelectItem>
-                      <SelectItem value="fok">Fill or Kill</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h4 className="font-semibold mb-2">Order Summary</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Action:</span>
-                      <Badge variant={orderData.side === 'buy' ? 'default' : 'destructive'}>
-                        {orderData.side.toUpperCase()} {orderData.qty} shares
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Symbol:</span>
-                      <span className="font-mono font-semibold">{selectedSymbol}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="font-semibold">{orderData.type.toUpperCase()}</span>
-                    </div>
-                    {orderData.type === 'limit' && orderData.limit_price && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Limit Price:</span>
-                        <span className="font-semibold">${orderData.limit_price}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Duration:</span>
-                      <span className="font-semibold">{orderData.time_in_force.toUpperCase()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  disabled={loading || !selectedAccount?.id} 
-                  className="w-full"
-                  variant={orderData.side === 'buy' ? 'default' : 'destructive'}
-                >
-                  {loading ? 'Placing Order...' : 
-                   !selectedAccount?.id ? 'Connect Alpaca Account' :
-                   `Place ${orderData.side.toUpperCase()} Order`}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Main Chart */}
+        <TradingChart 
+          symbol={selectedSymbol} 
+          initialTimeFrame="1h"
+          className="mb-8"
+        />
 
         {/* Additional Information */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -428,29 +192,29 @@ const AdvancedTradingView: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Live Trading</CardTitle>
+              <CardTitle>Performance</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Real-time order placement
+                  GPU-accelerated rendering
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Alpaca sandbox integration
+                  &lt;16ms frame times
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Market & limit orders
+                  Virtualized data windows
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  Buy & sell functionality
+                  Memory-efficient structures
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
-                  Live price data integration
+                  High-DPI display support
                 </li>
               </ul>
             </CardContent>
