@@ -18,11 +18,11 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  // Use Alpaca Broker API credentials for sandbox environment
+  // Use Alpaca Broker API credentials for direct AAPL connection
   const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
   const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
-  console.log('WebSocket connection request received for sandbox test stream');
+  console.log('WebSocket connection request received for AAPL direct stream');
   console.log('Broker API Key exists:', !!alpacaApiKey);
   console.log('Broker Secret Key exists:', !!alpacaSecretKey);
   console.log('API Key prefix:', alpacaApiKey ? alpacaApiKey.substring(0, 8) + '...' : 'None');
@@ -36,105 +36,59 @@ serve(async (req) => {
   let alpacaSocket: WebSocket | null = null;
   let isAuthenticated = false;
   let connectionAttempts = 0;
-  const maxConnectionAttempts = 1;
-  let mockDataInterval: number | null = null;
+  const maxConnectionAttempts = 3;
+  let retryTimeout: number | null = null;
 
-  const startMockDataStream = () => {
-    console.log('Starting mock data stream for AAPL');
-    
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({
-        type: 'auth_success',
-        message: 'Connected to mock data stream - simulated AAPL data'
-      }));
-    }
-
-    // Generate mock AAPL data every 2 seconds
-    let basePrice = 213.50;
-    mockDataInterval = setInterval(() => {
-      if (socket.readyState !== WebSocket.OPEN) {
-        if (mockDataInterval) {
-          clearInterval(mockDataInterval);
-          mockDataInterval = null;
-        }
-        return;
-      }
-
-      // Generate realistic price movements
-      const priceChange = (Math.random() - 0.5) * 2; // +/- $1 max change
-      basePrice += priceChange;
-      basePrice = Math.max(200, Math.min(250, basePrice)); // Keep in realistic range
-
-      const volume = Math.floor(Math.random() * 100000) + 50000;
-      const spread = 0.02;
-      const bidPrice = basePrice - spread;
-      const askPrice = basePrice + spread;
-
-      const mockTradeData = {
-        T: 't',
-        S: 'AAPL',
-        p: Number(basePrice.toFixed(2)),
-        s: volume,
-        t: Date.now() * 1000000, // Convert to nanoseconds like Alpaca
-        x: 'MOCK',
-        sandbox: true,
-        simulated: true,
-        source: 'mock_stream'
-      };
-
-      const mockQuoteData = {
-        T: 'q',
-        S: 'AAPL',
-        bp: Number(bidPrice.toFixed(2)),
-        ap: Number(askPrice.toFixed(2)),
-        bs: Math.floor(Math.random() * 1000) + 100,
-        as: Math.floor(Math.random() * 1000) + 100,
-        t: Date.now() * 1000000,
-        sandbox: true,
-        simulated: true,
-        source: 'mock_stream'
-      };
-
-      console.log('Sending mock data:', JSON.stringify(mockTradeData, null, 2));
-
-      socket.send(JSON.stringify({
-        type: 'market_data',
-        data: [mockTradeData, mockQuoteData]
-      }));
-    }, 2000);
-  };
 
   const connectToAlpaca = () => {
     if (connectionAttempts >= maxConnectionAttempts) {
-      console.log('Max connection attempts reached, starting mock data stream');
-      startMockDataStream();
+      console.error('Max connection attempts reached - unable to connect to Alpaca');
+      socket.send(JSON.stringify({
+        type: 'error',
+        message: 'Failed to connect to Alpaca after multiple attempts',
+        code: 'CONNECTION_FAILED'
+      }));
       return;
     }
 
     connectionAttempts++;
     
     try {
-      console.log(`Connecting to Alpaca data stream (attempt ${connectionAttempts}/${maxConnectionAttempts})...`);
+      console.log(`Connecting to Alpaca AAPL stream (attempt ${connectionAttempts}/${maxConnectionAttempts})...`);
       
       // Close existing connection if any
       if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
+        console.log('Closing existing Alpaca connection');
         alpacaSocket.close();
       }
       
+      // Clear any existing retry timeout
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
+      }
+      
+      // Connect to Alpaca sandbox for AAPL data
       alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/test");
       
-      // Set a timeout for authentication
+      // Set authentication timeout
       const authTimeout = setTimeout(() => {
-        console.log('Authentication timeout, switching to mock data');
+        console.error('404 - Authentication timeout after 10 seconds');
         if (alpacaSocket) {
           alpacaSocket.close();
         }
-        startMockDataStream();
-      }, 5000);
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Authentication timeout',
+          code: 404
+        }));
+        
+        // Retry connection
+        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
+      }, 10000);
       
       alpacaSocket.onopen = () => {
-        console.log('Connected to Alpaca sandbox test data stream');
-        console.log('Sending authentication to sandbox...');
+        console.log('WebSocket connection opened to Alpaca sandbox');
         
         const authMessage = {
           action: "auth",
@@ -142,7 +96,7 @@ serve(async (req) => {
           secret: alpacaSecretKey
         };
         
-        console.log('Sending auth message:', JSON.stringify(authMessage, null, 2));
+        console.log('Sending authentication for AAPL stream');
         alpacaSocket!.send(JSON.stringify(authMessage));
       };
 
@@ -150,90 +104,125 @@ serve(async (req) => {
         try {
           clearTimeout(authTimeout);
           let rawData = event.data;
-          console.log('Raw data received:', typeof rawData, rawData.length || 'no length');
           
           if (rawData instanceof Blob) {
             rawData = await rawData.text();
           }
           
           const data = JSON.parse(rawData);
-          console.log('Parsed data from Alpaca:', JSON.stringify(data, null, 2));
+          console.log('Alpaca response:', JSON.stringify(data));
           
           if (Array.isArray(data)) {
             for (const message of data) {
-              console.log('Processing message:', JSON.stringify(message, null, 2));
-              
               if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
-                connectionAttempts = 0;
-                console.log('Successfully authenticated with Alpaca sandbox');
+                connectionAttempts = 0; // Reset on successful auth
+                console.log('✓ Successfully authenticated with Alpaca');
                 
+                // Subscribe to AAPL directly (not FAKEPACA)
                 const subscribeMessage = {
                   action: "subscribe",
-                  trades: ["FAKEPACA"],
-                  quotes: ["FAKEPACA"],
-                  bars: ["FAKEPACA"]
+                  trades: ["AAPL"],
+                  quotes: ["AAPL"]
                 };
-                console.log('Subscribing to FAKEPACA test symbol:', JSON.stringify(subscribeMessage, null, 2));
+                console.log('Subscribing to real AAPL data');
                 alpacaSocket!.send(JSON.stringify(subscribeMessage));
                 
-                if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                  type: 'auth_success',
+                  message: 'Connected to Alpaca - streaming real AAPL data'
+                }));
+                
+              } else if (message.T === 'subscription') {
+                console.log('✓ Subscription confirmed for:', message);
+                
+              } else if (message.T === 'error') {
+                console.error('Alpaca error response:', message);
+                clearTimeout(authTimeout);
+                
+                if (message.code === 404) {
+                  console.error('404 - Authentication failed or timeout');
                   socket.send(JSON.stringify({
-                    type: 'auth_success',
-                    message: 'Connected to Alpaca sandbox test stream - simulated data'
+                    type: 'error',
+                    message: 'Authentication failed',
+                    code: 404
+                  }));
+                } else if (message.code === 406) {
+                  console.error('406 - Connection limit exceeded');
+                  socket.send(JSON.stringify({
+                    type: 'error',
+                    message: 'Connection limit exceeded',
+                    code: 406
                   }));
                 }
-              } else if (message.T === 'error') {
-                console.error('Alpaca error:', JSON.stringify(message, null, 2));
-                clearTimeout(authTimeout);
-                console.log('Alpaca connection failed, switching to mock data');
-                startMockDataStream();
                 
-              } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
-                console.log('Forwarding sandbox test data:', JSON.stringify(message, null, 2));
+                // Retry connection after error
+                retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
                 
-                const mappedData = {
-                  ...message,
-                  S: 'AAPL',
-                  sandbox: true,
-                  simulated: true,
-                  source: 'alpaca_sandbox_test'
-                };
+              } else if (isAuthenticated && (message.T === 't' || message.T === 'q')) {
+                console.log('✓ Real AAPL data received:', message);
                 
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'market_data',
-                    data: [mappedData]
+                    data: [message]
                   }));
                 }
               }
             }
           }
         } catch (error) {
-          console.error('Error parsing Alpaca message:', error);
+          console.error('Error processing Alpaca message:', error);
           clearTimeout(authTimeout);
-          startMockDataStream();
+          retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
         }
       };
 
       alpacaSocket.onerror = (error) => {
         console.error('Alpaca WebSocket error:', error);
         clearTimeout(authTimeout);
-        startMockDataStream();
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'WebSocket connection error',
+          code: 'WS_ERROR'
+        }));
+        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
       };
 
       alpacaSocket.onclose = (event) => {
-        console.log('Alpaca WebSocket disconnected:', event.code, event.reason);
+        console.log(`Alpaca WebSocket closed: ${event.code} - ${event.reason}`);
         clearTimeout(authTimeout);
         isAuthenticated = false;
         
-        if (!mockDataInterval) {
-          startMockDataStream();
+        let errorCode = event.code;
+        let errorMessage = event.reason || 'Connection closed';
+        
+        if (event.code === 1006) {
+          errorCode = 404;
+          errorMessage = 'Authentication timeout';
+        } else if (event.code === 1011) {
+          errorCode = 406;
+          errorMessage = 'Connection limit exceeded';
         }
+        
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: errorMessage,
+          code: errorCode
+        }));
+        
+        // Retry connection
+        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
       };
+      
     } catch (error) {
       console.error('Failed to create Alpaca WebSocket:', error);
-      startMockDataStream();
+      socket.send(JSON.stringify({
+        type: 'error',
+        message: 'Failed to create WebSocket connection',
+        code: 'CREATE_ERROR'
+      }));
+      retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
     }
   };
 
@@ -265,9 +254,9 @@ serve(async (req) => {
 
   socket.onclose = () => {
     console.log('Client disconnected');
-    if (mockDataInterval) {
-      clearInterval(mockDataInterval);
-      mockDataInterval = null;
+    if (retryTimeout) {
+      clearTimeout(retryTimeout);
+      retryTimeout = null;
     }
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
@@ -276,9 +265,9 @@ serve(async (req) => {
 
   socket.onerror = (error) => {
     console.error('Client WebSocket error:', error);
-    if (mockDataInterval) {
-      clearInterval(mockDataInterval);
-      mockDataInterval = null;
+    if (retryTimeout) {
+      clearTimeout(retryTimeout);
+      retryTimeout = null;
     }
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
