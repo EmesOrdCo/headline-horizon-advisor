@@ -62,6 +62,7 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
       // Step 2: Create the actual ACH transfer using Alpaca's API
       console.log('💸 Creating ACH transfer...');
       const transferData = {
+        transfer_type: 'ach', // REQUIRED: Specify this is an ACH transfer
         amount: parseFloat(amount), // Ensure it's a number
         direction: 'INCOMING', // Money coming into account
         timing: 'IMMEDIATE', // For demo/sandbox, try immediate
