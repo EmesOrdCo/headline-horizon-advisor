@@ -120,7 +120,7 @@ const CandlestickBar = (props: any) => {
 const StockLineChart: React.FC<StockLineChartProps> = ({ 
   currentPrice: parentPrice = 214.73, 
   symbol = 'AAPL',
-  chartType: propChartType = 'line'
+  chartType = 'line'
 }) => {
   const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
     symbols: [symbol], 
@@ -140,14 +140,14 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const [displayData, setDisplayData] = useState<PricePoint[]>([]);
   const [viewportStart, setViewportStart] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const [chartType, setChartType] = useState<'line' | 'candles'>(propChartType);
+  const [activeChartType, setActiveChartType] = useState<'line' | 'candles'>(chartType);
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync chart type with prop
   useEffect(() => {
-    setChartType(propChartType);
-  }, [propChartType]);
+    setActiveChartType(chartType);
+  }, [chartType]);
 
   // Fixed viewport size - always show exactly this many points
   const VIEWPORT_SIZE = 25;
@@ -245,7 +245,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     <div className="w-full h-full bg-gray-900">
       <div className="flex-1 p-2 w-full min-h-0 h-full">
         <ResponsiveContainer width="100%" height="100%">
-          {chartType === 'line' ? (
+          {activeChartType === 'line' ? (
             <LineChart 
               data={viewportData} 
               margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
