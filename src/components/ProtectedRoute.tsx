@@ -60,7 +60,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     };
 
     checkUserProfile();
-  }, [user, session, loading, navigate]);
+  }, [user, session, loading]);
 
   if (loading || checkingProfile) {
     return (
