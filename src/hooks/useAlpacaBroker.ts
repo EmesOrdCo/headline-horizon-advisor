@@ -187,6 +187,10 @@ export const useAlpacaBroker = () => {
     return callBrokerAPI('get_account', accountId);
   };
 
+  const getTradingAccount = async (accountId: string): Promise<any> => {
+    return callBrokerAPI('get_trading_account', accountId);
+  };
+
   // Funding
   const createACHRelationship = async (accountId: string, achData: any) => {
     return callBrokerAPI('create_ach_relationship', accountId, achData);
@@ -257,6 +261,7 @@ export const useAlpacaBroker = () => {
     createAccount,
     getAccounts,
     getAccount,
+    getTradingAccount,
     // Funding
     createACHRelationship,
     createTransfer,
