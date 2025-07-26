@@ -60,7 +60,7 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
     try {
       const achData = {
         account_owner_name: 'Demo User',
-        bank_account_type: newAccount.account_type,
+        bank_account_type: newAccount.account_type.toUpperCase(), // Convert to uppercase for Alpaca API
         bank_account_number: newAccount.account_number,
         bank_routing_number: newAccount.routing_number,
         nickname: newAccount.nickname,
