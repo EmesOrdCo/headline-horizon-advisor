@@ -29,6 +29,7 @@ import StockDetail from "./pages/StockDetail";
 import StockChart from "./pages/StockChart";
 import StockAnalysis from "./pages/StockAnalysis";
 import StockData from "./pages/StockData";
+import AdvancedTradingView from "./pages/AdvancedTradingView";
 import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -214,7 +215,15 @@ const App = () => (
                     <StockData />
                   </ProtectedRoute>
                 }
-              />
+                />
+              <Route
+                path="/advanced-trading-view"
+                element={
+                  <ProtectedRoute>
+                    <AdvancedTradingView />
+                  </ProtectedRoute>
+                }
+                />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

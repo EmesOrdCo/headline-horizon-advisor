@@ -80,6 +80,10 @@ const DashboardNav = () => {
       <Link to="/wallet" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
         Wallet
       </Link>
+      
+      <Link to="/advanced-trading-view" className="text-slate-300 hover:text-white transition-colors font-medium text-lg">
+        Trading View
+      </Link>
     </>
   );
 
