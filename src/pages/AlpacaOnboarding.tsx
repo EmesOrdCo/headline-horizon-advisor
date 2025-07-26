@@ -291,8 +291,14 @@ const AlpacaOnboarding = () => {
                   placeholder="Select your date of birth"
                   value={personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, "yyyy-MM-dd") : ""}
                   onChange={(e) => {
-                    const dateValue = e.target.value ? new Date(e.target.value) : undefined;
-                    setPersonalDetails(prev => ({ ...prev, dateOfBirth: dateValue }));
+                    if (e.target.value) {
+                      // Parse the date string properly to avoid timezone issues
+                      const [year, month, day] = e.target.value.split('-').map(Number);
+                      const dateValue = new Date(year, month - 1, day); // month is 0-indexed
+                      setPersonalDetails(prev => ({ ...prev, dateOfBirth: dateValue }));
+                    } else {
+                      setPersonalDetails(prev => ({ ...prev, dateOfBirth: undefined }));
+                    }
                   }}
                   max={format(new Date(), "yyyy-MM-dd")}
                   min="1900-01-01"
