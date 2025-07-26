@@ -348,42 +348,21 @@ const AlpacaOnboarding = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="citizenship">Country of Citizenship</Label>
-                <Select value={personalDetails.countryOfCitizenship} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, countryOfCitizenship: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                  USA (Sandbox Only)
+                </div>
               </div>
               <div>
                 <Label htmlFor="birthCountry">Country of Birth</Label>
-                <Select value={personalDetails.countryOfBirth} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, countryOfBirth: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                  USA (Sandbox Only)
+                </div>
               </div>
               <div>
                 <Label htmlFor="taxResidence">Tax Residence</Label>
-                <Select value={personalDetails.countryOfTaxResidence} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, countryOfTaxResidence: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                  USA (Sandbox Only)
+                </div>
               </div>
             </div>
 
@@ -455,16 +434,9 @@ const AlpacaOnboarding = () => {
               </div>
               <div>
                 <Label htmlFor="country">Country</Label>
-                <Select value={personalDetails.country} onValueChange={(value) => setPersonalDetails(prev => ({ ...prev, country: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(country => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                  USA (Sandbox Only)
+                </div>
               </div>
             </div>
 
