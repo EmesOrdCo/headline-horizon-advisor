@@ -113,9 +113,14 @@ const StockLineChart: React.FC = () => {
         return updated;
       });
       
-      console.log('📊 Added new chart point:', newPoint);
+      // Clear fallback data when real data starts coming in
+      if (fallbackData.length > 0) {
+        setFallbackData([]);
+      }
+      
+      console.log('📊 Added real WebSocket data point:', newPoint);
     }
-  }, [streamData]);
+  }, [streamData, fallbackData.length]);
 
   // Generate live updates for fallback data
   useEffect(() => {
