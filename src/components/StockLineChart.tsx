@@ -182,31 +182,24 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     });
   }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
-  // Add new data points ONLY from WebSocket - NO SIMULATION
+  // Add new data points immediately from WebSocket - NO DELAYS
   useEffect(() => {
-    const interval = setInterval(() => {
-      const streamPrice = streamData[symbol];
-      const now = Date.now();
-      
-      // Rate limit WebSocket updates
-      if (now - lastDataPointRef.current < 1000) return;
+    const streamPrice = streamData[symbol];
+    const now = Date.now();
+    
+    // Only add if we have new WebSocket data and haven't added too recently (prevent spam)
+    if (streamPrice?.price && (now - lastDataPointRef.current) > 500) {
       lastDataPointRef.current = now;
       
-      // ONLY use real WebSocket data - no simulation fallback
-      if (streamPrice?.price) {
-        addDataPoint(streamPrice.price, {
-          open: streamPrice.open || streamPrice.price,
-          high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
-          low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
-          close: streamPrice.close || streamPrice.price,
-          volume: streamPrice.volume || Math.floor(Math.random() * 10000),
-        });
-        console.log(`📡 REAL WebSocket data: $${streamPrice.price}`);
-      }
-      // NO ELSE CLAUSE - no simulation when WebSocket is down
-    }, 1000);
-
-    return () => clearInterval(interval);
+      addDataPoint(streamPrice.price, {
+        open: streamPrice.open || streamPrice.price,
+        high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
+        low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
+        close: streamPrice.close || streamPrice.price,
+        volume: streamPrice.volume || Math.floor(Math.random() * 10000),
+      });
+      console.log(`📡 INSTANT WebSocket data: $${streamPrice.price}`);
+    }
   }, [streamData, symbol, addDataPoint]);
 
   // Get viewport data for smooth scrolling
