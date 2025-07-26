@@ -63,13 +63,13 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
     }
   }, [streamData]);
 
-  // Generate nodes and edges based on real-time data
+  // Generate initial nodes and update based on real-time data
   useEffect(() => {
     const data = streamData['AAPL'];
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
 
-    // Main AAPL symbol node
+    // Main AAPL symbol node - ALWAYS show this
     const symbolNode: Node = {
       id: 'symbol-AAPL',
       type: 'default',
@@ -99,12 +99,56 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
     };
     newNodes.push(symbolNode);
 
-    // Price node
+    // WebSocket status node - ALWAYS show this
+    const statusNode: Node = {
+      id: 'websocket-status',
+      type: 'default',
+      position: { x: 300, y: 50 },
+      data: {
+        label: (
+          <div className="text-center">
+            <div className="text-xs text-gray-600">WebSocket</div>
+            <div className={`font-bold text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </div>
+            {errorMessage && (
+              <div className="text-xs text-red-500 mt-1 truncate max-w-[120px]">
+                {errorMessage.substring(0, 30)}...
+              </div>
+            )}
+          </div>
+        )
+      },
+      style: {
+        background: isConnected ? '#f0fdf4' : '#fef2f2',
+        border: `2px solid ${isConnected ? '#22c55e' : '#ef4444'}`,
+        borderRadius: '8px',
+        width: 140,
+        height: 80,
+      }
+    };
+    newNodes.push(statusNode);
+
+    // Connect symbol to status
+    newEdges.push({
+      id: 'e-symbol-status',
+      source: 'symbol-AAPL',
+      target: 'websocket-status',
+      type: 'smoothstep',
+      animated: isConnected,
+      style: { 
+        stroke: isConnected ? '#22c55e' : '#ef4444', 
+        strokeWidth: 2,
+        strokeDasharray: isConnected ? '' : '5,5'
+      }
+    });
+
+    // Price node - only show if we have price data
     if (data?.price) {
       const priceNode: Node = {
         id: 'price-AAPL',
         type: 'default',
-        position: { x: 300, y: 50 },
+        position: { x: 500, y: 50 },
         data: {
           label: (
             <div className="text-center">
@@ -130,10 +174,10 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = () => {
       };
       newNodes.push(priceNode);
 
-      // Connect symbol to price
+      // Connect status to price
       newEdges.push({
-        id: 'e-symbol-price',
-        source: 'symbol-AAPL',
+        id: 'e-status-price',
+        source: 'websocket-status',
         target: 'price-AAPL',
         type: 'smoothstep',
         animated: true,
