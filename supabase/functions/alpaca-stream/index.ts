@@ -40,127 +40,109 @@ serve(async (req) => {
   let retryTimeout: number | null = null;
 
 
-  const connectToAlpaca = () => {
-    if (connectionAttempts >= maxConnectionAttempts) {
-      console.error('Max connection attempts reached - unable to connect to Alpaca');
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Failed to connect to Alpaca after multiple attempts',
-        code: 'CONNECTION_FAILED'
-      }));
-      return;
-    }
-
-    connectionAttempts++;
-    
+  const connectToAlpaca = async () => {
     try {
-      console.log(`Connecting to Alpaca AAPL stream (attempt ${connectionAttempts}/${maxConnectionAttempts})...`);
+      console.log(`🔌 Connecting to Alpaca WebSocket (attempt ${connectionAttempts}/${maxConnectionAttempts})`);
       
-      // Close existing connection if any
-      if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
-        console.log('Closing existing Alpaca connection');
+      // Close existing connection
+      if (alpacaSocket) {
+        console.log('Closing existing connection');
         alpacaSocket.close();
+        alpacaSocket = null;
       }
       
-      // Clear any existing retry timeout
       if (retryTimeout) {
         clearTimeout(retryTimeout);
         retryTimeout = null;
       }
       
-      // Connect to Alpaca sandbox for AAPL data
-      alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/test");
+      // Connect to Alpaca data stream
+      console.log('🌐 Opening WebSocket to wss://stream.data.sandbox.alpaca.markets/v2/test');
+      alpacaSocket = new WebSocket('wss://stream.data.sandbox.alpaca.markets/v2/test');
       
-      // Set authentication timeout
-      const authTimeout = setTimeout(() => {
-        console.error('404 - Authentication timeout after 10 seconds');
-        if (alpacaSocket) {
-          alpacaSocket.close();
-        }
-        socket.send(JSON.stringify({
-          type: 'error',
-          message: 'Authentication timeout',
-          code: 404
-        }));
-        
-        // Retry connection
-        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
-      }, 10000);
+      let authTimeout: number;
       
       alpacaSocket.onopen = () => {
-        console.log('WebSocket connection opened to Alpaca sandbox');
+        console.log('✅ WebSocket connection opened');
         
+        // Send authentication immediately
         const authMessage = {
-          action: "auth",
+          action: 'auth',
           key: alpacaApiKey,
           secret: alpacaSecretKey
         };
         
-        console.log('Sending authentication for AAPL stream');
+        console.log('🔑 Sending authentication message');
         alpacaSocket!.send(JSON.stringify(authMessage));
+        
+        // Set auth timeout
+        authTimeout = setTimeout(() => {
+          if (!isAuthenticated) {
+            console.error('❌ Authentication timeout after 15 seconds');
+            alpacaSocket?.close();
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Authentication timeout',
+              code: 404
+            }));
+          }
+        }, 15000);
       };
 
       alpacaSocket.onmessage = async (event) => {
         try {
           clearTimeout(authTimeout);
-          let rawData = event.data;
           
-          if (rawData instanceof Blob) {
-            rawData = await rawData.text();
-          }
-          
+          const rawData = event.data instanceof Blob ? await event.data.text() : event.data;
           const data = JSON.parse(rawData);
-          console.log('Alpaca response:', JSON.stringify(data));
+          
+          console.log('📨 Received from Alpaca:', JSON.stringify(data));
           
           if (Array.isArray(data)) {
             for (const message of data) {
               if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
-                connectionAttempts = 0; // Reset on successful auth
-                console.log('✓ Successfully authenticated with Alpaca');
+                connectionAttempts = 0;
+                console.log('🎉 Successfully authenticated with Alpaca');
                 
-                // Subscribe to AAPL directly (not FAKEPACA)
+                // Subscribe to AAPL data
                 const subscribeMessage = {
-                  action: "subscribe",
-                  trades: ["AAPL"],
-                  quotes: ["AAPL"]
+                  action: 'subscribe',
+                  trades: ['AAPL'],
+                  quotes: ['AAPL']
                 };
-                console.log('Subscribing to real AAPL data');
+                
+                console.log('📋 Subscribing to AAPL trades and quotes');
                 alpacaSocket!.send(JSON.stringify(subscribeMessage));
                 
+                // Notify client of successful connection
                 socket.send(JSON.stringify({
                   type: 'auth_success',
-                  message: 'Connected to Alpaca - streaming real AAPL data'
+                  message: 'Connected to Alpaca - streaming AAPL data',
+                  symbol: 'AAPL'
                 }));
                 
               } else if (message.T === 'subscription') {
-                console.log('✓ Subscription confirmed for:', message);
+                console.log('✅ Subscription confirmed:', message);
                 
               } else if (message.T === 'error') {
-                console.error('Alpaca error response:', message);
-                clearTimeout(authTimeout);
+                console.error('❌ Alpaca error:', message);
                 
-                if (message.code === 404) {
-                  console.error('404 - Authentication failed or timeout');
-                  socket.send(JSON.stringify({
-                    type: 'error',
-                    message: 'Authentication failed',
-                    code: 404
-                  }));
-                } else if (message.code === 406) {
-                  console.error('406 - Connection limit exceeded');
-                  socket.send(JSON.stringify({
-                    type: 'error',
-                    message: 'Connection limit exceeded',
-                    code: 406
-                  }));
-                }
+                const errorCode = message.code || 'UNKNOWN';
+                const errorMsg = message.msg || 'Unknown error';
                 
-                // Retry connection after error
-                retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
+                socket.send(JSON.stringify({
+                  type: 'error',
+                  message: errorMsg,
+                  code: errorCode
+                }));
+                
+                // Close connection on error
+                alpacaSocket?.close();
                 
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q')) {
-                console.log('✓ Real AAPL data received:', message);
+                // Forward real market data
+                console.log('💹 Forwarding AAPL market data:', message.T, message.S, message.p || message.bp);
                 
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
@@ -172,38 +154,48 @@ serve(async (req) => {
             }
           }
         } catch (error) {
-          console.error('Error processing Alpaca message:', error);
+          console.error('❌ Error processing message:', error);
           clearTimeout(authTimeout);
-          retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
         }
       };
 
       alpacaSocket.onerror = (error) => {
-        console.error('Alpaca WebSocket error:', error);
+        console.error('❌ Alpaca WebSocket error:', error);
         clearTimeout(authTimeout);
+        
         socket.send(JSON.stringify({
           type: 'error',
           message: 'WebSocket connection error',
           code: 'WS_ERROR'
         }));
-        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
       };
 
       alpacaSocket.onclose = (event) => {
-        console.log(`Alpaca WebSocket closed: ${event.code} - ${event.reason}`);
+        console.error(`❌ Alpaca WebSocket closed: ${event.code} - ${event.reason || 'No reason provided'}`);
         clearTimeout(authTimeout);
         isAuthenticated = false;
         
+        // Map close codes to user-friendly messages
+        let errorMessage = 'Connection closed';
         let errorCode = event.code;
-        let errorMessage = event.reason || 'Connection closed';
         
-        if (event.code === 1006) {
-          errorCode = 404;
-          errorMessage = 'Authentication timeout';
-        } else if (event.code === 1011) {
-          errorCode = 406;
-          errorMessage = 'Connection limit exceeded';
+        switch (event.code) {
+          case 1006:
+            errorMessage = 'Connection lost unexpectedly';
+            break;
+          case 1011:
+            errorMessage = 'Server error occurred';
+            errorCode = 406; // Map to connection limit
+            break;
+          case 4001:
+            errorMessage = 'Authentication failed';
+            errorCode = 404;
+            break;
+          default:
+            errorMessage = event.reason || 'Unknown connection error';
         }
+        
+        console.error(`Mapped error: ${errorCode} - ${errorMessage}`);
         
         socket.send(JSON.stringify({
           type: 'error',
@@ -211,18 +203,34 @@ serve(async (req) => {
           code: errorCode
         }));
         
-        // Retry connection
-        retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
+        // Retry connection if we haven't exceeded max attempts
+        if (connectionAttempts < maxConnectionAttempts) {
+          connectionAttempts++;
+          console.log(`🔄 Retrying connection in 3 seconds (attempt ${connectionAttempts}/${maxConnectionAttempts})`);
+          retryTimeout = setTimeout(() => connectToAlpaca(), 3000);
+        } else {
+          console.error('❌ Max connection attempts reached');
+          socket.send(JSON.stringify({
+            type: 'error',
+            message: 'Max connection attempts exceeded',
+            code: 'MAX_RETRIES'
+          }));
+        }
       };
       
     } catch (error) {
-      console.error('Failed to create Alpaca WebSocket:', error);
+      console.error('❌ Failed to create WebSocket:', error);
+      connectionAttempts++;
+      
       socket.send(JSON.stringify({
         type: 'error',
-        message: 'Failed to create WebSocket connection',
+        message: 'Failed to create connection',
         code: 'CREATE_ERROR'
       }));
-      retryTimeout = setTimeout(() => connectToAlpaca(), 5000);
+      
+      if (connectionAttempts < maxConnectionAttempts) {
+        retryTimeout = setTimeout(() => connectToAlpaca(), 3000);
+      }
     }
   };
 
