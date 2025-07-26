@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAlpacaBroker, AlpacaAccount } from '@/hooks/useAlpacaBroker';
+import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from '@/hooks/useAlpacaBroker';
 
 interface AccountData {
   totalValue: number;
@@ -9,12 +9,14 @@ interface AccountData {
   error: string | null;
   accounts: AlpacaAccount[];
   selectedAccount: AlpacaAccount | null;
+  positions: AlpacaPosition[];
 }
 
 export const useAccountData = () => {
-  const { getAccounts, loading, error } = useAlpacaBroker();
+  const { getAccounts, getPositions, loading, error } = useAlpacaBroker();
   const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AlpacaAccount | null>(null);
+  const [positions, setPositions] = useState<AlpacaPosition[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const loadAccounts = async () => {
@@ -30,6 +32,18 @@ export const useAccountData = () => {
       ) || accountsData.find(acc => acc.status === 'ACTIVE') || accountsData[0];
       
       setSelectedAccount(activeAccount || null);
+      
+      // Load positions for the selected account
+      if (activeAccount) {
+        try {
+          const positionsData = await getPositions(activeAccount.id);
+          setPositions(positionsData);
+        } catch (positionsErr) {
+          console.error('Failed to load positions:', positionsErr);
+          setPositions([]);
+        }
+      }
+      
       setIsInitialized(true);
     } catch (err) {
       console.error('Failed to load accounts:', err);
@@ -56,6 +70,7 @@ export const useAccountData = () => {
     error: error,
     accounts,
     selectedAccount,
+    positions,
   };
 
   return {

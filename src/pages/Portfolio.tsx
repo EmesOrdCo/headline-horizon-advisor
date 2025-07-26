@@ -72,12 +72,13 @@ const Portfolio = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'GBP' | 'EUR'>('USD');
   const [showBenchmark, setShowBenchmark] = useState(false);
   const [benchmarkType, setBenchmarkType] = useState<'sp500' | 'nasdaq' | 'btc'>('sp500');
-  const { totalValue, availableCash, investedAmount, isLoading, refreshData } = useAccountData();
+  const { totalValue, availableCash, investedAmount, isLoading, refreshData, positions } = useAccountData();
   
-  // Get all stock symbols for logo loading
+  // Get all stock symbols for logo loading (including live positions)
   const allStockSymbols = [
     ...assetCategories.stocks.map(stock => stock.symbol),
-    ...assetCategories.funds.map(fund => fund.symbol)
+    ...assetCategories.funds.map(fund => fund.symbol),
+    ...positions.map(position => position.symbol)
   ];
   const { getLogoUrl } = useCompanyLogos(allStockSymbols);
   
@@ -226,60 +227,117 @@ const Portfolio = () => {
         <h2 className="text-2xl font-bold text-white">Portfolio Overview</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Asset Categories - Left Side */}
-          <div className="lg:col-span-2 flex flex-col">
-            {/* Crypto and Stocks sections */}
-            <div className="space-y-4 flex-1">
-              {['stocks', 'crypto'].map((category) => (
-                <Card key={category} className="bg-slate-800/50 border-slate-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white capitalize text-lg">{category}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {assetCategories[category as keyof typeof assetCategories].map((asset) => (
-                        <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                          <div className="flex items-center gap-2">
-                            {category === 'crypto' ? (
-                              <span className="text-lg">{asset.logo}</span>
-                            ) : (
+            {/* Asset Categories - Left Side */}
+            <div className="lg:col-span-2 flex flex-col">
+              {/* Live Stocks Positions */}
+              <Card className="bg-slate-800/50 border-slate-700 mb-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white capitalize text-lg flex items-center gap-2">
+                    Stocks
+                    <Badge className="bg-emerald-600 text-white text-xs">Live</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {isLoading ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="animate-pulse bg-slate-600 h-16 rounded-lg"></div>
+                        ))}
+                      </div>
+                    ) : positions.length > 0 ? (
+                      positions.map((position) => {
+                        const currentPrice = parseFloat(position.current_price);
+                        const marketValue = parseFloat(position.market_value);
+                        const costBasis = parseFloat(position.cost_basis);
+                        const unrealizedPL = parseFloat(position.unrealized_pl);
+                        const unrealizedPLPercent = parseFloat(position.unrealized_plpc) * 100;
+                        const shares = parseFloat(position.qty);
+
+                        return (
+                          <div key={position.symbol} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                            <div className="flex items-center gap-3">
                               <CompanyLogo 
-                                symbol={asset.symbol} 
-                                logoUrl={getLogoUrl(asset.symbol)} 
+                                symbol={position.symbol} 
+                                logoUrl={getLogoUrl(position.symbol)} 
                                 size="sm" 
                               />
-                            )}
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
-                                <span className="text-white text-sm font-medium">{asset.name}</span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-emerald-600 text-white text-xs">{position.symbol}</Badge>
+                                  <span className="text-white text-sm font-medium">${currentPrice.toFixed(2)}</span>
+                                </div>
+                                <p className="text-xs text-slate-400">
+                                  {shares} share{shares !== 1 ? 's' : ''}
+                                </p>
                               </div>
-                              <p className="text-xs text-slate-400">
-                                Invested: {formatCurrency(asset.investment)}
-                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-white font-bold text-sm">${marketValue.toFixed(2)}</div>
+                              <div className="flex items-center gap-1 text-xs mt-1">
+                                {unrealizedPL >= 0 ? (
+                                  <TrendingUp className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <TrendingDown className="w-3 h-3 text-red-400" />
+                                )}
+                                <span className={unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                                  ${unrealizedPL >= 0 ? '+' : ''}{unrealizedPL.toFixed(2)} ({unrealizedPLPercent >= 0 ? '+' : ''}{unrealizedPLPercent.toFixed(2)}%)
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
-                            <div className="flex items-center gap-2 text-xs mt-1">
-                              <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                                {formatPercent(asset.change)}
-                              </span>
-                              <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {formatPercent(asset.dayChange)}
-                              </span>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-slate-400">
+                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No positions found</p>
+                        <p className="text-xs mt-1">Start trading to see your positions here</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Crypto section */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white capitalize text-lg">Crypto</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {assetCategories.crypto.map((asset) => (
+                      <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{asset.logo}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                              <span className="text-white text-sm font-medium">{asset.name}</span>
                             </div>
+                            <p className="text-xs text-slate-400">
+                              Invested: {formatCurrency(asset.investment)}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Funds section at bottom */}
+                        <div className="text-right">
+                          <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                          <div className="flex items-center gap-2 text-xs mt-1">
+                            <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
+                              {formatPercent(asset.change)}
+                            </span>
+                            <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {formatPercent(asset.dayChange)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            {/* Funds section */}
             <Card className="bg-slate-800/50 border-slate-700 mt-4">
               <CardHeader className="pb-3">
                 <CardTitle className="text-white capitalize text-lg">Funds</CardTitle>
