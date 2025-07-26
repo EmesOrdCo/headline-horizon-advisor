@@ -109,46 +109,56 @@ const StockLineChart: React.FC = () => {
       };
 
       setChartData(prev => {
-        const updated = [...prev, newPoint].slice(-50); // Keep last 50 points
-        return updated;
+        // Check if this is a new data point to avoid duplicates
+        const lastPoint = prev[prev.length - 1];
+        const isDifferentPrice = !lastPoint || lastPoint.price !== newPoint.price || lastPoint.timestamp !== newPoint.timestamp;
+        
+        if (isDifferentPrice) {
+          const updated = [...prev, newPoint].slice(-50);
+          console.log('📊 Updated chart data, total points:', updated.length, 'Latest price:', newPoint.price);
+          return updated;
+        }
+        return prev;
       });
       
       // Clear fallback data when real data starts coming in
       if (fallbackData.length > 0) {
+        console.log('🔄 Clearing fallback data, switching to live data');
         setFallbackData([]);
       }
-      
-      console.log('📊 Added real WebSocket data point:', newPoint);
     }
-  }, [streamData, fallbackData.length]);
+  }, [streamData]);
 
-  // Generate live updates for fallback data
+  // Generate live updates for fallback data only when no real data is available
   useEffect(() => {
     if (fallbackData.length > 0 && chartData.length === 0) {
       const interval = setInterval(() => {
-        const lastPoint = fallbackData[fallbackData.length - 1];
-        const now = new Date();
-        const basePrice = 213.95;
-        const variation = (Math.random() - 0.5) * 2;
-        const newPrice = basePrice + variation;
-        
-        const newPoint: PricePoint = {
-          timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
-          time: now.toLocaleTimeString(),
-          price: Math.round(newPrice * 100) / 100,
-          open: lastPoint?.close || newPrice,
-          high: Math.round((newPrice + Math.random() * 0.5) * 100) / 100,
-          low: Math.round((newPrice - Math.random() * 0.5) * 100) / 100,
-          close: Math.round(newPrice * 100) / 100,
-          volume: Math.floor(Math.random() * 50000) + 30000
-        };
+        setFallbackData(prev => {
+          const lastPoint = prev[prev.length - 1];
+          const now = new Date();
+          const basePrice = lastPoint?.price || 213.95;
+          const variation = (Math.random() - 0.5) * 2;
+          const newPrice = basePrice + variation;
+          
+          const newPoint: PricePoint = {
+            timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
+            time: now.toLocaleTimeString(),
+            price: Math.round(newPrice * 100) / 100,
+            open: lastPoint?.close || newPrice,
+            high: Math.round((newPrice + Math.random() * 0.5) * 100) / 100,
+            low: Math.round((newPrice - Math.random() * 0.5) * 100) / 100,
+            close: Math.round(newPrice * 100) / 100,
+            volume: Math.floor(Math.random() * 50000) + 30000
+          };
 
-        setFallbackData(prev => [...prev, newPoint].slice(-50));
+          console.log('📈 Adding fallback data point:', newPoint.price);
+          return [...prev, newPoint].slice(-50);
+        });
       }, 3000);
 
       return () => clearInterval(interval);
     }
-  }, [fallbackData, chartData.length]);
+  }, [fallbackData.length, chartData.length]);
 
   const displayData = chartData.length > 0 ? chartData : fallbackData;
   const currentPrice = displayData[displayData.length - 1]?.price || 0;
