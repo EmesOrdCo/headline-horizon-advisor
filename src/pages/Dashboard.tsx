@@ -338,7 +338,7 @@ const Dashboard = () => {
                       />
                     </div>
                     {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3">
+                    <div className="lg:col-span-3 max-h-[600px] overflow-hidden">
                       <AINewsInsights symbol={topMagnificent7Story.symbol} />
                     </div>
                   </div>
@@ -383,7 +383,7 @@ const Dashboard = () => {
                     </div>
                     
                     {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3">
+                    <div className="lg:col-span-3 max-h-[600px] overflow-hidden">
                       <AINewsInsights symbol={topIndexFundStory.symbol} />
                     </div>
                   </div>
