@@ -30,10 +30,10 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
-    // Use Alpaca-specific headers for Transfer API
+    // Broker API uses HTTP Basic Auth (key:secret format)
+    const basicAuth = btoa(`${apiKey}:${secretKey}`);
     const headers = {
-      'APCA-API-KEY-ID': apiKey,
-      'APCA-API-SECRET-KEY': secretKey,
+      'Authorization': `Basic ${basicAuth}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
@@ -109,22 +109,6 @@ serve(async (req) => {
           method: 'POST',
           headers,
           body: JSON.stringify(data),
-        });
-        break;
-
-      case 'get_transfers':
-        url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/transfers`;
-        response = await fetch(url, {
-          method: 'GET',
-          headers,
-        });
-        break;
-
-      case 'get_transfer':
-        url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/transfers/${data.transfer_id}`;
-        response = await fetch(url, {
-          method: 'GET',
-          headers,
         });
         break;
 
@@ -269,8 +253,6 @@ serve(async (req) => {
       // Log request body for POST requests
       if (['create_account', 'create_ach_relationship', 'create_transfer', 'create_journal'].includes(action)) {
         console.log(`Request body:`, JSON.stringify(data, null, 2));
-      } else if (action === 'get_transfer' && data?.transfer_id) {
-        console.log(`Transfer ID: ${data.transfer_id}`);
       } else {
         console.log(`Request body: GET request (no body)`);
       }

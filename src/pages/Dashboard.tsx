@@ -332,7 +332,7 @@ const Dashboard = () => {
                         sentiment={topMagnificent7Story.ai_sentiment}
                         category={topMagnificent7Story.category}
                         isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        sourceLinks={topMagnificent7Story.source_links || "[]"}
+                        sourceLinks="[]"
                         stockPrice={getStockPrice(topMagnificent7Story.symbol)}
                       />
                     </div>
@@ -381,7 +381,7 @@ const Dashboard = () => {
                         sentiment={topIndexFundStory.ai_sentiment}
                         category={topIndexFundStory.category}
                         isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                        sourceLinks={topIndexFundStory.source_links || "[]"}
+                        sourceLinks="[]"
                         stockPrice={getStockPrice(topIndexFundStory.symbol)}
                       />
                     </div>
