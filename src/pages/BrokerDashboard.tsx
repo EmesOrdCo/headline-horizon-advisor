@@ -169,7 +169,7 @@ const BrokerDashboard = () => {
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
 
   const userStep = accounts.length === 0 ? 'create' : 
-                   !selectedAccount || !selectedAccountData?.last_equity || parseFloat(selectedAccountData.last_equity) === 0 ? 'fund' : 
+                   !selectedAccount || !selectedAccountData?.equity || parseFloat(selectedAccountData.equity) === 0 ? 'fund' : 
                    'trade';
 
   // Show loading state until initialized to prevent flicker
@@ -305,7 +305,7 @@ const BrokerDashboard = () => {
                           <div className="flex justify-between">
                             <span className="text-sm text-slate-400">Balance</span>
                             <span className="text-sm font-semibold text-white">
-                              ${account.last_equity ? parseFloat(account.last_equity).toFixed(2) : '0.00'}
+                              ${account.equity ? parseFloat(account.equity).toFixed(2) : '0.00'}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -363,8 +363,7 @@ const BrokerDashboard = () => {
                       <CardContent className="p-6 text-center">
                         <p className="text-sm font-medium text-emerald-300 mb-1">Equity</p>
                         <p className="text-3xl font-bold text-emerald-400">
-                          ${selectedAccountData?.equity ? parseFloat(selectedAccountData.equity).toFixed(2) : 
-                            selectedAccountData?.last_equity ? parseFloat(selectedAccountData.last_equity).toFixed(2) : '0.00'}
+                          ${selectedAccountData?.equity ? parseFloat(selectedAccountData.equity).toFixed(2) : '0.00'}
                         </p>
                       </CardContent>
                     </Card>

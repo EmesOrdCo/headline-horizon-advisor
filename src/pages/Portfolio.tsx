@@ -174,7 +174,7 @@ const Portfolio = () => {
           // Fallback to current account value
           setPerformanceData([{
             date: new Date().toISOString().slice(0, 10),
-            value: parseFloat(accountDetails.last_equity || '0'),
+            value: parseFloat(accountDetails.equity || '0'),
             sp500: 4200,
             nasdaq: 13000,
             btc: 42000
@@ -895,8 +895,7 @@ const Portfolio = () => {
                     <CardContent className="p-6 text-center">
                       <p className="text-sm font-medium text-emerald-300 mb-1">Equity</p>
                       <p className="text-3xl font-bold text-emerald-400">
-                        ${accountData.equity ? parseFloat(accountData.equity).toFixed(2) : 
-                          accountData.last_equity ? parseFloat(accountData.last_equity).toFixed(2) : '0.00'}
+                        ${accountData.equity ? parseFloat(accountData.equity).toFixed(2) : '0.00'}
                       </p>
                     </CardContent>
                   </Card>

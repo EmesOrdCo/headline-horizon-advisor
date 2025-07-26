@@ -7,13 +7,12 @@ export interface AlpacaAccount {
   status: string;
   currency: string;
   created_at: string;
-  last_equity?: string;
+  equity?: string;
   account_type?: string;
   trading_type?: string;
   
   // Detailed Trading Metrics
   cash?: string;
-  equity?: string;
   buying_power?: string;
   long_market_value?: string;
   short_market_value?: string;
