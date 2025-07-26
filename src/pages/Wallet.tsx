@@ -9,6 +9,9 @@ import DashboardNav from "@/components/DashboardNav";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 import { useAccountData } from "@/hooks/useAccountData";
+import ACHTransferModal from "@/components/ACHTransferModal";
+import TransferHistory from "@/components/TransferHistory";
+import BankAccountStatus from "@/components/BankAccountStatus";
 
 const Wallet = () => {
   useSEO({
@@ -18,7 +21,8 @@ const Wallet = () => {
   });
 
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
-  const { totalValue, availableCash, isLoading, refreshData } = useAccountData();
+  const [showACHTransfer, setShowACHTransfer] = useState(false);
+  const { totalValue, availableCash, isLoading, refreshData, selectedAccount } = useAccountData();
   
   const currentTime = new Date().toLocaleString("en-US", {
     hour: "2-digit",
@@ -99,13 +103,21 @@ const Wallet = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white">
+                  <Button 
+                    onClick={() => setShowACHTransfer(true)}
+                    disabled={!selectedAccount}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Funds to GBP
+                    Add Funds via ACH
                   </Button>
-                  <Button className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white">
+                  <Button 
+                    onClick={() => setShowACHTransfer(true)}
+                    disabled={!selectedAccount}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Funds to USD
+                    Simulate Deposit
                   </Button>
                 </div>
               </CardContent>
@@ -168,10 +180,23 @@ const Wallet = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Transfer History */}
+            {selectedAccount && (
+              <TransferHistory accountId={selectedAccount.id} />
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Bank Account Status */}
+            {selectedAccount && (
+              <BankAccountStatus 
+                accountId={selectedAccount.id}
+                onAddNewBank={() => setShowACHTransfer(true)}
+              />
+            )}
+            
             {/* Invite Friends Card */}
             <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
               <CardHeader>
@@ -202,6 +227,20 @@ const Wallet = () => {
       </div>
 
       <Footer />
+      
+      {/* ACH Transfer Modal */}
+      {selectedAccount && (
+        <ACHTransferModal
+          isOpen={showACHTransfer}
+          onClose={() => setShowACHTransfer(false)}
+          accountId={selectedAccount.id}
+          accountNumber={selectedAccount.account_number}
+          onTransferComplete={() => {
+            refreshData();
+            setShowACHTransfer(false);
+          }}
+        />
+      )}
     </div>
   );
 };
