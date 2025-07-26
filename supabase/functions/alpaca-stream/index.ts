@@ -125,8 +125,8 @@ serve(async (req) => {
     }
 
     // Check rate limiting
-    const now = Date.now();
-    const timeSinceLastConnection = now - lastConnectionTime;
+    const currentTime = Date.now();
+    const timeSinceLastConnection = currentTime - lastConnectionTime;
     if (timeSinceLastConnection < MIN_CONNECTION_INTERVAL) {
       const waitTime = MIN_CONNECTION_INTERVAL - timeSinceLastConnection;
       console.log(`⏰ Rate limiting: waiting ${waitTime}ms before connection`);
