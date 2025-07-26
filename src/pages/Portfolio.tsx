@@ -772,16 +772,6 @@ const Portfolio = () => {
       
       <div className="pt-16 px-6 pb-12">
         <div className="max-w-7xl mx-auto space-y-12">
-          {/* Demo Mode Banner */}
-          <div className="bg-amber-600/20 border border-amber-600/30 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-              <span className="text-amber-300 font-medium">Demo Mode</span>
-            </div>
-            <p className="text-amber-200 text-sm mt-1">
-              This portfolio uses dummy data for demonstration. Connect your brokerage account to see real positions.
-            </p>
-          </div>
 
           <AccountSummary />
           

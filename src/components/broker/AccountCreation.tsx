@@ -74,8 +74,27 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
       toast.success('Account created successfully!');
       onAccountCreated();
     } catch (error) {
-      toast.error('Failed to create account');
       console.error('Account creation error:', error);
+      
+      // Parse error message for specific error handling
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.toLowerCase().includes('already exists') || 
+          errorMessage.toLowerCase().includes('duplicate') ||
+          errorMessage.toLowerCase().includes('email already used')) {
+        toast.error('An account with this email already exists. Please use a different email address.');
+      } else if (errorMessage.toLowerCase().includes('invalid email')) {
+        toast.error('Please provide a valid email address.');
+      } else if (errorMessage.toLowerCase().includes('invalid phone')) {
+        toast.error('Please provide a valid phone number.');
+      } else if (errorMessage.toLowerCase().includes('invalid tax id') || 
+                 errorMessage.toLowerCase().includes('invalid ssn')) {
+        toast.error('Please provide a valid Tax ID/SSN.');
+      } else if (errorMessage.toLowerCase().includes('kyc')) {
+        toast.error('KYC verification failed. Please check your personal information.');
+      } else {
+        toast.error(`Account creation failed: ${errorMessage}`);
+      }
     }
   };
 
