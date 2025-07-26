@@ -130,7 +130,7 @@ const Auth = () => {
             given_name: firstName,
             family_name: lastName,
             date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : '',
-            tax_id: '661-010-666', // Test SSN for sandbox
+            tax_id: '661010666', // Test SSN for sandbox (without dashes)
             tax_id_type: 'USA_SSN',
             country_of_citizenship: 'USA',
             country_of_birth: 'USA',
