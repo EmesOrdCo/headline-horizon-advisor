@@ -59,10 +59,10 @@ export const useAccountData = () => {
   };
 
   const accountData: AccountData = {
-    totalValue: selectedAccount?.last_equity ? parseFloat(selectedAccount.last_equity) : 0,
+    totalValue: selectedAccount?.equity ? parseFloat(selectedAccount.equity) : 0,
     availableCash: selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0,
-    investedAmount: selectedAccount?.last_equity && selectedAccount?.buying_power 
-      ? parseFloat(selectedAccount.last_equity) - parseFloat(selectedAccount.buying_power)
+    investedAmount: selectedAccount?.equity && selectedAccount?.buying_power 
+      ? parseFloat(selectedAccount.equity) - parseFloat(selectedAccount.buying_power)
       : 0,
     isLoading: loading || !isInitialized,
     error: error,
