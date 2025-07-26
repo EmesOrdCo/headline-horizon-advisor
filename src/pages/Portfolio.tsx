@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from "@/hooks/useAlpacaBroker";
+import FundingSimulation from "@/components/broker/FundingSimulation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -339,23 +340,33 @@ const Portfolio = () => {
       currentPrice: parseFloat(position.current_price || '0')
     }));
 
-    // Create allocation data from real positions
-    const totalValue = livePositions.reduce((sum, asset) => sum + asset.currentValue, 0);
-    const pieData = livePositions.length > 0 ? livePositions.map((asset, index) => ({
-      name: asset.symbol,
-      value: asset.currentValue,
-      percentage: totalValue > 0 ? ((asset.currentValue / totalValue) * 100).toFixed(1) : '0.0',
-      color: `hsl(${(index * 45) % 360}, 70%, 60%)`
-    })) : [];
+    // Create allocation data from real positions, with demo fallback
+    let totalValue = livePositions.reduce((sum, asset) => sum + asset.currentValue, 0);
+    let pieData = [];
 
-    // Fallback to show cash if no positions
-    if (pieData.length === 0 && accountData?.cash) {
-      pieData.push({
-        name: 'Cash',
-        value: parseFloat(accountData.cash),
-        percentage: '100.0',
-        color: 'hsl(220, 70%, 60%)'
-      });
+    if (livePositions.length > 0 && totalValue > 0) {
+      // Use real positions
+      pieData = livePositions.map((asset, index) => ({
+        name: asset.symbol,
+        value: asset.currentValue,
+        percentage: ((asset.currentValue / totalValue) * 100).toFixed(1),
+        color: `hsl(${(index * 45) % 360}, 70%, 60%)`
+      }));
+    } else {
+      // Use demo portfolio allocation when no real positions
+      const demoPositions = [
+        { name: 'AAPL', value: 15000, color: 'hsl(210, 70%, 60%)' },
+        { name: 'MSFT', value: 12000, color: 'hsl(270, 70%, 60%)' },
+        { name: 'GOOGL', value: 8000, color: 'hsl(30, 70%, 60%)' },
+        { name: 'TSLA', value: 6000, color: 'hsl(120, 70%, 60%)' },
+        { name: 'NVDA', value: 4000, color: 'hsl(300, 70%, 60%)' },
+        { name: 'Cash', value: availableCash, color: 'hsl(180, 70%, 60%)' }
+      ];
+      totalValue = demoPositions.reduce((sum, asset) => sum + asset.value, 0);
+      pieData = demoPositions.map(asset => ({
+        ...asset,
+        percentage: totalValue > 0 ? ((asset.value / totalValue) * 100).toFixed(1) : '0.0'
+      }));
     }
 
     return (
@@ -403,21 +414,19 @@ const Portfolio = () => {
                                   <Badge className="bg-emerald-600 text-white text-xs">{position.symbol}</Badge>
                                   <span className="text-white text-sm font-medium">${currentPrice.toFixed(2)}</span>
                                 </div>
-                                <p className="text-xs text-slate-400">
-                                  {shares} share{shares !== 1 ? 's' : ''}
-                                </p>
+                                <p className="text-xs text-slate-400">{shares.toFixed(2)} shares</p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-white font-bold text-sm">${marketValue.toFixed(2)}</div>
-                              <div className="flex items-center gap-1 text-xs mt-1">
+                              <p className="text-white font-medium">${marketValue.toFixed(2)}</p>
+                              <div className="flex items-center gap-1">
                                 {unrealizedPL >= 0 ? (
-                                  <TrendingUp className="w-3 h-3 text-emerald-400" />
+                                  <ArrowUpRight className="w-3 h-3 text-emerald-400" />
                                 ) : (
-                                  <TrendingDown className="w-3 h-3 text-red-400" />
+                                  <ArrowDownRight className="w-3 h-3 text-red-400" />
                                 )}
-                                <span className={unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                                  ${unrealizedPL >= 0 ? '+' : ''}{unrealizedPL.toFixed(2)} ({unrealizedPLPercent >= 0 ? '+' : ''}{unrealizedPLPercent.toFixed(2)}%)
+                                <span className={`text-xs ${unrealizedPL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  ${Math.abs(unrealizedPL).toFixed(2)} ({unrealizedPLPercent.toFixed(2)}%)
                                 </span>
                               </div>
                             </div>
@@ -425,11 +434,45 @@ const Portfolio = () => {
                         );
                       })
                     ) : (
-                      <div className="text-center py-8 text-slate-400">
-                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p>No positions found</p>
-                        <p className="text-xs mt-1">Start trading to see your positions here</p>
-                      </div>
+                      // Demo positions when no real positions exist
+                      [
+                        { symbol: 'AAPL', shares: 75, price: 200.00, value: 15000, change: 2.5 },
+                        { symbol: 'MSFT', shares: 40, price: 300.00, value: 12000, change: 1.8 },
+                        { symbol: 'GOOGL', shares: 30, price: 266.67, value: 8000, change: -1.2 },
+                        { symbol: 'TSLA', shares: 25, price: 240.00, value: 6000, change: 3.1 },
+                        { symbol: 'NVDA', shares: 20, price: 200.00, value: 4000, change: -2.4 }
+                      ].map((stock) => (
+                        <div key={stock.symbol} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <CompanyLogo 
+                              symbol={stock.symbol} 
+                              logoUrl={getLogoUrl(stock.symbol)} 
+                              size="sm" 
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-emerald-600 text-white text-xs">{stock.symbol}</Badge>
+                                <span className="text-white text-sm font-medium">${stock.price.toFixed(2)}</span>
+                                <Badge className="bg-blue-600 text-white text-xs">Demo</Badge>
+                              </div>
+                              <p className="text-xs text-slate-400">{stock.shares} shares</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white font-medium">${stock.value.toLocaleString()}</p>
+                            <div className="flex items-center gap-1">
+                              {stock.change >= 0 ? (
+                                <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <ArrowDownRight className="w-3 h-3 text-red-400" />
+                              )}
+                              <span className={`text-xs ${stock.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
                 </CardContent>
@@ -674,91 +717,148 @@ const Portfolio = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : activities.length > 0 ? (
-                    activities.map((activity, index) => {
-                      // Map Alpaca activity data to display format similar to the screenshot
-                      const activityDate = new Date(activity.date || activity.created_at || activity.filled_at || '');
-                      const formattedDate = activityDate.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: '2-digit', 
-                        day: '2-digit' 
-                      });
-                      const formattedTime = activityDate.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true
-                      });
+                   ) : activities.length > 0 ? (
+                     activities.map((activity, index) => {
+                       // Map Alpaca activity data to display format similar to the screenshot
+                       const activityDate = new Date(activity.date || activity.created_at || activity.filled_at || '');
+                       const formattedDate = activityDate.toLocaleDateString('en-US', { 
+                         year: 'numeric', 
+                         month: '2-digit', 
+                         day: '2-digit' 
+                       });
+                       const formattedTime = activityDate.toLocaleTimeString([], { 
+                         hour: '2-digit', 
+                         minute: '2-digit',
+                         hour12: true
+                       });
 
-                      // Get account number (truncated)
-                      const accountNumber = selectedAccount ? 
-                        accounts.find(acc => acc.id === selectedAccount)?.account_number || 'N/A' : 'N/A';
+                       // Get account number (truncated)
+                       const accountNumber = selectedAccount ? 
+                         accounts.find(acc => acc.id === selectedAccount)?.account_number || 'N/A' : 'N/A';
 
-                      return (
-                        <tr key={activity.order_id || index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
-                          <td className="p-4">
-                            <span className="text-yellow-400 font-mono text-sm">
-                              {accountNumber}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-yellow-400 font-mono text-sm">
-                              {activity.order_id ? activity.order_id.substring(0, 8) + '...' : 'N/A'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <Badge 
-                              variant={activity.side === 'buy' ? 'default' : 'destructive'}
-                              className={activity.side === 'buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
-                            >
-                              {activity.side?.charAt(0).toUpperCase() + activity.side?.slice(1) || 'N/A'}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
-                            <Badge className="bg-slate-600 text-white">
-                              {activity.symbol || 'N/A'}
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-white font-mono">
-                            {activity.qty || activity.quantity || '0'}
-                          </td>
-                          <td className="p-4 text-white font-mono">
-                            {activity.price || activity.filled_avg_price ? 
-                              `$${parseFloat(activity.price || activity.filled_avg_price).toFixed(2)}` : 
-                              'N/A'
-                            }
-                          </td>
-                          <td className="p-4">
-                            <Badge 
-                              variant={activity.status === 'filled' ? 'default' : 'outline'}
-                              className={
-                                activity.status === 'filled' 
-                                  ? 'bg-green-600 text-white' 
-                                  : activity.status === 'accepted' 
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-300 border-slate-600'
-                              }
-                            >
-                              {activity.status === 'filled' ? '✓ Filled' : 
-                               activity.status === 'accepted' ? 'Accepted' : 
-                               activity.status || 'Completed'}
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-slate-300 font-mono text-sm">
-                            <div>{formattedDate}</div>
-                            <div className="text-xs text-slate-400">{formattedTime}</div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">
-                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p>No trade history found</p>
-                        <p className="text-xs mt-1">Your trading activities will appear here</p>
-                      </td>
-                    </tr>
-                  )}
+                       return (
+                         <tr key={activity.order_id || index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                           <td className="p-4">
+                             <span className="text-yellow-400 font-mono text-sm">
+                               {accountNumber}
+                             </span>
+                           </td>
+                           <td className="p-4">
+                             <span className="text-yellow-400 font-mono text-sm">
+                               {activity.order_id ? activity.order_id.substring(0, 8) + '...' : 'N/A'}
+                             </span>
+                           </td>
+                           <td className="p-4">
+                             <Badge 
+                               variant={activity.side === 'buy' ? 'default' : 'destructive'}
+                               className={activity.side === 'buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
+                             >
+                               {activity.side?.charAt(0).toUpperCase() + activity.side?.slice(1) || 'N/A'}
+                             </Badge>
+                           </td>
+                           <td className="p-4">
+                             <Badge className="bg-slate-600 text-white">
+                               {activity.symbol || 'N/A'}
+                             </Badge>
+                           </td>
+                           <td className="p-4 text-white font-mono">
+                             {activity.qty || activity.quantity || '0'}
+                           </td>
+                           <td className="p-4 text-white font-mono">
+                             {activity.price || activity.filled_avg_price ? 
+                               `$${parseFloat(activity.price || activity.filled_avg_price).toFixed(2)}` : 
+                               'N/A'
+                             }
+                           </td>
+                           <td className="p-4">
+                             <Badge 
+                               variant={activity.status === 'filled' ? 'default' : 'outline'}
+                               className={
+                                 activity.status === 'filled' 
+                                   ? 'bg-green-600 text-white' 
+                                   : activity.status === 'accepted' 
+                                     ? 'bg-blue-600 text-white'
+                                     : 'text-slate-300 border-slate-600'
+                               }
+                             >
+                               {activity.status === 'filled' ? '✓ Filled' : 
+                                activity.status === 'accepted' ? 'Accepted' : 
+                                activity.status || 'Completed'}
+                             </Badge>
+                           </td>
+                           <td className="p-4 text-slate-300 font-mono text-sm">
+                             <div>{formattedDate}</div>
+                             <div className="text-xs text-slate-400">{formattedTime}</div>
+                           </td>
+                         </tr>
+                       );
+                     })
+                   ) : (
+                     // Demo trade history when no real activities exist
+                     [
+                       { symbol: 'AAPL', side: 'buy', qty: 75, price: 195.50, status: 'filled', date: new Date(Date.now() - 86400000 * 2) },
+                       { symbol: 'MSFT', side: 'buy', qty: 40, price: 295.75, status: 'filled', date: new Date(Date.now() - 86400000 * 3) },
+                       { symbol: 'GOOGL', side: 'buy', qty: 30, price: 268.20, status: 'filled', date: new Date(Date.now() - 86400000 * 5) },
+                       { symbol: 'TSLA', side: 'sell', qty: 10, price: 245.80, status: 'filled', date: new Date(Date.now() - 86400000 * 7) },
+                       { symbol: 'NVDA', side: 'buy', qty: 20, price: 198.45, status: 'filled', date: new Date(Date.now() - 86400000 * 10) }
+                     ].map((trade, index) => {
+                       const formattedDate = trade.date.toLocaleDateString('en-US', { 
+                         year: 'numeric', 
+                         month: '2-digit', 
+                         day: '2-digit' 
+                       });
+                       const formattedTime = trade.date.toLocaleTimeString([], { 
+                         hour: '2-digit', 
+                         minute: '2-digit',
+                         hour12: true
+                       });
+
+                       return (
+                         <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
+                           <td className="p-4">
+                             <span className="text-yellow-400 font-mono text-sm">
+                               {accountData?.account_number || 'DEMO'}
+                             </span>
+                           </td>
+                           <td className="p-4">
+                             <div className="flex items-center gap-2">
+                               <span className="text-yellow-400 font-mono text-sm">
+                                 {Math.random().toString(36).substr(2, 8)}...
+                               </span>
+                               <Badge className="bg-blue-600 text-white text-xs">Demo</Badge>
+                             </div>
+                           </td>
+                           <td className="p-4">
+                             <Badge 
+                               className={trade.side === 'buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
+                             >
+                               {trade.side.charAt(0).toUpperCase() + trade.side.slice(1)}
+                             </Badge>
+                           </td>
+                           <td className="p-4">
+                             <Badge className="bg-slate-600 text-white">
+                               {trade.symbol}
+                             </Badge>
+                           </td>
+                           <td className="p-4 text-white font-mono">
+                             {trade.qty}
+                           </td>
+                           <td className="p-4 text-white font-mono">
+                             ${trade.price.toFixed(2)}
+                           </td>
+                           <td className="p-4">
+                             <Badge className="bg-green-600 text-white">
+                               ✓ Filled
+                             </Badge>
+                           </td>
+                           <td className="p-4 text-slate-300 font-mono text-sm">
+                             <div>{formattedDate}</div>
+                             <div className="text-xs text-slate-400">{formattedTime}</div>
+                           </td>
+                         </tr>
+                       );
+                     })
+                   )}
                 </tbody>
               </table>
             </div>
@@ -916,6 +1016,19 @@ const Portfolio = () => {
                     </Card>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Account Funding Section */}
+          {accountData && (
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-xl text-white">Account Funding</CardTitle>
+                <p className="text-slate-400">Simulate account funding and transfers (Sandbox Environment)</p>
+              </CardHeader>
+              <CardContent>
+                <FundingSimulation accountId={selectedAccount} onFundingComplete={refreshData} />
               </CardContent>
             </Card>
           )}
