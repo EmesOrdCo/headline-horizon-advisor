@@ -8,8 +8,11 @@ export interface AlpacaAccount {
   currency: string;
   created_at: string;
   last_equity?: string;
-  buying_power?: string;
+  
+  // Detailed Trading Metrics
   cash?: string;
+  equity?: string;
+  buying_power?: string;
   long_market_value?: string;
   short_market_value?: string;
   position_market_value?: string;
@@ -17,6 +20,7 @@ export interface AlpacaAccount {
   maintenance_margin?: string;
   regt_buying_power?: string;
   dtbp_buying_power?: string;
+  daytrading_buying_power?: string;
   effective_buying_power?: string;
   non_marginable_buying_power?: string;
   sma?: string;
@@ -27,6 +31,15 @@ export interface AlpacaAccount {
   pending_cash_transfers?: string;
   cash_withdrawable?: string;
   cash_transferable?: string;
+  
+  // Additional detailed fields from the API
+  trade_cash?: string;
+  net_liquidation_value?: string;
+  accrued_fees?: string;
+  pending_reg_t_call?: string;
+  pending_maintenance_call?: string;
+  pending_federal_call?: string;
+  pending_initial_call?: string;
 }
 
 export interface AlpacaAsset {

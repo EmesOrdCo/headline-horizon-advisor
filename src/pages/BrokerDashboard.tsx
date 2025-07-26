@@ -270,18 +270,20 @@ const BrokerDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Primary Account Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <Card className="bg-emerald-500/10 border-emerald-500/30">
                       <CardContent className="p-6 text-center">
-                        <p className="text-sm font-medium text-emerald-300 mb-1">Total Equity</p>
+                        <p className="text-sm font-medium text-emerald-300 mb-1">Equity</p>
                         <p className="text-3xl font-bold text-emerald-400">
-                          ${selectedAccountData?.last_equity ? parseFloat(selectedAccountData.last_equity).toFixed(2) : '0.00'}
+                          ${selectedAccountData?.equity ? parseFloat(selectedAccountData.equity).toFixed(2) : 
+                            selectedAccountData?.last_equity ? parseFloat(selectedAccountData.last_equity).toFixed(2) : '0.00'}
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="bg-blue-500/10 border-blue-500/30">
                       <CardContent className="p-6 text-center">
-                        <p className="text-sm font-medium text-blue-300 mb-1">Cash Balance</p>
+                        <p className="text-sm font-medium text-blue-300 mb-1">Cash</p>
                         <p className="text-3xl font-bold text-blue-400">
                           ${selectedAccountData?.cash ? parseFloat(selectedAccountData.cash).toFixed(2) : '0.00'}
                         </p>
@@ -289,15 +291,15 @@ const BrokerDashboard = () => {
                     </Card>
                     <Card className="bg-purple-500/10 border-purple-500/30">
                       <CardContent className="p-6 text-center">
-                        <p className="text-sm font-medium text-purple-300 mb-1">Buying Power</p>
+                        <p className="text-sm font-medium text-purple-300 mb-1">RegT Buying Power</p>
                         <p className="text-3xl font-bold text-purple-400">
-                          ${selectedAccountData?.buying_power ? parseFloat(selectedAccountData.buying_power).toFixed(2) : '0.00'}
+                          ${selectedAccountData?.regt_buying_power ? parseFloat(selectedAccountData.regt_buying_power).toFixed(2) : '0.00'}
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="bg-orange-500/10 border-orange-500/30">
                       <CardContent className="p-6 text-center">
-                        <p className="text-sm font-medium text-orange-300 mb-1">Market Value</p>
+                        <p className="text-sm font-medium text-orange-300 mb-1">Long Market Value</p>
                         <p className="text-3xl font-bold text-orange-400">
                           ${selectedAccountData?.long_market_value ? parseFloat(selectedAccountData.long_market_value).toFixed(2) : '0.00'}
                         </p>
@@ -305,54 +307,125 @@ const BrokerDashboard = () => {
                     </Card>
                   </div>
 
-                  {/* Additional Metrics Row */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Day Trade Count</p>
-                        <p className="text-lg font-semibold text-white">
-                          {selectedAccountData?.daytrade_count || '0'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Initial Margin</p>
-                        <p className="text-lg font-semibold text-white">
-                          ${selectedAccountData?.initial_margin ? parseFloat(selectedAccountData.initial_margin).toFixed(2) : '0.00'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Maintenance Margin</p>
-                        <p className="text-lg font-semibold text-white">
-                          ${selectedAccountData?.maintenance_margin ? parseFloat(selectedAccountData.maintenance_margin).toFixed(2) : '0.00'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Available Funds</p>
-                        <p className="text-lg font-semibold text-white">
-                          ${selectedAccountData?.regt_buying_power ? parseFloat(selectedAccountData.regt_buying_power).toFixed(2) : '0.00'}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Open Positions</p>
-                        <p className="text-lg font-semibold text-white">{positions.length}</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-slate-700/30 border-slate-600">
-                      <CardContent className="p-4 text-center">
-                        <p className="text-xs text-slate-400 mb-1">Multiplier</p>
-                        <p className="text-lg font-semibold text-white">
-                          {selectedAccountData?.multiplier || '1'}
-                        </p>
-                      </CardContent>
-                    </Card>
+                  {/* Trading Metrics */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Trading Metrics</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Day Trading Buying Power</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.daytrading_buying_power || selectedAccountData?.dtbp_buying_power ? 
+                              parseFloat(selectedAccountData.daytrading_buying_power || selectedAccountData.dtbp_buying_power!).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Short Market Value</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.short_market_value ? parseFloat(selectedAccountData.short_market_value).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Position Market Value</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${(() => {
+                              const longValue = selectedAccountData?.long_market_value ? parseFloat(selectedAccountData.long_market_value) : 0;
+                              const shortValue = selectedAccountData?.short_market_value ? parseFloat(selectedAccountData.short_market_value) : 0;
+                              return (longValue + shortValue).toFixed(2);
+                            })()}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Day Trade Count</p>
+                          <p className="text-lg font-semibold text-white">
+                            {selectedAccountData?.daytrade_count || '0'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Margin & Risk Metrics */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Margin & Risk Metrics</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Initial Margin</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.initial_margin ? parseFloat(selectedAccountData.initial_margin).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Maintenance Margin</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.maintenance_margin ? parseFloat(selectedAccountData.maintenance_margin).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Multiplier</p>
+                          <p className="text-lg font-semibold text-white">
+                            {selectedAccountData?.multiplier || '1'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">SMA</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.sma ? parseFloat(selectedAccountData.sma).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Account Details */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Account Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Account ID</p>
+                          <p className="text-sm font-semibold text-white break-all">
+                            {selectedAccountData?.id || 'N/A'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Trade Cash</p>
+                          <p className="text-lg font-semibold text-white">
+                            ${selectedAccountData?.trade_cash || selectedAccountData?.cash ? 
+                              parseFloat(selectedAccountData.trade_cash || selectedAccountData.cash!).toFixed(2) : '0.00'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Open Positions</p>
+                          <p className="text-lg font-semibold text-white">{positions.length}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <p className="text-xs text-slate-400 mb-1">Balance As Of</p>
+                          <p className="text-sm font-semibold text-white">
+                            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
