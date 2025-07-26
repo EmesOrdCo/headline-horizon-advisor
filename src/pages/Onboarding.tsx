@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import OnboardingEmail from "./onboarding/OnboardingEmail";
 import OnboardingDetails from "./onboarding/OnboardingDetails";
+import OnboardingAlpaca from "./onboarding/OnboardingAlpaca";
 import OnboardingWelcome from "./onboarding/OnboardingWelcome";
 import OnboardingStocks from "./onboarding/OnboardingStocks";
 import OnboardingLoading from "./onboarding/OnboardingLoading";
@@ -22,6 +23,7 @@ const Onboarding = () => {
     <Routes>
       <Route path="/email" element={<OnboardingEmail />} />
       <Route path="/details" element={<OnboardingDetails />} />
+      <Route path="/alpaca" element={<OnboardingAlpaca />} />
       <Route path="/welcome" element={<OnboardingWelcome />} />
       <Route path="/stocks" element={<OnboardingStocks />} />
       <Route path="/loading" element={<OnboardingLoading />} />

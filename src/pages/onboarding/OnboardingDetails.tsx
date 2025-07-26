@@ -137,7 +137,7 @@ const OnboardingDetails = () => {
           variant: "destructive",
         });
       } else {
-        navigate('/onboarding/welcome');
+        navigate('/onboarding/alpaca');
       }
     } catch (error) {
       toast({
