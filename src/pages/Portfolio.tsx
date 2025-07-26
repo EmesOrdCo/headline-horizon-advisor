@@ -799,18 +799,12 @@ const Portfolio = () => {
           {/* Account Overview - Same as Trading Dashboard */}
           {accountData && (
             <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl text-white">Account Overview</CardTitle>
-                    <p className="text-slate-400">Account: {accountData.account_number}</p>
-                  </div>
-                  <Button onClick={refreshData} disabled={isLoading} variant="outline" size="sm" className="hover-scale bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600">
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    {isLoading ? 'Loading...' : 'Refresh'}
-                  </Button>
-                </div>
-              </CardHeader>
+               <CardHeader>
+                 <div>
+                   <CardTitle className="text-xl text-white">Account Overview</CardTitle>
+                   <p className="text-slate-400">Account: {accountData.account_number}</p>
+                 </div>
+               </CardHeader>
               <CardContent>
                 {/* Primary Account Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
