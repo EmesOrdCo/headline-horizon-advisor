@@ -7,6 +7,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ComposedChart,
+  Bar,
 } from 'recharts';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
 import { useStockDataHistory } from '@/hooks/useStockDataHistory';
@@ -61,6 +63,41 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const CandlestickBar = (props: any) => {
+  const { payload, x, y, width, height } = props;
+  if (!payload) return null;
+  
+  const { open, close, high, low } = payload;
+  const isGreen = close >= open;
+  const color = isGreen ? '#10B981' : '#EF4444';
+  
+  const bodyHeight = Math.abs(close - open) * (height / (payload.high - payload.low));
+  const bodyY = y + (Math.max(high - Math.max(open, close)) * (height / (high - low)));
+  
+  return (
+    <g>
+      {/* Wick */}
+      <line
+        x1={x + width / 2}
+        y1={y}
+        x2={x + width / 2}
+        y2={y + height}
+        stroke={color}
+        strokeWidth={1}
+      />
+      {/* Body */}
+      <rect
+        x={x + width * 0.2}
+        y={bodyY}
+        width={width * 0.6}
+        height={Math.max(bodyHeight, 1)}
+        fill={color}
+        stroke={color}
+      />
+    </g>
+  );
+};
+
 const StockLineChart: React.FC<StockLineChartProps> = ({ 
   currentPrice: parentPrice = 214.73, 
   symbol = 'AAPL' 
@@ -83,6 +120,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const [displayData, setDisplayData] = useState<PricePoint[]>([]);
   const [viewportStart, setViewportStart] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const [chartType, setChartType] = useState<'line' | 'candles'>('line');
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -126,40 +164,42 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     });
   }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
-  // Add new data points from WebSocket or simulate them
+  // Add new data points from WebSocket or simulate them - INSTANT UPDATES
   useEffect(() => {
     const interval = setInterval(() => {
       const streamPrice = streamData[symbol];
       const now = Date.now();
       
-      // Rate limit to prevent too frequent updates
-      if (now - lastDataPointRef.current < 2500) return;
+      // Much faster updates for real-time feel - every 1 second
+      if (now - lastDataPointRef.current < 1000) return;
       lastDataPointRef.current = now;
       
       if (streamPrice?.price) {
         // Use real WebSocket data
         addDataPoint(streamPrice.price, {
-          open: streamPrice.open,
-          high: streamPrice.high,
-          low: streamPrice.low,
-          close: streamPrice.close,
-          volume: streamPrice.volume,
+          open: streamPrice.open || streamPrice.price,
+          high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
+          low: streamPrice.low || streamPrice.price - Math.random() * 0.05,
+          close: streamPrice.close || streamPrice.price,
+          volume: streamPrice.volume || Math.floor(Math.random() * 10000),
         });
-        console.log(`📡 Added real WebSocket data: $${streamPrice.price}`);
+        console.log(`📡 INSTANT: Real WebSocket data: $${streamPrice.price}`);
       } else {
         // Generate realistic price movement based on current price
-        const variation = (Math.random() - 0.5) * 0.15;
+        const variation = (Math.random() - 0.5) * 0.25;
         const newPrice = parentPrice + variation;
+        const openPrice = parentPrice + (Math.random() - 0.5) * 0.1;
         
         addDataPoint(newPrice, {
-          open: parentPrice + (Math.random() - 0.5) * 0.08,
-          high: newPrice + Math.random() * 0.08,
-          low: newPrice - Math.random() * 0.08,
+          open: openPrice,
+          high: Math.max(newPrice, openPrice) + Math.random() * 0.1,
+          low: Math.min(newPrice, openPrice) - Math.random() * 0.1,
           close: newPrice,
+          volume: Math.floor(Math.random() * 50000 + 10000),
         });
-        console.log(`🎲 Added simulated data: $${newPrice.toFixed(2)}`);
+        console.log(`🎲 INSTANT: Simulated data: $${newPrice.toFixed(2)}`);
       }
-    }, 4000); // Reduced frequency to every 4 seconds for smoother experience
+    }, 1000); // INSTANT updates every 1 second
 
     return () => clearInterval(interval);
   }, [streamData, symbol, parentPrice, addDataPoint]);
@@ -223,8 +263,31 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
           </div>
         </div>
         
-        {/* Scroll Controls */}
-        <div className="flex items-center gap-2 mt-2">
+        {/* Chart Type and Scroll Controls */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setChartType('line')}
+              className={`px-2 py-1 text-xs rounded ${
+                chartType === 'line' 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              Line
+            </button>
+            <button
+              onClick={() => setChartType('candles')}
+              className={`px-2 py-1 text-xs rounded ${
+                chartType === 'candles' 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              Candles
+            </button>
+          </div>
+          <div className="border-l border-gray-600 h-4"></div>
           <button
             onClick={scrollLeft}
             disabled={!canScrollLeft}
@@ -257,40 +320,73 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       
       <div ref={chartContainerRef} className="h-[300px] p-2 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart 
-            data={viewportData} 
-            margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#9CA3AF" 
-              fontSize={10}
-              tick={{ fill: '#9CA3AF' }}
-              interval={Math.max(0, Math.floor(viewportData.length / 6))}
-              angle={-45}
-              textAnchor="end"
-              height={50}
-            />
-            <YAxis 
-              stroke="#9CA3AF" 
-              fontSize={10}
-              tick={{ fill: '#9CA3AF' }}
-              domain={['dataMin - 0.1', 'dataMax + 0.1']}
-              tickFormatter={(value) => `$${value.toFixed(2)}`}
-              width={50}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone" 
-              dataKey="price" 
-              stroke="#10B981" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
-              connectNulls={false}
-            />
-          </LineChart>
+          {chartType === 'line' ? (
+            <LineChart 
+              data={viewportData} 
+              margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="time" 
+                stroke="#9CA3AF" 
+                fontSize={10}
+                tick={{ fill: '#9CA3AF' }}
+                interval={Math.max(0, Math.floor(viewportData.length / 6))}
+                angle={-45}
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis 
+                stroke="#9CA3AF" 
+                fontSize={10}
+                tick={{ fill: '#9CA3AF' }}
+                domain={['dataMin - 0.1', 'dataMax + 0.1']}
+                tickFormatter={(value) => `$${value.toFixed(2)}`}
+                width={50}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line 
+                type="monotone" 
+                dataKey="price" 
+                stroke="#10B981" 
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
+                connectNulls={false}
+              />
+            </LineChart>
+          ) : (
+            <ComposedChart 
+              data={viewportData} 
+              margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="time" 
+                stroke="#9CA3AF" 
+                fontSize={10}
+                tick={{ fill: '#9CA3AF' }}
+                interval={Math.max(0, Math.floor(viewportData.length / 6))}
+                angle={-45}
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis 
+                stroke="#9CA3AF" 
+                fontSize={10}
+                tick={{ fill: '#9CA3AF' }}
+                domain={['dataMin - 0.2', 'dataMax + 0.2']}
+                tickFormatter={(value) => `$${value.toFixed(2)}`}
+                width={50}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar 
+                dataKey="high" 
+                shape={<CandlestickBar />}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          )}
         </ResponsiveContainer>
       </div>
     </div>
