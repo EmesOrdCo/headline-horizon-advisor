@@ -76,25 +76,22 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
     }
 
     try {
-      // Note: Journal transfers in Alpaca sandbox may be limited
-      // For simulation purposes, we'll use a more realistic approach
+      // Use proper Journal API format for demo cash funding
       const journalData = {
-        from_account: accountId, // Use same account for demo
+        from_account: "FIRM_ACCOUNT", // Firm account for demo funding
         to_account: accountId,
-        entry_type: 'JNLC',
-        amount: amount,
-        description: `Funding simulation for account ${accountData?.account_number}`,
+        entry_type: "JNLC",
+        amount: amount
       };
 
       await createJournal(journalData);
-      toast.success(`Journal transfer of $${amount} completed successfully!`);
+      toast.success(`Demo cash funding of $${amount} completed successfully!`);
       onFundingComplete();
     } catch (error) {
       console.error('Journal funding error:', error);
-      // Fallback to ACH simulation if journal fails
-      toast.error('Journal transfer not available in sandbox. Trying ACH simulation...');
+      toast.error('Journal transfer failed in sandbox. Using mock funding instead...');
       setTimeout(() => {
-        handleACHFunding();
+        handleMockFunding();
       }, 1000);
     }
   };
