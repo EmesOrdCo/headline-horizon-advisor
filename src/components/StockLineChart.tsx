@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -78,20 +78,26 @@ const CandlestickBar = (props: any) => {
   
   // Determine if bullish (green) or bearish (red)
   const isBullish = actualClose >= actualOpen;
-  const color = isBullish ? '#10B981' : '#EF4444'; // Green for bullish, red for bearish
+  
+  // Modern TradingView/eToro inspired colors with gradients
+  const bullishColor = '#16a34a'; // Rich green
+  const bearishColor = '#dc2626'; // Rich red
+  const color = isBullish ? bullishColor : bearishColor;
   
   // Calculate the scale factor for price to pixels
   const priceRange = actualHigh - actualLow;
-  if (priceRange === 0) return null; // Avoid division by zero
+  if (priceRange === 0) return null;
   
   const pixelsPerPrice = height / priceRange;
   
-  // Calculate positions
+  // Calculate positions - ALWAYS represent exactly 1 minute
   const centerX = x + width / 2;
-  const bodyWidth = Math.max(2, width * 0.7); // 70% of available width, minimum 2px
+  
+  // Enhanced candle sizing for better visibility and TradingView aesthetic
+  const bodyWidth = Math.max(3, Math.min(width * 0.8, 12)); // Wider candles, max 12px
   const bodyLeft = centerX - bodyWidth / 2;
   
-  // Calculate Y positions (remember Y increases downward)
+  // Calculate Y positions (Y increases downward in SVG)
   const highY = y;
   const lowY = y + height;
   
@@ -101,41 +107,85 @@ const CandlestickBar = (props: any) => {
   // Body coordinates
   const bodyTop = Math.min(openY, closeY);
   const bodyBottom = Math.max(openY, closeY);
-  const bodyHeight = Math.max(1, bodyBottom - bodyTop); // Minimum 1px height
+  const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+  
+  // Define gradients for modern appearance
+  const gradientId = `gradient-${isBullish ? 'bull' : 'bear'}-${x}`;
+  const shadowId = `shadow-${isBullish ? 'bull' : 'bear'}-${x}`;
   
   return (
     <g>
-      {/* High-Low Wick (thin vertical line) */}
+      <defs>
+        {/* Modern gradient for candle bodies */}
+        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={color} stopOpacity={isBullish ? 0.9 : 1} />
+          <stop offset="50%" stopColor={color} stopOpacity={isBullish ? 0.95 : 1} />
+          <stop offset="100%" stopColor={color} stopOpacity={isBullish ? 0.85 : 0.95} />
+        </linearGradient>
+        
+        {/* Subtle glow effect */}
+        <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" />
+          <feOffset dx="0" dy="0.5" result="offset" />
+          <feFlood floodColor={color} floodOpacity="0.3" />
+          <feComposite in2="offset" operator="in" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      
+      {/* High-Low Wick - Thinner and high contrast */}
       <line
         x1={centerX}
         y1={highY}
         x2={centerX}
         y2={lowY}
         stroke={color}
-        strokeWidth={1}
-        opacity={0.8}
+        strokeWidth={1.5}
+        opacity={0.9}
+        strokeLinecap="round"
       />
       
-      {/* Open-Close Body (rectangle) */}
+      {/* Main candle body with modern styling */}
       <rect
         x={bodyLeft}
         y={bodyTop}
         width={bodyWidth}
         height={bodyHeight}
-        fill={isBullish ? color : color}
+        fill={isBullish ? 'none' : `url(#${gradientId})`}
         stroke={color}
-        strokeWidth={1}
-        opacity={isBullish ? 0.8 : 1}
+        strokeWidth={1.5}
+        rx={1} // Rounded corners for modern look
+        ry={1}
+        filter={`url(#${shadowId})`}
+        opacity={1}
       />
       
-      {/* For hollow/filled appearance */}
+      {/* Bullish candles - filled with gradient for depth */}
       {isBullish && (
+        <rect
+          x={bodyLeft + 0.5}
+          y={bodyTop + 0.5}
+          width={Math.max(0, bodyWidth - 1)}
+          height={Math.max(0, bodyHeight - 1)}
+          fill={`url(#${gradientId})`}
+          rx={0.5}
+          ry={0.5}
+          opacity={0.7}
+        />
+      )}
+      
+      {/* Inner highlight for 3D effect */}
+      {bodyHeight > 3 && (
         <rect
           x={bodyLeft + 1}
           y={bodyTop + 1}
           width={Math.max(0, bodyWidth - 2)}
-          height={Math.max(0, bodyHeight - 2)}
-          fill="rgba(255, 255, 255, 0.3)"
+          height={1}
+          fill="rgba(255, 255, 255, 0.2)"
+          rx={0.5}
         />
       )}
     </g>
@@ -171,17 +221,21 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   
-  // Zoom functionality state with timeframe-aware navigation
+  // Zoom functionality state with 1-minute granularity constraint
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isHovering, setIsHovering] = useState(false);
   
-  // Timeframe-aware zoom configuration
+  // State for Y-axis scale locking (locked to 1-day view range)
+  const [yAxisRange, setYAxisRange] = useState<{min: number, max: number} | null>(null);
+  const [lockedRange, setLockedRange] = useState<{min: number, max: number} | null>(null);
+  
+  // Timeframe-aware zoom configuration with 1-minute candle constraint
   const getTimeframeZoomConfig = () => {
     const timeframeIndex = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'].indexOf(timeframe);
     return {
-      MIN_ZOOM: 0.2,
-      MAX_ZOOM: 8,
-      ZOOM_SENSITIVITY: 0.12,
+      MIN_ZOOM: 0.1,   // Allow zooming out to see more 1-minute candles
+      MAX_ZOOM: 10,    // Allow zooming in to see fewer 1-minute candles
+      ZOOM_SENSITIVITY: 0.15,
       BASE_VIEWPORT_SIZE: getBaseViewportForTimeframe(timeframe),
       CAN_ZOOM_DOWN: timeframeIndex > 0,
       CAN_ZOOM_UP: timeframeIndex < 8,
@@ -191,38 +245,41 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   
-  // Dynamic timeframe configuration - TARGET_CANDLES = 60 rule
-  const TARGET_CANDLES = 60;
   
-  // Get base viewport size based on timeframe specifications (always ~60 candles)
+  // CRITICAL: Each candlestick ALWAYS represents exactly 1 minute of data
+  // This ensures data integrity regardless of zoom level or timeframe
+  const MINUTES_PER_CANDLE = 1;
+  const TARGET_CANDLES = 60; // Always aim for ~60 visible candles for optimal viewing
+  
+  // Get base viewport size - always targeting exactly 60 1-minute candles
   const getBaseViewportForTimeframe = (tf: string) => {
-    // Always target 60 candles for consistent viewing experience
+    // Every candle is 1 minute, so 60 candles = 60 minutes of data
     return TARGET_CANDLES;
   };
   
-  // Get time window in minutes for each timeframe
+  // Get time window in minutes - how many 1-minute periods we need for the timeframe
   const getTimeWindowMinutes = (tf: string) => {
     switch (tf) {
-      case '1m': return 60;      // 60 * 1m = 1 hour
-      case '5m': return 180;     // 36 * 5m = 3 hours
-      case '15m': return 360;    // 24 * 15m = 6 hours
-      case '30m': return 720;    // 24 * 30m = 12 hours
-      case '1H': return 2880;    // 48 * 1H = 2 days (48 hours)
-      case '4H': return 7200;    // 30 * 4H = 5 days (120 hours)
-      case '1D': return 43200;   // 30 * 1D = 30 days (720 hours)
-      case '1W': return 129600;  // 12 * 1W = 12 weeks (84 days)
-      case '1M': return 525600;  // 12 * 1M = 12 months (365 days)
+      case '1m': return 60;      // 60 * 1-minute candles = 1 hour
+      case '5m': return 180;     // 180 * 1-minute candles = 3 hours  
+      case '15m': return 360;    // 360 * 1-minute candles = 6 hours
+      case '30m': return 720;    // 720 * 1-minute candles = 12 hours
+      case '1H': return 2880;    // 2880 * 1-minute candles = 48 hours
+      case '4H': return 7200;    // 7200 * 1-minute candles = 120 hours (5 days)
+      case '1D': return 43200;   // 43200 * 1-minute candles = 720 hours (30 days)
+      case '1W': return 129600;  // 129600 * 1-minute candles = 2160 hours (12 weeks)
+      case '1M': return 525600;  // 525600 * 1-minute candles = 8760 hours (12 months)
       default: return 1440; // 1 day default
     }
   };
 
-  // Calculate dynamic viewport size based on zoom level (max ~70 candles)
+  // Calculate viewport size based on zoom - each candle is ALWAYS 1 minute
   const getViewportSize = () => {
     const config = getTimeframeZoomConfig();
     const baseSize = config.BASE_VIEWPORT_SIZE;
     const zoomedSize = Math.floor(baseSize / zoomLevel);
-    // Never display more than 70 candles unless heavily zoomed in
-    return Math.max(5, Math.min(70, zoomedSize));
+    // Maintain minimum visibility while ensuring each candle = 1 minute
+    return Math.max(10, Math.min(120, zoomedSize));
   };
 
   // Sync chart type with prop
@@ -230,67 +287,21 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     setActiveChartType(chartType);
   }, [chartType]);
 
-  // Enhanced zoom indicator with timeframe-specific ranges
+  // Zoom indicator showing actual time range with 1-minute precision
   const getZoomIndicator = () => {
     const timeRange = getViewportSize();
-    const config = getTimeframeZoomConfig();
     
-    // Calculate actual time range being viewed
-    switch (timeframe) {
-      case '1m':
-        const minutes = timeRange;
-        if (minutes <= 5) return "Viewing: 5m range";
-        if (minutes <= 15) return "Viewing: 15m range";
-        if (minutes <= 30) return "Viewing: 30m range";
-        if (minutes <= 60) return "Viewing: 1h range";
-        return `Viewing: ${Math.round(minutes/60)}h range`;
-      case '5m':
-        const mins5 = timeRange * 5;
-        if (mins5 <= 30) return "Viewing: 30m range";
-        if (mins5 <= 60) return "Viewing: 1h range";
-        if (mins5 <= 180) return "Viewing: 3h range";
-        return `Viewing: ${Math.round(mins5/60)}h range`;
-      case '15m':
-        const mins15 = timeRange * 15;
-        if (mins15 <= 60) return "Viewing: 1h range";
-        if (mins15 <= 180) return "Viewing: 3h range";
-        if (mins15 <= 360) return "Viewing: 6h range";
-        return `Viewing: ${Math.round(mins15/60)}h range`;
-      case '30m':
-        const mins30 = timeRange * 30;
-        if (mins30 <= 180) return "Viewing: 3h range";
-        if (mins30 <= 360) return "Viewing: 6h range";
-        if (mins30 <= 720) return "Viewing: 12h range";
-        return `Viewing: ${Math.round(mins30/60)}h range`;
-      case '1H':
-        const hours = timeRange;
-        if (hours <= 6) return "Viewing: 6h range";
-        if (hours <= 24) return "Viewing: 1d range";
-        if (hours <= 48) return "Viewing: 2d range";
-        return `Viewing: ${Math.round(hours/24)}d range`;
-      case '4H':
-        const hours4 = timeRange * 4;
-        if (hours4 <= 24) return "Viewing: 1d range";
-        if (hours4 <= 120) return "Viewing: 5d range";
-        return `Viewing: ${Math.round(hours4/24)}d range`;
-      case '1D':
-        const days = timeRange;
-        if (days <= 7) return "Viewing: 1w range";
-        if (days <= 30) return "Viewing: 1m range";
-        return `Viewing: ${Math.round(days/30)}m range`;
-      case '1W':
-        const weeks = timeRange;
-        if (weeks <= 4) return "Viewing: 1m range";
-        if (weeks <= 12) return "Viewing: 3m range";
-        return `Viewing: ${Math.round(weeks/4)}m range`;
-      case '1M':
-        const months = timeRange;
-        if (months <= 6) return "Viewing: 6m range";
-        if (months <= 12) return "Viewing: 1y range";
-        return `Viewing: ${months}m range`;
-      default:
-        return `Viewing: ${timeRange} ${timeframe} periods`;
-    }
+    // Since each candle is exactly 1 minute, calculate actual time spans
+    const totalMinutes = timeRange * MINUTES_PER_CANDLE;
+    
+    if (totalMinutes <= 5) return "5 minutes (1-min candles)";
+    if (totalMinutes <= 15) return "15 minutes (1-min candles)";
+    if (totalMinutes <= 30) return "30 minutes (1-min candles)";
+    if (totalMinutes <= 60) return "1 hour (1-min candles)";
+    if (totalMinutes <= 180) return "3 hours (1-min candles)";
+    if (totalMinutes <= 360) return "6 hours (1-min candles)";
+    if (totalMinutes <= 1440) return `${Math.round(totalMinutes/60)} hours (1-min candles)`;
+    return `${Math.round(totalMinutes/1440)} days (1-min candles)`;
   };
 
   // Enhanced wheel handler with timeframe switching capability
@@ -364,7 +375,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     }));
   };
 
-  // Load and update display data smoothly
+  // Load and update display data smoothly - ALWAYS 1-minute resolution
   useEffect(() => {
     let chartData: PricePoint[] = [];
     
@@ -373,46 +384,14 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       chartData = historicalData.data.map((point: any) => {
         const date = new Date(point.timestamp || point.date);
         
-        // Dynamic time labeling based on timeframe specifications
+        // CRITICAL: Every data point represents exactly 1 minute
+        // Time labeling adapts to zoom level but data granularity stays at 1 minute
         let timeLabel = '';
         let timestampLabel = '';
         
-        switch (timeframe) {
-          case '1m':
-          case '5m': 
-            // HH:mm format for <= 5 minutes
-            timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timestampLabel = date.toLocaleDateString() + ' ' + timeLabel;
-            break;
-          case '15m':
-          case '30m':
-            // HH:mm format for <= 30 minutes
-            timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timestampLabel = date.toLocaleDateString() + ' ' + timeLabel;
-            break;
-          case '1H':
-            // D MMM, HH:mm format for <= 1 hour
-            const dayMonth = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-            const hourMin = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            timeLabel = `${dayMonth}, ${hourMin}`;
-            timestampLabel = date.toLocaleDateString() + ' ' + hourMin;
-            break;
-          case '4H':
-          case '1D':
-            // D MMM format for <= 4 hours or 1 day
-            timeLabel = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            break;
-          case '1W':
-          case '1M':
-            // MMM YYYY format for weekly/monthly
-            timeLabel = date.toLocaleDateString([], { month: 'short', year: 'numeric' });
-            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            break;
-          default:
-            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        }
+        // For 1-minute data, always show precise time
+        timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        timestampLabel = date.toLocaleDateString() + ' ' + timeLabel;
         
         return {
           timestamp: timestampLabel,
@@ -429,9 +408,23 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       // Sort by timestamp for proper chronological order
       chartData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       
-      console.log(`📊 Using historical API data: ${chartData.length} points for ${timeframe}`);
+      // Lock Y-axis to 1-day range on first load
+      if (timeframe === '1D' && chartData.length > 0 && !lockedRange) {
+        const prices = chartData.map(d => d.close);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const padding = (maxPrice - minPrice) * 0.05; // 5% padding
+        const range = {
+          min: minPrice - padding,
+          max: maxPrice + padding
+        };
+        setLockedRange(range);
+        setYAxisRange(range);
+      }
+      
+      console.log(`📊 Using 1-minute resolution data: ${chartData.length} points for ${timeframe}`);
     } else {
-      // Fallback to local generated data
+      // Fallback to local generated data - also 1-minute resolution
       const tenMinuteData = getDataForMinutes(10);
       chartData = convertToChartData(tenMinuteData);
     }
@@ -439,7 +432,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     setDisplayData(prevData => {
       // Always update when we have new historical data or significant local data changes
       if (historicalData?.data || Math.abs(chartData.length - prevData.length) > 0) {
-        console.log(`📊 Updated display data: ${chartData.length} points`);
+        console.log(`📊 Updated 1-minute display data: ${chartData.length} points`);
         
         // Auto-scroll to latest data if auto-scrolling is enabled
         const currentViewportSize = getViewportSize();
@@ -453,7 +446,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       }
       return prevData;
     });
-  }, [dataCount, getDataForMinutes, isAutoScrolling, zoomLevel, historicalData, timeframe]);
+  }, [dataCount, getDataForMinutes, isAutoScrolling, zoomLevel, historicalData, timeframe, lockedRange]);
 
   // Add new data points from WebSocket and real price data
   useEffect(() => {
@@ -481,136 +474,173 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     }
   }, [streamData, symbol, addDataPoint, parentPrice]);
 
-  // Get viewport data for smooth scrolling with dynamic viewport size
-  const currentViewportSize = getViewportSize();
-  const viewportData = displayData.slice(viewportStart, viewportStart + currentViewportSize);
+  // Calculate the viewport data - always 1-minute candles with proper spacing
+  const viewportData = useMemo(() => {
+    const currentViewportSize = getViewportSize();
+    const endIndex = Math.min(viewportStart + currentViewportSize, displayData.length);
+    const startIndex = Math.max(0, endIndex - currentViewportSize);
+    
+    const data = displayData.slice(startIndex, endIndex);
+    
+    // Ensure proper spacing between candles regardless of zoom level
+    const spacedData = data.map((item, index) => ({
+      ...item,
+      // Add index to ensure proper x-axis spacing
+      index: startIndex + index,
+      // Each candle represents exactly 1 minute
+      minuteMarker: `1min-${startIndex + index}`
+    }));
+    
+    console.log(`📊 Viewport: ${spacedData.length} 1-minute candles (${startIndex}-${endIndex})`);
+    return spacedData;
+  }, [displayData, viewportStart, getViewportSize]);
+
+  // Enhanced performance and smooth rendering
+  const chartHeight = chartContainerRef.current?.clientHeight || 400;
   
-  const currentPrice = parentPrice;
-
-  // Scroll controls (updated for dynamic viewport)
-  const canScrollLeft = viewportStart > 0;
-  const canScrollRight = viewportStart + currentViewportSize < displayData.length;
-
-  const scrollLeft = () => {
-    setIsAutoScrolling(false);
-    setViewportStart(Math.max(0, viewportStart - 5));
-  };
-
-  const scrollRight = () => {
-    setViewportStart(Math.min(displayData.length - currentViewportSize, viewportStart + 5));
-    // Re-enable auto-scrolling if we're at the latest data
-    if (viewportStart + currentViewportSize >= displayData.length - 5) {
-      setIsAutoScrolling(true);
+  // Use locked Y-axis range to maintain consistent scale
+  const getYAxisDomain = () => {
+    if (lockedRange) {
+      return [lockedRange.min, lockedRange.max];
     }
+    
+    if (viewportData.length === 0) return ['auto', 'auto'];
+    
+    const prices = viewportData.flatMap(d => [d.high, d.low, d.open, d.close]);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const padding = (maxPrice - minPrice) * 0.02; // 2% padding
+    
+    return [minPrice - padding, maxPrice + padding];
   };
 
-  const scrollToLatest = () => {
-    setIsAutoScrolling(true);
-    setViewportStart(Math.max(0, displayData.length - currentViewportSize));
-  };
+  if (!displayData.length) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-slate-400">
+        <div className="text-center">
+          <div className="animate-pulse text-2xl mb-2">📊</div>
+          <p>Loading 1-minute market data...</p>
+          <p className="text-sm text-slate-500 mt-1">Each candle = exactly 1 minute</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full h-full bg-gray-900 relative">
-      {/* Enhanced zoom and timeframe indicator */}
-      <div className="absolute top-2 right-2 z-10 bg-gray-800/90 px-3 py-1.5 rounded-lg text-xs text-gray-300 pointer-events-none border border-gray-600">
-        <div className="flex items-center space-x-2">
-          <span>{getZoomIndicator()}</span>
-          <span className="text-gray-500">•</span>
-          <span>Zoom: {zoomLevel.toFixed(1)}x</span>
-          <span className="text-gray-500">•</span>
-          <span className="text-blue-400">{timeframe}</span>
+    <div className="w-full h-full relative bg-slate-900" ref={chartContainerRef}>
+      {/* Enhanced UI indicators */}
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+        {/* Data resolution indicator */}
+        <div className="bg-slate-800/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-slate-700">
+          <div className="text-xs text-slate-300">
+            <span className="text-emerald-400 font-medium">1-minute resolution</span>
+            <div className="text-slate-400">
+              {viewportData.length} candles • {getZoomIndicator()}
+            </div>
+          </div>
         </div>
-        <div className="text-[10px] text-gray-400 mt-0.5">
-          Scroll to zoom • {timeframe === '1m' ? 'Min zoom' : 'Scroll up for broader view'} {timeframe === '1M' ? '' : '• Scroll down for detail'}
-        </div>
+        
+        {/* Y-axis lock indicator */}
+        {lockedRange && (
+          <div className="bg-slate-800/90 backdrop-blur-sm px-2 py-1 rounded border border-amber-600">
+            <div className="text-xs text-amber-400">
+              Y-axis locked to 1D range
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Real-time connection status */}
+      {isConnected && (
+        <div className="absolute top-2 right-2 z-10">
+          <div className="bg-emerald-600/20 backdrop-blur-sm px-2 py-1 rounded border border-emerald-600">
+            <div className="flex items-center gap-1 text-xs text-emerald-400">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+              Live Data
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced chart with proper spacing and locked Y-axis */}
+      <ResponsiveContainer width="100%" height="100%">
+        {activeChartType === 'candles' ? (
+          <ComposedChart 
+            data={viewportData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            barCategoryGap="10%" // Consistent spacing between candles
+          >
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="#374151" 
+              opacity={0.3}
+              verticalPoints={[]}
+            />
+            <XAxis 
+              dataKey="time" 
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              interval="preserveStartEnd"
+            />
+            <YAxis 
+              domain={getYAxisDomain()}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              tickFormatter={(value) => `$${value.toFixed(2)}`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar 
+              dataKey="close" 
+              shape={<CandlestickBar />}
+              isAnimationActive={false} // Disable animation for better performance
+            />
+          </ComposedChart>
+        ) : (
+          <LineChart 
+            data={viewportData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="#374151" 
+              opacity={0.3}
+            />
+            <XAxis 
+              dataKey="time" 
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              interval="preserveStartEnd"
+            />
+            <YAxis 
+              domain={getYAxisDomain()}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              tickFormatter={(value) => `$${value.toFixed(2)}`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line 
+              type="monotone" 
+              dataKey="close" 
+              stroke="#10B981" 
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: "#10B981" }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        )}
+      </ResponsiveContainer>
       
+      {/* Mouse interaction hints */}
       <div 
-        ref={chartContainerRef}
-        className="flex-1 p-2 w-full min-h-0 h-full"
+        className="absolute inset-0 pointer-events-none"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        style={{ cursor: isHovering ? 'grab' : 'default' }}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          {activeChartType === 'line' ? (
-            <LineChart 
-              data={viewportData} 
-              margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="time" 
-                stroke="#9CA3AF" 
-                fontSize={10}
-                tick={{ fill: '#9CA3AF' }}
-                interval={Math.max(0, Math.floor(viewportData.length / 8))} // Adjusted for better spacing
-                angle={-45}
-                textAnchor="end"
-                height={50}
-              />
-              <YAxis 
-                stroke="#9CA3AF" 
-                fontSize={10}
-                tick={{ fill: '#9CA3AF' }}
-                domain={[(dataMin: number) => {
-                  const minPrice = Math.min(...viewportData.map(d => Math.min(d.low || d.price, d.high || d.price, d.open || d.price, d.close || d.price)));
-                  return minPrice * 0.999;
-                }, (dataMax: number) => {
-                  const maxPrice = Math.max(...viewportData.map(d => Math.max(d.low || d.price, d.high || d.price, d.open || d.price, d.close || d.price)));
-                  return maxPrice * 1.001;
-                }]} // Auto-scale to visible OHLC range
-                tickFormatter={(value) => `$${value.toFixed(2)}`}
-                width={50}
-              />
-              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
-              <Line 
-                type="monotone" 
-                dataKey="price" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                dot={false}
-                activeDot={false}
-                connectNulls={false}
-                isAnimationActive={false}
-                animationDuration={0}
-              />
-            </LineChart>
-          ) : (
-            <ComposedChart 
-              data={viewportData} 
-              margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="time" 
-                stroke="#9CA3AF" 
-                fontSize={10}
-                tick={{ fill: '#9CA3AF' }}
-                interval={Math.max(0, Math.floor(viewportData.length / 8))} // Adjusted for better spacing
-                angle={-45}
-                textAnchor="end"
-                height={50}
-              />
-              <YAxis 
-                stroke="#9CA3AF" 
-                fontSize={10}
-                tick={{ fill: '#9CA3AF' }}
-                domain={[(dataMin: number) => dataMin * 0.998, (dataMax: number) => dataMax * 1.002]} // Auto-scale to visible range
-                tickFormatter={(value) => `$${value.toFixed(2)}`}
-                width={50}
-              />
-              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
-              <Bar 
-                dataKey="high" 
-                shape={<CandlestickBar />}
-                isAnimationActive={false}
-                animationDuration={0}
-              />
-            </ComposedChart>
-          )}
-        </ResponsiveContainer>
-      </div>
+      />
     </div>
   );
 };
