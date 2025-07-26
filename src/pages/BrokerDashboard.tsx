@@ -168,21 +168,9 @@ const BrokerDashboard = () => {
 
   const selectedAccountData = accounts.find(acc => acc.id === selectedAccount);
 
-  // Fixed logic: If we have accounts, auto-select the first active one
-  const userStep = (() => {
-    if (accounts.length === 0) {
-      return 'create'; // Only show create if NO accounts exist
-    }
-    
-    // Auto-select first account if none selected
-    if (!selectedAccount && accounts.length > 0) {
-      const firstActiveAccount = accounts.find(acc => acc.status === 'ACTIVE') || accounts[0];
-      setSelectedAccount(firstActiveAccount.id);
-      return 'trade'; // Skip to trading since we have accounts
-    }
-    
-    return 'trade'; // We have accounts, go straight to trading
-  })();
+  const userStep = accounts.length === 0 ? 'create' : 
+                   !selectedAccount || !selectedAccountData?.last_equity || parseFloat(selectedAccountData.last_equity) === 0 ? 'fund' : 
+                   'trade';
 
   // Show loading state until initialized to prevent flicker
   if (!isInitialized) {
@@ -260,8 +248,76 @@ const BrokerDashboard = () => {
             </div>
           )}
 
-          {/* Step 2: Fund Account - Remove this since we skip to trading */}
-          {/* Funding section removed - accounts are pre-funded in sandbox */}
+          {/* Step 2: Fund Account */}
+          {userStep === 'fund' && accounts.length > 0 && (
+            <div className="animate-fade-in space-y-6">
+              {/* Account Selection */}
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-white">
+                    <span>Your Trading Account</span>
+                    <Badge className="bg-emerald-600 text-white">Active</Badge>
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">Manage your trading account settings and balance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {accounts.map((account) => (
+                      <Card 
+                        key={account.id} 
+                        className={`cursor-pointer transition-all duration-200 hover:bg-slate-700/50 ${
+                          selectedAccount === account.id 
+                            ? 'ring-2 ring-emerald-500 bg-emerald-500/10 border-emerald-500' 
+                            : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                        }`}
+                        onClick={() => setSelectedAccount(account.id)}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-base text-white">{account.account_number}</CardTitle>
+                            <Badge variant={account.status === 'ACTIVE' ? 'default' : 'secondary'} className="bg-emerald-600 text-white">
+                              {account.status}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-slate-400">Balance</span>
+                            <span className="text-sm font-semibold text-white">
+                              ${account.last_equity ? parseFloat(account.last_equity).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-slate-400">Buying Power</span>
+                            <span className="text-sm font-medium text-emerald-400">
+                              ${account.buying_power ? parseFloat(account.buying_power).toFixed(2) : '0.00'}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-emerald-600/20 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-emerald-400">2</span>
+                  </div>
+                  <CardTitle className="text-2xl text-white">Fund Your Account</CardTitle>
+                  <CardDescription className="text-slate-400 text-base">Add virtual funds to start trading</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FundingSimulation 
+                    accountId={selectedAccount} 
+                    accountData={selectedAccountData}
+                    onFundingComplete={refreshData}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Step 3: Trading Dashboard */}
           {userStep === 'trade' && (
