@@ -62,7 +62,7 @@ const steps = [
 ];
 
 const countries = [
-  'USA', 'Canada', 'United Kingdom', 'Germany', 'France', 'Japan', 'Australia', 'Others'
+  'USA', 'GBR', 'CAN', 'AUS', 'DEU', 'FRA', 'JPN', 'ITA', 'ESP', 'NLD', 'CHE', 'SWE', 'NOR', 'DNK'
 ];
 
 const fundingSources = [
@@ -166,17 +166,23 @@ const AlpacaOnboarding = () => {
     }
 
     setIsSubmitting(true);
+    
+    console.log('=== ACCOUNT CREATION DEBUG ===');
+    console.log('Personal Details:', personalDetails);
+    console.log('Disclosures:', disclosures);
+    console.log('Trusted Contact:', trustedContact);
+    
     try {
       const accountData = {
         account_type: 'trading' as const,
         contact: {
           email_address: personalDetails.email,
-          phone_number: personalDetails.phoneNumber,
+          phone_number: personalDetails.phoneNumber.replace(/[^\d]/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3'), // Format as XXX-XXX-XXXX
           street_address: [personalDetails.streetAddress],
           city: personalDetails.city,
-          state: personalDetails.state,
+          state: personalDetails.state || 'CA', // Default to CA if no state provided
           postal_code: personalDetails.postalCode,
-          country: personalDetails.country
+          country: 'USA' // Force USA for Alpaca API compatibility
         },
         identity: {
           given_name: personalDetails.firstName,
@@ -184,9 +190,9 @@ const AlpacaOnboarding = () => {
           date_of_birth: personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, 'yyyy-MM-dd') : '',
           tax_id: '123456789', // Simulated for sandbox
           tax_id_type: 'USA_SSN',
-          country_of_citizenship: personalDetails.countryOfCitizenship,
-          country_of_birth: personalDetails.countryOfBirth,
-          country_of_tax_residence: personalDetails.countryOfTaxResidence,
+          country_of_citizenship: 'USA', // Force USA for Alpaca API
+          country_of_birth: 'USA', // Force USA for Alpaca API  
+          country_of_tax_residence: 'USA', // Force USA for Alpaca API
           funding_source: personalDetails.fundingSource,
           party_type: 'natural_person'
         },
@@ -248,9 +254,30 @@ const AlpacaOnboarding = () => {
       
     } catch (error) {
       console.error('Account creation error:', error);
+      
+      // Extract meaningful error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Detailed error message:', errorMessage);
+      
+      // Provide specific error message
+      let userMessage = "Account creation failed. ";
+      if (errorMessage.includes('email')) {
+        userMessage += "Please check your email address.";
+      } else if (errorMessage.includes('phone')) {
+        userMessage += "Please check your phone number format.";
+      } else if (errorMessage.includes('tax_id') || errorMessage.includes('ssn')) {
+        userMessage += "Please check your Tax ID/SSN.";
+      } else if (errorMessage.includes('address')) {
+        userMessage += "Please check your address information.";
+      } else if (errorMessage.includes('required')) {
+        userMessage += "Some required fields are missing.";
+      } else {
+        userMessage += `Error details: ${errorMessage}`;
+      }
+      
       toast({
         title: "Account Creation Failed",
-        description: "There was an error creating your account. Please try again.",
+        description: userMessage,
         variant: "destructive"
       });
     } finally {
