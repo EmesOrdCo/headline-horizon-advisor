@@ -93,7 +93,12 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
       console.log('✅ Journal transfer result:', result);
       
       toast.success(`Journal transfer of $${amount} completed successfully!`);
-      onFundingComplete();
+      
+      // Add delay before refreshing account data to allow Alpaca to process the transfer
+      setTimeout(() => {
+        console.log('🔄 Refreshing account data after journal transfer...');
+        onFundingComplete();
+      }, 2000); // 2 second delay
     } catch (error) {
       console.error('❌ Journal funding error:', error);
       toast.error(`Journal transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
