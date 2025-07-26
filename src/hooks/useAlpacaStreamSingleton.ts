@@ -110,7 +110,7 @@ class AlpacaStreamManager {
 
     console.log(`Singleton: Creating WebSocket connection (attempt ${this.connectionAttempts}/${this.maxAttempts})`);
     
-    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
+    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.functions.supabase.co/alpaca-stream`;
     
     try {
       this.socket = new WebSocket(wsUrl);
