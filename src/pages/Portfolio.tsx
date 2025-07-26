@@ -824,9 +824,8 @@ const Portfolio = () => {
                           No trade history yet. Make your first trade to see activity here.
                         </td>
                       </tr>
-                    )
-                   )}
-                </tbody>
+                     )}
+                 </tbody>
               </table>
             </div>
           </CardContent>
