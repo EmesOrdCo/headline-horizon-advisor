@@ -9,6 +9,24 @@ export interface AlpacaAccount {
   created_at: string;
   last_equity?: string;
   buying_power?: string;
+  cash?: string;
+  long_market_value?: string;
+  short_market_value?: string;
+  position_market_value?: string;
+  initial_margin?: string;
+  maintenance_margin?: string;
+  regt_buying_power?: string;
+  dtbp_buying_power?: string;
+  effective_buying_power?: string;
+  non_marginable_buying_power?: string;
+  sma?: string;
+  daytrade_count?: number;
+  multiplier?: string;
+  settled_cash?: string;
+  crypto_market_value?: string;
+  pending_cash_transfers?: string;
+  cash_withdrawable?: string;
+  cash_transferable?: string;
 }
 
 export interface AlpacaAsset {
