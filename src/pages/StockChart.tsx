@@ -26,6 +26,7 @@ import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
+import LiveTimeGraph from "@/components/LiveTimeGraph";
 
 const StockChart: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -284,13 +285,40 @@ const StockChart: React.FC = () => {
 
           {/* Chart Content */}
           <div className="flex-1 bg-slate-900 min-h-0">
-            <HistoricalPriceChart
-              symbol={activeSymbol}
-              timeframe="1Day"
-              limit={100}
-              showMiniChart={false}
-              fullHeight={true}
-            />
+            <Tabs value="chart" className="h-full flex flex-col">
+              <TabsList className="bg-slate-800/50 border-b border-slate-700 rounded-none h-10 w-full justify-start px-4">
+                <TabsTrigger 
+                  value="chart" 
+                  className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Price Chart
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="live-flow" 
+                  className="text-sm px-3 py-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Live Data Flow
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chart" className="flex-1 m-0 p-0">
+                <HistoricalPriceChart
+                  symbol={activeSymbol}
+                  timeframe="1Day"
+                  limit={100}
+                  showMiniChart={false}
+                  fullHeight={true}
+                />
+              </TabsContent>
+              
+              <TabsContent value="live-flow" className="flex-1 m-0 p-4">
+                <LiveTimeGraph
+                  streamData={streamData}
+                  symbols={[activeSymbol]}
+                  isConnected={isConnected}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
