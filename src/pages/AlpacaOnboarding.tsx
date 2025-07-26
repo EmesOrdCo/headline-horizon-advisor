@@ -303,6 +303,10 @@ const AlpacaOnboarding = () => {
                     selected={personalDetails.dateOfBirth}
                     onSelect={(date) => setPersonalDetails(prev => ({ ...prev, dateOfBirth: date }))}
                     disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    defaultMonth={new Date(1990, 0, 1)}
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
