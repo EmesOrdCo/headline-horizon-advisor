@@ -41,21 +41,44 @@ const AdvancedTradingView: React.FC = () => {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🚀 Order submission started');
+    console.log('Selected Account:', selectedAccount);
+    console.log('Order Data:', orderData);
+    
+    // Validation checks
     if (!selectedAccount?.id) {
-      toast.error('Please connect your Alpaca account first');
+      console.error('❌ No Alpaca account found');
+      toast.error('Please connect your Alpaca account first. Go to Broker Dashboard to link your account.');
+      return;
+    }
+
+    if (!orderData.qty || parseFloat(orderData.qty) <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+
+    if (orderData.type === 'limit' && (!orderData.limit_price || parseFloat(orderData.limit_price) <= 0)) {
+      toast.error('Please enter a valid limit price');
       return;
     }
 
     try {
-      const order = await placeOrder(selectedAccount.id, {
+      console.log('📡 Placing order...');
+      const orderPayload = {
         symbol: selectedSymbol,
         qty: orderData.qty,
         side: orderData.side,
         type: orderData.type,
         time_in_force: orderData.time_in_force,
         limit_price: orderData.type === 'limit' ? orderData.limit_price : undefined,
-      });
-      toast.success(`Order placed successfully! Order ID: ${order.id}`);
+      };
+      
+      console.log('Order payload:', orderPayload);
+      
+      const order = await placeOrder(selectedAccount.id, orderPayload);
+      
+      console.log('✅ Order placed successfully:', order);
+      toast.success(`${orderData.side.toUpperCase()} order placed successfully! Order ID: ${order.id}`);
       refreshData();
       
       // Reset form
@@ -65,9 +88,9 @@ const AdvancedTradingView: React.FC = () => {
         limit_price: '',
       });
     } catch (error) {
+      console.error('❌ Order placement error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
-      toast.error(errorMessage);
-      console.error('Order placement error:', error);
+      toast.error(`Order failed: ${errorMessage}`);
     }
   };
   
@@ -192,42 +215,57 @@ const AdvancedTradingView: React.FC = () => {
           </div>
           
           {/* Order Placement Interface */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Place Order</CardTitle>
-              <p className="text-slate-400 text-sm">
-                Simulate order placement in sandbox environment
-              </p>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Live Order Placement
+              </CardTitle>
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-sm">
+                  Place real trades via Alpaca (Sandbox Mode)
+                </p>
+                {selectedAccount ? (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ Account: {selectedAccount.account_number}
+                  </div>
+                ) : (
+                  <div className="text-xs text-destructive">
+                    ⚠ No Alpaca account connected
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePlaceOrder} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="symbol" className="text-white">Symbol</Label>
-                    <div className="mt-1 p-3 bg-slate-700 rounded-md border border-slate-600">
-                      <span className="text-white font-mono">{selectedSymbol}</span>
+                    <Label htmlFor="symbol">Symbol</Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md border">
+                      <span className="font-mono font-semibold">{selectedSymbol}</span>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="qty" className="text-white">Quantity</Label>
+                    <Label htmlFor="qty">Quantity</Label>
                     <Input
                       id="qty"
                       type="number"
                       value={orderData.qty}
                       onChange={(e) => setOrderData({ ...orderData, qty: e.target.value })}
                       min="1"
+                      step="1"
                       required
-                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="Number of shares"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="side" className="text-white">Side</Label>
+                    <Label htmlFor="side">Side</Label>
                     <Select value={orderData.side} onValueChange={(value: 'buy' | 'sell') => setOrderData({ ...orderData, side: value })}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -238,9 +276,9 @@ const AdvancedTradingView: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="type" className="text-white">Order Type</Label>
+                    <Label htmlFor="type">Order Type</Label>
                     <Select value={orderData.type} onValueChange={(value: 'market' | 'limit') => setOrderData({ ...orderData, type: value })}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -253,24 +291,23 @@ const AdvancedTradingView: React.FC = () => {
 
                 {orderData.type === 'limit' && (
                   <div>
-                    <Label htmlFor="limit_price" className="text-white">Limit Price ($)</Label>
+                    <Label htmlFor="limit_price">Limit Price ($)</Label>
                     <Input
                       id="limit_price"
                       type="number"
                       step="0.01"
                       value={orderData.limit_price}
                       onChange={(e) => setOrderData({ ...orderData, limit_price: e.target.value })}
-                      placeholder="0.00"
+                      placeholder="Enter limit price"
                       required={orderData.type === 'limit'}
-                      className="bg-slate-700 border-slate-600 text-white"
                     />
                   </div>
                 )}
 
                 <div>
-                  <Label htmlFor="time_in_force" className="text-white">Time in Force</Label>
+                  <Label htmlFor="time_in_force">Time in Force</Label>
                   <Select value={orderData.time_in_force} onValueChange={(value: any) => setOrderData({ ...orderData, time_in_force: value })}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -282,29 +319,33 @@ const AdvancedTradingView: React.FC = () => {
                   </Select>
                 </div>
 
-                <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                  <h4 className="font-semibold mb-2 text-white">Order Summary</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-300">Action:</span>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h4 className="font-semibold mb-2">Order Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Action:</span>
                       <Badge variant={orderData.side === 'buy' ? 'default' : 'destructive'}>
                         {orderData.side.toUpperCase()} {orderData.qty} shares
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-300">Symbol:</span>
-                      <span className="font-mono text-white">{selectedSymbol}</span>
+                      <span className="text-muted-foreground">Symbol:</span>
+                      <span className="font-mono font-semibold">{selectedSymbol}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-300">Type:</span>
-                      <span className="text-white">{orderData.type.toUpperCase()}</span>
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="font-semibold">{orderData.type.toUpperCase()}</span>
                     </div>
                     {orderData.type === 'limit' && orderData.limit_price && (
                       <div className="flex justify-between">
-                        <span className="text-slate-300">Limit Price:</span>
-                        <span className="text-white">${orderData.limit_price}</span>
+                        <span className="text-muted-foreground">Limit Price:</span>
+                        <span className="font-semibold">${orderData.limit_price}</span>
                       </div>
                     )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="font-semibold">{orderData.time_in_force.toUpperCase()}</span>
+                    </div>
                   </div>
                 </div>
 
