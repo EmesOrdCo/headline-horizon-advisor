@@ -79,17 +79,23 @@ const Portfolio = () => {
       // Get user's account number from profile
       let userAccountNumber = null;
       if (user) {
-        const { data: profile } = await supabase
+        console.log('Current user ID:', user.id);
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('alpaca_account_number')
+          .select('alpaca_account_number, alpaca_account_id, alpaca_account_status')
           .eq('id', user.id)
           .maybeSingle();
         
+        console.log('Profile query result:', { profile, error: profileError });
         userAccountNumber = profile?.alpaca_account_number;
+        console.log('User account number from profile:', userAccountNumber);
+      } else {
+        console.log('No user found');
       }
       
       // Load accounts
       const accountsData = await getAccounts();
+      console.log('All accounts from Alpaca:', accountsData.map(acc => ({ id: acc.id, number: acc.account_number, status: acc.status })));
       setAccounts(accountsData);
       if (accountsData.length > 0) {
         // Use user's account number if available, otherwise fallback to first account
@@ -97,7 +103,9 @@ const Portfolio = () => {
           ? accountsData.find(acc => acc.account_number === userAccountNumber)
           : accountsData[0];
         
+        console.log('Target account found:', targetAccount);
         const selectedAccountId = targetAccount?.id || accountsData[0].id;
+        console.log('Selected account ID:', selectedAccountId);
         setSelectedAccount(selectedAccountId);
         
         // Load account details, positions, orders, portfolio history, and activities
