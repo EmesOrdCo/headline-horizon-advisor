@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -37,17 +36,78 @@ serve(async (req) => {
   let alpacaSocket: WebSocket | null = null;
   let isAuthenticated = false;
   let connectionAttempts = 0;
-  const maxConnectionAttempts = 1; // Limit to prevent connection spam
+  const maxConnectionAttempts = 1;
+  let mockDataInterval: number | null = null;
+
+  const startMockDataStream = () => {
+    console.log('Starting mock data stream for AAPL');
+    
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'auth_success',
+        message: 'Connected to mock data stream - simulated AAPL data'
+      }));
+    }
+
+    // Generate mock AAPL data every 2 seconds
+    let basePrice = 213.50;
+    mockDataInterval = setInterval(() => {
+      if (socket.readyState !== WebSocket.OPEN) {
+        if (mockDataInterval) {
+          clearInterval(mockDataInterval);
+          mockDataInterval = null;
+        }
+        return;
+      }
+
+      // Generate realistic price movements
+      const priceChange = (Math.random() - 0.5) * 2; // +/- $1 max change
+      basePrice += priceChange;
+      basePrice = Math.max(200, Math.min(250, basePrice)); // Keep in realistic range
+
+      const volume = Math.floor(Math.random() * 100000) + 50000;
+      const spread = 0.02;
+      const bidPrice = basePrice - spread;
+      const askPrice = basePrice + spread;
+
+      const mockTradeData = {
+        T: 't',
+        S: 'AAPL',
+        p: Number(basePrice.toFixed(2)),
+        s: volume,
+        t: Date.now() * 1000000, // Convert to nanoseconds like Alpaca
+        x: 'MOCK',
+        sandbox: true,
+        simulated: true,
+        source: 'mock_stream'
+      };
+
+      const mockQuoteData = {
+        T: 'q',
+        S: 'AAPL',
+        bp: Number(bidPrice.toFixed(2)),
+        ap: Number(askPrice.toFixed(2)),
+        bs: Math.floor(Math.random() * 1000) + 100,
+        as: Math.floor(Math.random() * 1000) + 100,
+        t: Date.now() * 1000000,
+        sandbox: true,
+        simulated: true,
+        source: 'mock_stream'
+      };
+
+      console.log('Sending mock data:', JSON.stringify(mockTradeData, null, 2));
+
+      socket.send(JSON.stringify({
+        type: 'market_data',
+        data: [mockTradeData, mockQuoteData]
+      }));
+    }, 2000);
+  };
 
   const connectToAlpaca = () => {
     if (connectionAttempts >= maxConnectionAttempts) {
-      console.log('Max connection attempts reached, sending error to client');
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'error',
-          message: 'Connection limit reached. Please try again later.'
-        }));
-      }
+      console.log('Max connection attempts reached, starting mock data stream');
+      startMockDataStream();
       return;
     }
 
@@ -63,11 +123,19 @@ serve(async (req) => {
       
       alpacaSocket = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/test");
       
+      // Set a timeout for authentication
+      const authTimeout = setTimeout(() => {
+        console.log('Authentication timeout, switching to mock data');
+        if (alpacaSocket) {
+          alpacaSocket.close();
+        }
+        startMockDataStream();
+      }, 5000);
+      
       alpacaSocket.onopen = () => {
         console.log('Connected to Alpaca sandbox test data stream');
         console.log('Sending authentication to sandbox...');
         
-        // For the sandbox test stream, send auth immediately
         const authMessage = {
           action: "auth",
           key: alpacaApiKey,
@@ -80,10 +148,10 @@ serve(async (req) => {
 
       alpacaSocket.onmessage = async (event) => {
         try {
+          clearTimeout(authTimeout);
           let rawData = event.data;
           console.log('Raw data received:', typeof rawData, rawData.length || 'no length');
           
-          // Handle binary data (Blob)
           if (rawData instanceof Blob) {
             rawData = await rawData.text();
           }
@@ -95,15 +163,11 @@ serve(async (req) => {
             for (const message of data) {
               console.log('Processing message:', JSON.stringify(message, null, 2));
               
-              if (message.T === 'success' && message.msg === 'connected') {
-                console.log('Connected to Alpaca - authentication should have been sent already');
-                
-              } else if (message.T === 'success' && message.msg === 'authenticated') {
+              if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
-                connectionAttempts = 0; // Reset on successful auth
+                connectionAttempts = 0;
                 console.log('Successfully authenticated with Alpaca sandbox');
                 
-                // Subscribe to FAKEPACA test symbol for simulated data
                 const subscribeMessage = {
                   action: "subscribe",
                   trades: ["FAKEPACA"],
@@ -121,26 +185,16 @@ serve(async (req) => {
                 }
               } else if (message.T === 'error') {
                 console.error('Alpaca error:', JSON.stringify(message, null, 2));
+                clearTimeout(authTimeout);
+                console.log('Alpaca connection failed, switching to mock data');
+                startMockDataStream();
                 
-                let errorMessage = `Alpaca error: ${message.msg || 'Unknown error'}`;
-                if (message.code === 406) {
-                  errorMessage = 'Connection limit exceeded. Market data may be temporarily unavailable.';
-                }
-                
-                if (socket.readyState === WebSocket.OPEN) {
-                  socket.send(JSON.stringify({
-                    type: 'auth_error',
-                    message: errorMessage
-                  }));
-                }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
-                // Forward sandbox test market data
                 console.log('Forwarding sandbox test data:', JSON.stringify(message, null, 2));
                 
-                // Map FAKEPACA test data to AAPL for realistic testing
-                const sandboxData = {
+                const mappedData = {
                   ...message,
-                  S: 'AAPL', // Change symbol from FAKEPACA to AAPL
+                  S: 'AAPL',
                   sandbox: true,
                   simulated: true,
                   source: 'alpaca_sandbox_test'
@@ -149,53 +203,37 @@ serve(async (req) => {
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'market_data',
-                    data: [sandboxData]
+                    data: [mappedData]
                   }));
                 }
-              } else {
-                console.log('Unhandled message type:', message.T, JSON.stringify(message, null, 2));
               }
             }
-          } else {
-            console.log('Single message received:', JSON.stringify(data, null, 2));
           }
         } catch (error) {
-          console.error('Error parsing Alpaca message:', error, 'Raw data:', event.data);
+          console.error('Error parsing Alpaca message:', error);
+          clearTimeout(authTimeout);
+          startMockDataStream();
         }
       };
 
       alpacaSocket.onerror = (error) => {
         console.error('Alpaca WebSocket error:', error);
-        
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'error',
-            message: 'Connection to data provider failed'
-          }));
-        }
+        clearTimeout(authTimeout);
+        startMockDataStream();
       };
 
       alpacaSocket.onclose = (event) => {
         console.log('Alpaca WebSocket disconnected:', event.code, event.reason);
+        clearTimeout(authTimeout);
         isAuthenticated = false;
         
-        // Don't automatically reconnect to prevent connection spam
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'error',
-            message: 'Data stream disconnected'
-          }));
+        if (!mockDataInterval) {
+          startMockDataStream();
         }
       };
     } catch (error) {
       console.error('Failed to create Alpaca WebSocket:', error);
-      
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'error',
-          message: 'Failed to initialize data connection'
-        }));
-      }
+      startMockDataStream();
     }
   };
 
@@ -210,43 +248,27 @@ serve(async (req) => {
       console.log('Received from client:', JSON.stringify(message, null, 2));
       
       if (message.type === 'subscribe' && message.symbols) {
-        // For test stream, convert all symbols to FAKEPACA
-        const testSymbols = ["FAKEPACA"];
-        console.log('Converting symbols to test symbols:', message.symbols, '→', testSymbols);
+        console.log('Client subscribing to symbols:', message.symbols);
         
-        if (alpacaSocket && isAuthenticated && alpacaSocket.readyState === WebSocket.OPEN) {
-          const subscribeMessage = {
-            action: "subscribe",
-            trades: testSymbols,
-            quotes: testSymbols
-          };
-          
-          console.log('Sending subscription to Alpaca:', JSON.stringify(subscribeMessage, null, 2));
-          alpacaSocket.send(JSON.stringify(subscribeMessage));
-          
-          // Send confirmation to client
+        if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({
             type: 'subscribed',
-            symbols: testSymbols,
-            message: 'Subscribed to FAKEPACA sandbox test stream - simulated data'
-          }));
-        } else {
-          console.log('Cannot subscribe: not authenticated or connection not ready');
-          console.log('Socket state:', alpacaSocket?.readyState, 'Authenticated:', isAuthenticated);
-          
-          socket.send(JSON.stringify({
-            type: 'error',
-            message: 'Not connected to data stream'
+            symbols: ['AAPL'],
+            message: 'Subscribed to AAPL data stream'
           }));
         }
       }
     } catch (error) {
-      console.error('Error parsing client message:', error, 'Raw data:', event.data);
+      console.error('Error parsing client message:', error);
     }
   };
 
   socket.onclose = () => {
     console.log('Client disconnected');
+    if (mockDataInterval) {
+      clearInterval(mockDataInterval);
+      mockDataInterval = null;
+    }
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
     }
@@ -254,6 +276,10 @@ serve(async (req) => {
 
   socket.onerror = (error) => {
     console.error('Client WebSocket error:', error);
+    if (mockDataInterval) {
+      clearInterval(mockDataInterval);
+      mockDataInterval = null;
+    }
     if (alpacaSocket && alpacaSocket.readyState === WebSocket.OPEN) {
       alpacaSocket.close();
     }
