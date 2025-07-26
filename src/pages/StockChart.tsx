@@ -314,7 +314,7 @@ const StockChart: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="live-flow" className="flex-1 m-0 p-4">
-                <LiveTimeGraph />
+                <LiveTimeGraph currentPrice={currentPrice} symbol={activeSymbol} />
               </TabsContent>
             </Tabs>
           </div>

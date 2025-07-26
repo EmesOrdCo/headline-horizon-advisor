@@ -2,13 +2,21 @@ import React from 'react';
 import StockLineChart from './StockLineChart';
 import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 
-const LiveTimeGraph: React.FC = () => {
+interface LiveTimeGraphProps {
+  currentPrice?: number;
+  symbol?: string;
+}
+
+const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({ 
+  currentPrice = 214.73, 
+  symbol = 'AAPL' 
+}) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <WebSocketMonitor />
       </div>
-      <StockLineChart />
+      <StockLineChart currentPrice={currentPrice} symbol={symbol} />
     </div>
   );
 };

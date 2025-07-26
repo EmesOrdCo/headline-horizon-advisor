@@ -21,6 +21,11 @@ interface PricePoint {
   volume: number;
 }
 
+interface StockLineChartProps {
+  currentPrice?: number;
+  symbol?: string;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -55,9 +60,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const StockLineChart: React.FC = () => {
+const StockLineChart: React.FC<StockLineChartProps> = ({ 
+  currentPrice: parentPrice = 214.73, 
+  symbol = 'AAPL' 
+}) => {
   const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
-    symbols: ['AAPL'], 
+    symbols: [symbol], 
     enabled: true 
   });
 
@@ -68,8 +76,8 @@ const StockLineChart: React.FC = () => {
     const now = new Date();
     const initialData: PricePoint[] = [];
     
-    // Start with a consistent base price that matches the page header
-    const basePrice = 214.73; // Match the header price
+    // Use the parent's current price for consistency
+    const basePrice = parentPrice;
     
     // Generate last 10 minutes in 30-second intervals (20 points)
     for (let i = 19; i >= 0; i--) {
@@ -91,19 +99,19 @@ const StockLineChart: React.FC = () => {
     
     setChartData(initialData);
     console.log('📊 Initialized chart with', initialData.length, 'points, latest price:', initialData[initialData.length - 1]?.price);
-  }, []);
+  }, [parentPrice]);
 
-  // Add new data every 3 seconds
+  // Add new data every 3 seconds, using parent price as base
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const data = streamData['AAPL'];
+      const data = streamData[symbol];
       
       setChartData(prev => {
-        const lastPoint = prev[prev.length - 1];
-        const basePrice = data?.price || lastPoint?.price || 214.73;
+        // Always use the parent's current price as the base to ensure consistency
+        const basePrice = parentPrice;
         
-        // Small realistic price movements
+        // Small realistic price movements around the parent price
         const priceChange = (Math.random() - 0.5) * 0.1;
         const newPrice = basePrice + priceChange;
         
@@ -126,15 +134,16 @@ const StockLineChart: React.FC = () => {
         });
         
         const updated = [...filteredData, newPoint];
-        console.log('📊 Updated chart, points:', updated.length, 'latest price:', newPoint.price);
+        console.log('📊 Updated chart, points:', updated.length, 'latest price:', newPoint.price, 'parent price:', parentPrice);
         return updated;
       });
     }, 3000); // Update every 3 seconds
 
     return () => clearInterval(interval);
-  }, [streamData]);
+  }, [streamData, parentPrice, symbol]);
 
-  const currentPrice = chartData[chartData.length - 1]?.price || 214.73;
+  // Use the parent's current price for display
+  const currentPrice = parentPrice;
   const firstPrice = chartData[0]?.price || currentPrice;
   const priceChange = currentPrice - firstPrice;
   const priceChangePercent = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
