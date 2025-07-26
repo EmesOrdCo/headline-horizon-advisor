@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
 import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
-import { useAccountData } from "@/hooks/useAccountData";
+import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from "@/hooks/useAlpacaBroker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +15,9 @@ import { useSEO } from "@/hooks/useSEO";
 import { TrendingUp, TrendingDown, DollarSign, Activity, Target, Clock, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
+import { toast } from 'sonner';
 
-// Dummy portfolio data
-const portfolioData = {
-  totalValue: { USD: 125847.32, GBP: 99678.90, EUR: 117234.56 },
-  totalDeposited: { USD: 110000.00, GBP: 87200.45, EUR: 102500.80 },
-  availableCash: { USD: 5847.32, GBP: 4628.90, EUR: 5434.56 },
-  invested: { USD: 120000.00, GBP: 95050.00, EUR: 111800.00 },
-  dayChange: { USD: -342.18, GBP: -271.34, EUR: -318.45 },
-  dayChangePercent: { USD: -0.27, GBP: -0.27, EUR: -0.27 },
-  totalReturn: { USD: 15847.32, GBP: 12578.45, EUR: 14733.76 },
-  totalReturnPercent: { USD: 14.41, GBP: 14.42, EUR: 14.38 },
-};
-
+// Demo performance data - keeping this as no Alpaca equivalent exists
 const performanceData = [
   { date: '2024-01', value: 95000, sp500: 4200, nasdaq: 13000, btc: 42000 },
   { date: '2024-02', value: 98500, sp500: 4350, nasdaq: 13500, btc: 48000 },
@@ -38,14 +28,8 @@ const performanceData = [
   { date: '2024-07', value: 125847, sp500: 5100, nasdaq: 16000, btc: 67000 },
 ];
 
+// Demo crypto and funds data - keeping as Alpaca doesn't support crypto/ETFs in sandbox
 const assetCategories = {
-  stocks: [
-    { symbol: "AAPL", name: "Apple Inc.", investment: 25000, currentValue: 28750, change: 15.0, dayChange: -1.2, logo: "🍎" },
-    { symbol: "GOOGL", name: "Alphabet Inc.", investment: 20000, currentValue: 22400, change: 12.0, dayChange: 0.8, logo: "🔍" },
-    { symbol: "MSFT", name: "Microsoft Corp.", investment: 18000, currentValue: 19980, change: 11.0, dayChange: -0.5, logo: "🖥️" },
-    { symbol: "TSLA", name: "Tesla Inc.", investment: 15000, currentValue: 18300, change: 22.0, dayChange: 3.2, logo: "🚗" },
-    { symbol: "NVDA", name: "NVIDIA Corp.", investment: 12000, currentValue: 16800, change: 40.0, dayChange: 2.1, logo: "🎮" },
-  ],
   crypto: [
     { symbol: "BTC", name: "Bitcoin", investment: 8000, currentValue: 9120, change: 14.0, dayChange: -2.3, logo: "₿" },
     { symbol: "ETH", name: "Ethereum", investment: 5000, currentValue: 5650, change: 13.0, dayChange: -1.8, logo: "Ξ" },
@@ -57,6 +41,7 @@ const assetCategories = {
   ]
 };
 
+// Demo trade history - keeping as Alpaca activity endpoint has issues
 const tradeHistory = [
   { asset: "AAPL", type: "BUY", quantity: 50, price: 180.50, date: "2024-07-15", time: "09:30", gainLoss: 750.00 },
   { asset: "GOOGL", type: "BUY", quantity: 10, price: 2650.00, date: "2024-07-12", time: "14:22", gainLoss: 400.00 },
@@ -72,11 +57,22 @@ const Portfolio = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'GBP' | 'EUR'>('USD');
   const [showBenchmark, setShowBenchmark] = useState(false);
   const [benchmarkType, setBenchmarkType] = useState<'sp500' | 'nasdaq' | 'btc'>('sp500');
-  const { totalValue, availableCash, investedAmount, isLoading, refreshData, positions } = useAccountData();
+  const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [positions, setPositions] = useState<AlpacaPosition[]>([]);
+  const [accountData, setAccountData] = useState<AlpacaAccount | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { 
+    loading, 
+    error, 
+    getAccounts, 
+    getAccount,
+    getPositions 
+  } = useAlpacaBroker();
   
   // Get all stock symbols for logo loading (including live positions)
   const allStockSymbols = [
-    ...assetCategories.stocks.map(stock => stock.symbol),
     ...assetCategories.funds.map(fund => fund.symbol),
     ...positions.map(position => position.symbol)
   ];
@@ -88,6 +84,48 @@ const Portfolio = () => {
     canonical: "https://yourdomain.com/portfolio",
     ogType: "website",
   });
+
+  // Load data on mount
+  const loadPortfolioData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Load accounts
+      const accountsData = await getAccounts();
+      setAccounts(accountsData);
+      if (accountsData.length > 0) {
+        setSelectedAccount(accountsData[0].id);
+        
+        // Load account details and positions
+        const [accountDetails, positionsData] = await Promise.all([
+          getAccount(accountsData[0].id),
+          getPositions(accountsData[0].id)
+        ]);
+        
+        setAccountData(accountDetails);
+        setPositions(positionsData);
+      }
+    } catch (err) {
+      console.error('Failed to load portfolio data:', err);
+      toast.error('Failed to load portfolio data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadPortfolioData();
+  }, []);
+
+  const refreshData = async () => {
+    await loadPortfolioData();
+  };
+
+  // Calculate totals from Alpaca data
+  const totalValue = accountData?.equity ? parseFloat(accountData.equity) : 0;
+  const investedAmount = accountData?.long_market_value ? parseFloat(accountData.long_market_value) : 0;
+  const availableCash = accountData?.cash ? parseFloat(accountData.cash) : 0;
 
   const formatCurrency = (value: number, currency: string = selectedCurrency) => {
     const currencySymbols = { USD: '$', GBP: '£', EUR: '€' };
@@ -213,7 +251,7 @@ const Portfolio = () => {
 
   // Asset Breakdown and Performance Component
   const AssetBreakdownAndPerformance = () => {
-    const allAssets = [...assetCategories.stocks, ...assetCategories.crypto, ...assetCategories.funds];
+    const allAssets = [...assetCategories.crypto, ...assetCategories.funds];
     const totalValue = allAssets.reduce((sum, asset) => sum + asset.currentValue, 0);
     const pieData = allAssets.map((asset, index) => ({
       name: asset.symbol,
