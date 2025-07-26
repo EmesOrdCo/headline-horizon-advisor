@@ -29,6 +29,7 @@ import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import LiveTimeGraph from "@/components/LiveTimeGraph";
 
 const StockChart: React.FC = () => {
+  const [activeTab, setActiveTab] = useState("chart");
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
@@ -285,7 +286,7 @@ const StockChart: React.FC = () => {
 
           {/* Chart Content */}
           <div className="flex-1 bg-slate-900 min-h-0">
-            <Tabs value="chart" className="h-full flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
               <TabsList className="bg-slate-800/50 border-b border-slate-700 rounded-none h-10 w-full justify-start px-4">
                 <TabsTrigger 
                   value="chart" 
