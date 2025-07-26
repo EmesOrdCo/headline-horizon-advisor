@@ -303,14 +303,35 @@ const Portfolio = () => {
 
   // Asset Breakdown and Performance Component
   const AssetBreakdownAndPerformance = () => {
-    const allAssets = [...assetCategories.crypto, ...assetCategories.funds];
-    const totalValue = allAssets.reduce((sum, asset) => sum + asset.currentValue, 0);
-    const pieData = allAssets.map((asset, index) => ({
+    // Use real live stock positions for allocation instead of dummy data
+    const livePositions = positions.map(position => ({
+      symbol: position.symbol,
+      qty: parseFloat(position.qty || '0'),
+      currentValue: parseFloat(position.market_value || '0'),
+      costBasis: parseFloat(position.cost_basis || '0'),
+      unrealizedPL: parseFloat(position.unrealized_pl || '0'),
+      unrealizedPLPercent: parseFloat(position.unrealized_plpc || '0'),
+      currentPrice: parseFloat(position.current_price || '0')
+    }));
+
+    // Create allocation data from real positions
+    const totalValue = livePositions.reduce((sum, asset) => sum + asset.currentValue, 0);
+    const pieData = livePositions.length > 0 ? livePositions.map((asset, index) => ({
       name: asset.symbol,
       value: asset.currentValue,
-      percentage: ((asset.currentValue / totalValue) * 100).toFixed(1),
+      percentage: totalValue > 0 ? ((asset.currentValue / totalValue) * 100).toFixed(1) : '0.0',
       color: `hsl(${(index * 45) % 360}, 70%, 60%)`
-    }));
+    })) : [];
+
+    // Fallback to show cash if no positions
+    if (pieData.length === 0 && accountData?.cash) {
+      pieData.push({
+        name: 'Cash',
+        value: parseFloat(accountData.cash),
+        percentage: '100.0',
+        color: 'hsl(220, 70%, 60%)'
+      });
+    }
 
     return (
       <div className="space-y-6">
