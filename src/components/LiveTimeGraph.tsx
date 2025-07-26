@@ -70,7 +70,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
                 <div className="flex items-center space-x-2 ml-4">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-green-400 text-sm">Live</span>
-                  <span className="text-slate-400 text-sm">30pts</span>
+                  <span className="text-slate-400 text-sm">{stockSymbol === 'AAPL' ? '600pts' : '30pts'}</span>
                   <span className="text-blue-400 text-sm">Auto</span>
                 </div>
               )}
