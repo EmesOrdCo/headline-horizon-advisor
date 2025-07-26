@@ -436,34 +436,42 @@ const Portfolio = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {assetCategories.crypto.map((asset) => (
-                      <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{asset.logo}</span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
-                              <span className="text-white text-sm font-medium">{asset.name}</span>
+                    {assetCategories.crypto.length > 0 ? (
+                      assetCategories.crypto.map((asset) => (
+                        <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{asset.logo}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                                <span className="text-white text-sm font-medium">{asset.name}</span>
+                              </div>
+                              <p className="text-xs text-slate-400">
+                                Invested: {formatCurrency(asset.investment)}
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-400">
-                              Invested: {formatCurrency(asset.investment)}
-                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                            <div className="flex items-center gap-2 text-xs mt-1">
+                              <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
+                                {formatPercent(asset.change)}
+                              </span>
+                              <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {formatPercent(asset.dayChange)}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
-                          <div className="flex items-center gap-2 text-xs mt-1">
-                            <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                              {formatPercent(asset.change)}
-                            </span>
-                            <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {formatPercent(asset.dayChange)}
-                            </span>
-                          </div>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400">
+                        <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No crypto positions</p>
+                        <p className="text-xs mt-1">Crypto trading not available in sandbox</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -472,41 +480,49 @@ const Portfolio = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-white capitalize text-lg">Funds</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {assetCategories.funds.map((asset) => (
-                     <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
-                       <div className="flex items-center gap-2">
-                         <CompanyLogo 
-                           symbol={asset.symbol} 
-                           logoUrl={getLogoUrl(asset.symbol)} 
-                           size="sm" 
-                         />
-                        <div>
+                <CardContent>
+                  <div className="space-y-2">
+                    {assetCategories.funds.length > 0 ? (
+                      assetCategories.funds.map((asset) => (
+                        <div key={asset.symbol} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-colors">
                           <div className="flex items-center gap-2">
-                            <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
-                            <span className="text-white text-sm font-medium">{asset.name}</span>
+                            <CompanyLogo 
+                              symbol={asset.symbol} 
+                              logoUrl={getLogoUrl(asset.symbol)} 
+                              size="sm" 
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-emerald-600 text-white text-xs">{asset.symbol}</Badge>
+                                <span className="text-white text-sm font-medium">{asset.name}</span>
+                              </div>
+                              <p className="text-xs text-slate-400">
+                                Invested: {formatCurrency(asset.investment)}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs text-slate-400">
-                            Invested: {formatCurrency(asset.investment)}
-                          </p>
+                          <div className="text-right">
+                            <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
+                            <div className="flex items-center gap-2 text-xs mt-1">
+                              <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
+                                {formatPercent(asset.change)}
+                              </span>
+                              <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {formatPercent(asset.dayChange)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400">
+                        <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>No fund positions</p>
+                        <p className="text-xs mt-1">Fund trading not available in sandbox</p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-white font-bold text-sm">{formatCurrency(asset.currentValue)}</div>
-                        <div className="flex items-center gap-2 text-xs mt-1">
-                          <span className={`flex items-center gap-1 ${asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {asset.change >= 0 ? <ArrowUpRight className="w-2 h-2" /> : <ArrowDownRight className="w-2 h-2" />}
-                            {formatPercent(asset.change)}
-                          </span>
-                          <span className={`${asset.dayChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {formatPercent(asset.dayChange)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
               </CardContent>
             </Card>
           </div>
