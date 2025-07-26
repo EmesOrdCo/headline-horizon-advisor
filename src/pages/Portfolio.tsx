@@ -78,15 +78,21 @@ const Portfolio = () => {
       const accountsData = await getAccounts();
       setAccounts(accountsData);
       if (accountsData.length > 0) {
-        setSelectedAccount(accountsData[0].id);
+        // Select account with the highest equity value for portfolio display
+        const accountWithEquity = accountsData
+          .filter(acc => acc.last_equity && parseFloat(acc.last_equity) > 0)
+          .sort((a, b) => parseFloat(b.last_equity) - parseFloat(a.last_equity))[0];
+        
+        const selectedAccountId = accountWithEquity?.id || accountsData[0].id;
+        setSelectedAccount(selectedAccountId);
         
         // Load account details, positions, orders, portfolio history, and activities
         const [accountDetails, positionsData, ordersData, portfolioHistoryData, activitiesData] = await Promise.all([
-          getAccount(accountsData[0].id),
-          getPositions(accountsData[0].id),
-          getOrders(accountsData[0].id, { status: 'all', limit: 50 }),
-          getPortfolioHistory(accountsData[0].id, { period: '1M', timeframe: '1D' }).catch(() => null),
-          getActivities(accountsData[0].id).catch(() => []) // Handle 404 error gracefully
+          getAccount(selectedAccountId),
+          getPositions(selectedAccountId),
+          getOrders(selectedAccountId, { status: 'all', limit: 50 }),
+          getPortfolioHistory(selectedAccountId, { period: '1M', timeframe: '1D' }).catch(() => null),
+          getActivities(selectedAccountId).catch(() => []) // Handle 404 error gracefully
         ]);
         
         console.log('Raw account details from API:', accountDetails);
