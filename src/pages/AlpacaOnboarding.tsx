@@ -85,11 +85,11 @@ const AlpacaOnboarding = () => {
     countryOfBirth: 'USA',
     countryOfTaxResidence: 'USA',
     email: 'harry.emes@worc.ox.ac.uk',
-    phoneNumber: '07375827675',
-    streetAddress: 'The Plough, Jockey End',
-    city: 'Gaddesden Row',
-    state: 'CA', // Valid US state for Alpaca API
-    postalCode: 'HP2 6HR',
+    phoneNumber: '(555) 123-4567', // US phone format
+    streetAddress: '123 Main Street', // US address format
+    city: 'San Francisco', // US city
+    state: 'CA', // Valid US state
+    postalCode: '94102', // US ZIP code format
     country: 'USA',
     fundingSource: ['employment_income']
   });
