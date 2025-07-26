@@ -30,10 +30,10 @@ serve(async (req) => {
       throw new Error('Alpaca broker API credentials not configured');
     }
 
-    // Broker API uses HTTP Basic Auth (key:secret format)
-    const basicAuth = btoa(`${apiKey}:${secretKey}`);
+    // Use APCA headers for real-time account data as specified
     const headers = {
-      'Authorization': `Basic ${basicAuth}`,
+      'APCA-API-KEY-ID': apiKey,
+      'APCA-API-SECRET-KEY': secretKey,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
