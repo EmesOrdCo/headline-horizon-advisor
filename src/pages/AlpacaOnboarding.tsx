@@ -284,10 +284,11 @@ const AlpacaOnboarding = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="dobInput">Date of Birth (YYYY-MM-DD) *</Label>
+                <Label htmlFor="dobInput">Date of Birth *</Label>
                 <Input
                   id="dobInput"
                   type="date"
+                  placeholder="Select your date of birth"
                   value={personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, "yyyy-MM-dd") : ""}
                   onChange={(e) => {
                     const dateValue = e.target.value ? new Date(e.target.value) : undefined;
@@ -297,6 +298,9 @@ const AlpacaOnboarding = () => {
                   min="1900-01-01"
                   required
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use the date picker or type your date
+                </p>
               </div>
               <div>
                 <Label>Or Select Date *</Label>
