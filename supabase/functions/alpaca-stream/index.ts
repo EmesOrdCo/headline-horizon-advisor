@@ -20,8 +20,8 @@ serve(async (req) => {
   }
 
   // Use Alpaca Broker API credentials for sandbox environment
-  const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
-  const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
+  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
   console.log('WebSocket connection request received for sandbox test stream');
   console.log('Broker API Key exists:', !!alpacaApiKey);
