@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from "@/hooks/useAlpacaBroker";
+import { supabase } from "@/integrations/supabase/client";
 import FundingSimulation from "@/components/broker/FundingSimulation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,17 +71,31 @@ const Portfolio = () => {
     ogType: "website",
   });
 
-  // Load data on mount - always use account 892602088
+  // Load data on mount - use user's account number from profile
   const loadPortfolioData = async () => {
     try {
       setIsLoading(true);
+      
+      // Get user's account number from profile
+      let userAccountNumber = null;
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('alpaca_account_number')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        userAccountNumber = profile?.alpaca_account_number;
+      }
       
       // Load accounts
       const accountsData = await getAccounts();
       setAccounts(accountsData);
       if (accountsData.length > 0) {
-        // Always use account number 892602088
-        const targetAccount = accountsData.find(acc => acc.account_number === '892602088');
+        // Use user's account number if available, otherwise fallback to first account
+        const targetAccount = userAccountNumber 
+          ? accountsData.find(acc => acc.account_number === userAccountNumber)
+          : accountsData[0];
         
         const selectedAccountId = targetAccount?.id || accountsData[0].id;
         setSelectedAccount(selectedAccountId);
