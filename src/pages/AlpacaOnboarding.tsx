@@ -177,7 +177,7 @@ const AlpacaOnboarding = () => {
         account_type: 'trading' as const,
         contact: {
           email_address: personalDetails.email,
-          phone_number: personalDetails.phoneNumber.replace(/[^\d]/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3'), // Format as XXX-XXX-XXXX
+          phone_number: personalDetails.phoneNumber.replace(/[^\d]/g, ''), // Remove all non-digits for Alpaca API
           street_address: [personalDetails.streetAddress],
           city: personalDetails.city,
           state: personalDetails.state || 'CA', // Default to CA if no state provided
