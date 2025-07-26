@@ -166,12 +166,14 @@ class AlpacaStreamManager {
             case 'market_data':
               if (Array.isArray(message.data)) {
                 message.data.forEach((item: any) => {
-                  if (this.subscribedSymbols.has(item.S)) {
+                  // Handle both AAPL (mapped from FAKEPACA) and original FAKEPACA 
+                  const symbol = item.S || item.symbol;
+                  if (symbol === 'AAPL' || this.subscribedSymbols.has(symbol)) {
                     const price = item.p || item.ap || item.bp || item.c;
                     if (price) {
-                      this.streamData[item.S] = {
+                      this.streamData[symbol] = {
                         type: item.T,
-                        symbol: item.S,
+                        symbol: symbol,
                         price: price,
                         timestamp: item.t ? new Date(item.t / 1000000).toISOString() : new Date().toISOString(),
                         volume: item.s || item.v,

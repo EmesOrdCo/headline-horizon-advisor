@@ -43,8 +43,8 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [priceHistory, setPriceHistory] = useState<Record<string, Array<{price: number, timestamp: string | number}>>>({});
 
-  // For test stream, use FAKEPACA instead of the actual symbol
-  const testSymbols = symbols.map(symbol => "FAKEPACA");
+  // Use actual symbols - FAKEPACA data is mapped to AAPL in the backend
+  const actualSymbols = symbols;
 
   // Add mock data when disconnected to demonstrate the visualization
   const mockStreamData = isConnected ? {} : {
@@ -301,7 +301,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30 font-medium">
-              📊 Sandbox Test Data (FAKEPACA)
+              📊 Sandbox Test Data (FAKEPACA → AAPL)
             </span>
             <span className="text-xs px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/30 font-medium">
               ⚠️ Simulated

@@ -137,9 +137,10 @@ serve(async (req) => {
                 // Forward sandbox test market data
                 console.log('Forwarding sandbox test data:', JSON.stringify(message, null, 2));
                 
-                // Add sandbox markers to the data
+                // Map FAKEPACA test data to AAPL for realistic testing
                 const sandboxData = {
                   ...message,
+                  S: 'AAPL', // Change symbol from FAKEPACA to AAPL
                   sandbox: true,
                   simulated: true,
                   source: 'alpaca_sandbox_test'
