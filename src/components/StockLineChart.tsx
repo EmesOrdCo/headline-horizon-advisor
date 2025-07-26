@@ -377,7 +377,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                domain={['dataMin - 0.2', 'dataMax + 0.2']}
+                domain={['dataMin - 1', 'dataMax + 1']}
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
