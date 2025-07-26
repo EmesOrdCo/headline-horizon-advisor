@@ -24,12 +24,9 @@ export const useAccountData = () => {
       const accountsData = await getAccounts();
       setAccounts(accountsData);
       
-      // Select the first active account with funds
-      const activeAccount = accountsData.find(acc => 
-        acc.status === 'ACTIVE' && 
-        acc.last_equity && 
-        parseFloat(acc.last_equity) > 0
-      ) || accountsData.find(acc => acc.status === 'ACTIVE') || accountsData[0];
+      // Select specific account 892602088
+      const targetAccount = accountsData.find(acc => acc.account_number === '892602088');
+      const activeAccount = targetAccount || accountsData.find(acc => acc.status === 'ACTIVE') || accountsData[0];
       
       setSelectedAccount(activeAccount || null);
       
