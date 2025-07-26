@@ -43,7 +43,24 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [priceHistory, setPriceHistory] = useState<Record<string, Array<{price: number, timestamp: string | number}>>>({});
 
-  // Track price history for each symbol
+  // Add mock data when disconnected to demonstrate the visualization
+  const mockStreamData = isConnected ? {} : {
+    [symbols[0]]: {
+      type: 'trade',
+      symbol: symbols[0],
+      price: 213.96,
+      timestamp: new Date().toISOString(),
+      volume: 1000000,
+      bid: 212.90,
+      ask: 215.00,
+      open: 212.48,
+      high: 215.78,
+      low: 212.10,
+      close: 213.96
+    }
+  };
+
+  const displayData = isConnected ? streamData : mockStreamData;
   useEffect(() => {
     Object.entries(streamData).forEach(([symbol, data]) => {
       if (data.price && data.timestamp) {
@@ -67,7 +84,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
     const newEdges: Edge[] = [];
 
     symbols.forEach((symbol, index) => {
-      const data = streamData[symbol];
+      const data = displayData[symbol];
       const history = priceHistory[symbol] || [];
       
       // Main symbol node
@@ -253,7 +270,7 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
 
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [streamData, symbols, priceHistory, isConnected, setNodes, setEdges]);
+  }, [displayData, symbols, priceHistory, isConnected, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
