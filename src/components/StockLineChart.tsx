@@ -148,103 +148,157 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   const lastDataPointRef = useRef<number>(0);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   
-  // Zoom functionality state
-  const [zoomLevel, setZoomLevel] = useState(1); // 1 = default, >1 = zoomed in, <1 = zoomed out
+  // Zoom functionality state with timeframe-aware navigation
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [isHovering, setIsHovering] = useState(false);
   
-  // Zoom configuration
-  const MIN_ZOOM = 0.1; // Max zoom out (10x more data visible)
-  const MAX_ZOOM = 10;  // Max zoom in (10x less data visible)
-  const ZOOM_SENSITIVITY = 0.15; // 15% change per scroll
-  const BASE_VIEWPORT_SIZE = 25; // Base number of data points to show
+  // Timeframe-aware zoom configuration
+  const getTimeframeZoomConfig = () => {
+    const timeframeIndex = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'].indexOf(timeframe);
+    return {
+      MIN_ZOOM: 0.2,
+      MAX_ZOOM: 8,
+      ZOOM_SENSITIVITY: 0.12,
+      BASE_VIEWPORT_SIZE: getBaseViewportForTimeframe(timeframe),
+      CAN_ZOOM_DOWN: timeframeIndex > 0,
+      CAN_ZOOM_UP: timeframeIndex < 8,
+      NEXT_TIMEFRAME_DOWN: timeframeIndex > 0 ? ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'][timeframeIndex - 1] : null,
+      NEXT_TIMEFRAME_UP: timeframeIndex < 8 ? ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'][timeframeIndex + 1] : null
+    };
+  };
+
+  
+  // Get base viewport size based on timeframe specifications
+  const getBaseViewportForTimeframe = (tf: string) => {
+    switch (tf) {
+      case '1m': return 60;   // 1 hour worth of 1m candles
+      case '5m': return 36;   // 3 hours worth of 5m candles  
+      case '15m': return 24;  // 6 hours worth of 15m candles
+      case '30m': return 24;  // 12 hours worth of 30m candles
+      case '1H': return 48;   // 2 days worth of 1H candles
+      case '4H': return 30;   // 5 days worth of 4H candles  
+      case '1D': return 30;   // 1 month worth of 1D candles
+      case '1W': return 12;   // 3 months worth of 1W candles
+      case '1M': return 12;   // 1 year worth of 1M candles
+      default: return 30;
+    }
+  };
+
+  // Calculate dynamic viewport size based on zoom level
+  const getViewportSize = () => {
+    const config = getTimeframeZoomConfig();
+    return Math.max(5, Math.floor(config.BASE_VIEWPORT_SIZE / zoomLevel));
+  };
 
   // Sync chart type with prop
   useEffect(() => {
     setActiveChartType(chartType);
   }, [chartType]);
 
-  // Calculate dynamic viewport size based on zoom level
-  const getViewportSize = () => {
-    // Inverse relationship: higher zoom = smaller viewport (more detailed view)
-    return Math.max(5, Math.floor(BASE_VIEWPORT_SIZE / zoomLevel));
-  };
-
-  // Zoom indicator text based on timeframe and viewport
+  // Enhanced zoom indicator with timeframe-specific ranges
   const getZoomIndicator = () => {
     const timeRange = getViewportSize();
+    const config = getTimeframeZoomConfig();
     
-    // Dynamic indicator based on timeframe
+    // Calculate actual time range being viewed
     switch (timeframe) {
       case '1m':
-        if (timeRange <= 5) return "Viewing: 5m range";
-        if (timeRange <= 15) return "Viewing: 15m range";
-        if (timeRange <= 30) return "Viewing: 30m range";
-        return "Viewing: 1h+ range";
+        const minutes = timeRange;
+        if (minutes <= 5) return "Viewing: 5m range";
+        if (minutes <= 15) return "Viewing: 15m range";
+        if (minutes <= 30) return "Viewing: 30m range";
+        if (minutes <= 60) return "Viewing: 1h range";
+        return `Viewing: ${Math.round(minutes/60)}h range`;
       case '5m':
-        if (timeRange <= 5) return "Viewing: 25m range";
-        if (timeRange <= 15) return "Viewing: 1h range";
-        return "Viewing: 3h+ range";
+        const mins5 = timeRange * 5;
+        if (mins5 <= 30) return "Viewing: 30m range";
+        if (mins5 <= 60) return "Viewing: 1h range";
+        if (mins5 <= 180) return "Viewing: 3h range";
+        return `Viewing: ${Math.round(mins5/60)}h range`;
       case '15m':
-        if (timeRange <= 5) return "Viewing: 1.5h range";
-        if (timeRange <= 15) return "Viewing: 4h range";
-        return "Viewing: 12h+ range";
+        const mins15 = timeRange * 15;
+        if (mins15 <= 60) return "Viewing: 1h range";
+        if (mins15 <= 180) return "Viewing: 3h range";
+        if (mins15 <= 360) return "Viewing: 6h range";
+        return `Viewing: ${Math.round(mins15/60)}h range`;
       case '30m':
-        if (timeRange <= 5) return "Viewing: 2.5h range";
-        if (timeRange <= 15) return "Viewing: 8h range";
-        return "Viewing: 1d+ range";
+        const mins30 = timeRange * 30;
+        if (mins30 <= 180) return "Viewing: 3h range";
+        if (mins30 <= 360) return "Viewing: 6h range";
+        if (mins30 <= 720) return "Viewing: 12h range";
+        return `Viewing: ${Math.round(mins30/60)}h range`;
       case '1H':
-        if (timeRange <= 5) return "Viewing: 5h range";
-        if (timeRange <= 15) return "Viewing: 15h range";
-        return "Viewing: 2d+ range";
+        const hours = timeRange;
+        if (hours <= 6) return "Viewing: 6h range";
+        if (hours <= 24) return "Viewing: 1d range";
+        if (hours <= 48) return "Viewing: 2d range";
+        return `Viewing: ${Math.round(hours/24)}d range`;
       case '4H':
-        if (timeRange <= 5) return "Viewing: 20h range";
-        if (timeRange <= 15) return "Viewing: 2.5d range";
-        return "Viewing: 1w+ range";
+        const hours4 = timeRange * 4;
+        if (hours4 <= 24) return "Viewing: 1d range";
+        if (hours4 <= 120) return "Viewing: 5d range";
+        return `Viewing: ${Math.round(hours4/24)}d range`;
       case '1D':
-        if (timeRange <= 5) return "Viewing: 1w range";
-        if (timeRange <= 15) return "Viewing: 2w range";
-        return "Viewing: 1m+ range";
+        const days = timeRange;
+        if (days <= 7) return "Viewing: 1w range";
+        if (days <= 30) return "Viewing: 1m range";
+        return `Viewing: ${Math.round(days/30)}m range`;
       case '1W':
-        if (timeRange <= 5) return "Viewing: 1m range";
-        if (timeRange <= 15) return "Viewing: 3m range";
-        return "Viewing: 6m+ range";
+        const weeks = timeRange;
+        if (weeks <= 4) return "Viewing: 1m range";
+        if (weeks <= 12) return "Viewing: 3m range";
+        return `Viewing: ${Math.round(weeks/4)}m range`;
       case '1M':
-        if (timeRange <= 5) return "Viewing: 5m range";
-        if (timeRange <= 15) return "Viewing: 1y range";
-        return "Viewing: 2y+ range";
+        const months = timeRange;
+        if (months <= 6) return "Viewing: 6m range";
+        if (months <= 12) return "Viewing: 1y range";
+        return `Viewing: ${months}m range`;
       default:
         return `Viewing: ${timeRange} ${timeframe} periods`;
     }
   };
 
-  // Handle wheel event for zooming
+  // Enhanced wheel handler with timeframe switching capability
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (!isHovering || !chartContainerRef.current) return;
       
-      e.preventDefault(); // Prevent page scrolling
+      e.preventDefault();
       e.stopPropagation();
       
+      const config = getTimeframeZoomConfig();
       const delta = e.deltaY;
-      const zoomDirection = delta > 0 ? 1 : -1; // Scroll down = zoom in, scroll up = zoom out
+      const isZoomIn = delta > 0; // Scroll down = zoom in
+      
+      // Check if we should switch timeframes instead of just zooming
+      if (isZoomIn && zoomLevel >= config.MAX_ZOOM * 0.8 && config.CAN_ZOOM_DOWN) {
+        // Switch to lower timeframe (more detailed)
+        console.log(`🔄 Switching to ${config.NEXT_TIMEFRAME_DOWN} for more detail`);
+        // Note: This would need to be handled by parent component
+        // For now, just continue with current zoom
+      } else if (!isZoomIn && zoomLevel <= config.MIN_ZOOM * 1.2 && config.CAN_ZOOM_UP) {
+        // Switch to higher timeframe (less detailed) 
+        console.log(`🔄 Switching to ${config.NEXT_TIMEFRAME_UP} for broader view`);
+        // Note: This would need to be handled by parent component
+        // For now, just continue with current zoom
+      }
+      
+      const zoomDirection = isZoomIn ? 1 : -1;
       
       setZoomLevel(prevZoom => {
-        const newZoom = prevZoom * (1 + (zoomDirection * ZOOM_SENSITIVITY));
-        const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+        const newZoom = prevZoom * (1 + (zoomDirection * config.ZOOM_SENSITIVITY));
+        const clampedZoom = Math.max(config.MIN_ZOOM, Math.min(config.MAX_ZOOM, newZoom));
         
         // Calculate new viewport start to maintain center position
         const currentViewportSize = getViewportSize();
-        const newViewportSize = Math.max(5, Math.floor(BASE_VIEWPORT_SIZE / clampedZoom));
+        const newViewportSize = Math.max(5, Math.floor(config.BASE_VIEWPORT_SIZE / clampedZoom));
         const centerPoint = viewportStart + currentViewportSize / 2;
         const newViewportStart = Math.max(0, centerPoint - newViewportSize / 2);
         
-        // Update viewport start with the new centered position
         setViewportStart(Math.floor(newViewportStart));
-        
-        // Disable auto-scrolling when manually zooming
         setIsAutoScrolling(false);
         
-        console.log(`🔍 Zoom: ${clampedZoom.toFixed(2)}x, Viewport: ${newViewportSize} points`);
+        console.log(`🔍 Zoom: ${clampedZoom.toFixed(2)}x, Viewport: ${newViewportSize} ${timeframe} periods`);
         
         return clampedZoom;
       });
@@ -253,12 +307,9 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     const chartElement = chartContainerRef.current;
     if (chartElement) {
       chartElement.addEventListener('wheel', handleWheel, { passive: false });
-      
-      return () => {
-        chartElement.removeEventListener('wheel', handleWheel);
-      };
+      return () => chartElement.removeEventListener('wheel', handleWheel);
     }
-  }, [isHovering, viewportStart, getViewportSize]);
+  }, [isHovering, viewportStart, getViewportSize, timeframe, zoomLevel]);
 
   // Mouse enter/leave handlers for hover detection
   const handleMouseEnter = () => setIsHovering(true);
@@ -287,28 +338,30 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       chartData = historicalData.data.map((point: any) => {
         const date = new Date(point.timestamp || point.date);
         
-        // Format time based on timeframe
+        // Enhanced time labeling based on timeframe specifications
         let timeLabel = '';
         switch (timeframe) {
           case '1m':
-          case '5m':
+          case '5m': 
           case '15m':
           case '30m':
+            // HH:mm format for intraday
             timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             break;
           case '1H':
           case '4H':
-            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + 
+            // D MMM, HH:mm format for hourly
+            timeLabel = date.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + 
                        date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             break;
           case '1D':
-            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-            break;
           case '1W':
-            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            // D MMM format for daily/weekly
+            timeLabel = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
             break;
           case '1M':
-            timeLabel = date.toLocaleDateString([], { month: 'short', year: '2-digit' });
+            // MMM YYYY format for monthly
+            timeLabel = date.toLocaleDateString([], { month: 'short', year: 'numeric' });
             break;
           default:
             timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -411,9 +464,18 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
 
   return (
     <div className="w-full h-full bg-gray-900 relative">
-      {/* Zoom Indicator */}
-      <div className="absolute top-2 right-2 z-10 bg-gray-800/80 px-2 py-1 rounded text-xs text-gray-300 pointer-events-none">
-        {getZoomIndicator()} • Zoom: {zoomLevel.toFixed(1)}x
+      {/* Enhanced zoom and timeframe indicator */}
+      <div className="absolute top-2 right-2 z-10 bg-gray-800/90 px-3 py-1.5 rounded-lg text-xs text-gray-300 pointer-events-none border border-gray-600">
+        <div className="flex items-center space-x-2">
+          <span>{getZoomIndicator()}</span>
+          <span className="text-gray-500">•</span>
+          <span>Zoom: {zoomLevel.toFixed(1)}x</span>
+          <span className="text-gray-500">•</span>
+          <span className="text-blue-400">{timeframe}</span>
+        </div>
+        <div className="text-[10px] text-gray-400 mt-0.5">
+          Scroll to zoom • {timeframe === '1m' ? 'Min zoom' : 'Scroll up for broader view'} {timeframe === '1M' ? '' : '• Scroll down for detail'}
+        </div>
       </div>
       
       <div 

@@ -41,25 +41,29 @@ const StockChart: React.FC = () => {
   const activeSymbol = symbol || 'SPY';
   const { data: stockPrices } = useStockPrices([activeSymbol]);
   
-  // Dynamic historical data fetching based on timeframe
+  // Dynamic historical data fetching based on timeframe specifications
   const getTimeframeConfig = (timeframe: string) => {
     switch (timeframe) {
       case '1m':
+        return { apiTimeframe: '1Minute', limit: 60, hours: 1 }; // Last 1 hour
       case '5m':
+        return { apiTimeframe: '5Minute', limit: 36, hours: 3 }; // Last 3 hours  
       case '15m':
+        return { apiTimeframe: '15Minute', limit: 24, hours: 6 }; // Last 6 hours
       case '30m':
-        return { apiTimeframe: '1Hour', limit: 48 }; // Last 2 days for intraday
+        return { apiTimeframe: '30Minute', limit: 24, hours: 12 }; // Last 12 hours
       case '1H':
+        return { apiTimeframe: '1Hour', limit: 48, days: 2 }; // Last 2 days
       case '4H':
-        return { apiTimeframe: '1Day', limit: 5 }; // Last 5 days
+        return { apiTimeframe: '4Hour', limit: 30, days: 5 }; // Last 5 days
       case '1D':
-        return { apiTimeframe: '1Day', limit: 30 }; // Last 30 days
+        return { apiTimeframe: '1Day', limit: 30, days: 30 }; // Last 1 month
       case '1W':
-        return { apiTimeframe: '1Week', limit: 26 }; // Last 26 weeks (6 months)
+        return { apiTimeframe: '1Week', limit: 12, months: 3 }; // Last 3 months
       case '1M':
-        return { apiTimeframe: '1Month', limit: 12 }; // Last 12 months
+        return { apiTimeframe: '1Month', limit: 12, months: 12 }; // Last 1 year
       default:
-        return { apiTimeframe: '1Day', limit: 30 };
+        return { apiTimeframe: '1Day', limit: 30, days: 30 };
     }
   };
   
