@@ -818,71 +818,13 @@ const Portfolio = () => {
                          </tr>
                        );
                      })
-                   ) : (
-                     // Demo trade history when no real activities exist
-                     [
-                       { symbol: 'AAPL', side: 'buy', qty: 75, price: 195.50, status: 'filled', date: new Date(Date.now() - 86400000 * 2) },
-                       { symbol: 'MSFT', side: 'buy', qty: 40, price: 295.75, status: 'filled', date: new Date(Date.now() - 86400000 * 3) },
-                       { symbol: 'GOOGL', side: 'buy', qty: 30, price: 268.20, status: 'filled', date: new Date(Date.now() - 86400000 * 5) },
-                       { symbol: 'TSLA', side: 'sell', qty: 10, price: 245.80, status: 'filled', date: new Date(Date.now() - 86400000 * 7) },
-                       { symbol: 'NVDA', side: 'buy', qty: 20, price: 198.45, status: 'filled', date: new Date(Date.now() - 86400000 * 10) }
-                     ].map((trade, index) => {
-                       const formattedDate = trade.date.toLocaleDateString('en-US', { 
-                         year: 'numeric', 
-                         month: '2-digit', 
-                         day: '2-digit' 
-                       });
-                       const formattedTime = trade.date.toLocaleTimeString([], { 
-                         hour: '2-digit', 
-                         minute: '2-digit',
-                         hour12: true
-                       });
-
-                       return (
-                         <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-700/20">
-                           <td className="p-4">
-                             <span className="text-yellow-400 font-mono text-sm">
-                               {accountData?.account_number || 'DEMO'}
-                             </span>
-                           </td>
-                           <td className="p-4">
-                             <div className="flex items-center gap-2">
-                               <span className="text-yellow-400 font-mono text-sm">
-                                 {Math.random().toString(36).substr(2, 8)}...
-                               </span>
-                               <Badge className="bg-blue-600 text-white text-xs">Demo</Badge>
-                             </div>
-                           </td>
-                           <td className="p-4">
-                             <Badge 
-                               className={trade.side === 'buy' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
-                             >
-                               {trade.side.charAt(0).toUpperCase() + trade.side.slice(1)}
-                             </Badge>
-                           </td>
-                           <td className="p-4">
-                             <Badge className="bg-slate-600 text-white">
-                               {trade.symbol}
-                             </Badge>
-                           </td>
-                           <td className="p-4 text-white font-mono">
-                             {trade.qty}
-                           </td>
-                           <td className="p-4 text-white font-mono">
-                             ${trade.price.toFixed(2)}
-                           </td>
-                           <td className="p-4">
-                             <Badge className="bg-green-600 text-white">
-                               ✓ Filled
-                             </Badge>
-                           </td>
-                           <td className="p-4 text-slate-300 font-mono text-sm">
-                             <div>{formattedDate}</div>
-                             <div className="text-xs text-slate-400">{formattedTime}</div>
-                           </td>
-                         </tr>
-                       );
-                     })
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-slate-400">
+                          No trade history yet. Make your first trade to see activity here.
+                        </td>
+                      </tr>
+                    )
                    )}
                 </tbody>
               </table>
