@@ -283,9 +283,9 @@ const StockChart: React.FC = () => {
           </div>
 
           {/* Chart Content - Live Apple Chart */}
-          <div className="flex-1 bg-slate-900 min-h-0 flex flex-col overflow-y-auto">
+          <div className="flex-1 bg-slate-900 min-h-0">
             {/* Live Apple Chart */}
-            <div className="flex-1 min-h-[400px]">
+            <div className="h-full w-full">
               <StockLineChart currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" />
             </div>
             
