@@ -76,7 +76,7 @@ const Profile = () => {
     };
 
     loadProfile();
-  }, [user, navigate, toast]);
+  }, [user, toast]);
 
   const validateAge = (birthDate: string) => {
     const today = new Date();
