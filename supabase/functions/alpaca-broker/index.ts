@@ -103,6 +103,14 @@ serve(async (req) => {
         });
         break;
 
+      case 'get_ach_relationships':
+        url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/ach_relationships`;
+        response = await fetch(url, {
+          method: 'GET',
+          headers,
+        });
+        break;
+
       case 'create_transfer':
         url = `${BROKER_BASE_URL}/v1/accounts/${account_id}/transfers`;
         response = await fetch(url, {

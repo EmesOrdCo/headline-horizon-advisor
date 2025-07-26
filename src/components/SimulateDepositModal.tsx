@@ -22,7 +22,7 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
   const [amount, setAmount] = useState('1000.00');
   const [journalId, setJournalId] = useState<string | null>(null);
   
-  const { createTransfer, loading } = useAlpacaBroker();
+  const { createTransfer, getACHRelationships, loading } = useAlpacaBroker();
 
   const resetForm = () => {
     setStep('form');
@@ -39,44 +39,60 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
     setStep('processing');
 
     try {
-      console.log('💰 Creating ACH transfer for demo deposit...');
+      console.log('💰 Starting real ACH deposit to Alpaca account...');
+      console.log('Account ID:', accountId);
+      console.log('Deposit amount:', amount);
       
-      // Create an ACH transfer using the Alpaca Transfer API
-      // This creates a real transfer record in the Alpaca database
+      // Step 1: Get existing ACH relationships 
+      console.log('🔍 Fetching existing ACH relationships...');
+      const relationships = await getACHRelationships(accountId);
+      console.log('📋 ACH relationships found:', relationships);
+      
+      let relationshipId = null;
+      
+      if (relationships && relationships.length > 0) {
+        // Use the first active relationship
+        const activeRelationship = relationships.find(r => r.status === 'ACTIVE') || relationships[0];
+        relationshipId = activeRelationship.id;
+        console.log('✅ Using existing ACH relationship:', relationshipId);
+      } else {
+        throw new Error('No ACH relationships found. Please set up ACH first.');
+      }
+      
+      // Step 2: Create the actual ACH transfer using Alpaca's API
+      console.log('💸 Creating ACH transfer...');
       const transferData = {
-        amount: amount,
-        direction: 'INCOMING', // Money coming into the account
-        timing: 'IMMEDIATE', // For demo purposes, make it immediate
-        relationship_id: 'demo_relationship_id', // Use a demo relationship ID
-        description: `Demo ACH deposit of $${amount}`,
-        type: 'ach'
+        amount: parseFloat(amount), // Ensure it's a number
+        direction: 'INCOMING', // Money coming into account
+        timing: 'IMMEDIATE', // For demo/sandbox, try immediate
+        relationship_id: relationshipId, // Use the actual relationship ID
+        fee_payment_method: 'ACCOUNT' // Pay fees from account
       };
-
-      console.log('📤 Sending transfer request:', transferData);
       
+      console.log('📤 Transfer data:', transferData);
       const transferResult = await createTransfer(accountId, transferData);
-      console.log('✅ ACH transfer created:', transferResult);
+      console.log('✅ ACH transfer created successfully:', transferResult);
       
-      setJournalId(transferResult.id || 'demo_transfer_' + Date.now());
+      setJournalId(transferResult.id || 'transfer_' + Date.now());
       setStep('success');
       
-      toast.success(`$${amount} ACH transfer initiated!`);
-      toast.info('Demo ACH transfer created in Alpaca database');
+      toast.success(`🎉 $${amount} ACH deposit initiated successfully!`);
+      toast.success('✅ Real transfer created in Alpaca database');
       
       // Trigger refresh to update account display
       onDepositComplete();
       
     } catch (error) {
-      console.error('❌ ACH transfer error:', error);
+      console.error('❌ ACH deposit failed:', error);
       
-      // If the ACH transfer fails, try a simpler approach
-      console.log('🔄 ACH transfer failed, creating demo simulation...');
+      // Show detailed error and still show success for demo purposes
+      console.log('🔄 ACH failed, but completing demo anyway...');
       
-      setJournalId('demo_simulation_' + Date.now());
+      setJournalId('demo_transfer_' + Date.now());
       setStep('success');
       
-      toast.success(`Demo deposit simulation completed!`);
-      toast.info('Note: This is a demo simulation as ACH may not be fully configured');
+      toast.error(`ACH transfer failed: ${error.message}`);
+      toast.info('Demo deposit simulation completed instead');
       onDepositComplete();
     }
   };
