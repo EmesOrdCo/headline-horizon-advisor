@@ -76,16 +76,17 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
     }
 
     try {
-      // In Alpaca sandbox, journal transfers are limited. 
-      // Instead, we'll use a simulated approach that mimics real funding
-      console.log('Simulating journal transfer for demo purposes');
-      console.log('Account ID:', accountId);
-      console.log('Amount:', amount);
-      
-      // Simulate the funding process - in a real implementation, 
-      // you would need a firm account with sufficient funds
-      toast.success(`Demo cash funding of $${amount} simulated successfully!`);
-      toast.info('Note: Alpaca sandbox has limited journal transfer support. This simulates the funding process.');
+      // Use proper Journal API format with real firm account ID
+      const journalData = {
+        from_account: "9f39baf5-9891-3ef5-9c6f-4f7c5a672e7c", // Real firm account
+        to_account: accountId,
+        entry_type: "JNLC",
+        amount: amount
+      };
+
+      console.log('Creating journal transfer:', journalData);
+      await createJournal(journalData);
+      toast.success(`Journal transfer of $${amount} completed successfully!`);
       onFundingComplete();
     } catch (error) {
       console.error('Journal funding error:', error);
