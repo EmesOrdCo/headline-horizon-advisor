@@ -102,26 +102,26 @@ const StockChart: React.FC = () => {
     }
   };
 
-  // Get current stock info 
+  // Get current stock info with REAL-TIME priority
   const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
   const streamPrice = streamData?.[activeSymbol];
   
-  // Use dynamic pricing based on the current symbol instead of hardcoded AAPL values
+  // PRIORITY: Use real-time WebSocket data FIRST, then fallback to API data
   const currentPrice = streamPrice?.price || currentStock?.price || 0;
   const bidPrice = streamPrice?.bid || (currentPrice - 0.05);
   const askPrice = streamPrice?.ask || (currentPrice + 0.05);
   const spread = askPrice - bidPrice;
   const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
   
-  // Get OHLC data - use real data or reasonable defaults
+  // Get OHLC data - PRIORITIZE real-time data
   const todayData = historicalData?.data?.[0];
   const openPrice = streamPrice?.open || todayData?.open || currentPrice;
-  const highPrice = streamPrice?.high || todayData?.high || currentPrice;
-  const lowPrice = streamPrice?.low || todayData?.low || currentPrice;
+  const highPrice = streamPrice?.high || Math.max(todayData?.high || 0, currentPrice);
+  const lowPrice = streamPrice?.low || Math.min(todayData?.low || currentPrice, currentPrice);
   const closePrice = streamPrice?.close || currentPrice;
   const volume = streamPrice?.volume || todayData?.volume || 50000;
   
-  // Calculate change from open price
+  // Calculate change from open price using REAL-TIME data
   const change = currentPrice - openPrice;
   const changePercent = openPrice > 0 ? ((change / openPrice) * 100) : 0;
   
