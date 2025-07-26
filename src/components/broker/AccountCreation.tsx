@@ -13,16 +13,28 @@ interface AccountCreationProps {
 }
 
 const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
+  // Generate unique test data to avoid conflicts
+  const generateUniqueEmail = () => {
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000);
+    return `test_user_${timestamp}_${randomNum}@example.com`;
+  };
+
+  const generateUniquePhone = () => {
+    const randomNum = Math.floor(Math.random() * 9000) + 1000;
+    return `+1555${randomNum}`;
+  };
+
   const [formData, setFormData] = useState({
-    email: 'test@example.com',
-    phone: '+15551234567',
-    street1: '123 Test Street',
+    email: generateUniqueEmail(),
+    phone: generateUniquePhone(),
+    street1: '20 N San Mateo Dr',
     street2: '',
-    city: 'New York',
-    state: 'NY',
-    postal_code: '10001',
-    given_name: 'John',
-    family_name: 'Doe',
+    city: 'San Mateo',
+    state: 'CA',
+    postal_code: '94401',
+    given_name: 'Test',
+    family_name: 'User',
     date_of_birth: '1990-01-01',
     tax_id: '123456789',
     funding_source: 'employment_income',
@@ -90,7 +102,7 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
       <CardHeader>
         <CardTitle>Create Test Account</CardTitle>
         <CardDescription>
-          Create a new sandbox account with dummy KYC data for testing
+          Create a new sandbox account with auto-generated unique test data
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -188,8 +200,8 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NY">New York</SelectItem>
                   <SelectItem value="CA">California</SelectItem>
+                  <SelectItem value="NY">New York</SelectItem>
                   <SelectItem value="TX">Texas</SelectItem>
                   <SelectItem value="FL">Florida</SelectItem>
                 </SelectContent>
