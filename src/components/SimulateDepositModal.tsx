@@ -22,7 +22,7 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
   const [amount, setAmount] = useState('1000.00');
   const [journalId, setJournalId] = useState<string | null>(null);
   
-  const { createJournal, createACHRelationship, createTransfer, loading } = useAlpacaBroker();
+  const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
     setStep('form');
@@ -36,46 +36,34 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
       return;
     }
 
+    setLoading(true);
     setStep('processing');
 
+    // Simple demo simulation - just wait 2 seconds and show success
     try {
-      console.log('🏦 Creating journal transfer for instant deposit...');
+      console.log('💰 Starting demo deposit simulation...');
       
-      // Use Journal API to simulate an instant deposit
-      // Based on official Alpaca documentation: https://docs.alpaca.markets/reference/createjournal
-      const journalData = {
-        entry_type: 'JNLC', // Journal Cash
-        from_account: 'alpaca-funding-source', // Need a pre-funded account
-        to_account: accountId,
-        amount: amount, // Amount as string
-        description: `Simulated deposit of $${amount}`,
-        // Travel Rule fields (optional but recommended)
-        transmitter_name: 'MarketSensorAI Sandbox',
-        currency: 'USD'
-      };
-
-      const journalResult = await createJournal(journalData);
-      console.log('✅ Journal transfer created:', journalResult);
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      setJournalId(journalResult.id || 'sandbox_journal_' + Date.now());
+      // Generate a fake transaction ID for demo purposes
+      const demoTransactionId = `DEMO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      setJournalId(demoTransactionId);
       setStep('success');
+      setLoading(false);
       
-      toast.success(`$${amount} instantly added to your account!`);
+      toast.success(`🎉 Demo deposit of $${amount} completed!`);
+      toast.info('💡 This is a demo simulation - no real money involved');
+      
+      // Trigger refresh to update account display
       onDepositComplete();
       
     } catch (error) {
-      console.error('❌ Journal transfer error:', error);
-      
-      // Even if the Journal API fails (common in sandbox), we'll show success
-      // since this is just a simulation for demo purposes
-      console.log('🔄 Journal API may not be available, simulating success...');
-      
-      setJournalId('sandbox_simulation_' + Date.now());
-      setStep('success');
-      
-      toast.success(`Simulated $${amount} deposit completed!`);
-      toast.info('Note: This is a sandbox simulation for demo purposes');
-      onDepositComplete();
+      console.error('❌ Demo simulation error:', error);
+      setStep('error');
+      setLoading(false);
+      toast.error('Demo simulation failed');
     }
   };
 
