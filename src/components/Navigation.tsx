@@ -54,7 +54,7 @@ const Navigation = () => {
                   Log In
                 </Button>
               </Link>
-              <Link to="/onboarding/email">
+              <Link to="/auth?mode=signup">
                 <Button className="bg-emerald-500 hover:bg-emerald-600 text-white">
                   Sign Up
                 </Button>
@@ -142,7 +142,7 @@ const Navigation = () => {
                         Log In
                       </Button>
                     </Link>
-                    <Link to="/onboarding/email" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link to="/auth?mode=signup" onClick={() => setIsMobileMenuOpen(false)}>
                       <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
                         Sign Up
                       </Button>
