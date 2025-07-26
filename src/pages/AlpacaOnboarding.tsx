@@ -88,7 +88,7 @@ const AlpacaOnboarding = () => {
     phoneNumber: '07375827675',
     streetAddress: 'The Plough, Jockey End',
     city: 'Gaddesden Row',
-    state: 'Hertfordshire',
+    state: 'CA', // Valid US state for Alpaca API
     postalCode: 'HP2 6HR',
     country: 'USA',
     fundingSource: ['employment_income']
