@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LineChart,
   Line,
@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { useStockDataHistory } from '@/hooks/useStockDataHistory';
 
 interface PricePoint {
   timestamp: string;
@@ -69,84 +70,110 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     enabled: true 
   });
 
-  const [chartData, setChartData] = useState<PricePoint[]>([]);
+  const { 
+    addDataPoint, 
+    getDataForMinutes,
+    dataCount 
+  } = useStockDataHistory({ 
+    symbol, 
+    currentPrice: parentPrice, 
+    enabled: true 
+  });
 
-  // Initialize with current time and generate 10 minutes of data
+  const [displayData, setDisplayData] = useState<PricePoint[]>([]);
+  const [viewportStart, setViewportStart] = useState(0);
+  const lastDataPointRef = useRef<number>(0);
+
+  // Convert historical data points to chart format
+  const convertToChartData = (historicalData: any[]): PricePoint[] => {
+    return historicalData.map(point => ({
+      timestamp: new Date(point.timestamp).toLocaleDateString() + ' ' + new Date(point.timestamp).toLocaleTimeString(),
+      time: new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      price: point.price,
+      open: point.open,
+      high: point.high,
+      low: point.low,
+      close: point.close,
+      volume: point.volume,
+    }));
+  };
+
+  // Load and update display data
   useEffect(() => {
-    const now = new Date();
-    const initialData: PricePoint[] = [];
+    const tenMinuteData = getDataForMinutes(10);
+    const chartData = convertToChartData(tenMinuteData);
     
-    // Use the parent's current price for consistency
-    const basePrice = parentPrice;
+    setDisplayData(chartData);
     
-    // Generate last 10 minutes in 30-second intervals (20 points)
-    for (let i = 19; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 30000); // 30 seconds apart
-      const variation = (Math.random() - 0.5) * 0.5; // Smaller variations for consistency
-      const price = basePrice + variation;
-      
-      initialData.push({
-        timestamp: timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString(),
-        time: timestamp.toLocaleTimeString(),
-        price: Math.round(price * 100) / 100,
-        open: Math.round((basePrice + (Math.random() - 0.5) * 0.2) * 100) / 100,
-        high: Math.round((price + Math.random() * 0.2) * 100) / 100,
-        low: Math.round((price - Math.random() * 0.2) * 100) / 100,
-        close: Math.round(price * 100) / 100,
-        volume: Math.floor(Math.random() * 10000) + 50000
-      });
+    // Auto-scroll to show the latest data
+    if (chartData.length > 20) {
+      setViewportStart(Math.max(0, chartData.length - 20));
     }
     
-    setChartData(initialData);
-    console.log('📊 Initialized chart with', initialData.length, 'points, latest price:', initialData[initialData.length - 1]?.price);
-  }, [parentPrice]);
+    console.log(`📊 Updated display data: ${chartData.length} points (showing last 10 minutes)`);
+  }, [dataCount, getDataForMinutes]);
 
-  // Add new data every 3 seconds, using parent price as base
+  // Add new data points from WebSocket or simulate them
   useEffect(() => {
     const interval = setInterval(() => {
-      const now = new Date();
-      const data = streamData[symbol];
+      const streamPrice = streamData[symbol];
+      const now = Date.now();
       
-      setChartData(prev => {
-        // Always use the parent's current price as the base to ensure consistency
-        const basePrice = parentPrice;
-        
-        // Small realistic price movements around the parent price
-        const priceChange = (Math.random() - 0.5) * 0.1;
-        const newPrice = basePrice + priceChange;
-        
-        const newPoint: PricePoint = {
-          timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
-          time: now.toLocaleTimeString(),
-          price: Math.round(newPrice * 100) / 100,
-          open: data?.open || Math.round((basePrice + (Math.random() - 0.5) * 0.05) * 100) / 100,
-          high: data?.high || Math.round((newPrice + Math.random() * 0.05) * 100) / 100,
-          low: data?.low || Math.round((newPrice - Math.random() * 0.05) * 100) / 100,
-          close: data?.close || Math.round(newPrice * 100) / 100,
-          volume: data?.volume || Math.floor(Math.random() * 10000) + 50000
-        };
-
-        // Keep only last 10 minutes of data
-        const tenMinutesAgo = now.getTime() - (10 * 60 * 1000);
-        const filteredData = prev.filter(point => {
-          const pointTime = new Date(point.timestamp).getTime();
-          return pointTime > tenMinutesAgo;
+      // Don't add duplicate data points
+      if (now - lastDataPointRef.current < 2000) return;
+      lastDataPointRef.current = now;
+      
+      if (streamPrice?.price) {
+        // Use real WebSocket data
+        addDataPoint(streamPrice.price, {
+          open: streamPrice.open,
+          high: streamPrice.high,
+          low: streamPrice.low,
+          close: streamPrice.close,
+          volume: streamPrice.volume,
         });
+        console.log(`📡 Added real WebSocket data: $${streamPrice.price}`);
+      } else {
+        // Generate realistic price movement based on current price
+        const variation = (Math.random() - 0.5) * 0.2;
+        const newPrice = parentPrice + variation;
         
-        const updated = [...filteredData, newPoint];
-        console.log('📊 Updated chart, points:', updated.length, 'latest price:', newPoint.price, 'parent price:', parentPrice);
-        return updated;
-      });
-    }, 3000); // Update every 3 seconds
+        addDataPoint(newPrice, {
+          open: parentPrice + (Math.random() - 0.5) * 0.1,
+          high: newPrice + Math.random() * 0.1,
+          low: newPrice - Math.random() * 0.1,
+          close: newPrice,
+        });
+        console.log(`🎲 Added simulated data: $${newPrice.toFixed(2)}`);
+      }
+    }, 3000); // Add new data every 3 seconds
 
     return () => clearInterval(interval);
-  }, [streamData, parentPrice, symbol]);
+  }, [streamData, symbol, parentPrice, addDataPoint]);
 
-  // Use the parent's current price for display
+  // Get viewport data for smooth scrolling
+  const viewportData = displayData.slice(viewportStart, viewportStart + 20);
+  
   const currentPrice = parentPrice;
-  const firstPrice = chartData[0]?.price || currentPrice;
+  const firstPrice = displayData[0]?.price || currentPrice;
   const priceChange = currentPrice - firstPrice;
   const priceChangePercent = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
+
+  // Scroll controls
+  const canScrollLeft = viewportStart > 0;
+  const canScrollRight = viewportStart + 20 < displayData.length;
+
+  const scrollLeft = () => {
+    setViewportStart(Math.max(0, viewportStart - 5));
+  };
+
+  const scrollRight = () => {
+    setViewportStart(Math.min(displayData.length - 20, viewportStart + 5));
+  };
+
+  const scrollToLatest = () => {
+    setViewportStart(Math.max(0, displayData.length - 20));
+  };
 
   return (
     <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700">
@@ -169,7 +196,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
               {isConnected ? 'Live Data' : 'Simulated Data'}
             </span>
             <span className="text-sm text-gray-400">
-              Last 10 minutes
+              {dataCount} total points
             </span>
             {errorMessage && (
               <span className="text-xs text-red-400 ml-2">
@@ -178,11 +205,38 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
             )}
           </div>
         </div>
+        
+        {/* Scroll Controls */}
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            onClick={scrollLeft}
+            disabled={!canScrollLeft}
+            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+          >
+            ← Earlier
+          </button>
+          <button
+            onClick={scrollRight}
+            disabled={!canScrollRight}
+            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+          >
+            Later →
+          </button>
+          <button
+            onClick={scrollToLatest}
+            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500"
+          >
+            Latest
+          </button>
+          <span className="text-xs text-gray-400">
+            Showing {viewportStart + 1}-{Math.min(viewportStart + 20, displayData.length)} of {displayData.length}
+          </span>
+        </div>
       </div>
       
-      <div className="h-[540px] p-4">
+      <div className="h-[500px] p-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={viewportData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
