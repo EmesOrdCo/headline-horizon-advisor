@@ -17,6 +17,21 @@ serve(async (req) => {
 
     console.log(`Fetching historical data for ${symbol} with timeframe ${timeframe} and limit ${limit}`);
 
+    // Map timeframes to Alpaca API format
+    const timeframeMap: Record<string, string> = {
+      '1Minute': '1Min',
+      '5Minute': '5Min',
+      '15Minute': '15Min',
+      '30Minute': '30Min',
+      '1Hour': '1Hour',
+      '1Day': '1Day',
+      '1Week': '1Week',
+      '1Month': '1Month'
+    };
+
+    const alpacaTimeframe = timeframeMap[timeframe] || timeframe;
+    console.log(`Mapped timeframe from ${timeframe} to ${alpacaTimeframe}`);
+
     const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
     const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
@@ -35,7 +50,7 @@ serve(async (req) => {
     const startDateStr = startDate.toISOString().split('T')[0];
 
     // Use more efficient API endpoint structure
-    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${timeframe}&start=${startDateStr}&limit=${optimizeLimit}&sort=desc`;
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbol}&timeframe=${alpacaTimeframe}&start=${startDateStr}&limit=${optimizeLimit}&sort=desc`;
     
     const barsResponse = await fetch(barsUrl, {
       method: 'GET',
