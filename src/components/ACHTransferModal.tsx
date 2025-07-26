@@ -67,7 +67,7 @@ const ACHTransferModal = ({ isOpen, onClose, accountId, accountNumber, onTransfe
       
       const achData = {
         account_owner_name: 'Demo User', // Required field for sandbox
-        bank_account_type: 'checking',
+        bank_account_type: 'CHECKING', // Use uppercase as required by Alpaca API
         bank_account_number: '123456789',
         bank_routing_number: '021000021',
         nickname: bankNickname,

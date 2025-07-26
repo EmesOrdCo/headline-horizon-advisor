@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 import { useAccountData } from "@/hooks/useAccountData";
 import ACHTransferModal from "@/components/ACHTransferModal";
+import SimulateDepositModal from "@/components/SimulateDepositModal";
 import TransferHistory from "@/components/TransferHistory";
 import BankAccountStatus from "@/components/BankAccountStatus";
 import BankAccountManager from "@/components/BankAccountManager";
@@ -23,6 +24,7 @@ const Wallet = () => {
 
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [showACHTransfer, setShowACHTransfer] = useState(false);
+  const [showSimulateDeposit, setShowSimulateDeposit] = useState(false);
   const { totalValue, availableCash, isLoading, refreshData, selectedAccount } = useAccountData();
   
   const currentTime = new Date().toLocaleString("en-US", {
@@ -113,7 +115,7 @@ const Wallet = () => {
                     Add Funds via ACH
                   </Button>
                   <Button 
-                    onClick={() => setShowACHTransfer(true)}
+                    onClick={() => setShowSimulateDeposit(true)}
                     disabled={!selectedAccount}
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
                   >
@@ -244,6 +246,20 @@ const Wallet = () => {
           onTransferComplete={() => {
             refreshData();
             setShowACHTransfer(false);
+          }}
+        />
+      )}
+
+      {/* Simulate Deposit Modal */}
+      {selectedAccount && (
+        <SimulateDepositModal
+          isOpen={showSimulateDeposit}
+          onClose={() => setShowSimulateDeposit(false)}
+          accountId={selectedAccount.id}
+          accountNumber={selectedAccount.account_number}
+          onDepositComplete={() => {
+            refreshData();
+            setShowSimulateDeposit(false);
           }}
         />
       )}
