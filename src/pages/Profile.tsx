@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Mail, Calendar, Save, Camera, Upload, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, User, Mail, Calendar, Save, Camera, Upload, Lock, Eye, EyeOff, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import { useSEO } from "@/hooks/useSEO";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 
 const Profile = () => {
   const [firstName, setFirstName] = useState("");
@@ -26,6 +27,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -548,8 +550,60 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Delete Account Section */}
+          <Card className="bg-slate-800/50 border-red-500/20 mt-6">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="bg-red-500/20 p-2 rounded-lg">
+                  <Trash2 className="h-6 w-6 text-red-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-red-400 text-xl">Danger Zone</CardTitle>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Permanently delete your account and all associated data
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-white font-semibold mb-2">Delete Account</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                      Once you delete your account, there is no going back. This will permanently delete:
+                    </p>
+                    <ul className="list-disc list-inside mt-2 text-sm text-slate-400 space-y-1">
+                      <li>Your profile and personal information</li>
+                      <li>All your stock watchlists and preferences</li>
+                      <li>Your analysis history and saved data</li>
+                      <li>Any uploaded files or images</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      variant="destructive"
+                      className="bg-red-600 hover:bg-red-700 text-white border-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      <DeleteAccountModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 };
