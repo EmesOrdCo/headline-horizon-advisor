@@ -62,107 +62,71 @@ const StockLineChart: React.FC = () => {
   });
 
   const [chartData, setChartData] = useState<PricePoint[]>([]);
-  const [fallbackData, setFallbackData] = useState<PricePoint[]>([]);
 
-  // Generate initial fallback data
+  // Initialize with current time and generate 10 minutes of data
   useEffect(() => {
-    if (chartData.length === 0 && fallbackData.length === 0) {
-      const now = Date.now();
-      const initialData: PricePoint[] = [];
+    const now = new Date();
+    const initialData: PricePoint[] = [];
+    
+    // Generate last 10 minutes in 30-second intervals (20 points)
+    for (let i = 19; i >= 0; i--) {
+      const timestamp = new Date(now.getTime() - i * 30000); // 30 seconds apart
+      const basePrice = 213.95;
+      const variation = (Math.random() - 0.5) * 2;
+      const price = basePrice + variation;
       
-      for (let i = 29; i >= 0; i--) {
-        const timestamp = new Date(now - i * 30000); // 30 seconds apart
-        const basePrice = 213.95;
-        const variation = (Math.random() - 0.5) * 4;
-        const price = basePrice + variation;
-        
-        initialData.push({
-          timestamp: timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString(),
-          time: timestamp.toLocaleTimeString(),
-          price: Math.round(price * 100) / 100,
-          open: Math.round((basePrice + (Math.random() - 0.5) * 2) * 100) / 100,
-          high: Math.round((price + Math.random() * 1) * 100) / 100,
-          low: Math.round((price - Math.random() * 1) * 100) / 100,
-          close: Math.round(price * 100) / 100,
-          volume: Math.floor(Math.random() * 50000) + 30000
-        });
-      }
-      
-      setFallbackData(initialData);
-      console.log('📈 Generated initial chart data with', initialData.length, 'points');
+      initialData.push({
+        timestamp: timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString(),
+        time: timestamp.toLocaleTimeString(),
+        price: Math.round(price * 100) / 100,
+        open: Math.round((basePrice + (Math.random() - 0.5) * 1) * 100) / 100,
+        high: Math.round((price + Math.random() * 0.5) * 100) / 100,
+        low: Math.round((price - Math.random() * 0.5) * 100) / 100,
+        close: Math.round(price * 100) / 100,
+        volume: Math.floor(Math.random() * 50000) + 30000
+      });
     }
-  }, [chartData.length, fallbackData.length]);
+    
+    setChartData(initialData);
+  }, []);
 
-  // Update chart data when stream data changes
+  // Add new data every 3 seconds
   useEffect(() => {
-    const data = streamData['AAPL'];
-    if (data?.price && data?.timestamp) {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const data = streamData['AAPL'];
+      
+      // Use WebSocket data if available, otherwise generate simulated data
+      const basePrice = data?.price || 213.95;
+      const newPrice = data?.price || basePrice + (Math.random() - 0.5) * 1;
+      
       const newPoint: PricePoint = {
-        timestamp: new Date(data.timestamp).toLocaleDateString() + ' ' + new Date(data.timestamp).toLocaleTimeString(),
-        time: new Date(data.timestamp).toLocaleTimeString(),
-        price: data.price,
-        open: data.open || data.price,
-        high: data.high || data.price,
-        low: data.low || data.price,
-        close: data.close || data.price,
-        volume: data.volume || 0
+        timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
+        time: now.toLocaleTimeString(),
+        price: Math.round(newPrice * 100) / 100,
+        open: data?.open || Math.round((basePrice + (Math.random() - 0.5) * 0.5) * 100) / 100,
+        high: data?.high || Math.round((newPrice + Math.random() * 0.3) * 100) / 100,
+        low: data?.low || Math.round((newPrice - Math.random() * 0.3) * 100) / 100,
+        close: data?.close || Math.round(newPrice * 100) / 100,
+        volume: data?.volume || Math.floor(Math.random() * 50000) + 30000
       };
 
       setChartData(prev => {
-        // Check if this is a new data point to avoid duplicates
-        const lastPoint = prev[prev.length - 1];
-        const isDifferentPrice = !lastPoint || lastPoint.price !== newPoint.price || lastPoint.timestamp !== newPoint.timestamp;
+        const tenMinutesAgo = now.getTime() - (10 * 60 * 1000); // 10 minutes ago
+        const filteredData = prev.filter(point => {
+          const pointTime = new Date(point.timestamp).getTime();
+          return pointTime > tenMinutesAgo;
+        });
         
-        if (isDifferentPrice) {
-          const updated = [...prev, newPoint].slice(-50);
-          console.log('📊 Updated chart data, total points:', updated.length, 'Latest price:', newPoint.price);
-          return updated;
-        }
-        return prev;
+        return [...filteredData, newPoint];
       });
-      
-      // Clear fallback data when real data starts coming in
-      if (fallbackData.length > 0) {
-        console.log('🔄 Clearing fallback data, switching to live data');
-        setFallbackData([]);
-      }
-    }
+    }, 3000); // Update every 3 seconds
+
+    return () => clearInterval(interval);
   }, [streamData]);
 
-  // Generate live updates for fallback data only when no real data is available
-  useEffect(() => {
-    if (fallbackData.length > 0 && chartData.length === 0) {
-      const interval = setInterval(() => {
-        setFallbackData(prev => {
-          const lastPoint = prev[prev.length - 1];
-          const now = new Date();
-          const basePrice = lastPoint?.price || 213.95;
-          const variation = (Math.random() - 0.5) * 2;
-          const newPrice = basePrice + variation;
-          
-          const newPoint: PricePoint = {
-            timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
-            time: now.toLocaleTimeString(),
-            price: Math.round(newPrice * 100) / 100,
-            open: lastPoint?.close || newPrice,
-            high: Math.round((newPrice + Math.random() * 0.5) * 100) / 100,
-            low: Math.round((newPrice - Math.random() * 0.5) * 100) / 100,
-            close: Math.round(newPrice * 100) / 100,
-            volume: Math.floor(Math.random() * 50000) + 30000
-          };
-
-          console.log('📈 Adding fallback data point:', newPoint.price);
-          return [...prev, newPoint].slice(-50);
-        });
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }
-  }, [fallbackData.length, chartData.length]);
-
-  const displayData = chartData.length > 0 ? chartData : fallbackData;
-  const currentPrice = displayData[displayData.length - 1]?.price || 0;
-  const previousPrice = displayData[displayData.length - 2]?.price || currentPrice;
+  const currentPrice = chartData[chartData.length - 1]?.price || 0;
+  const previousPrice = chartData[chartData.length - 2]?.price || currentPrice;
   const priceChange = currentPrice - previousPrice;
   const priceChangePercent = previousPrice > 0 ? (priceChange / previousPrice) * 100 : 0;
 
@@ -184,7 +148,10 @@ const StockLineChart: React.FC = () => {
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
             <span className="text-sm text-gray-400">
-              {isConnected ? 'Live Data' : 'Demo Data'}
+              {isConnected ? 'Live Data' : 'Simulated Data'}
+            </span>
+            <span className="text-sm text-gray-400">
+              Last 10 minutes
             </span>
             {errorMessage && (
               <span className="text-xs text-red-400 ml-2">
@@ -197,7 +164,7 @@ const StockLineChart: React.FC = () => {
       
       <div className="h-[540px] p-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={displayData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
@@ -209,7 +176,7 @@ const StockLineChart: React.FC = () => {
               stroke="#9CA3AF" 
               fontSize={12}
               tick={{ fill: '#9CA3AF' }}
-              domain={['dataMin - 1', 'dataMax + 1']}
+              domain={['dataMin - 0.5', 'dataMax + 0.5']}
               tickFormatter={(value) => `$${value.toFixed(2)}`}
             />
             <Tooltip content={<CustomTooltip />} />
