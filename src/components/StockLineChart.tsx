@@ -82,7 +82,12 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
 
   const [displayData, setDisplayData] = useState<PricePoint[]>([]);
   const [viewportStart, setViewportStart] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const lastDataPointRef = useRef<number>(0);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fixed viewport size - always show exactly this many points
+  const VIEWPORT_SIZE = 25;
 
   // Convert historical data points to chart format
   const convertToChartData = (historicalData: any[]): PricePoint[] => {
@@ -98,20 +103,28 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     }));
   };
 
-  // Load and update display data
+  // Load and update display data smoothly
   useEffect(() => {
     const tenMinuteData = getDataForMinutes(10);
     const chartData = convertToChartData(tenMinuteData);
     
-    setDisplayData(chartData);
-    
-    // Auto-scroll to show the latest data
-    if (chartData.length > 20) {
-      setViewportStart(Math.max(0, chartData.length - 20));
-    }
-    
-    console.log(`📊 Updated display data: ${chartData.length} points (showing last 10 minutes)`);
-  }, [dataCount, getDataForMinutes]);
+    setDisplayData(prevData => {
+      // Only update if we have significantly new data to prevent continuous redraws
+      if (Math.abs(chartData.length - prevData.length) > 0) {
+        console.log(`📊 Updated display data: ${chartData.length} points`);
+        
+        // Auto-scroll to latest data if auto-scrolling is enabled
+        if (isAutoScrolling && chartData.length > VIEWPORT_SIZE) {
+          setTimeout(() => {
+            setViewportStart(Math.max(0, chartData.length - VIEWPORT_SIZE));
+          }, 100);
+        }
+        
+        return chartData;
+      }
+      return prevData;
+    });
+  }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
   // Add new data points from WebSocket or simulate them
   useEffect(() => {
@@ -119,8 +132,8 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       const streamPrice = streamData[symbol];
       const now = Date.now();
       
-      // Don't add duplicate data points
-      if (now - lastDataPointRef.current < 2000) return;
+      // Rate limit to prevent too frequent updates
+      if (now - lastDataPointRef.current < 2500) return;
       lastDataPointRef.current = now;
       
       if (streamPrice?.price) {
@@ -135,24 +148,24 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         console.log(`📡 Added real WebSocket data: $${streamPrice.price}`);
       } else {
         // Generate realistic price movement based on current price
-        const variation = (Math.random() - 0.5) * 0.2;
+        const variation = (Math.random() - 0.5) * 0.15;
         const newPrice = parentPrice + variation;
         
         addDataPoint(newPrice, {
-          open: parentPrice + (Math.random() - 0.5) * 0.1,
-          high: newPrice + Math.random() * 0.1,
-          low: newPrice - Math.random() * 0.1,
+          open: parentPrice + (Math.random() - 0.5) * 0.08,
+          high: newPrice + Math.random() * 0.08,
+          low: newPrice - Math.random() * 0.08,
           close: newPrice,
         });
         console.log(`🎲 Added simulated data: $${newPrice.toFixed(2)}`);
       }
-    }, 3000); // Add new data every 3 seconds
+    }, 4000); // Reduced frequency to every 4 seconds for smoother experience
 
     return () => clearInterval(interval);
   }, [streamData, symbol, parentPrice, addDataPoint]);
 
   // Get viewport data for smooth scrolling
-  const viewportData = displayData.slice(viewportStart, viewportStart + 20);
+  const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
   
   const currentPrice = parentPrice;
   const firstPrice = displayData[0]?.price || currentPrice;
@@ -161,22 +174,28 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
 
   // Scroll controls
   const canScrollLeft = viewportStart > 0;
-  const canScrollRight = viewportStart + 20 < displayData.length;
+  const canScrollRight = viewportStart + VIEWPORT_SIZE < displayData.length;
 
   const scrollLeft = () => {
+    setIsAutoScrolling(false);
     setViewportStart(Math.max(0, viewportStart - 5));
   };
 
   const scrollRight = () => {
-    setViewportStart(Math.min(displayData.length - 20, viewportStart + 5));
+    setViewportStart(Math.min(displayData.length - VIEWPORT_SIZE, viewportStart + 5));
+    // Re-enable auto-scrolling if we're at the latest data
+    if (viewportStart + VIEWPORT_SIZE >= displayData.length - 5) {
+      setIsAutoScrolling(true);
+    }
   };
 
   const scrollToLatest = () => {
-    setViewportStart(Math.max(0, displayData.length - 20));
+    setIsAutoScrolling(true);
+    setViewportStart(Math.max(0, displayData.length - VIEWPORT_SIZE));
   };
 
   return (
-    <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700">
+    <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div>
@@ -198,6 +217,9 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
             <span className="text-sm text-gray-400">
               {dataCount} total points
             </span>
+            {isAutoScrolling && (
+              <span className="text-xs text-blue-400">Auto-scrolling</span>
+            )}
             {errorMessage && (
               <span className="text-xs text-red-400 ml-2">
                 {errorMessage}
@@ -207,50 +229,62 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
         </div>
         
         {/* Scroll Controls */}
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
           <button
             onClick={scrollLeft}
             disabled={!canScrollLeft}
-            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
           >
             ← Earlier
           </button>
           <button
             onClick={scrollRight}
             disabled={!canScrollRight}
-            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
           >
             Later →
           </button>
           <button
             onClick={scrollToLatest}
-            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500"
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              isAutoScrolling 
+                ? 'bg-blue-600 text-white hover:bg-blue-500' 
+                : 'bg-gray-600 text-white hover:bg-blue-600'
+            }`}
           >
-            Latest
+            Latest {isAutoScrolling ? '●' : '○'}
           </button>
           <span className="text-xs text-gray-400">
-            Showing {viewportStart + 1}-{Math.min(viewportStart + 20, displayData.length)} of {displayData.length}
+            Showing {viewportStart + 1}-{Math.min(viewportStart + VIEWPORT_SIZE, displayData.length)} of {displayData.length}
           </span>
         </div>
       </div>
       
-      <div className="h-[500px] p-4">
+      <div ref={chartContainerRef} className="h-[480px] p-4 w-full overflow-hidden">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={viewportData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart 
+            data={viewportData} 
+            margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+            style={{ overflow: 'visible' }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
               stroke="#9CA3AF" 
-              fontSize={12}
+              fontSize={11}
               tick={{ fill: '#9CA3AF' }}
-              interval="preserveStartEnd"
+              interval={Math.max(0, Math.floor(viewportData.length / 8))}
+              angle={-45}
+              textAnchor="end"
+              height={60}
             />
             <YAxis 
               stroke="#9CA3AF" 
-              fontSize={12}
+              fontSize={11}
               tick={{ fill: '#9CA3AF' }}
               domain={['dataMin - 0.1', 'dataMax + 0.1']}
               tickFormatter={(value) => `$${value.toFixed(2)}`}
+              width={60}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line 
@@ -258,8 +292,8 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
               dataKey="price" 
               stroke="#10B981" 
               strokeWidth={3}
-              dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
-              activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
+              dot={false}
+              activeDot={{ r: 5, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
               connectNulls={false}
             />
           </LineChart>
