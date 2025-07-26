@@ -75,7 +75,7 @@ export const useAlpacaStream = ({ symbols, enabled = true }: UseAlpacaStreamProp
     setErrorMessage('');
     console.log('Attempting to connect to Alpaca WebSocket for:', symbols[0]);
     
-    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.functions.supabase.co/alpaca-stream`;
+    const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
     
     try {
       socketRef.current = new WebSocket(wsUrl);
