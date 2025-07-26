@@ -53,7 +53,7 @@ class AlpacaStreamManager {
     newSymbols.forEach(symbol => this.subscribedSymbols.add(symbol));
 
     // Only connect if we don't have a connection and haven't exceeded attempts
-    if (!this.socket && this.connectionAttempts < this.maxAttempts) {
+    if (!this.socket && this.connectionStatus !== 'connecting' && this.connectionAttempts < this.maxAttempts) {
       this.connect();
     } else if (this.socket && this.isAuthenticated && newSymbols.length > 0) {
       // Subscribe to new symbols if already connected
@@ -101,8 +101,16 @@ class AlpacaStreamManager {
 
   private connect() {
     // Prevent multiple simultaneous connections
-    if (this.socket || this.connectionAttempts >= this.maxAttempts) {
-      console.log('Singleton: Connection already exists or max attempts reached');
+    if (this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN) {
+      console.log('Singleton: Connection already exists in state:', this.socket.readyState);
+      return;
+    }
+
+    if (this.connectionAttempts >= this.maxAttempts) {
+      console.log('Singleton: Max connection attempts reached');
+      this.connectionStatus = 'error';
+      this.errorMessage = 'Max connection attempts reached';
+      this.notifySubscribers();
       return;
     }
 
@@ -214,10 +222,10 @@ class AlpacaStreamManager {
       };
 
       this.socket.onclose = (event) => {
-        console.log('Singleton: WebSocket closed, code:', event.code);
+        console.log('Singleton: WebSocket closed, code:', event.code, 'reason:', event.reason);
         this.isAuthenticated = false;
-        this.connectionStatus = 'error';
-        this.errorMessage = 'Connection closed. Real-time data unavailable.';
+        this.connectionStatus = 'disconnected';
+        this.errorMessage = `Connection closed (${event.code}): ${event.reason || 'Unknown reason'}`;
         this.cleanup();
         this.notifySubscribers();
       };
@@ -279,13 +287,17 @@ export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaS
 
   useEffect(() => {
     if (enabled && symbols.length > 0) {
+      console.log('Hook: Starting subscription for symbols:', symbols);
       managerRef.current.subscribe(subscriberIdRef.current, updateStatus, symbols);
     }
 
     return () => {
-      managerRef.current.unsubscribe(subscriberIdRef.current, symbols);
+      if (symbols.length > 0) {
+        console.log('Hook: Cleaning up subscription for symbols:', symbols);
+        managerRef.current.unsubscribe(subscriberIdRef.current, symbols);
+      }
     };
-  }, [symbols, enabled, updateStatus]);
+  }, [symbols.join(','), enabled]); // Use symbols.join(',') to prevent array reference issues
 
   return {
     isConnected: status.connectionStatus === 'connected',
