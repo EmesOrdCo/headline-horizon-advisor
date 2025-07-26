@@ -314,6 +314,10 @@ serve(async (req) => {
           console.log(`Plain text error response:`, errorText);
           if (errorText.toLowerCase().includes('not found')) {
             errorMessage = `Resource not found (${response.status}). This may be normal for some operations.`;
+          } else if (errorText.toLowerCase().includes('forbidden') || errorText.toLowerCase().includes('unauthorized')) {
+            errorMessage = 'API access denied. This endpoint may not be available in sandbox mode.';
+          } else if (action === 'create_ach_relationship' || action === 'create_transfer') {
+            errorMessage = 'ACH transfers may not be fully supported in sandbox mode. Please try the journal transfer option instead.';
           } else {
             errorMessage = errorText || `API request failed with status ${response.status}`;
           }
