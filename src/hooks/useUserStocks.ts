@@ -16,9 +16,11 @@ const DEFAULT_STOCKS = [
   { symbol: 'NVDA', name: 'NVIDIA Corporation' },
   { symbol: 'TSLA', name: 'Tesla Inc.' },
   { symbol: 'META', name: 'Meta Platforms Inc.' },
-  { symbol: 'SPY', name: 'SPDR S&P 500 ETF' },
-  { symbol: 'QQQ', name: 'Invesco QQQ Trust' },
-  { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average ETF' }
+  { symbol: 'NFLX', name: 'Netflix Inc.' },
+  { symbol: 'AMD', name: 'Advanced Micro Devices' },
+  { symbol: 'CRM', name: 'Salesforce Inc.' },
+  { symbol: 'PYPL', name: 'PayPal Holdings Inc.' },
+  { symbol: 'ADBE', name: 'Adobe Inc.' }
 ];
 
 export const useUserStocks = () => {
