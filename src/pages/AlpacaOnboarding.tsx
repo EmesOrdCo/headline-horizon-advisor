@@ -188,12 +188,27 @@ const AlpacaOnboarding = () => {
           given_name: personalDetails.firstName,
           family_name: personalDetails.lastName,
           date_of_birth: personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, 'yyyy-MM-dd') : '',
-          tax_id: '123456789', // Simulated for sandbox
+          tax_id: '661-010-666', // Test SSN format as shown in docs
           tax_id_type: 'USA_SSN',
           country_of_citizenship: 'USA', // Force USA for Alpaca API
           country_of_birth: 'USA', // Force USA for Alpaca API  
           country_of_tax_residence: 'USA', // Force USA for Alpaca API
           funding_source: personalDetails.fundingSource,
+          // Required financial profile fields from Alpaca docs
+          annual_income_min: "50000",
+          annual_income_max: "75000",
+          total_net_worth_min: "100000",
+          total_net_worth_max: "150000",
+          liquid_net_worth_min: "50000",
+          liquid_net_worth_max: "75000",
+          liquidity_needs: "does_not_matter",
+          investment_experience_with_stocks: "over_5_years",
+          investment_experience_with_options: "over_5_years",
+          risk_tolerance: "conservative",
+          investment_objective: "market_speculation",
+          investment_time_horizon: "more_than_10_years",
+          marital_status: "SINGLE",
+          number_of_dependents: 0,
           party_type: 'natural_person'
         },
         disclosures: {
