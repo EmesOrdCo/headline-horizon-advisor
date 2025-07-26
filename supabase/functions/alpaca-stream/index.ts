@@ -78,6 +78,7 @@ serve(async (req) => {
       alpacaSocket.onmessage = async (event) => {
         try {
           let rawData = event.data;
+          console.log('Raw data received:', typeof rawData, rawData.length || 'no length');
           
           // Handle binary data (Blob)
           if (rawData instanceof Blob) {
@@ -85,23 +86,46 @@ serve(async (req) => {
           }
           
           const data = JSON.parse(rawData);
-          console.log('Received from Alpaca:', data);
+          console.log('Parsed data from Alpaca:', JSON.stringify(data, null, 2));
           
           if (Array.isArray(data)) {
             for (const message of data) {
-              if (message.T === 'success' && message.msg === 'authenticated') {
+              console.log('Processing message:', JSON.stringify(message, null, 2));
+              
+              if (message.T === 'success' && message.msg === 'connected') {
+                console.log('Connected to Alpaca, now authenticating...');
+                
+                // Send auth message
+                const authMessage = {
+                  action: "auth",
+                  key: alpacaApiKey,
+                  secret: alpacaSecretKey
+                };
+                console.log('Sending auth message:', JSON.stringify(authMessage, null, 2));
+                alpacaSocket!.send(JSON.stringify(authMessage));
+                
+              } else if (message.T === 'success' && message.msg === 'authenticated') {
                 isAuthenticated = true;
                 connectionAttempts = 0; // Reset on successful auth
                 console.log('Successfully authenticated with Alpaca');
                 
+                // Subscribe to FAKEPACA for test stream
+                const subscribeMessage = {
+                  action: "subscribe",
+                  trades: ["FAKEPACA"],
+                  quotes: ["FAKEPACA"]
+                };
+                console.log('Subscribing to FAKEPACA:', JSON.stringify(subscribeMessage, null, 2));
+                alpacaSocket!.send(JSON.stringify(subscribeMessage));
+                
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'auth_success',
-                    message: 'Connected to Alpaca data stream'
+                    message: 'Connected to Alpaca test stream'
                   }));
                 }
               } else if (message.T === 'error') {
-                console.error('Alpaca error:', message);
+                console.error('Alpaca error:', JSON.stringify(message, null, 2));
                 
                 let errorMessage = `Alpaca error: ${message.msg || 'Unknown error'}`;
                 if (message.code === 406) {
@@ -116,17 +140,22 @@ serve(async (req) => {
                 }
               } else if (isAuthenticated && (message.T === 't' || message.T === 'q' || message.T === 'b')) {
                 // Forward market data
+                console.log('Forwarding market data:', JSON.stringify(message, null, 2));
                 if (socket.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify({
                     type: 'market_data',
                     data: [message]
                   }));
                 }
+              } else {
+                console.log('Unhandled message type:', message.T, JSON.stringify(message, null, 2));
               }
             }
+          } else {
+            console.log('Single message received:', JSON.stringify(data, null, 2));
           }
         } catch (error) {
-          console.error('Error parsing Alpaca message:', error);
+          console.error('Error parsing Alpaca message:', error, 'Raw data:', event.data);
         }
       };
 
@@ -173,26 +202,41 @@ serve(async (req) => {
   socket.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data);
-      console.log('Received from client:', message);
+      console.log('Received from client:', JSON.stringify(message, null, 2));
       
       if (message.type === 'subscribe' && message.symbols) {
-        console.log('Subscribing to symbols:', message.symbols);
+        // For test stream, convert all symbols to FAKEPACA
+        const testSymbols = ["FAKEPACA"];
+        console.log('Converting symbols to test symbols:', message.symbols, '→', testSymbols);
         
         if (alpacaSocket && isAuthenticated && alpacaSocket.readyState === WebSocket.OPEN) {
           const subscribeMessage = {
             action: "subscribe",
-            trades: message.symbols,
-            quotes: message.symbols
+            trades: testSymbols,
+            quotes: testSymbols
           };
           
-          console.log('Sending subscription to Alpaca:', subscribeMessage);
+          console.log('Sending subscription to Alpaca:', JSON.stringify(subscribeMessage, null, 2));
           alpacaSocket.send(JSON.stringify(subscribeMessage));
+          
+          // Send confirmation to client
+          socket.send(JSON.stringify({
+            type: 'subscribed',
+            symbols: testSymbols,
+            message: 'Subscribed to test stream'
+          }));
         } else {
           console.log('Cannot subscribe: not authenticated or connection not ready');
+          console.log('Socket state:', alpacaSocket?.readyState, 'Authenticated:', isAuthenticated);
+          
+          socket.send(JSON.stringify({
+            type: 'error',
+            message: 'Not connected to data stream'
+          }));
         }
       }
     } catch (error) {
-      console.error('Error parsing client message:', error);
+      console.error('Error parsing client message:', error, 'Raw data:', event.data);
     }
   };
 

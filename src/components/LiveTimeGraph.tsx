@@ -43,6 +43,9 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [priceHistory, setPriceHistory] = useState<Record<string, Array<{price: number, timestamp: string | number}>>>({});
 
+  // For test stream, use FAKEPACA instead of the actual symbol
+  const testSymbols = symbols.map(symbol => "FAKEPACA");
+
   // Add mock data when disconnected to demonstrate the visualization
   const mockStreamData = isConnected ? {} : {
     [symbols[0]]: {
