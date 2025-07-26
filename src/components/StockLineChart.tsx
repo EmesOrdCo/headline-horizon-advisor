@@ -182,18 +182,18 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     });
   }, [dataCount, getDataForMinutes, isAutoScrolling]);
 
-  // Add new data points from WebSocket or simulate them - INSTANT UPDATES
+  // Add new data points ONLY from WebSocket - NO SIMULATION
   useEffect(() => {
     const interval = setInterval(() => {
       const streamPrice = streamData[symbol];
       const now = Date.now();
       
-      // Much faster updates for real-time feel - every 1 second
+      // Rate limit WebSocket updates
       if (now - lastDataPointRef.current < 1000) return;
       lastDataPointRef.current = now;
       
+      // ONLY use real WebSocket data - no simulation fallback
       if (streamPrice?.price) {
-        // Use real WebSocket data
         addDataPoint(streamPrice.price, {
           open: streamPrice.open || streamPrice.price,
           high: streamPrice.high || streamPrice.price + Math.random() * 0.05,
@@ -201,26 +201,13 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
           close: streamPrice.close || streamPrice.price,
           volume: streamPrice.volume || Math.floor(Math.random() * 10000),
         });
-        console.log(`📡 INSTANT: Real WebSocket data: $${streamPrice.price}`);
-      } else {
-        // Generate realistic price movement based on current price
-        const variation = (Math.random() - 0.5) * 0.25;
-        const newPrice = parentPrice + variation;
-        const openPrice = parentPrice + (Math.random() - 0.5) * 0.1;
-        
-        addDataPoint(newPrice, {
-          open: openPrice,
-          high: Math.max(newPrice, openPrice) + Math.random() * 0.1,
-          low: Math.min(newPrice, openPrice) - Math.random() * 0.1,
-          close: newPrice,
-          volume: Math.floor(Math.random() * 50000 + 10000),
-        });
-        console.log(`🎲 INSTANT: Simulated data: $${newPrice.toFixed(2)}`);
+        console.log(`📡 REAL WebSocket data: $${streamPrice.price}`);
       }
-    }, 1000); // INSTANT updates every 1 second
+      // NO ELSE CLAUSE - no simulation when WebSocket is down
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [streamData, symbol, parentPrice, addDataPoint]);
+  }, [streamData, symbol, addDataPoint]);
 
   // Get viewport data for smooth scrolling
   const viewportData = displayData.slice(viewportStart, viewportStart + VIEWPORT_SIZE);
