@@ -35,11 +35,36 @@ const StockChart: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [chartType, setChartType] = useState<'line' | 'candles'>('line');
+  const [isLoadingTimeframe, setIsLoadingTimeframe] = useState(false);
   
   // Fetch current stock data and historical data - use SPY as it has extended hours trading
   const activeSymbol = symbol || 'SPY';
   const { data: stockPrices } = useStockPrices([activeSymbol]);
-  const { data: historicalData } = useHistoricalPrices(activeSymbol, '1Day', 1);
+  
+  // Dynamic historical data fetching based on timeframe
+  const getTimeframeConfig = (timeframe: string) => {
+    switch (timeframe) {
+      case '1m':
+      case '5m':
+      case '15m':
+      case '30m':
+        return { apiTimeframe: '1Hour', limit: 48 }; // Last 2 days for intraday
+      case '1H':
+      case '4H':
+        return { apiTimeframe: '1Day', limit: 5 }; // Last 5 days
+      case '1D':
+        return { apiTimeframe: '1Day', limit: 30 }; // Last 30 days
+      case '1W':
+        return { apiTimeframe: '1Week', limit: 26 }; // Last 26 weeks (6 months)
+      case '1M':
+        return { apiTimeframe: '1Month', limit: 12 }; // Last 12 months
+      default:
+        return { apiTimeframe: '1Day', limit: 30 };
+    }
+  };
+  
+  const { apiTimeframe, limit } = getTimeframeConfig(selectedTimeframe);
+  const { data: historicalData, isLoading: historicalLoading, refetch: refetchHistorical } = useHistoricalPrices(activeSymbol, apiTimeframe, limit);
   
   // Fetch watchlist data - include globally traded assets
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
@@ -52,6 +77,23 @@ const StockChart: React.FC = () => {
   });
   
   const timeframes = ['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'];
+  
+  // Handle timeframe changes with smooth transitions
+  const handleTimeframeChange = async (timeframe: string) => {
+    if (timeframe === selectedTimeframe) return;
+    
+    setIsLoadingTimeframe(true);
+    setSelectedTimeframe(timeframe);
+    
+    // Trigger data refetch for new timeframe
+    try {
+      await refetchHistorical();
+    } catch (error) {
+      console.error('Failed to fetch data for timeframe:', timeframe, error);
+    } finally {
+      setTimeout(() => setIsLoadingTimeframe(false), 300); // Small delay for smooth transition
+    }
+  };
   
   const leftSidebarTools = [
     { icon: Crosshair, label: 'Cursor' },
@@ -208,18 +250,24 @@ const StockChart: React.FC = () => {
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
           {/* Timeframe Options */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 relative">
+            {isLoadingTimeframe && (
+              <div className="absolute inset-0 bg-slate-800/50 rounded-md flex items-center justify-center z-10">
+                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
             {['1m', '5m', '15m', '30m', '1H', '4H', '1D', '1W', '1M'].map((timeframe) => (
               <Button
                 key={timeframe}
                 variant="ghost"
                 size="sm"
-                className={`text-xs px-2 py-1 h-7 ${
+                disabled={isLoadingTimeframe}
+                className={`text-xs px-2 py-1 h-7 transition-all duration-200 ${
                   timeframe === selectedTimeframe 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-blue-600 text-white shadow-lg' 
                     : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                }`}
-                onClick={() => setSelectedTimeframe(timeframe)}
+                } ${isLoadingTimeframe ? 'opacity-50' : ''}`}
+                onClick={() => handleTimeframeChange(timeframe)}
               >
                 {timeframe}
               </Button>
@@ -316,8 +364,24 @@ const StockChart: React.FC = () => {
 
           {/* Chart Content - Takes full remaining height */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
+            {/* Loading overlay for timeframe changes */}
+            {(isLoadingTimeframe || historicalLoading) && (
+              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex items-center justify-center">
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-8 h-8 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="text-slate-300 text-sm">Loading {selectedTimeframe} data...</div>
+                </div>
+              </div>
+            )}
+            
             <div className="absolute inset-0">
-              <StockLineChart currentPrice={currentPrice} symbol={activeSymbol} chartType={chartType} />
+              <StockLineChart 
+                currentPrice={currentPrice} 
+                symbol={activeSymbol} 
+                chartType={chartType}
+                timeframe={selectedTimeframe}
+                historicalData={historicalData}
+              />
             </div>
             
             {/* WebSocket Monitor */}

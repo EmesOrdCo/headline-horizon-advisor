@@ -28,6 +28,8 @@ interface StockLineChartProps {
   currentPrice?: number;
   symbol: string;
   chartType?: 'line' | 'candles';
+  timeframe?: string;
+  historicalData?: any;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -120,7 +122,9 @@ const CandlestickBar = (props: any) => {
 const StockLineChart: React.FC<StockLineChartProps> = ({ 
   currentPrice: parentPrice = 0, 
   symbol = 'AAPL',
-  chartType = 'line'
+  chartType = 'line',
+  timeframe = '1D',
+  historicalData
 }) => {
   const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
     symbols: [symbol], 
@@ -134,7 +138,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   } = useStockDataHistory({ 
     symbol, 
     currentPrice: parentPrice, 
-    enabled: true 
+    enabled: !historicalData // Only use local history if no external historical data
   });
 
   const [displayData, setDisplayData] = useState<PricePoint[]>([]);
@@ -165,16 +169,52 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
     return Math.max(5, Math.floor(BASE_VIEWPORT_SIZE / zoomLevel));
   };
 
-  // Zoom indicator text
+  // Zoom indicator text based on timeframe and viewport
   const getZoomIndicator = () => {
     const timeRange = getViewportSize();
-    if (timeRange <= 5) return "Viewing: 1-2m range";
-    if (timeRange <= 15) return "Viewing: 5m range";
-    if (timeRange <= 30) return "Viewing: 15m range";
-    if (timeRange <= 60) return "Viewing: 30m range";
-    if (timeRange <= 120) return "Viewing: 1h range";
-    if (timeRange <= 250) return "Viewing: 3h range";
-    return "Viewing: 6h+ range";
+    
+    // Dynamic indicator based on timeframe
+    switch (timeframe) {
+      case '1m':
+        if (timeRange <= 5) return "Viewing: 5m range";
+        if (timeRange <= 15) return "Viewing: 15m range";
+        if (timeRange <= 30) return "Viewing: 30m range";
+        return "Viewing: 1h+ range";
+      case '5m':
+        if (timeRange <= 5) return "Viewing: 25m range";
+        if (timeRange <= 15) return "Viewing: 1h range";
+        return "Viewing: 3h+ range";
+      case '15m':
+        if (timeRange <= 5) return "Viewing: 1.5h range";
+        if (timeRange <= 15) return "Viewing: 4h range";
+        return "Viewing: 12h+ range";
+      case '30m':
+        if (timeRange <= 5) return "Viewing: 2.5h range";
+        if (timeRange <= 15) return "Viewing: 8h range";
+        return "Viewing: 1d+ range";
+      case '1H':
+        if (timeRange <= 5) return "Viewing: 5h range";
+        if (timeRange <= 15) return "Viewing: 15h range";
+        return "Viewing: 2d+ range";
+      case '4H':
+        if (timeRange <= 5) return "Viewing: 20h range";
+        if (timeRange <= 15) return "Viewing: 2.5d range";
+        return "Viewing: 1w+ range";
+      case '1D':
+        if (timeRange <= 5) return "Viewing: 1w range";
+        if (timeRange <= 15) return "Viewing: 2w range";
+        return "Viewing: 1m+ range";
+      case '1W':
+        if (timeRange <= 5) return "Viewing: 1m range";
+        if (timeRange <= 15) return "Viewing: 3m range";
+        return "Viewing: 6m+ range";
+      case '1M':
+        if (timeRange <= 5) return "Viewing: 5m range";
+        if (timeRange <= 15) return "Viewing: 1y range";
+        return "Viewing: 2y+ range";
+      default:
+        return `Viewing: ${timeRange} ${timeframe} periods`;
+    }
   };
 
   // Handle wheel event for zooming
@@ -240,12 +280,65 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
 
   // Load and update display data smoothly
   useEffect(() => {
-    const tenMinuteData = getDataForMinutes(10);
-    const chartData = convertToChartData(tenMinuteData);
+    let chartData: PricePoint[] = [];
+    
+    // Prioritize historical data from API if available
+    if (historicalData?.data && historicalData.data.length > 0) {
+      chartData = historicalData.data.map((point: any) => {
+        const date = new Date(point.timestamp || point.date);
+        
+        // Format time based on timeframe
+        let timeLabel = '';
+        switch (timeframe) {
+          case '1m':
+          case '5m':
+          case '15m':
+          case '30m':
+            timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            break;
+          case '1H':
+          case '4H':
+            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + 
+                       date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            break;
+          case '1D':
+            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            break;
+          case '1W':
+            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            break;
+          case '1M':
+            timeLabel = date.toLocaleDateString([], { month: 'short', year: '2-digit' });
+            break;
+          default:
+            timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+        
+        return {
+          timestamp: date.toLocaleDateString() + ' ' + date.toLocaleTimeString(),
+          time: timeLabel,
+          price: point.close || point.price,
+          open: point.open,
+          high: point.high,
+          low: point.low,
+          close: point.close || point.price,
+          volume: point.volume || 0,
+        };
+      });
+      
+      // Sort by timestamp for proper chronological order
+      chartData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      
+      console.log(`📊 Using historical API data: ${chartData.length} points for ${timeframe}`);
+    } else {
+      // Fallback to local generated data
+      const tenMinuteData = getDataForMinutes(10);
+      chartData = convertToChartData(tenMinuteData);
+    }
     
     setDisplayData(prevData => {
-      // Only update if we have significantly new data to prevent continuous redraws
-      if (Math.abs(chartData.length - prevData.length) > 0) {
+      // Always update when we have new historical data or significant local data changes
+      if (historicalData?.data || Math.abs(chartData.length - prevData.length) > 0) {
         console.log(`📊 Updated display data: ${chartData.length} points`);
         
         // Auto-scroll to latest data if auto-scrolling is enabled
@@ -260,7 +353,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       }
       return prevData;
     });
-  }, [dataCount, getDataForMinutes, isAutoScrolling, zoomLevel]);
+  }, [dataCount, getDataForMinutes, isAutoScrolling, zoomLevel, historicalData, timeframe]);
 
   // Add new data points from WebSocket and real price data
   useEffect(() => {
