@@ -14,6 +14,7 @@ import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
 import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
 import { DetailedAnalysis } from "@/components/NewsCard/DetailedAnalysis";
+import AINewsInsights from "@/components/StockDetail/AINewsInsights";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
@@ -336,14 +337,9 @@ const Dashboard = () => {
                         stockPrice={getStockPrice(topMagnificent7Story.symbol)}
                       />
                     </div>
-                    {/* Source Articles - Right Side (wider now) */}
+                    {/* AI News Insights - Right Side (wider now) */}
                     <div className="lg:col-span-3">
-                      <SourceArticles 
-                        parsedSourceLinks={magnificent7SourceArticles}
-                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        articleWeights={magnificent7ArticleWeights}
-                        weightsLoading={magnificent7WeightsLoading}
-                      />
+                      <AINewsInsights symbol={topMagnificent7Story.symbol} />
                     </div>
                   </div>
                 </CardContent>
@@ -386,14 +382,9 @@ const Dashboard = () => {
                       />
                     </div>
                     
-                    {/* Source Articles - Right Side (wider now) */}
+                    {/* AI News Insights - Right Side (wider now) */}
                     <div className="lg:col-span-3">
-                      <SourceArticles 
-                        parsedSourceLinks={indexFundSourceArticles}
-                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                        articleWeights={indexFundArticleWeights}
-                        weightsLoading={indexFundWeightsLoading}
-                      />
+                      <AINewsInsights symbol={topIndexFundStory.symbol} />
                     </div>
                   </div>
                 </CardContent>
