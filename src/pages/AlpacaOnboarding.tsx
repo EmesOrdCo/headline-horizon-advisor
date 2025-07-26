@@ -168,6 +168,7 @@ const AlpacaOnboarding = () => {
     setIsSubmitting(true);
     try {
       const accountData = {
+        account_type: 'trading' as const,
         contact: {
           email_address: personalDetails.email,
           phone_number: personalDetails.phoneNumber,
@@ -186,13 +187,16 @@ const AlpacaOnboarding = () => {
           country_of_citizenship: personalDetails.countryOfCitizenship,
           country_of_birth: personalDetails.countryOfBirth,
           country_of_tax_residence: personalDetails.countryOfTaxResidence,
-          funding_source: personalDetails.fundingSource
+          funding_source: personalDetails.fundingSource,
+          party_type: 'natural_person'
         },
         disclosures: {
           is_control_person: disclosures.isControlPerson,
           is_affiliated_exchange_or_finra: disclosures.isAffiliatedExchangeOrFinra,
+          is_affiliated_exchange_or_iiroc: false,
           is_politically_exposed: disclosures.isPoliticallyExposed,
-          immediate_family_exposed: disclosures.immediateFamilyExposed
+          immediate_family_exposed: disclosures.immediateFamilyExposed,
+          is_discretionary: false
         },
         agreements: [
           {

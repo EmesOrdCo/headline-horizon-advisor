@@ -46,6 +46,7 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
     e.preventDefault();
 
     const accountData: CreateAccountData = {
+      account_type: 'trading',
       contact: {
         email_address: formData.email,
         phone_number: formData.phone,
@@ -65,20 +66,28 @@ const AccountCreation = ({ onAccountCreated }: AccountCreationProps) => {
         country_of_birth: 'USA',
         country_of_tax_residence: 'USA',
         funding_source: [formData.funding_source],
+        party_type: 'natural_person'
       },
       disclosures: {
         is_control_person: false,
         is_affiliated_exchange_or_finra: false,
+        is_affiliated_exchange_or_iiroc: false,
         is_politically_exposed: false,
         immediate_family_exposed: false,
+        is_discretionary: false
       },
       agreements: [
         {
           agreement: 'customer_agreement',
           signed_at: new Date().toISOString(),
-          ip_address: '192.168.1.1',
+          ip_address: '127.0.0.1',
         },
       ],
+      trusted_contact: {
+        given_name: 'Jane',
+        family_name: 'Doe',
+        email_address: formData.email
+      }
     };
 
     try {

@@ -83,6 +83,7 @@ export interface AlpacaPosition {
 }
 
 export interface CreateAccountData {
+  account_type: 'trading' | 'custodial' | 'donor_advised' | 'ira';
   contact: {
     email_address: string;
     phone_number: string;
@@ -102,18 +103,26 @@ export interface CreateAccountData {
     country_of_birth: string;
     country_of_tax_residence: string;
     funding_source: string[];
+    party_type: string;
   };
   disclosures: {
     is_control_person: boolean;
     is_affiliated_exchange_or_finra: boolean;
+    is_affiliated_exchange_or_iiroc?: boolean;
     is_politically_exposed: boolean;
     immediate_family_exposed: boolean;
+    is_discretionary?: boolean;
   };
   agreements: Array<{
     agreement: string;
     signed_at: string;
     ip_address: string;
   }>;
+  trusted_contact?: {
+    given_name: string;
+    family_name: string;
+    email_address: string;
+  };
 }
 
 export const useAlpacaBroker = () => {
