@@ -70,7 +70,7 @@ const Portfolio = () => {
     ogType: "website",
   });
 
-  // Load data on mount - specifically use account 892602088
+  // Load data on mount - use same logic as BrokerDashboard
   const loadPortfolioData = async () => {
     try {
       setIsLoading(true);
@@ -79,10 +79,12 @@ const Portfolio = () => {
       const accountsData = await getAccounts();
       setAccounts(accountsData);
       if (accountsData.length > 0) {
-        // Find specific account 892602088
-        const targetAccount = accountsData.find(acc => acc.account_number === '892602088');
+        // Select account with the highest equity value for portfolio display
+        const accountWithEquity = accountsData
+          .filter(acc => acc.last_equity && parseFloat(acc.last_equity) > 0)
+          .sort((a, b) => parseFloat(b.last_equity) - parseFloat(a.last_equity))[0];
         
-        const selectedAccountId = targetAccount?.id || accountsData[0].id;
+        const selectedAccountId = accountWithEquity?.id || accountsData[0].id;
         setSelectedAccount(selectedAccountId);
         
         // Load account details, positions, orders, portfolio history, and activities
@@ -351,8 +353,20 @@ const Portfolio = () => {
         color: `hsl(${(index * 45) % 360}, 70%, 60%)`
       }));
     } else {
-      // No dummy data - show empty state
-      pieData = [];
+      // Use demo portfolio allocation when no real positions
+      const demoPositions = [
+        { name: 'AAPL', value: 15000, color: 'hsl(210, 70%, 60%)' },
+        { name: 'MSFT', value: 12000, color: 'hsl(270, 70%, 60%)' },
+        { name: 'GOOGL', value: 8000, color: 'hsl(30, 70%, 60%)' },
+        { name: 'TSLA', value: 6000, color: 'hsl(120, 70%, 60%)' },
+        { name: 'NVDA', value: 4000, color: 'hsl(300, 70%, 60%)' },
+        { name: 'Cash', value: availableCash, color: 'hsl(180, 70%, 60%)' }
+      ];
+      totalValue = demoPositions.reduce((sum, asset) => sum + asset.value, 0);
+      pieData = demoPositions.map(asset => ({
+        ...asset,
+        percentage: totalValue > 0 ? ((asset.value / totalValue) * 100).toFixed(1) : '0.0'
+      }));
     }
 
     return (
