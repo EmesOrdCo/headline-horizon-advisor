@@ -11,10 +11,10 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, session, loading } = useAuth();
   const navigate = useNavigate();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const checkUserProfile = async () => {
       // If still loading auth, wait
       if (loading) {
         return;
@@ -27,47 +27,50 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
-      // If user exists but email not confirmed, redirect to onboarding email
-      if (user && !user.email_confirmed_at) {
-        console.log('Email not confirmed, redirecting to onboarding email');
-        navigate('/onboarding/email');
-        return;
-      }
-
       try {
         // Check if profile exists and onboarding is completed
         const { data, error } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('onboarding_completed, alpaca_account_id')
           .eq('id', user.id)
           .single();
 
         if (error) {
-          console.error('Error checking onboarding status:', error);
-          // If profile doesn't exist, redirect to details page to create it
+          console.error('Error checking profile:', error);
+          // If profile doesn't exist, redirect to auth to complete setup
           if (error.code === 'PGRST116') {
-            console.log('Profile not found, redirecting to details');
-            navigate('/onboarding/details');
+            console.log('Profile not found, redirecting to auth');
+            navigate('/auth');
             return;
           }
-        } else if (!data.onboarding_completed) {
-          console.log('Onboarding not completed, redirecting to details');
-          navigate('/onboarding/details');
+        }
+
+        // If profile exists but onboarding not completed, redirect to auth
+        if (data && !data.onboarding_completed) {
+          console.log('Onboarding not completed, redirecting to auth');
+          navigate('/auth');
           return;
         }
 
-        setCheckingOnboarding(false);
+        setCheckingProfile(false);
       } catch (error) {
-        console.error('Error in onboarding check:', error);
-        setCheckingOnboarding(false);
+        console.error('Error in profile check:', error);
+        navigate('/auth');
       }
     };
 
-    checkOnboardingStatus();
+    checkUserProfile();
   }, [user, session, loading, navigate]);
 
-  if (loading || checkingOnboarding) {
-    return null; // Reduce visual flicker by not showing loading screen
+  if (loading || checkingProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user || !session) {

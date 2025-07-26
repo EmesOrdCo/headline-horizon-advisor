@@ -19,7 +19,7 @@ const Pricing = () => {
           </p>
         </div>
         
-        <Link to={user ? "/dashboard" : "/onboarding/email"}>
+        <Link to={user ? "/dashboard" : "/auth"}>
           <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 sm:px-12 py-3 sm:py-4 text-lg sm:text-xl mb-4 sm:mb-6 w-full sm:w-auto">
             Start Your Free Trial
           </Button>

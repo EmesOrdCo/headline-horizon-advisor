@@ -34,7 +34,7 @@ const Hero = () => {
                 </Button>
               </Link>
             ) : (
-              <Link to="/onboarding/email">
+              <Link to="/auth">
                 <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-8 py-2 sm:py-3 text-base sm:text-lg w-full sm:w-auto">
                   Start Free Trial →
                 </Button>
