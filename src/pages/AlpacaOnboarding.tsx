@@ -282,59 +282,32 @@ const AlpacaOnboarding = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dobInput">Date of Birth *</Label>
-                <Input
-                  id="dobInput"
-                  type="date"
-                  placeholder="Select your date of birth"
-                  value={personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, "yyyy-MM-dd") : ""}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      // Parse the date string properly to avoid timezone issues
-                      const [year, month, day] = e.target.value.split('-').map(Number);
-                      const dateValue = new Date(year, month - 1, day); // month is 0-indexed
-                      setPersonalDetails(prev => ({ ...prev, dateOfBirth: dateValue }));
-                    } else {
-                      setPersonalDetails(prev => ({ ...prev, dateOfBirth: undefined }));
-                    }
-                  }}
-                  max={format(new Date(), "yyyy-MM-dd")}
-                  min="1900-01-01"
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Use the date picker or type your date
-                </p>
-              </div>
-              <div>
-                <Label>Or Select Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !personalDetails.dateOfBirth && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={personalDetails.dateOfBirth}
-                      onSelect={(date) => setPersonalDetails(prev => ({ ...prev, dateOfBirth: date }))}
-                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div>
+              <Label>Date of Birth *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !personalDetails.dateOfBirth && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {personalDetails.dateOfBirth ? format(personalDetails.dateOfBirth, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={personalDetails.dateOfBirth}
+                    onSelect={(date) => setPersonalDetails(prev => ({ ...prev, dateOfBirth: date }))}
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
