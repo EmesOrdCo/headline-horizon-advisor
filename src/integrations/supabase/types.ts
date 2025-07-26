@@ -97,6 +97,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          alpaca_account_created_at: string | null
+          alpaca_account_id: string | null
+          alpaca_account_number: string | null
+          alpaca_account_status: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -109,6 +113,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alpaca_account_created_at?: string | null
+          alpaca_account_id?: string | null
+          alpaca_account_number?: string | null
+          alpaca_account_status?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -121,6 +129,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alpaca_account_created_at?: string | null
+          alpaca_account_id?: string | null
+          alpaca_account_number?: string | null
+          alpaca_account_status?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null

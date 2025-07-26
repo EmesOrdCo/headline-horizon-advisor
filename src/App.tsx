@@ -53,7 +53,14 @@ const App = () => (
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/alpaca-onboarding" element={<AlpacaOnboarding />} />
+              <Route 
+                path="/alpaca-onboarding" 
+                element={
+                  <ProtectedRoute>
+                    <AlpacaOnboarding />
+                  </ProtectedRoute>
+                } 
+              />
               <Route
                 path="/stock/:symbol"
                 element={

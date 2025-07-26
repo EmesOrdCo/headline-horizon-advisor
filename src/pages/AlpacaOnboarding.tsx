@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, CheckCircle, User, FileText, PenTool, Upload, Users, Send, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PersonalDetails {
   firstName: string;
@@ -141,9 +143,20 @@ const AlpacaOnboarding = () => {
   const [accountResult, setAccountResult] = useState<AccountResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { createAccount, loading } = useAlpacaBroker();
+  const { createAccount, loading: alpacaLoading } = useAlpacaBroker();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Update email from authenticated user
+  useEffect(() => {
+    if (user?.email) {
+      setPersonalDetails(prev => ({
+        ...prev,
+        email: user.email || prev.email
+      }));
+    }
+  }, [user]);
 
   const validateStep = useCallback((step: number): boolean => {
     switch (step) {
@@ -287,6 +300,26 @@ const AlpacaOnboarding = () => {
         throw new Error('No result returned from createAccount');
       }
       
+      // Save Alpaca account information to user profile
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            alpaca_account_id: result.id,
+            alpaca_account_number: result.account_number,
+            alpaca_account_status: result.status,
+            alpaca_account_created_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (profileError) {
+          console.error('Error updating profile with Alpaca data:', profileError);
+          // Don't fail the whole process, just log the error
+        } else {
+          console.log('Successfully saved Alpaca account data to profile');
+        }
+      }
+      
       setAccountResult({
         accountNumber: result.account_number || 'PENDING',
         status: result.status || 'APPROVED',
@@ -298,7 +331,7 @@ const AlpacaOnboarding = () => {
       
       toast({
         title: "Account Created Successfully!",
-        description: `Your Alpaca brokerage account ${result.account_number} has been created.`
+        description: `Your Alpaca brokerage account ${result.account_number} has been created and linked to your profile.`
       });
       
     } catch (error) {
@@ -1020,6 +1053,7 @@ const AlpacaOnboarding = () => {
         return null;
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8">
