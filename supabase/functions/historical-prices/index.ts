@@ -17,14 +17,14 @@ serve(async (req) => {
 
     console.log(`Fetching historical data for ${symbol} with timeframe ${timeframe} and limit ${limit}`);
 
-    const alpacaApiKey = Deno.env.get("ALPACA_TRADING_API_KEY");
-    const alpacaSecretKey = Deno.env.get("ALPACA_TRADING_SECRET_KEY");
+    const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
+    const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
-    console.log(`Using Trading API key: ${alpacaApiKey ? alpacaApiKey.substring(0, 5) + '...' : 'undefined'}`);
-    console.log(`Using Trading secret key: ${alpacaSecretKey ? 'defined' : 'undefined'}`);
+    console.log(`Using Trader API key: ${alpacaApiKey ? alpacaApiKey.substring(0, 8) + '...' : 'undefined'}`);
+    console.log(`Using Trader secret key: ${alpacaSecretKey ? 'defined' : 'undefined'}`);
 
     if (!alpacaApiKey || !alpacaSecretKey) {
-      throw new Error('Alpaca Trading API credentials not configured');
+      throw new Error('Alpaca Trader API credentials not configured');
     }
 
     // For 1-week mini charts (7 days), we want exactly 7 trading days
