@@ -10,29 +10,41 @@ interface LiveTimeGraphProps {
 
 const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({ 
   currentPrice = 214.73, 
-  symbol = 'AAPL' 
+  symbol = 'CRM' 
 }) => {
-  // Set up Alpaca WebSocket for real-time updates
+  // Set up Alpaca WebSocket for real-time updates for both CRM and AAPL
   const { streamData, isConnected } = useAlpacaStreamSingleton({
-    symbols: [symbol],
+    symbols: [symbol, 'AAPL'],
     enabled: true
   });
 
-  // Get current stream data
-  const streamPrice = streamData?.[symbol];
-  
-  // Use consistent base price to match header and all components
+  // CRM Data
+  const crmStreamPrice = streamData?.[symbol];
   const basePrice = 214.73;
-  const activeCurrentPrice = streamPrice?.price || currentPrice || basePrice;
-  const openPrice = streamPrice?.open || 213.95;
-  const highPrice = streamPrice?.high || 214.95;
-  const lowPrice = streamPrice?.low || 212.95;
-  const closePrice = streamPrice?.close || activeCurrentPrice;
-  const volume = streamPrice?.volume || 57580;
+  const crmCurrentPrice = crmStreamPrice?.price || currentPrice || basePrice;
+  const crmOpenPrice = crmStreamPrice?.open || 213.95;
+  const crmHighPrice = crmStreamPrice?.high || 214.95;
+  const crmLowPrice = crmStreamPrice?.low || 212.95;
+  const crmClosePrice = crmStreamPrice?.close || crmCurrentPrice;
+  const crmVolume = crmStreamPrice?.volume || 57580;
   
-  // Calculate change from open price
-  const change = activeCurrentPrice - openPrice;
-  const changePercent = openPrice > 0 ? ((change / openPrice) * 100) : 0;
+  // Calculate CRM change from open price
+  const crmChange = crmCurrentPrice - crmOpenPrice;
+  const crmChangePercent = crmOpenPrice > 0 ? ((crmChange / crmOpenPrice) * 100) : 0;
+
+  // AAPL Data
+  const aaplStreamPrice = streamData?.['AAPL'];
+  const aaplBasePrice = 214.73;
+  const aaplCurrentPrice = aaplStreamPrice?.price || aaplBasePrice;
+  const aaplOpenPrice = aaplStreamPrice?.open || 213.95;
+  const aaplHighPrice = aaplStreamPrice?.high || 214.95;
+  const aaplLowPrice = aaplStreamPrice?.low || 212.95;
+  const aaplClosePrice = aaplStreamPrice?.close || aaplCurrentPrice;
+  const aaplVolume = aaplStreamPrice?.volume || 57580;
+  
+  // Calculate AAPL change from open price
+  const aaplChange = aaplCurrentPrice - aaplOpenPrice;
+  const aaplChangePercent = aaplOpenPrice > 0 ? ((aaplChange / aaplOpenPrice) * 100) : 0;
   
   // Format volume
   const formatVolume = (vol: number) => {
@@ -42,17 +54,17 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
     return vol.toString();
   };
 
-  return (
-    <div className="h-full flex flex-col">
+  const renderChart = (stockSymbol: string, stockCurrentPrice: number, stockOpenPrice: number, stockHighPrice: number, stockLowPrice: number, stockClosePrice: number, stockVolume: number, stockChange: number, stockChangePercent: number) => (
+    <div className="flex flex-col h-[400px]">
       {/* Stock Chart Header - matching Price Chart style */}
       <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700/50 flex-shrink-0">
         <div className="flex items-center space-x-6">
           <div className="flex flex-col">
-            <h2 className="text-white text-xl font-bold mb-1">{symbol} Stock Chart</h2>
+            <h2 className="text-white text-xl font-bold mb-1">{stockSymbol} Stock Chart</h2>
             <div className="flex items-center space-x-2">
-              <span className="text-white text-2xl font-bold">${activeCurrentPrice.toFixed(2)}</span>
-              <span className={`text-lg ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+              <span className="text-white text-2xl font-bold">${stockCurrentPrice.toFixed(2)}</span>
+              <span className={`text-lg ${stockChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {stockChange >= 0 ? '+' : ''}{stockChange.toFixed(2)} ({stockChange >= 0 ? '+' : ''}{stockChangePercent.toFixed(2)}%)
               </span>
               {isConnected && (
                 <div className="flex items-center space-x-2 ml-4">
@@ -90,19 +102,29 @@ const LiveTimeGraph: React.FC<LiveTimeGraphProps> = ({
           </div>
           
           <div className="flex items-center space-x-4 text-sm text-slate-400">
-            <div>O <span className="text-white">{openPrice.toFixed(2)}</span></div>
-            <div>H <span className="text-green-400">{highPrice.toFixed(2)}</span></div>
-            <div>L <span className="text-red-400">{lowPrice.toFixed(2)}</span></div>
-            <div>C <span className="text-white">{closePrice.toFixed(2)}</span></div>
-            <div>Vol <span className="text-blue-400">{formatVolume(volume)}</span></div>
+            <div>O <span className="text-white">{stockOpenPrice.toFixed(2)}</span></div>
+            <div>H <span className="text-green-400">{stockHighPrice.toFixed(2)}</span></div>
+            <div>L <span className="text-red-400">{stockLowPrice.toFixed(2)}</span></div>
+            <div>C <span className="text-white">{stockClosePrice.toFixed(2)}</span></div>
+            <div>Vol <span className="text-blue-400">{formatVolume(stockVolume)}</span></div>
           </div>
         </div>
       </div>
 
       {/* Chart Content */}
       <div className="flex-1 bg-slate-900 min-h-0">
-        <StockLineChart currentPrice={activeCurrentPrice} symbol={symbol} />
+        <StockLineChart currentPrice={stockCurrentPrice} symbol={stockSymbol} />
       </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col overflow-y-auto bg-slate-900">
+      {/* CRM Chart */}
+      {renderChart(symbol, crmCurrentPrice, crmOpenPrice, crmHighPrice, crmLowPrice, crmClosePrice, crmVolume, crmChange, crmChangePercent)}
+      
+      {/* AAPL Chart */}
+      {renderChart('AAPL', aaplCurrentPrice, aaplOpenPrice, aaplHighPrice, aaplLowPrice, aaplClosePrice, aaplVolume, aaplChange, aaplChangePercent)}
 
       {/* WebSocket Monitor - positioned like in broker dashboard */}
       <div className="absolute bottom-4 right-4">
