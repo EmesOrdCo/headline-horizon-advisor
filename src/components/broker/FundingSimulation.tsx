@@ -14,7 +14,7 @@ interface FundingSimulationProps {
 }
 
 const FundingSimulation = ({ accountId, accountData, onFundingComplete }: FundingSimulationProps) => {
-  const [fundingType, setFundingType] = useState<'ach' | 'journal'>('journal');
+  const [fundingType, setFundingType] = useState<'ach' | 'journal'>('ach');
   const [amount, setAmount] = useState('10000');
   
   const { createACHRelationship, createTransfer, createJournal, loading } = useAlpacaBroker();
@@ -61,20 +61,26 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
     }
 
     try {
+      // Note: Journal transfers in Alpaca sandbox may be limited
+      // For simulation purposes, we'll use a more realistic approach
       const journalData = {
-        from_account: 'FIRM_ACCOUNT', // This would be your firm's account ID in real scenario
+        from_account: accountId, // Use same account for demo
         to_account: accountId,
         entry_type: 'JNLC',
         amount: amount,
-        description: `Test funding for account ${accountData?.account_number}`,
+        description: `Funding simulation for account ${accountData?.account_number}`,
       };
 
       await createJournal(journalData);
       toast.success(`Journal transfer of $${amount} completed successfully!`);
       onFundingComplete();
     } catch (error) {
-      toast.error('Failed to complete journal transfer');
       console.error('Journal funding error:', error);
+      // Fallback to ACH simulation if journal fails
+      toast.error('Journal transfer not available in sandbox. Trying ACH simulation...');
+      setTimeout(() => {
+        handleACHFunding();
+      }, 1000);
     }
   };
 
@@ -114,8 +120,8 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="journal">Instant Journal Transfer (Recommended)</SelectItem>
-                <SelectItem value="ach">ACH Transfer Simulation</SelectItem>
+                <SelectItem value="ach">ACH Transfer Simulation (Recommended)</SelectItem>
+                <SelectItem value="journal">Journal Transfer (Limited in Sandbox)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -139,8 +145,8 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
             </h4>
             <p className="text-sm text-muted-foreground">
               {fundingType === 'journal' 
-                ? 'Instant funding using firm account journal entry. Funds will be available immediately.'
-                : 'Simulates ACH bank transfer. Creates ACH relationship and transfer request.'
+                ? 'Journal transfers have limited support in Alpaca sandbox environment. Will fallback to ACH if not available.'
+                : 'Simulates ACH bank transfer. Creates ACH relationship and transfer request. Recommended for sandbox testing.'
               }
             </p>
           </div>
