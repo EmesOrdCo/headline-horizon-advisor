@@ -12,6 +12,7 @@ import { useAccountData } from "@/hooks/useAccountData";
 import ACHTransferModal from "@/components/ACHTransferModal";
 import TransferHistory from "@/components/TransferHistory";
 import BankAccountStatus from "@/components/BankAccountStatus";
+import BankAccountManager from "@/components/BankAccountManager";
 
 const Wallet = () => {
   useSEO({
@@ -180,6 +181,11 @@ const Wallet = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Bank Account Manager */}
+            {selectedAccount && (
+              <BankAccountManager accountId={selectedAccount.id} />
+            )}
 
             {/* Transfer History */}
             {selectedAccount && (

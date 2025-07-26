@@ -66,6 +66,7 @@ const ACHTransferModal = ({ isOpen, onClose, accountId, accountNumber, onTransfe
       console.log('🏦 Creating ACH relationship for account:', accountId);
       
       const achData = {
+        account_owner_name: 'Demo User', // Required field for sandbox
         bank_account_type: 'checking',
         bank_account_number: '123456789',
         bank_routing_number: '021000021',
