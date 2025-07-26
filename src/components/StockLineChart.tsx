@@ -195,13 +195,13 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   return (
-    <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-      <div className="p-4 border-b border-gray-700">
+    <div className="w-full h-[400px] bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+      <div className="p-3 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">AAPL Stock Chart</h2>
+            <h2 className="text-lg font-bold text-white">AAPL Stock Chart</h2>
             <div className="flex items-center gap-4 mt-1">
-              <span className="text-2xl font-bold text-white">
+              <span className="text-xl font-bold text-white">
                 ${currentPrice.toFixed(2)}
               </span>
               <span className={`text-sm font-medium ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -210,90 +210,84 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-gray-400">
-              {isConnected ? 'Live Data' : 'Simulated Data'}
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-xs text-gray-400">
+              {isConnected ? 'Live' : 'Sim'}
             </span>
-            <span className="text-sm text-gray-400">
-              {dataCount} total points
+            <span className="text-xs text-gray-400">
+              {dataCount}pts
             </span>
             {isAutoScrolling && (
-              <span className="text-xs text-blue-400">Auto-scrolling</span>
-            )}
-            {errorMessage && (
-              <span className="text-xs text-red-400 ml-2">
-                {errorMessage}
-              </span>
+              <span className="text-xs text-blue-400">Auto</span>
             )}
           </div>
         </div>
         
         {/* Scroll Controls */}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
+        <div className="flex items-center gap-2 mt-2">
           <button
             onClick={scrollLeft}
             disabled={!canScrollLeft}
-            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+            className="px-2 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50"
           >
             ← Earlier
           </button>
           <button
             onClick={scrollRight}
             disabled={!canScrollRight}
-            className="px-3 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+            className="px-2 py-1 text-xs bg-gray-700 text-white rounded disabled:opacity-50"
           >
             Later →
           </button>
           <button
             onClick={scrollToLatest}
-            className={`px-3 py-1 text-xs rounded transition-colors ${
+            className={`px-2 py-1 text-xs rounded ${
               isAutoScrolling 
-                ? 'bg-blue-600 text-white hover:bg-blue-500' 
-                : 'bg-gray-600 text-white hover:bg-blue-600'
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-600 text-white'
             }`}
           >
             Latest {isAutoScrolling ? '●' : '○'}
           </button>
           <span className="text-xs text-gray-400">
-            Showing {viewportStart + 1}-{Math.min(viewportStart + VIEWPORT_SIZE, displayData.length)} of {displayData.length}
+            {viewportStart + 1}-{Math.min(viewportStart + VIEWPORT_SIZE, displayData.length)} of {displayData.length}
           </span>
         </div>
       </div>
       
-      <div ref={chartContainerRef} className="h-[480px] p-4 w-full overflow-hidden">
+      <div ref={chartContainerRef} className="h-[300px] p-2 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart 
             data={viewportData} 
-            margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
-            style={{ overflow: 'visible' }}
+            margin={{ top: 5, right: 15, left: 15, bottom: 30 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
               stroke="#9CA3AF" 
-              fontSize={11}
+              fontSize={10}
               tick={{ fill: '#9CA3AF' }}
-              interval={Math.max(0, Math.floor(viewportData.length / 8))}
+              interval={Math.max(0, Math.floor(viewportData.length / 6))}
               angle={-45}
               textAnchor="end"
-              height={60}
+              height={50}
             />
             <YAxis 
               stroke="#9CA3AF" 
-              fontSize={11}
+              fontSize={10}
               tick={{ fill: '#9CA3AF' }}
               domain={['dataMin - 0.1', 'dataMax + 0.1']}
               tickFormatter={(value) => `$${value.toFixed(2)}`}
-              width={60}
+              width={50}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line 
               type="monotone" 
               dataKey="price" 
               stroke="#10B981" 
-              strokeWidth={3}
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 5, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
+              activeDot={{ r: 4, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
               connectNulls={false}
             />
           </LineChart>
