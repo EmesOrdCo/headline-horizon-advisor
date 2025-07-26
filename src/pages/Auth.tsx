@@ -211,7 +211,7 @@ const Auth = () => {
           )}
           
           {!isSignUp && (
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-2">
               <Button
                 variant="link"
                 onClick={() => navigate('/onboarding/email')}
@@ -219,6 +219,15 @@ const Auth = () => {
                 disabled={loading}
               >
                 New user? Start here
+              </Button>
+              <div className="text-sm text-gray-500 dark:text-slate-400">or</div>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/alpaca-onboarding')}
+                className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                disabled={loading}
+              >
+                🏦 Open Alpaca Brokerage Account
               </Button>
             </div>
           )}

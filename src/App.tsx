@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { RefreshProvider } from "./contexts/RefreshContext";
 import HomePage from "./pages/HomePage";
 import Auth from "./pages/Auth";
+import AlpacaOnboarding from "./pages/AlpacaOnboarding";
 import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
 import BrokerDashboard from "./pages/BrokerDashboard";
@@ -52,6 +53,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/alpaca-onboarding" element={<AlpacaOnboarding />} />
               <Route
                 path="/stock/:symbol"
                 element={
