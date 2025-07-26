@@ -14,10 +14,22 @@ interface FundingSimulationProps {
 }
 
 const FundingSimulation = ({ accountId, accountData, onFundingComplete }: FundingSimulationProps) => {
-  const [fundingType, setFundingType] = useState<'ach' | 'journal'>('ach');
+  const [fundingType, setFundingType] = useState<'ach' | 'journal' | 'mock'>('mock');
   const [amount, setAmount] = useState('10000');
   
   const { createACHRelationship, createTransfer, createJournal, loading } = useAlpacaBroker();
+
+  const handleMockFunding = async () => {
+    if (!accountId) {
+      toast.error('Please select an account first');
+      return;
+    }
+
+    // Simulate a funding process for demonstration purposes
+    toast.success(`Mock funding of $${amount} initiated successfully!`);
+    toast.success('Note: This is a simulation - real funds are not transferred in sandbox mode');
+    onFundingComplete();
+  };
 
   const handleACHFunding = async () => {
     if (!accountId) {
@@ -49,8 +61,11 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
       toast.success(`ACH funding of $${amount} initiated successfully!`);
       onFundingComplete();
     } catch (error) {
-      toast.error('Failed to initiate ACH funding');
       console.error('ACH funding error:', error);
+      toast.error('ACH funding failed in sandbox. Using mock funding instead...');
+      setTimeout(() => {
+        handleMockFunding();
+      }, 1000);
     }
   };
 
@@ -87,8 +102,10 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
   const handleFunding = () => {
     if (fundingType === 'ach') {
       handleACHFunding();
-    } else {
+    } else if (fundingType === 'journal') {
       handleJournalFunding();
+    } else {
+      handleMockFunding();
     }
   };
 
@@ -115,13 +132,14 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="funding-type">Funding Method</Label>
-            <Select value={fundingType} onValueChange={(value: 'ach' | 'journal') => setFundingType(value)}>
+            <Select value={fundingType} onValueChange={(value: 'ach' | 'journal' | 'mock') => setFundingType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ach">ACH Transfer Simulation (Recommended)</SelectItem>
-                <SelectItem value="journal">Journal Transfer (Limited in Sandbox)</SelectItem>
+                <SelectItem value="mock">Mock Funding (Recommended for Demo)</SelectItem>
+                <SelectItem value="ach">ACH Transfer Simulation</SelectItem>
+                <SelectItem value="journal">Journal Transfer (Limited)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -141,12 +159,14 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
 
           <div className="bg-muted p-4 rounded-lg">
             <h4 className="font-semibold mb-2">
-              {fundingType === 'journal' ? 'Journal Transfer' : 'ACH Transfer'}
+              {fundingType === 'journal' ? 'Journal Transfer' : fundingType === 'ach' ? 'ACH Transfer' : 'Mock Funding'}
             </h4>
             <p className="text-sm text-muted-foreground">
               {fundingType === 'journal' 
-                ? 'Journal transfers have limited support in Alpaca sandbox environment. Will fallback to ACH if not available.'
-                : 'Simulates ACH bank transfer. Creates ACH relationship and transfer request. Recommended for sandbox testing.'
+                ? 'Journal transfers have limited support in Alpaca sandbox environment. Will fallback to mock if not available.'
+                : fundingType === 'ach' 
+                ? 'Simulates ACH bank transfer. Creates ACH relationship and transfer request. May fallback to mock in sandbox.'
+                : 'Simulates funding process for demonstration purposes. No real money is transferred.'
               }
             </p>
           </div>
