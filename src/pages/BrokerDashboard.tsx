@@ -24,6 +24,7 @@ const BrokerDashboard = () => {
   const [assets, setAssets] = useState<AlpacaAsset[]>([]);
   const [orders, setOrders] = useState<AlpacaOrder[]>([]);
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const { 
     loading, 
@@ -53,9 +54,12 @@ const BrokerDashboard = () => {
       // Load assets
       const assetsData = await getAssets({ status: 'active', asset_class: 'us_equity' });
       setAssets(assetsData.slice(0, 100)); // Limit to first 100 for performance
+      
+      setIsInitialized(true);
     } catch (err) {
       console.error('Failed to load initial data:', err);
       toast.error('Failed to load broker data');
+      setIsInitialized(true);
     }
   };
 
@@ -94,6 +98,18 @@ const BrokerDashboard = () => {
   const userStep = accounts.length === 0 ? 'create' : 
                    !selectedAccount || !selectedAccountData?.last_equity || parseFloat(selectedAccountData.last_equity) === 0 ? 'fund' : 
                    'trade';
+
+  // Show loading state until initialized to prevent flicker
+  if (!isInitialized) {
+    return (
+      <>
+        <DashboardNav />
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="text-white text-lg">Loading broker data...</div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

@@ -67,11 +67,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [user, session, loading, navigate]);
 
   if (loading || checkingOnboarding) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
-      </div>
-    );
+    return null; // Reduce visual flicker by not showing loading screen
   }
 
   if (!user || !session) {
