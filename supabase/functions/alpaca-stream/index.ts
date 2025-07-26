@@ -19,12 +19,13 @@ serve(async (req) => {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  const alpacaApiKey = Deno.env.get("ALPACA_API_KEY");
-  const alpacaSecretKey = Deno.env.get("ALPACA_SECRET_KEY");
+  const alpacaApiKey = Deno.env.get("ALPACA_TRADER_API_KEY");
+  const alpacaSecretKey = Deno.env.get("ALPACA_TRADER_SECRET_KEY");
 
   console.log('WebSocket connection request received');
-  console.log('Broker API Key exists:', !!alpacaApiKey);
-  console.log('Broker Secret Key exists:', !!alpacaSecretKey);
+  console.log('Trader API Key exists:', !!alpacaApiKey);
+  console.log('Trader Secret Key exists:', !!alpacaSecretKey);
+  console.log('API Key prefix:', alpacaApiKey ? alpacaApiKey.substring(0, 8) + '...' : 'None');
 
   if (!alpacaApiKey || !alpacaSecretKey) {
     console.error('Missing Alpaca API credentials');
