@@ -87,6 +87,114 @@ const FUNDING_SOURCES = [
   { value: 'other', label: 'Other' }
 ];
 
+const COUNTRIES = [
+  { value: 'USA', label: 'United States' },
+  { value: 'CAN', label: 'Canada' },
+  { value: 'GBR', label: 'United Kingdom' },
+  { value: 'AUS', label: 'Australia' },
+  { value: 'DEU', label: 'Germany' },
+  { value: 'FRA', label: 'France' },
+  { value: 'JPN', label: 'Japan' },
+  { value: 'CHN', label: 'China' },
+  { value: 'IND', label: 'India' },
+  { value: 'BRA', label: 'Brazil' }
+];
+
+const US_STATES = [
+  { value: 'AL', label: 'Alabama' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'WY', label: 'Wyoming' },
+  { value: 'DC', label: 'District of Columbia' }
+];
+
+const INVESTMENT_EXPERIENCE = [
+  { value: 'none', label: 'No Experience' },
+  { value: 'limited', label: 'Limited (Less than 1 year)' },
+  { value: '1_to_3_years', label: '1-3 Years' },
+  { value: '3_to_5_years', label: '3-5 Years' },
+  { value: 'over_5_years', label: 'Over 5 Years' },
+  { value: 'extensive', label: 'Extensive (10+ Years)' }
+];
+
+const RISK_TOLERANCE = [
+  { value: 'conservative', label: 'Conservative' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'aggressive', label: 'Aggressive' },
+  { value: 'very_aggressive', label: 'Very Aggressive' }
+];
+
+const INVESTMENT_OBJECTIVES = [
+  { value: 'capital_preservation', label: 'Capital Preservation' },
+  { value: 'income', label: 'Income Generation' },
+  { value: 'growth', label: 'Growth' },
+  { value: 'speculation', label: 'Speculation' },
+  { value: 'market_speculation', label: 'Market Speculation' }
+];
+
+const MARITAL_STATUS = [
+  { value: 'SINGLE', label: 'Single' },
+  { value: 'MARRIED', label: 'Married' },
+  { value: 'DIVORCED', label: 'Divorced' },
+  { value: 'WIDOWED', label: 'Widowed' },
+  { value: 'SEPARATED', label: 'Separated' }
+];
+
+const COUNTRY_CODES = [
+  { value: '+1', label: 'US (+1)', flag: '🇺🇸' },
+  { value: '+44', label: 'UK (+44)', flag: '🇬🇧' },
+  { value: '+33', label: 'FR (+33)', flag: '🇫🇷' },
+  { value: '+49', label: 'DE (+49)', flag: '🇩🇪' },
+  { value: '+81', label: 'JP (+81)', flag: '🇯🇵' },
+  { value: '+86', label: 'CN (+86)', flag: '🇨🇳' }
+];
+
 const Auth = () => {
   useSEO({
     title: "Sign In or Create Account",
@@ -477,7 +585,7 @@ const Auth = () => {
               {onboardingData.dateOfBirth ? format(onboardingData.dateOfBirth, "PPP") : "Pick a date"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50" align="start">
             <Calendar
               mode="single"
               selected={onboardingData.dateOfBirth}
@@ -488,6 +596,7 @@ const Auth = () => {
               fromYear={1900}
               toYear={new Date().getFullYear()}
               initialFocus
+              className="p-3 pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
@@ -500,13 +609,15 @@ const Auth = () => {
             value={onboardingData.countryOfCitizenship} 
             onValueChange={(value) => updateOnboardingData({ countryOfCitizenship: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white dark:bg-slate-800">
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USA">United States</SelectItem>
-              <SelectItem value="CAN">Canada</SelectItem>
-              <SelectItem value="GBR">United Kingdom</SelectItem>
+            <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50">
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country.value} value={country.value}>
+                  {country.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -516,13 +627,15 @@ const Auth = () => {
             value={onboardingData.countryOfBirth} 
             onValueChange={(value) => updateOnboardingData({ countryOfBirth: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white dark:bg-slate-800">
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USA">United States</SelectItem>
-              <SelectItem value="CAN">Canada</SelectItem>
-              <SelectItem value="GBR">United Kingdom</SelectItem>
+            <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50">
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country.value} value={country.value}>
+                  {country.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -532,13 +645,15 @@ const Auth = () => {
             value={onboardingData.countryOfTaxResidence} 
             onValueChange={(value) => updateOnboardingData({ countryOfTaxResidence: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white dark:bg-slate-800">
               <SelectValue placeholder="Select country" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USA">United States</SelectItem>
-              <SelectItem value="CAN">Canada</SelectItem>
-              <SelectItem value="GBR">United Kingdom</SelectItem>
+            <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50">
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country.value} value={country.value}>
+                  {country.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -558,13 +673,31 @@ const Auth = () => {
         </div>
         <div>
           <Label>Phone Number *</Label>
-          <Input
-            value={onboardingData.phoneNumber}
-            onChange={(e) => updateOnboardingData({ phoneNumber: e.target.value })}
-            placeholder="(555) 123-4567"
-            required
-            disabled={loading}
-          />
+          <div className="flex gap-2">
+            <Select value="+1" disabled>
+              <SelectTrigger className="w-24 bg-white dark:bg-slate-800">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50">
+                {COUNTRY_CODES.map((code) => (
+                  <SelectItem key={code.value} value={code.value}>
+                    <span className="flex items-center gap-2">
+                      <span>{code.flag}</span>
+                      <span>{code.value}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              className="flex-1"
+              value={onboardingData.phoneNumber}
+              onChange={(e) => updateOnboardingData({ phoneNumber: e.target.value })}
+              placeholder="(555) 123-4567"
+              required
+              disabled={loading}
+            />
+          </div>
         </div>
       </div>
 
@@ -619,13 +752,21 @@ const Auth = () => {
         </div>
         <div>
           <Label>State *</Label>
-          <Input
-            value={onboardingData.state}
-            onChange={(e) => updateOnboardingData({ state: e.target.value })}
-            placeholder="CA"
-            required
-            disabled={loading}
-          />
+          <Select 
+            value={onboardingData.state} 
+            onValueChange={(value) => updateOnboardingData({ state: value })}
+          >
+            <SelectTrigger className="bg-white dark:bg-slate-800">
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50 max-h-60 overflow-y-auto">
+              {US_STATES.map((state) => (
+                <SelectItem key={state.value} value={state.value}>
+                  {state.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label>ZIP Code *</Label>
@@ -645,10 +786,10 @@ const Auth = () => {
           value={onboardingData.fundingSource[0]} 
           onValueChange={(value) => updateOnboardingData({ fundingSource: [value] })}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-white dark:bg-slate-800">
             <SelectValue placeholder="Select funding source" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 z-50">
             {FUNDING_SOURCES.map((source) => (
               <SelectItem key={source.value} value={source.value}>
                 {source.label}
