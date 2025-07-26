@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Wallet as WalletIcon, Users, DollarSign } from "lucide-react";
+import { Plus, Wallet as WalletIcon, Users, DollarSign, RefreshCw } from "lucide-react";
 import DashboardNav from "@/components/DashboardNav";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
+import { useAccountData } from "@/hooks/useAccountData";
 
 const Wallet = () => {
   useSEO({
@@ -16,14 +17,21 @@ const Wallet = () => {
     canonical: "/wallet"
   });
 
-  const [selectedCurrency, setSelectedCurrency] = useState("GBP");
-  const currentTime = new Date().toLocaleString("en-GB", {
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const { totalValue, availableCash, isLoading, refreshData } = useAccountData();
+  
+  const currentTime = new Date().toLocaleString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
   });
+
+  const formatCurrency = (value: number, currency: string = selectedCurrency) => {
+    const currencySymbols = { USD: '$', GBP: '£' };
+    return `${currencySymbols[currency as keyof typeof currencySymbols]}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const friendAvatars = [
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
@@ -53,19 +61,34 @@ const Wallet = () => {
                   <CardTitle className="text-lg font-medium text-gray-700 dark:text-slate-300">
                     Your Total Value
                   </CardTitle>
-                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                    <SelectTrigger className="w-20 border-emerald-200 dark:border-emerald-500/30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={refreshData} 
+                      disabled={isLoading} 
+                      variant="outline" 
+                      size="sm"
+                      className="border-emerald-200 dark:border-emerald-500/30"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <SelectTrigger className="w-20 border-emerald-200 dark:border-emerald-500/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="GBP">GBP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-4xl font-bold text-gray-900 dark:text-white">
-                    {selectedCurrency === "GBP" ? "£" : "$"}0.00
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-12 w-48 rounded"></div>
+                    ) : (
+                      formatCurrency(totalValue)
+                    )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-slate-400">
                     Last update at {currentTime}
@@ -101,10 +124,15 @@ const Wallet = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">£0.00</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
+                    ) : (
+                      formatCurrency(availableCash, 'GBP')
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed">
-                    To manage your card, send payments and more please go to{" "}
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">MarketSensor Money app</span>.
+                    Available cash ready for trading and investments.
                   </p>
                 </CardContent>
               </Card>
@@ -120,10 +148,22 @@ const Wallet = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">£0.00</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
+                    ) : (
+                      formatCurrency(totalValue, 'GBP')
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <div className="text-sm text-gray-600 dark:text-slate-400">Available USD</div>
-                    <div className="text-xl font-semibold text-gray-700 dark:text-slate-300">$0.00</div>
+                    <div className="text-xl font-semibold text-gray-700 dark:text-slate-300">
+                      {isLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-6 w-24 rounded"></div>
+                      ) : (
+                        formatCurrency(availableCash, 'USD')
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

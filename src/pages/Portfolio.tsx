@@ -5,13 +5,14 @@ import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import { useAccountData } from "@/hooks/useAccountData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useSEO } from "@/hooks/useSEO";
-import { TrendingUp, TrendingDown, DollarSign, Activity, Target, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Activity, Target, Clock, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 
@@ -71,6 +72,7 @@ const Portfolio = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'GBP' | 'EUR'>('USD');
   const [showBenchmark, setShowBenchmark] = useState(false);
   const [benchmarkType, setBenchmarkType] = useState<'sp500' | 'nasdaq' | 'btc'>('sp500');
+  const { totalValue, availableCash, investedAmount, isLoading, refreshData } = useAccountData();
   
   // Get all stock symbols for logo loading
   const allStockSymbols = [
@@ -97,23 +99,33 @@ const Portfolio = () => {
 
   // Account Summary Component
   const AccountSummary = () => {
-    const data = portfolioData;
-    
     return (
       <div className="space-y-6">
         {/* Currency Selector */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Account Summary</h2>
-          <Select value={selectedCurrency} onValueChange={(value: 'USD' | 'GBP' | 'EUR') => setSelectedCurrency(value)}>
-            <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USD">USD ($)</SelectItem>
-              <SelectItem value="GBP">GBP (£)</SelectItem>
-              <SelectItem value="EUR">EUR (€)</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={refreshData} 
+              disabled={isLoading} 
+              variant="outline" 
+              size="sm" 
+              className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Loading...' : 'Refresh'}
+            </Button>
+            <Select value={selectedCurrency} onValueChange={(value: 'USD' | 'GBP' | 'EUR') => setSelectedCurrency(value)}>
+              <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -127,9 +139,13 @@ const Portfolio = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">
-                {formatCurrency(data.totalValue[selectedCurrency])}
+                {isLoading ? (
+                  <div className="animate-pulse bg-slate-600 h-8 w-32 rounded"></div>
+                ) : (
+                  formatCurrency(totalValue)
+                )}
               </div>
-              <p className="text-xs text-slate-400 mt-1">All investments & cash</p>
+              <p className="text-xs text-slate-400 mt-1">Live account balance</p>
             </CardContent>
           </Card>
 
@@ -142,9 +158,13 @@ const Portfolio = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-emerald-400">
-                {formatCurrency(data.invested[selectedCurrency])}
+                {isLoading ? (
+                  <div className="animate-pulse bg-slate-600 h-8 w-32 rounded"></div>
+                ) : (
+                  formatCurrency(investedAmount)
+                )}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Currently placed</p>
+              <p className="text-xs text-slate-400 mt-1">Currently invested</p>
             </CardContent>
           </Card>
 
@@ -157,9 +177,13 @@ const Portfolio = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-400">
-                {formatCurrency(data.availableCash[selectedCurrency])}
+                {isLoading ? (
+                  <div className="animate-pulse bg-slate-600 h-8 w-32 rounded"></div>
+                ) : (
+                  formatCurrency(availableCash)
+                )}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Ready to invest</p>
+              <p className="text-xs text-slate-400 mt-1">Available cash</p>
             </CardContent>
           </Card>
 
@@ -171,12 +195,14 @@ const Portfolio = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${data.totalReturn[selectedCurrency] >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatCurrency(data.totalReturn[selectedCurrency])}
+              <div className="text-2xl font-bold text-slate-400">
+                {isLoading ? (
+                  <div className="animate-pulse bg-slate-600 h-8 w-32 rounded"></div>
+                ) : (
+                  "Coming Soon"
+                )}
               </div>
-              <p className={`text-xs mt-1 ${data.totalReturnPercent[selectedCurrency] >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatPercent(data.totalReturnPercent[selectedCurrency])}
-              </p>
+              <p className="text-xs text-slate-400 mt-1">Returns calculation pending</p>
             </CardContent>
           </Card>
         </div>
