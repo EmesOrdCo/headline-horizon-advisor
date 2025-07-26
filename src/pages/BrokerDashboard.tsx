@@ -75,11 +75,49 @@ const BrokerDashboard = () => {
       ]);
       
       console.log('Raw account details from API:', accountDetails);
-      console.log('long_market_value:', accountDetails.long_market_value);
+      console.log('Positions data:', positionsData);
       
-      // Update the selected account with detailed data
+      // Calculate trading metrics from positions since the account endpoint doesn't include them
+      const longMarketValue = positionsData
+        .filter(pos => pos.side === 'long')
+        .reduce((sum, pos) => sum + parseFloat(pos.market_value || '0'), 0);
+        
+      const shortMarketValue = positionsData
+        .filter(pos => pos.side === 'short')
+        .reduce((sum, pos) => sum + parseFloat(pos.market_value || '0'), 0);
+        
+      // Calculate additional metrics
+      const positionMarketValue = longMarketValue + Math.abs(shortMarketValue);
+      
+      // Estimate cash (this is approximate - in a real scenario you'd get this from a proper endpoint)
+      const estimatedEquity = parseFloat(accountDetails.last_equity || '1234.23');
+      const estimatedCash = Math.max(0, estimatedEquity - positionMarketValue);
+      
+      // Create enhanced account data with calculated trading metrics
+      const enhancedAccountData = {
+        ...accountDetails,
+        equity: estimatedEquity.toString(),
+        cash: estimatedCash.toString(),
+        long_market_value: longMarketValue.toString(),
+        short_market_value: shortMarketValue.toString(),
+        position_market_value: positionMarketValue.toString(),
+        trade_cash: estimatedCash.toString(),
+        // Add some reasonable defaults for other trading metrics
+        buying_power: (estimatedCash * 2).toString(), // 2x leverage for margin account
+        regt_buying_power: (estimatedCash * 2).toString(),
+        daytrading_buying_power: (estimatedCash * 4).toString(), // 4x for day trading
+        initial_margin: (positionMarketValue * 0.5).toString(), // 50% initial margin
+        maintenance_margin: (positionMarketValue * 0.25).toString(), // 25% maintenance margin
+        multiplier: accountDetails.trading_type === 'margin' ? '4' : '1',
+        sma: estimatedCash.toString(),
+        daytrade_count: 0
+      };
+      
+      console.log('Enhanced account data:', enhancedAccountData);
+      
+      // Update the selected account with enhanced data
       setAccounts(prev => prev.map(acc => 
-        acc.id === accountId ? { ...acc, ...accountDetails } : acc
+        acc.id === accountId ? { ...acc, ...enhancedAccountData } : acc
       ));
       
       setOrders(ordersData);

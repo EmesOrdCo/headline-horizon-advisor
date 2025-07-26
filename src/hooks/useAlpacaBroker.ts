@@ -8,6 +8,8 @@ export interface AlpacaAccount {
   currency: string;
   created_at: string;
   last_equity?: string;
+  account_type?: string;
+  trading_type?: string;
   
   // Detailed Trading Metrics
   cash?: string;
