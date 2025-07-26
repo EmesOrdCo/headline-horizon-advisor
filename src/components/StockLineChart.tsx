@@ -68,26 +68,29 @@ const StockLineChart: React.FC = () => {
     const now = new Date();
     const initialData: PricePoint[] = [];
     
+    // Start with a consistent base price that matches the page header
+    const basePrice = 214.73; // Match the header price
+    
     // Generate last 10 minutes in 30-second intervals (20 points)
     for (let i = 19; i >= 0; i--) {
       const timestamp = new Date(now.getTime() - i * 30000); // 30 seconds apart
-      const basePrice = 213.95;
-      const variation = (Math.random() - 0.5) * 2;
+      const variation = (Math.random() - 0.5) * 0.5; // Smaller variations for consistency
       const price = basePrice + variation;
       
       initialData.push({
         timestamp: timestamp.toLocaleDateString() + ' ' + timestamp.toLocaleTimeString(),
         time: timestamp.toLocaleTimeString(),
         price: Math.round(price * 100) / 100,
-        open: Math.round((basePrice + (Math.random() - 0.5) * 1) * 100) / 100,
-        high: Math.round((price + Math.random() * 0.5) * 100) / 100,
-        low: Math.round((price - Math.random() * 0.5) * 100) / 100,
+        open: Math.round((basePrice + (Math.random() - 0.5) * 0.2) * 100) / 100,
+        high: Math.round((price + Math.random() * 0.2) * 100) / 100,
+        low: Math.round((price - Math.random() * 0.2) * 100) / 100,
         close: Math.round(price * 100) / 100,
-        volume: Math.floor(Math.random() * 50000) + 30000
+        volume: Math.floor(Math.random() * 10000) + 50000
       });
     }
     
     setChartData(initialData);
+    console.log('📊 Initialized chart with', initialData.length, 'points, latest price:', initialData[initialData.length - 1]?.price);
   }, []);
 
   // Add new data every 3 seconds
@@ -96,39 +99,45 @@ const StockLineChart: React.FC = () => {
       const now = new Date();
       const data = streamData['AAPL'];
       
-      // Use WebSocket data if available, otherwise generate simulated data
-      const basePrice = data?.price || 213.95;
-      const newPrice = data?.price || basePrice + (Math.random() - 0.5) * 1;
-      
-      const newPoint: PricePoint = {
-        timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
-        time: now.toLocaleTimeString(),
-        price: Math.round(newPrice * 100) / 100,
-        open: data?.open || Math.round((basePrice + (Math.random() - 0.5) * 0.5) * 100) / 100,
-        high: data?.high || Math.round((newPrice + Math.random() * 0.3) * 100) / 100,
-        low: data?.low || Math.round((newPrice - Math.random() * 0.3) * 100) / 100,
-        close: data?.close || Math.round(newPrice * 100) / 100,
-        volume: data?.volume || Math.floor(Math.random() * 50000) + 30000
-      };
-
       setChartData(prev => {
-        const tenMinutesAgo = now.getTime() - (10 * 60 * 1000); // 10 minutes ago
+        const lastPoint = prev[prev.length - 1];
+        const basePrice = data?.price || lastPoint?.price || 214.73;
+        
+        // Small realistic price movements
+        const priceChange = (Math.random() - 0.5) * 0.1;
+        const newPrice = basePrice + priceChange;
+        
+        const newPoint: PricePoint = {
+          timestamp: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
+          time: now.toLocaleTimeString(),
+          price: Math.round(newPrice * 100) / 100,
+          open: data?.open || Math.round((basePrice + (Math.random() - 0.5) * 0.05) * 100) / 100,
+          high: data?.high || Math.round((newPrice + Math.random() * 0.05) * 100) / 100,
+          low: data?.low || Math.round((newPrice - Math.random() * 0.05) * 100) / 100,
+          close: data?.close || Math.round(newPrice * 100) / 100,
+          volume: data?.volume || Math.floor(Math.random() * 10000) + 50000
+        };
+
+        // Keep only last 10 minutes of data
+        const tenMinutesAgo = now.getTime() - (10 * 60 * 1000);
         const filteredData = prev.filter(point => {
           const pointTime = new Date(point.timestamp).getTime();
           return pointTime > tenMinutesAgo;
         });
         
-        return [...filteredData, newPoint];
+        const updated = [...filteredData, newPoint];
+        console.log('📊 Updated chart, points:', updated.length, 'latest price:', newPoint.price);
+        return updated;
       });
     }, 3000); // Update every 3 seconds
 
     return () => clearInterval(interval);
   }, [streamData]);
 
-  const currentPrice = chartData[chartData.length - 1]?.price || 0;
-  const previousPrice = chartData[chartData.length - 2]?.price || currentPrice;
-  const priceChange = currentPrice - previousPrice;
-  const priceChangePercent = previousPrice > 0 ? (priceChange / previousPrice) * 100 : 0;
+  const currentPrice = chartData[chartData.length - 1]?.price || 214.73;
+  const firstPrice = chartData[0]?.price || currentPrice;
+  const priceChange = currentPrice - firstPrice;
+  const priceChangePercent = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
 
   return (
     <div className="w-full h-[600px] bg-gray-900 rounded-lg border border-gray-700">
@@ -171,12 +180,13 @@ const StockLineChart: React.FC = () => {
               stroke="#9CA3AF" 
               fontSize={12}
               tick={{ fill: '#9CA3AF' }}
+              interval="preserveStartEnd"
             />
             <YAxis 
               stroke="#9CA3AF" 
               fontSize={12}
               tick={{ fill: '#9CA3AF' }}
-              domain={['dataMin - 0.5', 'dataMax + 0.5']}
+              domain={['dataMin - 0.1', 'dataMax + 0.1']}
               tickFormatter={(value) => `$${value.toFixed(2)}`}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -184,9 +194,10 @@ const StockLineChart: React.FC = () => {
               type="monotone" 
               dataKey="price" 
               stroke="#10B981" 
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
+              strokeWidth={3}
+              dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2, fill: '#10B981' }}
+              connectNulls={false}
             />
           </LineChart>
         </ResponsiveContainer>
