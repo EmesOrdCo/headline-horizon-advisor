@@ -168,26 +168,38 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   };
 
   
-  // Get base viewport size based on timeframe specifications
+  // Dynamic timeframe configuration - TARGET_CANDLES = 60 rule
+  const TARGET_CANDLES = 60;
+  
+  // Get base viewport size based on timeframe specifications (always ~60 candles)
   const getBaseViewportForTimeframe = (tf: string) => {
+    // Always target 60 candles for consistent viewing experience
+    return TARGET_CANDLES;
+  };
+  
+  // Get time window in minutes for each timeframe
+  const getTimeWindowMinutes = (tf: string) => {
     switch (tf) {
-      case '1m': return 60;   // 1 hour worth of 1m candles
-      case '5m': return 36;   // 3 hours worth of 5m candles  
-      case '15m': return 24;  // 6 hours worth of 15m candles
-      case '30m': return 24;  // 12 hours worth of 30m candles
-      case '1H': return 48;   // 2 days worth of 1H candles
-      case '4H': return 30;   // 5 days worth of 4H candles  
-      case '1D': return 30;   // 1 month worth of 1D candles
-      case '1W': return 12;   // 3 months worth of 1W candles
-      case '1M': return 12;   // 1 year worth of 1M candles
-      default: return 30;
+      case '1m': return 60;      // 60 * 1m = 1 hour
+      case '5m': return 180;     // 36 * 5m = 3 hours
+      case '15m': return 360;    // 24 * 15m = 6 hours
+      case '30m': return 720;    // 24 * 30m = 12 hours
+      case '1H': return 2880;    // 48 * 1H = 2 days (48 hours)
+      case '4H': return 7200;    // 30 * 4H = 5 days (120 hours)
+      case '1D': return 43200;   // 30 * 1D = 30 days (720 hours)
+      case '1W': return 129600;  // 12 * 1W = 12 weeks (84 days)
+      case '1M': return 525600;  // 12 * 1M = 12 months (365 days)
+      default: return 1440; // 1 day default
     }
   };
 
-  // Calculate dynamic viewport size based on zoom level
+  // Calculate dynamic viewport size based on zoom level (max ~70 candles)
   const getViewportSize = () => {
     const config = getTimeframeZoomConfig();
-    return Math.max(5, Math.floor(config.BASE_VIEWPORT_SIZE / zoomLevel));
+    const baseSize = config.BASE_VIEWPORT_SIZE;
+    const zoomedSize = Math.floor(baseSize / zoomLevel);
+    // Never display more than 70 candles unless heavily zoomed in
+    return Math.max(5, Math.min(70, zoomedSize));
   };
 
   // Sync chart type with prop
@@ -338,37 +350,49 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
       chartData = historicalData.data.map((point: any) => {
         const date = new Date(point.timestamp || point.date);
         
-        // Enhanced time labeling based on timeframe specifications
+        // Dynamic time labeling based on timeframe specifications
         let timeLabel = '';
+        let timestampLabel = '';
+        
         switch (timeframe) {
           case '1m':
           case '5m': 
+            // HH:mm format for <= 5 minutes
+            timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timestampLabel = date.toLocaleDateString() + ' ' + timeLabel;
+            break;
           case '15m':
           case '30m':
-            // HH:mm format for intraday
+            // HH:mm format for <= 30 minutes
             timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timestampLabel = date.toLocaleDateString() + ' ' + timeLabel;
             break;
           case '1H':
+            // D MMM, HH:mm format for <= 1 hour
+            const dayMonth = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+            const hourMin = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeLabel = `${dayMonth}, ${hourMin}`;
+            timestampLabel = date.toLocaleDateString() + ' ' + hourMin;
+            break;
           case '4H':
-            // D MMM, HH:mm format for hourly
-            timeLabel = date.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + 
-                       date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            break;
           case '1D':
-          case '1W':
-            // D MMM format for daily/weekly
+            // D MMM format for <= 4 hours or 1 day
             timeLabel = date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             break;
+          case '1W':
           case '1M':
-            // MMM YYYY format for monthly
+            // MMM YYYY format for weekly/monthly
             timeLabel = date.toLocaleDateString([], { month: 'short', year: 'numeric' });
+            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             break;
           default:
             timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            timestampLabel = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         }
         
         return {
-          timestamp: date.toLocaleDateString() + ' ' + date.toLocaleTimeString(),
+          timestamp: timestampLabel,
           time: timeLabel,
           price: point.close || point.price,
           open: point.open,
@@ -497,7 +521,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                interval={Math.max(0, Math.floor(viewportData.length / 6))}
+                interval={Math.max(0, Math.floor(viewportData.length / 8))} // Adjusted for better spacing
                 angle={-45}
                 textAnchor="end"
                 height={50}
@@ -506,7 +530,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                domain={['dataMin - 0.1', 'dataMax + 0.1']}
+                domain={[(dataMin: number) => dataMin * 0.998, (dataMax: number) => dataMax * 1.002]} // Auto-scale to visible range
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
@@ -534,7 +558,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                interval={Math.max(0, Math.floor(viewportData.length / 6))}
+                interval={Math.max(0, Math.floor(viewportData.length / 8))} // Adjusted for better spacing
                 angle={-45}
                 textAnchor="end"
                 height={50}
@@ -543,7 +567,7 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
                 stroke="#9CA3AF" 
                 fontSize={10}
                 tick={{ fill: '#9CA3AF' }}
-                domain={[(dataMin: number) => dataMin - 5, (dataMax: number) => dataMax + 5]}
+                domain={[(dataMin: number) => dataMin * 0.998, (dataMax: number) => dataMax * 1.002]} // Auto-scale to visible range
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 width={50}
               />
