@@ -67,11 +67,12 @@ const StockChart: React.FC = () => {
     { icon: Settings, label: 'Settings' }
   ];
 
-  // Create watchlist with real data
+  // Create watchlist with REAL data from APIs
   const watchlistStocks = watchlistSymbols.map(sym => {
     const price = watchlistPrices?.find(p => p.symbol === sym);
     const streamPrice = streamData?.[sym];
     
+    // Use REAL API data - prioritize stream data, then API data
     const currentPrice = streamPrice?.price || price?.price || 0;
     const change = price?.change || 0;
     const changePercent = price?.changePercent || 0;
@@ -89,37 +90,37 @@ const StockChart: React.FC = () => {
     return {
       symbol: sym,
       name: displayNames[sym] || sym,
-      price: currentPrice.toFixed(2),
-      change: change >= 0 ? `+${change.toFixed(2)}` : change.toFixed(2),
-      changePercent: change >= 0 ? `+${changePercent.toFixed(2)}%` : `${changePercent.toFixed(2)}%`,
+      price: currentPrice > 0 ? currentPrice.toFixed(2) : '0.00',
+      change: change >= 0 ? `+${Math.abs(change).toFixed(2)}` : `-${Math.abs(change).toFixed(2)}`,
+      changePercent: changePercent >= 0 ? `+${Math.abs(changePercent).toFixed(2)}%` : `-${Math.abs(changePercent).toFixed(2)}%`,
       positive: change >= 0
     };
   });
 
 
-  // Get current stock info 
+  // Get current stock info using REAL data from APIs
   const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
   const streamPrice = streamData?.[activeSymbol];
   
-  // Use consistent base price of 214.73 to match header and all components
-  const basePrice = 214.73;
-  const currentPrice = streamPrice?.price || basePrice;
-  const bidPrice = streamPrice?.bid || (basePrice - 0.05);
-  const askPrice = streamPrice?.ask || (basePrice + 0.05);
+  // Use REAL data from APIs - prioritize stream data, then API data, then fallback
+  const currentPrice = streamPrice?.price || currentStock?.price || 0;
+  const bidPrice = streamPrice?.bid || currentStock?.bidPrice || (currentPrice * 0.999);
+  const askPrice = streamPrice?.ask || currentStock?.askPrice || (currentPrice * 1.001);
   const spread = askPrice - bidPrice;
   const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
   
-  // Get OHLC data - use consistent values that match the header
+  // Get REAL OHLC data from historical data or stream data
   const todayData = historicalData?.data?.[0];
-  const openPrice = streamPrice?.open || 213.95;
-  const highPrice = streamPrice?.high || 214.95;
-  const lowPrice = streamPrice?.low || 212.95;
-  const closePrice = streamPrice?.close || currentPrice;
-  const volume = streamPrice?.volume || 57580; // Match header volume (57.58K)
+  const openPrice = streamPrice?.open || todayData?.open || currentPrice;
+  const highPrice = streamPrice?.high || todayData?.high || currentPrice;
+  const lowPrice = streamPrice?.low || todayData?.low || currentPrice;
+  const closePrice = streamPrice?.close || todayData?.close || currentPrice;
+  const volume = streamPrice?.volume || todayData?.volume || 0;
   
-  // Calculate change from open price
-  const change = currentPrice - openPrice;
-  const changePercent = openPrice > 0 ? ((change / openPrice) * 100) : 0;
+  // Calculate change using REAL data
+  const previousClose = currentStock?.previousClose || openPrice;
+  const change = currentStock?.change || (currentPrice - previousClose);
+  const changePercent = currentStock?.changePercent || (previousClose > 0 ? ((change / previousClose) * 100) : 0);
   
   // Format volume
   const formatVolume = (vol: number) => {
@@ -316,7 +317,7 @@ const StockChart: React.FC = () => {
           {/* Chart Content - Takes full remaining height */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
             <div className="absolute inset-0">
-              <StockLineChart currentPrice={streamData?.['AAPL']?.price || 214.73} symbol="AAPL" chartType={chartType} />
+              <StockLineChart currentPrice={currentPrice} symbol={activeSymbol} chartType={chartType} />
             </div>
             
             {/* WebSocket Monitor */}
