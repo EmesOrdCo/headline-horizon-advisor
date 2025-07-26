@@ -95,11 +95,9 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
       toast.success(`Journal transfer of $${amount} completed successfully!`);
       onFundingComplete();
     } catch (error) {
-      console.error('Journal funding error:', error);
-      toast.error('Journal transfer failed in sandbox. Using mock funding instead...');
-      setTimeout(() => {
-        handleMockFunding();
-      }, 1000);
+      console.error('❌ Journal funding error:', error);
+      toast.error(`Journal transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error; // Don't fall back - show the real error
     }
   };
 
@@ -167,7 +165,7 @@ const FundingSimulation = ({ accountId, accountData, onFundingComplete }: Fundin
             </h4>
             <p className="text-sm text-muted-foreground">
               {fundingType === 'journal' 
-                ? 'Journal transfers have limited support in Alpaca sandbox environment. Will fallback to mock if not available.'
+                ? 'Makes real journal transfer API calls to Alpaca. Will show actual errors if it fails.'
                 : fundingType === 'ach' 
                 ? 'Simulates ACH bank transfer. Creates ACH relationship and transfer request. May fallback to mock in sandbox.'
                 : 'Simulates funding process for demonstration purposes. No real money is transferred.'
