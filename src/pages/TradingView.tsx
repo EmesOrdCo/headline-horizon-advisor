@@ -63,11 +63,11 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
-  // DISABLE WebSocket on TradingView page to avoid conflicts with LiveTradingViewChart
-  // const { streamData, isConnected } = useAlpacaStreamSingleton({
-  //   symbols: [activeSymbol, ...watchlistSymbols],
-  //   enabled: !isDemo
-  // });
+  // Enable WebSocket streaming for real-time updates
+  const { streamData, isConnected } = useAlpacaStreamSingleton({
+    symbols: [activeSymbol, ...watchlistSymbols],
+    enabled: !isDemo
+  });
   
   const leftSidebarTools = [
     { icon: Crosshair, label: 'Cursor' },
