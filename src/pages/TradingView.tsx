@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
+import { useTheme } from "@/contexts/ThemeContext";
+import TechnicalIndicatorChart from "@/components/chart/TechnicalIndicatorChart";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -36,11 +38,20 @@ interface TradingViewProps {
 const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [selectedIndicators, setSelectedIndicators] = useState('Add...');
   const [showGrid, setShowGrid] = useState(true);
   const [showVolume, setShowVolume] = useState(true);
-  const [darkTheme, setDarkTheme] = useState(true);
+  const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area'>('candlestick');
+  const [activeIndicators, setActiveIndicators] = useState({
+    sma: false,
+    ema: false,
+    bollinger: false,
+    rsi: false,
+    macd: false,
+    volume: true
+  });
   
   // Use AAPL as default symbol like in the image
   const activeSymbol = symbol || 'AAPL';
@@ -165,16 +176,32 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-sm px-3 py-1 h-8 rounded bg-green-600 text-white"
+              className={`text-sm px-3 py-1 h-8 rounded ${
+                chartType === 'line' ? 'bg-green-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+              onClick={() => setChartType('line')}
             >
               Line
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-sm px-3 py-1 h-8 rounded text-slate-300 hover:text-white hover:bg-slate-700"
+              className={`text-sm px-3 py-1 h-8 rounded ${
+                chartType === 'candlestick' ? 'bg-green-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+              onClick={() => setChartType('candlestick')}
             >
               Candles
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-sm px-3 py-1 h-8 rounded ${
+                chartType === 'area' ? 'bg-green-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+              onClick={() => setChartType('area')}
+            >
+              Area
             </Button>
           </div>
 
@@ -199,11 +226,29 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
-          {/* Action Buttons */}
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white text-sm">
-            <BarChart3 className="w-4 h-4 mr-1" />
-            Indicators
-          </Button>
+          {/* Indicators Dropdown */}
+          <Select>
+            <SelectTrigger className="w-40 h-8 text-sm bg-slate-700 border-slate-600 text-slate-300">
+              <SelectValue placeholder="Indicators" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-600">
+              <SelectItem value="sma" onClick={() => setActiveIndicators(prev => ({ ...prev, sma: !prev.sma }))}>
+                SMA (Simple Moving Average)
+              </SelectItem>
+              <SelectItem value="ema" onClick={() => setActiveIndicators(prev => ({ ...prev, ema: !prev.ema }))}>
+                EMA (Exponential Moving Average)
+              </SelectItem>
+              <SelectItem value="bollinger" onClick={() => setActiveIndicators(prev => ({ ...prev, bollinger: !prev.bollinger }))}>
+                Bollinger Bands
+              </SelectItem>
+              <SelectItem value="rsi" onClick={() => setActiveIndicators(prev => ({ ...prev, rsi: !prev.rsi }))}>
+                RSI (Relative Strength Index)
+              </SelectItem>
+              <SelectItem value="macd" onClick={() => setActiveIndicators(prev => ({ ...prev, macd: !prev.macd }))}>
+                MACD
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white text-sm">
             <AlertTriangle className="w-4 h-4 mr-1" />
@@ -324,32 +369,15 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Chart Container */}
-          <div className="flex-1 bg-slate-900 relative min-h-0">
-            {/* Chart Content */}
-            <div className="absolute inset-0 p-4">
-              <div className="w-full h-full bg-slate-800 rounded-lg border border-slate-700 relative overflow-hidden">
-                {/* Candlestick Chart */}
-                <div className="absolute inset-0">
-                  <svg width="100%" height="100%" viewBox="0 0 1000 400" className="overflow-visible">
-                    {/* Grid lines */}
-                    {showGrid && (
-                      <g stroke="#374151" strokeWidth="0.5">
-                        {[0, 100, 200, 300, 400].map(y => (
-                          <line key={y} x1="0" y1={y} x2="1000" y2={y} />
-                        ))}
-                        {[0, 200, 400, 600, 800, 1000].map(x => (
-                          <line key={x} x1={x} y1="0" x2={x} y2="400" />
-                        ))}
-                      </g>
-                    )}
-                    
-                    {/* Candlesticks */}
-                    {candlestickData.map(candle => drawCandlestick(candle, 400))}
-                  </svg>
-                </div>
-              </div>
-            </div>
+          {/* Professional TradingView Chart */}
+          <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
+            <TechnicalIndicatorChart
+              symbol={activeSymbol}
+              theme={isDarkMode ? 'dark' : 'light'}
+              height={650}
+              isDemo={isDemo}
+              className="w-full h-full"
+            />
           </div>
         </div>
 
