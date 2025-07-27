@@ -1,17 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface AlpacaBar {
-  t: string; // timestamp
-  o: number; // open
-  h: number; // high
-  l: number; // low
-  c: number; // close
-  v: number; // volume
-}
 
 interface AlpacaTrade {
   T: string; // message type
@@ -21,107 +11,95 @@ interface AlpacaTrade {
   t: string; // timestamp
 }
 
+interface TradingViewWidgetProps {
+  symbol: string;
+  onPriceUpdate?: (price: number) => void;
+}
+
+// TradingView Widget Component
+const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, onPriceUpdate }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Clear any existing widget
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+    }
+
+    // Create TradingView script
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).TradingView && containerRef.current) {
+        widgetRef.current = new (window as any).TradingView.widget({
+          container_id: containerRef.current.id,
+          width: '100%',
+          height: 500,
+          symbol: `NASDAQ:${symbol}`,
+          interval: '1',
+          timezone: 'Etc/UTC',
+          theme: 'light',
+          style: '1',
+          locale: 'en',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          details: true,
+          hotlist: true,
+          calendar: true,
+          studies: [
+            'RSI@tv-basicstudies',
+            'MASimple@tv-basicstudies'
+          ],
+          show_popup_button: true,
+          popup_width: '1000',
+          popup_height: '650',
+          no_referral_id: false,
+          onChartReady: () => {
+            console.log('TradingView chart is ready');
+          }
+        });
+      }
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, [symbol]);
+
+  // Generate unique ID for each widget instance
+  const widgetId = `tradingview-widget-${symbol}-${Math.random().toString(36).substr(2, 9)}`;
+
+  return (
+    <div 
+      id={widgetId}
+      ref={containerRef}
+      className="w-full h-[500px] border border-gray-200 rounded-lg"
+    />
+  );
+};
+
 const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   
   const [isConnected, setIsConnected] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
 
-  // Initialize chart - TradingView Lightweight Charts
-  useEffect(() => {
-    console.log('Chart initialization started');
-    
-    if (!chartContainerRef.current) {
-      console.error('Chart container not found');
-      return;
-    }
-
+  // Fetch current price from Alpaca
+  const fetchCurrentPrice = async () => {
     try {
-      console.log('Creating TradingView Lightweight Chart...');
+      console.log('📊 Fetching current price for', symbol);
       
-      // Create chart using TradingView createChart method
-      const chart = createChart(chartContainerRef.current, {
-        width: 800,
-        height: 400,
-        layout: {
-          background: { color: '#ffffff' },
-          textColor: '#333',
-        },
-        grid: {
-          vertLines: { color: '#e6e6e6' },
-          horzLines: { color: '#e6e6e6' },
-        },
-        crosshair: {
-          mode: 1,
-        },
-        rightPriceScale: {
-          borderColor: '#cccccc',
-        },
-        timeScale: {
-          borderColor: '#cccccc',
-          timeVisible: true,
-          secondsVisible: false,
-        },
-      });
-
-      console.log('Chart initialized');
-
-      // Add candlestick series using proper TradingView method with type casting
-      const candleSeries = (chart as any).addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
-        borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
-      });
-      
-      console.log('Candlestick series created');
-
-      candlestickSeriesRef.current = candleSeries;
-      chartRef.current = chart;
-      
-      console.log('Chart and series refs set');
-
-      // Handle resize
-      const handleResize = () => {
-        if (chartContainerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
-          });
-        }
-      };
-
-      window.addEventListener('resize', handleResize);
-
-      return () => {
-        console.log('Cleaning up chart...');
-        window.removeEventListener('resize', handleResize);
-        if (chartRef.current) {
-          chartRef.current.remove();
-        }
-        if (wsRef.current) {
-          wsRef.current.close();
-        }
-      };
-
-    } catch (error) {
-      console.error('Chart initialization failed:', error);
-      setIsLoading(false);
-      toast.error('Chart initialization failed');
-    }
-  }, []);
-
-  // Fetch historical data from Alpaca
-  const fetchHistoricalData = async () => {
-    try {
-      console.log('📊 Starting historical data fetch for', symbol);
-      setIsLoading(true);
-      
-      // Get API keys from Supabase secrets
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.error('❌ No session found');
@@ -129,60 +107,29 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         return;
       }
 
-      console.log('✅ Session found, calling edge function...');
-
-      // Call our edge function to get historical data with increased limit
-      const { data, error } = await supabase.functions.invoke('alpaca-historical-data', {
-        body: { 
-          symbol,
-          timeframe: '1Min',
-          limit: 1000  // Increased to 1000 as requested
-        }
+      const { data, error } = await supabase.functions.invoke('stock-price', {
+        body: { symbols: [symbol] }
       });
 
-      console.log('📊 Edge function response:', { data, error });
-
       if (error) {
-        console.error('❌ Edge function error:', error);
+        console.error('❌ Error fetching price:', error);
         throw error;
       }
 
-      if (data?.bars && Array.isArray(data.bars)) {
-        console.log('Historical data loaded:', data.bars.length, 'bars');
-        
-        const formatted: CandlestickData[] = data.bars.map((bar: AlpacaBar) => ({
-          time: Math.floor(new Date(bar.t).getTime() / 1000) as any,
-          open: bar.o,
-          high: bar.h,
-          low: bar.l,
-          close: bar.c,
-        }));
-
-        console.log('Historical data loaded:', formatted);
-
-        if (candlestickSeriesRef.current && formatted.length > 0) {
-          console.log('Setting chart data with', formatted.length, 'bars');
-          candlestickSeriesRef.current.setData(formatted);
-          
-          const latestPrice = formatted[formatted.length - 1].close;
-          setCurrentPrice(latestPrice);
-          console.log('Current price set to:', latestPrice);
-        } else {
-          console.warn('No series or no data to set - Series:', !!candlestickSeriesRef.current, 'Data length:', formatted.length);
-        }
-      } else {
-        console.error('❌ Invalid data format received:', data);
-        throw new Error('Invalid data format received');
+      if (data && Array.isArray(data) && data.length > 0) {
+        const stockData = data[0];
+        setCurrentPrice(stockData.price || 0);
+        console.log('Current price set to:', stockData.price);
       }
     } catch (error) {
-      console.error('❌ Error fetching historical data:', error);
-      toast.error('Failed to fetch historical data: ' + (error as any).message);
+      console.error('❌ Error fetching current price:', error);
+      toast.error('Failed to fetch current price: ' + (error as any).message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Connect to Alpaca WebSocket via our edge function
+  // Connect to Alpaca WebSocket for real-time price updates
   const connectWebSocket = async () => {
     try {
       console.log('Starting WebSocket connection...');
@@ -194,7 +141,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       }
 
       // Use our Supabase edge function WebSocket endpoint
-      const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-websocket`;
+      const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
       
       console.log('Connecting to WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);
@@ -207,8 +154,8 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         // Subscribe to trades for the symbol after connection
         console.log('Subscribing to symbol:', symbol);
         const subscribeMessage = { 
-          action: 'subscribe', 
-          symbol: symbol 
+          type: 'subscribe',
+          symbols: [symbol]
         };
         ws.send(JSON.stringify(subscribeMessage));
       };
@@ -225,42 +172,17 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
               if (msg.T === 't' && msg.S === symbol) {
                 const trade = msg;
                 const price = trade.p;
-                const timestamp = Math.floor(new Date(trade.t).getTime() / 1000);
-
-                console.log('Trade update:', { symbol, price, timestamp });
-
-                // Update chart with new trade price
-                if (candlestickSeriesRef.current) {
-                  candlestickSeriesRef.current.update({
-                    time: timestamp as any,
-                    close: price,
-                    open: currentPrice || price,
-                    high: Math.max(currentPrice || price, price),
-                    low: Math.min(currentPrice || price, price),
-                  });
-                }
-
+                console.log('Trade update:', { symbol, price });
                 setCurrentPrice(price);
+                setLastUpdate(new Date().toLocaleTimeString());
               }
             });
           } else if (data.type === 'trade' && data.symbol === symbol) {
             // Handle single trade message
             const price = data.data.p;
-            const timestamp = Math.floor(new Date(data.data.t).getTime() / 1000);
-
-            console.log('Trade update:', { symbol, price, timestamp });
-
-            if (candlestickSeriesRef.current) {
-              candlestickSeriesRef.current.update({
-                time: timestamp as any,
-                close: price,
-                open: currentPrice || price,
-                high: Math.max(currentPrice || price, price),
-                low: Math.min(currentPrice || price, price),
-              });
-            }
-
+            console.log('Trade update:', { symbol, price });
             setCurrentPrice(price);
+            setLastUpdate(new Date().toLocaleTimeString());
           } else {
             console.log('Other WebSocket data:', data);
           }
@@ -324,7 +246,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       wsRef.current = null;
     }
     
-    fetchHistoricalData();
+    fetchCurrentPrice();
     connectWebSocket();
     
     // Cleanup on component unmount
@@ -339,58 +261,68 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   }, [symbol]);
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="w-full space-y-6">
+      {/* Header with Price and Status */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold">{symbol} Live Chart</h2>
+          <h2 className="text-3xl font-bold text-gray-800">{symbol} Live Trading</h2>
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-600">
-              {isConnected ? 'Live' : 'Disconnected'}
+              {isConnected ? 'Live Feed Active' : 'Disconnected'}
             </span>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold">${currentPrice.toFixed(2)}</div>
-          <div className="text-sm text-gray-600">Current Price</div>
+          <div className="text-3xl font-bold text-green-600">${currentPrice.toFixed(2)}</div>
+          <div className="text-sm text-gray-600">
+            {lastUpdate ? `Last Update: ${lastUpdate}` : 'Current Price'}
+          </div>
         </div>
       </div>
 
-      {/* TradingView Chart Container with Fixed Dimensions */}
-      <div className="border border-gray-200 rounded-lg relative">
-        <div 
-          ref={chartContainerRef} 
-          className="w-full h-96"
-          style={{ width: '800px', height: '400px', minWidth: '100%' }}
-        />
+      {/* TradingView Chart */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
-            <div className="text-lg">Loading chart data...</div>
+          <div className="flex items-center justify-center h-[500px] bg-gray-50">
+            <div className="text-lg text-gray-600">Loading TradingView chart...</div>
           </div>
         )}
+        <TradingViewWidget 
+          symbol={symbol} 
+          onPriceUpdate={setCurrentPrice}
+        />
       </div>
 
-      {/* Trading Buttons */}
-      <div className="flex justify-center space-x-4">
-        <Button
-          onClick={() => placeOrder('buy')}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-2"
-          disabled={!isConnected}
-        >
-          Buy {symbol}
-        </Button>
-        <Button
-          onClick={() => placeOrder('sell')}
-          className="bg-red-600 hover:bg-red-700 text-white px-8 py-2"
-          disabled={!isConnected}
-        >
-          Sell {symbol}
-        </Button>
+      {/* Trading Controls */}
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h3 className="text-xl font-semibold mb-4 text-center">Quick Trading</h3>
+        <div className="flex justify-center space-x-6">
+          <Button
+            onClick={() => placeOrder('buy')}
+            className="bg-green-600 hover:bg-green-700 text-white px-12 py-3 text-lg"
+            disabled={!isConnected || isLoading}
+          >
+            🟢 BUY {symbol}
+          </Button>
+          <Button
+            onClick={() => placeOrder('sell')}
+            className="bg-red-600 hover:bg-red-700 text-white px-12 py-3 text-lg"
+            disabled={!isConnected || isLoading}
+          >
+            🔴 SELL {symbol}
+          </Button>
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-3">
+          Market orders • 1 share • Alpaca Sandbox Mode
+        </p>
       </div>
 
-      <div className="text-center text-sm text-gray-600">
-        <p>Live trading with Alpaca Markets (Sandbox Mode)</p>
-        <p>Chart powered by TradingView Lightweight Charts</p>
+      {/* Info Banner */}
+      <div className="text-center text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+        <p className="font-semibold">📊 Live Trading Dashboard</p>
+        <p>TradingView Professional Charts • Alpaca Markets Integration • Real-time Data Feed</p>
+        <p className="text-xs mt-1">⚠️ Sandbox Environment - No Real Money Involved</p>
       </div>
     </div>
   );
