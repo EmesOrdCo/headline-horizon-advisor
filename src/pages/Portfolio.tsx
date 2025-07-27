@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNav from "@/components/DashboardNav";
-import MarketTicker from "@/components/MarketTicker";
+
 import Footer from "@/components/Footer";
 import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
@@ -786,10 +786,6 @@ const Portfolio = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DashboardNav />
-      
-      <div className="pt-16">
-        <MarketTicker />
-      </div>
       
       <div className="pt-16 px-6 pb-12">
         <div className="max-w-7xl mx-auto space-y-12">

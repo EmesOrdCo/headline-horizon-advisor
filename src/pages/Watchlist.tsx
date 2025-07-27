@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building, Plus } from "lucide-react";
-import MarketTicker from "@/components/MarketTicker";
+
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
@@ -250,11 +250,8 @@ const Watchlist = () => {
       <DashboardNav />
       
       <div className="pt-16">
-        <MarketTicker />
-      </div>
-      
-       <div className="px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
           {/* My Watchlist Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -540,10 +537,9 @@ const Watchlist = () => {
                 )}
             </div>
           </div>
+          </div>
         </div>
       </div>
-
-      {/* Daily Movers - Top 5 Leaderboard Style */}
       <div className="max-w-7xl mx-auto mt-8 mb-8 px-4 sm:px-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
