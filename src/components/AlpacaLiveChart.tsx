@@ -33,53 +33,76 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
   // Initialize chart
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    console.log('🔧 Chart initialization started');
+    console.log('🔧 Container ref:', chartContainerRef.current);
+    
+    if (!chartContainerRef.current) {
+      console.error('❌ Chart container not found');
+      return;
+    }
 
-    // Create chart with TradingView default styling
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
-      layout: {
-        background: { color: '#ffffff' },
-        textColor: '#333',
-      },
-      grid: {
-        vertLines: { color: '#e6e6e6' },
-        horzLines: { color: '#e6e6e6' },
-      },
-      crosshair: {
-        mode: 1,
-      },
-      rightPriceScale: {
-        borderColor: '#cccccc',
-      },
-      timeScale: {
-        borderColor: '#cccccc',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    });
-
-    console.log('Chart created:', chart);
-    console.log('Chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
-
-    // Add candlestick series - try different approaches
-    let candlestickSeries;
     try {
-      // Try the most common approach first
-      if (typeof (chart as any).addCandlestickSeries === 'function') {
-        candlestickSeries = (chart as any).addCandlestickSeries({
-          upColor: '#26a69a',
-          downColor: '#ef5350',
-          borderVisible: false,
-          wickUpColor: '#26a69a',
-          wickDownColor: '#ef5350',
-        });
-      } else {
-        console.error('addCandlestickSeries method not found on chart object');
-        console.log('Available chart methods:', Object.getOwnPropertyNames(chart));
-        // Try alternative method names
-        if (typeof (chart as any).addSeries === 'function') {
+      console.log('🔧 Creating chart with lightweight-charts...');
+      
+      // Create chart with TradingView default styling
+      const chart = createChart(chartContainerRef.current, {
+        width: chartContainerRef.current.clientWidth,
+        height: 400,
+        layout: {
+          background: { color: '#ffffff' },
+          textColor: '#333',
+        },
+        grid: {
+          vertLines: { color: '#e6e6e6' },
+          horzLines: { color: '#e6e6e6' },
+        },
+        crosshair: {
+          mode: 1,
+        },
+        rightPriceScale: {
+          borderColor: '#cccccc',
+        },
+        timeScale: {
+          borderColor: '#cccccc',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      console.log('✅ Chart created successfully:', chart);
+      console.log('🔧 Chart methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
+
+      // Try to add candlestick series
+      let candlestickSeries = null;
+      
+      try {
+        console.log('🔧 Attempting to add candlestick series...');
+        
+        // Method 1: Direct addCandlestickSeries call
+        if (typeof (chart as any).addCandlestickSeries === 'function') {
+          console.log('✅ Using direct addCandlestickSeries method');
+          candlestickSeries = (chart as any).addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+          });
+        } 
+        // Method 2: Try with type casting
+        else if (typeof (chart as any).addCandlestickSeries === 'function') {
+          console.log('✅ Using casted addCandlestickSeries method');
+          candlestickSeries = (chart as any).addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+          });
+        }
+        // Method 3: Try addSeries with candlestick type
+        else if (typeof (chart as any).addSeries === 'function') {
+          console.log('✅ Using addSeries with candlestick type');
           candlestickSeries = (chart as any).addSeries('candlestick', {
             upColor: '#26a69a',
             downColor: '#ef5350',
@@ -87,55 +110,79 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
             wickUpColor: '#26a69a',
             wickDownColor: '#ef5350',
           });
-        } else {
-          setIsLoading(false);
-          toast.error('Chart library not compatible');
-          return;
         }
+        // Method 4: Last resort - try line series instead
+        else {
+          console.warn('⚠️ Candlestick not available, falling back to line series');
+          if (typeof (chart as any).addLineSeries === 'function') {
+            candlestickSeries = (chart as any).addLineSeries({
+              color: '#26a69a',
+              lineWidth: 2,
+            });
+          }
+        }
+
+        if (candlestickSeries) {
+          console.log('✅ Series created successfully:', candlestickSeries);
+          candlestickSeriesRef.current = candlestickSeries;
+          chartRef.current = chart;
+        } else {
+          throw new Error('Failed to create any chart series');
+        }
+
+      } catch (seriesError) {
+        console.error('❌ Error creating series:', seriesError);
+        console.log('🔧 Available chart methods:', Object.getOwnPropertyNames(chart));
+        console.log('🔧 Chart prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
+        setIsLoading(false);
+        toast.error('Chart series creation failed');
+        return;
       }
-      candlestickSeriesRef.current = candlestickSeries;
+
+      // Handle resize
+      const handleResize = () => {
+        if (chartContainerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({
+            width: chartContainerRef.current.clientWidth,
+          });
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        console.log('🔧 Cleaning up chart...');
+        window.removeEventListener('resize', handleResize);
+        if (chartRef.current) {
+          chartRef.current.remove();
+        }
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+
     } catch (error) {
-      console.error('Failed to create candlestick series:', error);
+      console.error('❌ Chart initialization failed:', error);
       setIsLoading(false);
-      toast.error('Failed to initialize chart');
-      return;
+      toast.error('Chart initialization failed');
     }
-
-    chartRef.current = chart;
-
-    // Handle resize
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
   }, []);
 
   // Fetch historical data from Alpaca
   const fetchHistoricalData = async () => {
     try {
+      console.log('📊 Starting historical data fetch for', symbol);
       setIsLoading(true);
       
       // Get API keys from Supabase secrets
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error('❌ No session found');
         toast.error('Please log in to access trading features');
         return;
       }
+
+      console.log('✅ Session found, calling edge function...');
 
       // Call our edge function to get historical data
       const { data, error } = await supabase.functions.invoke('alpaca-historical-data', {
@@ -146,9 +193,16 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         }
       });
 
-      if (error) throw error;
+      console.log('📊 Edge function response:', { data, error });
 
-      if (data?.bars) {
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.bars && Array.isArray(data.bars)) {
+        console.log('✅ Historical data received:', data.bars.length, 'bars');
+        
         const chartData: CandlestickData[] = data.bars.map((bar: AlpacaBar) => ({
           time: Math.floor(new Date(bar.t).getTime() / 1000) as any,
           open: bar.o,
@@ -157,16 +211,25 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
           close: bar.c,
         }));
 
-        if (candlestickSeriesRef.current) {
+        console.log('📊 Formatted chart data:', chartData.slice(0, 3)); // Log first 3 items
+
+        if (candlestickSeriesRef.current && chartData.length > 0) {
+          console.log('📊 Setting chart data...');
           candlestickSeriesRef.current.setData(chartData);
-          if (chartData.length > 0) {
-            setCurrentPrice(chartData[chartData.length - 1].close);
-          }
+          
+          const latestPrice = chartData[chartData.length - 1].close;
+          setCurrentPrice(latestPrice);
+          console.log('💰 Current price set to:', latestPrice);
+        } else {
+          console.warn('⚠️ No series or no data to set');
         }
+      } else {
+        console.error('❌ Invalid data format received:', data);
+        throw new Error('Invalid data format received');
       }
     } catch (error) {
-      console.error('Error fetching historical data:', error);
-      toast.error('Failed to fetch historical data');
+      console.error('❌ Error fetching historical data:', error);
+      toast.error('Failed to fetch historical data: ' + (error as any).message);
     } finally {
       setIsLoading(false);
     }
@@ -175,31 +238,42 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   // Connect to Alpaca WebSocket
   const connectWebSocket = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // Get the WebSocket URL for our edge function (use wss for production)
-      const protocol = 'wss:';
-      const projectId = 'gjtswpgjrznbrnmvmpno'; // Your Supabase project ID
-      const wsUrl = `${protocol}//gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-websocket`;
+      console.log('🔌 Starting WebSocket connection...');
       
-      console.log('Connecting to WebSocket:', wsUrl);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('❌ No session for WebSocket');
+        return;
+      }
+
+      // Use the correct Supabase WebSocket URL
+      const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-websocket`;
+      
+      console.log('🔌 Connecting to WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        console.log('✅ WebSocket connected');
         setIsConnected(true);
         toast.success('Connected to live data feed');
+        
         // Subscribe to trades for the symbol
-        ws.send(JSON.stringify({ action: 'subscribe', symbol }));
+        const subscribeMessage = { action: 'subscribe', symbol };
+        console.log('📡 Sending subscription:', subscribeMessage);
+        ws.send(JSON.stringify(subscribeMessage));
       };
 
       ws.onmessage = (event) => {
         try {
+          console.log('📡 WebSocket message received:', event.data);
           const data = JSON.parse(event.data);
+          
           if (data.type === 'trade' && data.symbol === symbol) {
             const trade: AlpacaTrade = data.data;
             const price = trade.p;
             const timestamp = Math.floor(new Date(trade.t).getTime() / 1000);
+
+            console.log('💰 Trade update:', { symbol, price, timestamp });
 
             // Update chart with new trade price
             if (candlestickSeriesRef.current) {
@@ -213,26 +287,29 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
             }
 
             setCurrentPrice(price);
+          } else {
+            console.log('📡 Other WebSocket data:', data);
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('❌ Error parsing WebSocket message:', error, event.data);
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
         toast.info('Disconnected from live data feed');
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('❌ WebSocket error:', error);
         setIsConnected(false);
-        toast.error('Connection error');
+        toast.error('WebSocket connection error');
       };
 
       wsRef.current = ws;
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
+      console.error('❌ Error setting up WebSocket:', error);
       toast.error('Failed to connect to live data');
     }
   };
