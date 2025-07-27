@@ -231,7 +231,7 @@ const Portfolio = () => {
   // Account Summary Component
   const AccountSummary = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8 p-6">
         {/* Currency Selector */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Account Summary</h2>
