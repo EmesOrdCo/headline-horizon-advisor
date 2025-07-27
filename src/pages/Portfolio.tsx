@@ -7,7 +7,7 @@ import CompanyLogo from "@/components/CompanyLogo";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from "@/hooks/useAlpacaBroker";
 import { supabase } from "@/integrations/supabase/client";
-import FundingSimulation from "@/components/broker/FundingSimulation";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -920,19 +920,6 @@ const Portfolio = () => {
                     </Card>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Account Funding Section */}
-          {accountData && (
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">Account Funding</CardTitle>
-                <p className="text-slate-400">Simulate account funding and transfers (Sandbox Environment)</p>
-              </CardHeader>
-              <CardContent>
-                <FundingSimulation accountId={selectedAccount} onFundingComplete={refreshData} />
               </CardContent>
             </Card>
           )}
