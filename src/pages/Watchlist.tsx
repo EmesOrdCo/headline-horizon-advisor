@@ -204,6 +204,11 @@ const Watchlist = () => {
   };
 
   const filteredData = (): Stock[] => {
+    // Handle coming soon categories
+    if (['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter)) {
+      return [];
+    }
+
     // Show loading state or empty state
     if (userStocksLoading) {
       return [];
@@ -217,23 +222,45 @@ const Watchlist = () => {
       return [];
     }
   
-    // Create stock data from user's actual stocks and real price data
-    let data: Stock[] = userStocks.map(userStock => {
-      const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
-      
-      return {
-        symbol: userStock.symbol,
-        name: getStockName(userStock.symbol),
-        price: priceData?.price || 0,
-        change: priceData?.change || 0,
-        changePercent: priceData?.changePercent || 0,
-      };
-    });
-  
-    // Sort by symbol for consistent ordering
-    data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    // For both 'my-stocks' and 'stocks' categories, show user's actual selected stocks
+    if (categoryFilter === 'my-stocks' || categoryFilter === 'stocks') {
+      let data: Stock[] = userStocks.map(userStock => {
+        const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
+        
+        return {
+          symbol: userStock.symbol,
+          name: getStockName(userStock.symbol),
+          price: priceData?.price || 0,
+          change: priceData?.change || 0,
+          changePercent: priceData?.changePercent || 0,
+        };
+      });
     
-    return data;
+      // Sort by symbol for consistent ordering
+      data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+      
+      return data;
+    }
+
+    // For 'popular' category, show a curated list (for now, same as user stocks)
+    if (categoryFilter === 'popular') {
+      let data: Stock[] = userStocks.map(userStock => {
+        const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
+        
+        return {
+          symbol: userStock.symbol,
+          name: getStockName(userStock.symbol),
+          price: priceData?.price || 0,
+          change: priceData?.change || 0,
+          changePercent: priceData?.changePercent || 0,
+        };
+      });
+    
+      data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+      return data;
+    }
+
+    return [];
   };
 
   return (
@@ -413,25 +440,41 @@ const Watchlist = () => {
                         <TableCell><Skeleton className="w-20 h-4 bg-slate-700" /></TableCell>
                       </TableRow>
                     ))
-                  ) : filteredData().length === 0 ? (
-                    // Empty state
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center">
-                        <div className="flex flex-col items-center gap-3 text-slate-400">
-                          <BarChart3 className="w-12 h-12" />
-                          <div>
-                            <p className="font-medium">No stocks in your watchlist</p>
-                            <p className="text-sm">Add some stocks to start tracking your portfolio</p>
-                          </div>
-                          <Link 
-                            to="/my-stocks" 
-                            className="text-emerald-400 hover:text-emerald-300 underline"
-                          >
-                            Add your first stock →
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                   ) : filteredData().length === 0 ? (
+                     // Empty state - different messages based on category
+                     <TableRow>
+                       <TableCell colSpan={5} className="h-32 text-center">
+                         {['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter) ? (
+                           <div className="flex flex-col items-center gap-3 text-slate-400">
+                             <BarChart3 className="w-12 h-12" />
+                             <div>
+                               <p className="font-medium text-xl text-white">Coming Soon</p>
+                               <p className="text-sm">
+                                 {categoryFilter === 'crypto' && 'Cryptocurrency tracking is coming soon'}
+                                 {categoryFilter === 'indices' && 'Market indices tracking is coming soon'}
+                                 {categoryFilter === 'commodities' && 'Commodities tracking is coming soon'}
+                                 {categoryFilter === 'currencies' && 'Currency pairs tracking is coming soon'}
+                                 {categoryFilter === 'etfs' && 'ETF tracking is coming soon'}
+                               </p>
+                             </div>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col items-center gap-3 text-slate-400">
+                             <BarChart3 className="w-12 h-12" />
+                             <div>
+                               <p className="font-medium">No stocks in your watchlist</p>
+                               <p className="text-sm">Add some stocks to start tracking your portfolio</p>
+                             </div>
+                             <Link 
+                               to="/my-stocks" 
+                               className="text-emerald-400 hover:text-emerald-300 underline"
+                             >
+                               Add your first stock →
+                             </Link>
+                           </div>
+                         )}
+                       </TableCell>
+                     </TableRow>
                   ) : (
                     // Actual stock data
                     filteredData().map((stock) => (
