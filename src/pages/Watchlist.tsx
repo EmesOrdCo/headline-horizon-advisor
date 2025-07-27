@@ -206,11 +206,6 @@ const Watchlist = () => {
   };
 
   const filteredData = (): Stock[] => {
-    // Handle coming soon categories and empty categories
-    if (['crypto', 'indices', 'commodities', 'currencies', 'etfs', 'my-stocks', 'stocks'].includes(categoryFilter)) {
-      return [];
-    }
-
     // Show loading state or empty state
     if (userStocksLoading) {
       return [];
@@ -224,8 +219,8 @@ const Watchlist = () => {
       return [];
     }
 
-    // For 'popular' category, show user's actual selected stocks
-    if (categoryFilter === 'popular') {
+    // For 'popular', 'my-stocks', and 'stocks' categories, show user's actual selected stocks
+    if (['popular', 'my-stocks', 'stocks'].includes(categoryFilter)) {
       let data: Stock[] = userStocks.map(userStock => {
         const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
         
@@ -240,6 +235,11 @@ const Watchlist = () => {
     
       data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
       return data;
+    }
+
+    // Handle other coming soon categories
+    if (['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter)) {
+      return [];
     }
 
     return [];
@@ -423,21 +423,17 @@ const Watchlist = () => {
                      // Empty state - different messages based on category
                      <TableRow>
                        <TableCell colSpan={5} className="h-32 text-center">
-                          {['crypto', 'indices', 'commodities', 'currencies', 'etfs', 'my-stocks', 'stocks'].includes(categoryFilter) ? (
+                          {['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter) ? (
                             <div className="flex flex-col items-center gap-3 text-slate-400">
                               <BarChart3 className="w-12 h-12" />
                               <div>
-                                <p className="font-medium text-xl text-white">
-                                  {['my-stocks', 'stocks'].includes(categoryFilter) ? 'Coming Soon' : 'Coming Soon'}
-                                </p>
+                                <p className="font-medium text-xl text-white">Coming Soon</p>
                                 <p className="text-sm">
                                   {categoryFilter === 'crypto' && 'Cryptocurrency tracking is coming soon'}
                                   {categoryFilter === 'indices' && 'Market indices tracking is coming soon'}
                                   {categoryFilter === 'commodities' && 'Commodities tracking is coming soon'}
                                   {categoryFilter === 'currencies' && 'Currency pairs tracking is coming soon'}
                                   {categoryFilter === 'etfs' && 'ETF tracking is coming soon'}
-                                  {categoryFilter === 'my-stocks' && 'My Stocks feature is coming soon'}
-                                  {categoryFilter === 'stocks' && 'Stocks feature is coming soon'}
                                 </p>
                               </div>
                             </div>
