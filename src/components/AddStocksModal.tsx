@@ -3,12 +3,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
+import { useFinnhubMetrics } from "@/hooks/useFinnhubMetrics";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Trash2, TrendingUp, TrendingDown, Search, X } from "lucide-react";
+import { Loader2, Trash2, TrendingUp, TrendingDown, Search, Building2, DollarSign, Target, BarChart3, Plus } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
 import { Badge } from "@/components/ui/badge";
 
@@ -31,6 +32,11 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedStock, setSelectedStock] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [selectedSearchResult, setSelectedSearchResult] = useState("");
+
+  // Get Finnhub metrics for the selected search result
+  const { metrics, loading: metricsLoading, error: metricsError } = useFinnhubMetrics(selectedSearchResult);
 
   // Get real-time stock prices
   const userStockSymbols = userStocks.map(stock => stock.symbol);
@@ -65,10 +71,44 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
     }
   };
 
-  const addStock = async () => {
-    if (!selectedStock.trim()) return;
+  // Search for stocks when query changes
+  useEffect(() => {
+    if (searchQuery.trim().length >= 1) {
+      const timer = setTimeout(() => {
+        searchStocks(searchQuery.trim().toUpperCase());
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSearchResults([]);
+      setSelectedSearchResult("");
+    }
+  }, [searchQuery]);
 
-    const symbol = selectedStock.toUpperCase().trim();
+  const searchStocks = async (query: string) => {
+    try {
+      // For now, we'll suggest common stock symbols that match the query
+      const commonStocks = [
+        'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'CRM', 'UBER',
+        'SPOT', 'ADBE', 'PYPL', 'INTC', 'AMD', 'BABA', 'DIS', 'BA', 'GE', 'GM',
+        'F', 'T', 'VZ', 'JPM', 'BAC', 'WFC', 'C', 'GS', 'MS', 'V', 'MA', 'COST'
+      ];
+      
+      const filtered = commonStocks.filter(symbol => 
+        symbol.includes(query) || symbol.startsWith(query)
+      ).slice(0, 10);
+      
+      setSearchResults(filtered);
+      if (filtered.length > 0 && !selectedSearchResult) {
+        setSelectedSearchResult(filtered[0]);
+      }
+    } catch (error) {
+      console.error('Error searching stocks:', error);
+    }
+  };
+
+  const addStock = async (symbolToAdd?: string) => {
+    const symbol = (symbolToAdd || selectedSearchResult || selectedStock).toUpperCase().trim();
+    if (!symbol) return;
     
     // Check if stock already exists
     if (userStocks.some(stock => stock.symbol === symbol)) {
@@ -99,6 +139,8 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
 
       setSelectedStock("");
       setSearchQuery("");
+      setSearchResults([]);
+      setSelectedSearchResult("");
       fetchUserStocks();
     } catch (error) {
       console.error('Error adding stock:', error);
@@ -138,7 +180,11 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      addStock();
+      if (selectedSearchResult) {
+        addStock(selectedSearchResult);
+      } else {
+        addStock();
+      }
     }
   };
 
@@ -152,56 +198,178 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-900 border-slate-700 text-white overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] bg-slate-900 border-slate-700 text-white overflow-hidden">
         <DialogHeader className="pb-4 border-b border-slate-700">
           <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
             <div className="p-2 bg-emerald-600 rounded-lg">
-              <Plus className="w-6 h-6" />
+              <Building2 className="w-6 h-6" />
             </div>
             Manage Your Stocks
           </DialogTitle>
           <p className="text-slate-400 mt-2">
-            Add and manage stocks in your personal watchlist to track performance and get AI insights
+            Search and add stocks to your personal watchlist to track performance and get AI insights
           </p>
         </DialogHeader>
 
         <div className="overflow-y-auto max-h-[calc(90vh-12rem)] space-y-6">
-          {/* Add New Stock Section */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Search className="w-5 h-5 text-emerald-400" />
-                Add New Stock
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Label htmlFor="stock-symbol" className="text-slate-300 text-sm">
-                    Stock Symbol (e.g., AAPL, TSLA, MSFT)
-                  </Label>
-                  <Input
-                    id="stock-symbol"
-                    value={selectedStock}
-                    onChange={(e) => setSelectedStock(e.target.value.toUpperCase())}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Enter stock symbol..."
-                    className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button 
-                    onClick={addStock}
-                    disabled={!selectedStock.trim()}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Stock
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Search Section - Left Side */}
+            <div className="space-y-4">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Search className="w-5 h-5 text-emerald-400" />
+                    Search Stocks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="stock-search" className="text-slate-300 text-sm">
+                      Enter stock symbol or company name
+                    </Label>
+                    <Input
+                      id="stock-search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Search for stocks (e.g., AAPL, TSLA)..."
+                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
+                    />
+                  </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-slate-300 text-sm">Search Results:</Label>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {searchResults.map((symbol) => (
+                          <Button
+                            key={symbol}
+                            onClick={() => setSelectedSearchResult(symbol)}
+                            variant={selectedSearchResult === symbol ? "default" : "ghost"}
+                            className={`w-full justify-start text-left p-3 ${
+                              selectedSearchResult === symbol 
+                                ? "bg-emerald-600 text-white" 
+                                : "bg-slate-700/50 text-slate-300 hover:bg-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <CompanyLogo symbol={symbol} size="sm" />
+                              <span className="font-medium">{symbol}</span>
+                            </div>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Stock Details - Right Side */}
+            <div className="space-y-4">
+              {selectedSearchResult && (
+                <Card className="bg-slate-800/50 border-slate-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <CompanyLogo symbol={selectedSearchResult} size="md" />
+                        <span>{selectedSearchResult}</span>
+                      </div>
+                      <Button 
+                        onClick={() => addStock(selectedSearchResult)}
+                        disabled={userStocks.some(stock => stock.symbol === selectedSearchResult)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {userStocks.some(stock => stock.symbol === selectedSearchResult) ? 'Already Added' : 'Add to Watchlist'}
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {metricsLoading ? (
+                      <div className="space-y-3">
+                        <div className="animate-pulse bg-slate-600 h-4 w-3/4 rounded"></div>
+                        <div className="animate-pulse bg-slate-600 h-4 w-1/2 rounded"></div>
+                        <div className="animate-pulse bg-slate-600 h-4 w-2/3 rounded"></div>
+                      </div>
+                    ) : metricsError ? (
+                      <div className="text-slate-400 text-sm">
+                        <p>Financial data temporarily unavailable</p>
+                        <p className="text-xs">Finnhub API experiencing issues</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Key Financial Metrics */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {metrics.marketCap && (
+                            <div>
+                              <p className="text-slate-400 text-xs">Market Cap</p>
+                              <p className="text-white font-medium">${(metrics.marketCap / 1e9).toFixed(2)}B</p>
+                            </div>
+                          )}
+                          {metrics.peRatio && (
+                            <div>
+                              <p className="text-slate-400 text-xs">P/E Ratio</p>
+                              <p className="text-white font-medium">{metrics.peRatio.toFixed(2)}</p>
+                            </div>
+                          )}
+                          {metrics.eps && (
+                            <div>
+                              <p className="text-slate-400 text-xs">EPS</p>
+                              <p className="text-white font-medium">${metrics.eps.toFixed(2)}</p>
+                            </div>
+                          )}
+                          {metrics.dividendYield && (
+                            <div>
+                              <p className="text-slate-400 text-xs">Dividend Yield</p>
+                              <p className="text-white font-medium">{(metrics.dividendYield * 100).toFixed(2)}%</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 52-week Range */}
+                        {(metrics.fiftyTwoWeekHigh || metrics.fiftyTwoWeekLow) && (
+                          <div>
+                            <p className="text-slate-400 text-xs mb-1">52-Week Range</p>
+                            <div className="flex items-center gap-2 text-sm">
+                              {metrics.fiftyTwoWeekLow && (
+                                <span className="text-red-400">${metrics.fiftyTwoWeekLow.toFixed(2)}</span>
+                              )}
+                              <span className="text-slate-400">-</span>
+                              {metrics.fiftyTwoWeekHigh && (
+                                <span className="text-emerald-400">${metrics.fiftyTwoWeekHigh.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Financial Health Indicators */}
+                        {(metrics.returnOnEquity || metrics.debtToEquity) && (
+                          <div className="pt-2 border-t border-slate-700">
+                            <p className="text-slate-400 text-xs mb-2">Financial Health</p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              {metrics.returnOnEquity && (
+                                <div>
+                                  <p className="text-slate-400 text-xs">ROE</p>
+                                  <p className="text-white">{(metrics.returnOnEquity * 100).toFixed(1)}%</p>
+                                </div>
+                              )}
+                              {metrics.debtToEquity && (
+                                <div>
+                                  <p className="text-slate-400 text-xs">Debt/Equity</p>
+                                  <p className="text-white">{metrics.debtToEquity.toFixed(2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
 
           {/* Current Stocks Section */}
           <Card className="bg-slate-800/50 border-slate-700">
