@@ -560,58 +560,124 @@ const Watchlist = () => {
             </span>
           </div>
           
-          {/* Movers Category Filter */}
+          {/* Full Category Filter for Daily Movers */}
           <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-1 overflow-x-auto mb-4">
-            <div className="flex items-center gap-1 min-w-max">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 min-w-max">
+                <Button
+                  variant={moversFilter === "popular" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("popular")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "popular" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <BarChart className="w-4 h-4 mr-2" />
+                  Popular
+                </Button>
+                <Button
+                  variant={moversFilter === "my-stocks" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("my-stocks")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "my-stocks" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  My Stocks
+                </Button>
+                <Button
+                  variant={moversFilter === "stocks" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("stocks")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "stocks" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Stocks
+                </Button>
+                <Button
+                  variant={moversFilter === "crypto" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("crypto")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "crypto" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Bitcoin className="w-4 h-4 mr-2" />
+                  Crypto
+                </Button>
+                <Button
+                  variant={moversFilter === "indices" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("indices")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "indices" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Indices
+                </Button>
+                <Button
+                  variant={moversFilter === "commodities" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("commodities")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "commodities" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Commodities
+                </Button>
+                <Button
+                  variant={moversFilter === "currencies" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("currencies")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "currencies" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Currencies
+                </Button>
+                <Button
+                  variant={moversFilter === "etfs" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setMoversFilter("etfs")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    moversFilter === "etfs" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Building className="w-4 h-4 mr-2" />
+                  ETFs
+                </Button>
+              </div>
               <Button
-                variant={moversFilter === "stocks" ? "default" : "ghost"}
+                variant="outline"
                 size="sm"
-                onClick={() => setMoversFilter("stocks")}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                  moversFilter === "stocks" 
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
+                className="text-slate-300 border-slate-600 hover:bg-slate-700 ml-4"
               >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Stocks
-              </Button>
-              <Button
-                variant={moversFilter === "crypto" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setMoversFilter("crypto")}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                  moversFilter === "crypto" 
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <Bitcoin className="w-4 h-4 mr-2" />
-                Crypto
-              </Button>
-              <Button
-                variant={moversFilter === "indices" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setMoversFilter("indices")}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                  moversFilter === "indices" 
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Indices
+                View All
               </Button>
             </div>
           </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-slate-300 border-slate-600 hover:bg-slate-700"
-          >
-            View All
-          </Button>
         </div>
 
         {moversLoading && (
