@@ -61,21 +61,43 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
     });
 
     console.log('Chart created:', chart);
-    console.log('Available methods:', Object.getOwnPropertyNames(chart));
+    console.log('Chart methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
 
-    // Add candlestick series using the correct API with validation
-    if (typeof (chart as any).addCandlestickSeries === 'function') {
-      const candlestickSeries = (chart as any).addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
-        borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
-      });
+    // Add candlestick series - try different approaches
+    let candlestickSeries;
+    try {
+      // Try the most common approach first
+      if (typeof (chart as any).addCandlestickSeries === 'function') {
+        candlestickSeries = (chart as any).addCandlestickSeries({
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+      } else {
+        console.error('addCandlestickSeries method not found on chart object');
+        console.log('Available chart methods:', Object.getOwnPropertyNames(chart));
+        // Try alternative method names
+        if (typeof (chart as any).addSeries === 'function') {
+          candlestickSeries = (chart as any).addSeries('candlestick', {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+          });
+        } else {
+          setIsLoading(false);
+          toast.error('Chart library not compatible');
+          return;
+        }
+      }
       candlestickSeriesRef.current = candlestickSeries;
-    } else {
-      console.error('addCandlestickSeries method not found on chart object');
-      console.log('Chart object:', chart);
+    } catch (error) {
+      console.error('Failed to create candlestick series:', error);
+      setIsLoading(false);
+      toast.error('Failed to initialize chart');
       return;
     }
 
@@ -156,14 +178,10 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Get the WebSocket URL for our edge function
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = window.location.port ? `:${window.location.port}` : '';
-      
-      // For production Supabase projects, use the correct format
+      // Get the WebSocket URL for our edge function (use wss for production)
+      const protocol = 'wss:';
       const projectId = 'gjtswpgjrznbrnmvmpno'; // Your Supabase project ID
-      const wsUrl = `${protocol}//${projectId}.supabase.co/functions/v1/alpaca-websocket`;
+      const wsUrl = `${protocol}//gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-websocket`;
       
       console.log('Connecting to WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);

@@ -25,8 +25,8 @@ serve(async (req) => {
   socket.onopen = () => {
     console.log("Client connected to WebSocket")
     
-    // Connect to Alpaca WebSocket
-    alpacaWs = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/stocks")
+    // Connect to Alpaca production market data WebSocket
+    alpacaWs = new WebSocket("wss://stream.data.alpaca.markets/v2/stocks")
     
     alpacaWs.onopen = () => {
       console.log("Connected to Alpaca WebSocket")

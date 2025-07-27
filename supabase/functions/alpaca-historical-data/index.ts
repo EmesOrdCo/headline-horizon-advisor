@@ -17,7 +17,7 @@ serve(async (req) => {
     const { symbol, timeframe = '1Min', limit = 100 } = await req.json()
     console.log(`Fetching data for ${symbol}, timeframe: ${timeframe}, limit: ${limit}`)
 
-    // Get Alpaca API credentials from environment variables
+    // Get Alpaca API credentials - use market data API keys, not trader keys
     const alpacaApiKey = Deno.env.get('ALPACA_API_KEY')
     const alpacaSecret = Deno.env.get('ALPACA_SECRET_KEY')
 
@@ -37,8 +37,8 @@ serve(async (req) => {
     const start = startDate.toISOString().split('T')[0]
     const end = endDate.toISOString().split('T')[0]
 
-    // Fetch historical data from Alpaca
-    const url = `https://data.sandbox.alpaca.markets/v2/stocks/${symbol}/bars?timeframe=${timeframe}&start=${start}&end=${end}&limit=${limit}&asof=&feed=iex&sort=asc`
+    // Use production market data endpoint (free tier available)
+    const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars?timeframe=${timeframe}&start=${start}&end=${end}&limit=${limit}&asof=&feed=iex&sort=asc`
     console.log('Alpaca URL:', url)
     
     const response = await fetch(url, {
