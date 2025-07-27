@@ -22,9 +22,10 @@ interface UserStock {
 interface AddStocksModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStockAdded?: () => void; // Callback when a stock is successfully added
 }
 
-const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
+const AddStocksModal = ({ open, onOpenChange, onStockAdded }: AddStocksModalProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -142,6 +143,11 @@ const AddStocksModal = ({ open, onOpenChange }: AddStocksModalProps) => {
       setSearchResults([]);
       setSelectedSearchResult("");
       fetchUserStocks();
+      
+      // Call the callback to refresh the parent component
+      if (onStockAdded) {
+        onStockAdded();
+      }
     } catch (error) {
       console.error('Error adding stock:', error);
       toast({

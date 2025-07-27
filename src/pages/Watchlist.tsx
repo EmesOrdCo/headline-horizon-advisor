@@ -184,13 +184,15 @@ const Watchlist = () => {
   const [showAddStocksModal, setShowAddStocksModal] = useState(false);
 
   // Fetch user's actual stocks from database
-  const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
+  const { data: userStocks, isLoading: userStocksLoading, error: userStocksError, refetch: refetchUserStocks } = useUserStocks();
   
-  // Extract symbols from user stocks
+  // Extract symbols from user stocks + popular stocks for pricing
   const watchlistSymbols = userStocks?.map(stock => stock.symbol) || [];
+  const popularSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'];
+  const allSymbols = [...new Set([...watchlistSymbols, ...popularSymbols])]; // Remove duplicates
   
-  // Get real-time stock prices for user's stocks
-  const { data: stockPrices, isLoading: pricesLoading } = useStockPrices(watchlistSymbols);
+  // Get real-time stock prices for both user's stocks and popular stocks
+  const { data: stockPrices, isLoading: pricesLoading } = useStockPrices(allSymbols);
   
   // Get biggest movers data
   const { data: moversData, isLoading: moversLoading, error: moversError, refetch } = useBiggestMovers();
@@ -206,21 +208,44 @@ const Watchlist = () => {
   };
 
   const filteredData = (): Stock[] => {
-    // Show loading state or empty state
-    if (userStocksLoading) {
-      return [];
+    // For 'popular' category, show predefined popular stocks with live pricing
+    if (categoryFilter === 'popular') {
+      const popularSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'];
+      
+      if (!stockPrices) {
+        return [];
+      }
+
+      let data: Stock[] = popularSymbols.map(symbol => {
+        const priceData = stockPrices.find((s) => s.symbol === symbol);
+        
+        return {
+          symbol: symbol,
+          name: getStockName(symbol),
+          price: priceData?.price || 0,
+          change: priceData?.change || 0,
+          changePercent: priceData?.changePercent || 0,
+        };
+      });
+    
+      return data;
     }
 
-    if (!userStocks || userStocks.length === 0) {
-      return [];
-    }
+    // For 'my-stocks' and 'stocks' categories, show user's actual selected stocks
+    if (['my-stocks', 'stocks'].includes(categoryFilter)) {
+      // Show loading state or empty state
+      if (userStocksLoading) {
+        return [];
+      }
 
-    if (!stockPrices) {
-      return [];
-    }
+      if (!userStocks || userStocks.length === 0) {
+        return [];
+      }
 
-    // For 'popular', 'my-stocks', and 'stocks' categories, show user's actual selected stocks
-    if (['popular', 'my-stocks', 'stocks'].includes(categoryFilter)) {
+      if (!stockPrices) {
+        return [];
+      }
+
       let data: Stock[] = userStocks.map(userStock => {
         const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
         
@@ -774,6 +799,7 @@ const Watchlist = () => {
       <AddStocksModal 
         open={showAddStocksModal}
         onOpenChange={setShowAddStocksModal}
+        onStockAdded={() => refetchUserStocks()} // Refresh user stocks when a new one is added
       />
       
       <Footer />
