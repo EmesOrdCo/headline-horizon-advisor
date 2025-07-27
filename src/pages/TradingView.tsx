@@ -329,89 +329,8 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             {/* Chart Content */}
             <div className="absolute inset-0 p-4">
               <div className="w-full h-full bg-slate-800 rounded-lg border border-slate-700 relative overflow-hidden">
-                {/* Chart Overlay - EXACT replica from image */}
-                <div className="absolute top-4 left-4 right-4 z-10">
-                  {/* Y-axis locked indicator */}
-                  <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded mb-4 inline-block">
-                    Y-axis locked to 1D range
-                  </div>
-                  
-                  {/* Chart symbol and price */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-white text-xl font-bold">AAPL 150.2424</div>
-                      <Badge className="bg-red-600 text-white px-2 py-1">
-                        -0.4228 (-0.28%)
-                      </Badge>
-                    </div>
-                    <div className="text-slate-400 text-sm">
-                      Last updated: 14:03:32
-                    </div>
-                  </div>
-
-                  {/* Chart Controls - EXACT replica */}
-                  <div className="bg-slate-800/90 backdrop-blur rounded-lg p-4 border border-slate-600">
-                    <div className="flex items-center justify-between">
-                      {/* Timeframe */}
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <BarChart3 className="w-4 h-4 text-slate-400" />
-                          <span className="text-slate-400 text-sm">Timeframe:</span>
-                          <div className="flex space-x-1">
-                            {['1M', '5M', '15M', '1H', '4H', '1D', '1W'].map((tf) => (
-                              <Button
-                                key={tf}
-                                variant="ghost"
-                                size="sm"
-                                className={`text-xs px-2 py-1 h-6 ${
-                                  tf === '1M' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'
-                                }`}
-                              >
-                                {tf}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {/* Indicators */}
-                        <div className="flex items-center space-x-2">
-                          <TrendingUp className="w-4 h-4 text-slate-400" />
-                          <span className="text-slate-400 text-sm">Indicators:</span>
-                          <Select value={selectedIndicators} onValueChange={setSelectedIndicators}>
-                            <SelectTrigger className="w-24 h-6 text-xs bg-slate-700 border-slate-600">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Add...">Add...</SelectItem>
-                              <SelectItem value="MA">Moving Average</SelectItem>
-                              <SelectItem value="RSI">RSI</SelectItem>
-                              <SelectItem value="MACD">MACD</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Settings */}
-                      <div className="flex items-center space-x-6">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-slate-400 text-sm">Grid</span>
-                          <Switch checked={showGrid} onCheckedChange={setShowGrid} className="scale-75" />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-slate-400 text-sm">Volume</span>
-                          <Switch checked={showVolume} onCheckedChange={setShowVolume} className="scale-75" />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-slate-400 text-sm">Theme</span>
-                          <Switch checked={darkTheme} onCheckedChange={setDarkTheme} className="scale-75" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Candlestick Chart - EXACT replica */}
-                <div className="absolute inset-0 pt-32">
+                {/* Candlestick Chart */}
+                <div className="absolute inset-0">
                   <svg width="100%" height="100%" viewBox="0 0 1000 400" className="overflow-visible">
                     {/* Grid lines */}
                     {showGrid && (
@@ -425,7 +344,7 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
                       </g>
                     )}
                     
-                    {/* Candlesticks - EXACT pattern from image */}
+                    {/* Candlesticks */}
                     {candlestickData.map(candle => drawCandlestick(candle, 400))}
                   </svg>
                 </div>
