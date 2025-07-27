@@ -3,10 +3,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle, Check, Wallet } from "lucide-react";
+import { CheckCircle, ChevronRight, Monitor, User, ArrowRightLeft, Bell, Shield, Database, Mail, AlertCircle, Check, Wallet, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import DashboardNav from "@/components/DashboardNav";
 
 const Settings = () => {
@@ -102,6 +103,17 @@ const Settings = () => {
       <DashboardNav />
       
       <div className="pt-16 p-6 h-[90vh] flex flex-col">
+        
+        {/* Coming Soon Banner */}
+        <div className="max-w-7xl mx-auto w-full mb-8">
+          <Alert className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-200">
+            <Clock className="h-4 w-4" />
+            <AlertDescription className="font-medium">
+              These features are coming soon
+            </AlertDescription>
+          </Alert>
+        </div>
+
         <div className="max-w-7xl mx-auto w-full flex-1 flex items-center justify-center">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
             
