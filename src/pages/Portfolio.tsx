@@ -792,6 +792,9 @@ const Portfolio = () => {
 
           <AccountSummary />
           
+          <AssetBreakdownAndPerformance />
+          <TradeHistory />
+          
           {/* Account Overview - Same as Trading Dashboard */}
           {accountData && (
             <Card className="bg-slate-800/50 border-slate-700">
@@ -923,8 +926,6 @@ const Portfolio = () => {
               </CardContent>
             </Card>
           )}
-          <AssetBreakdownAndPerformance />
-          <TradeHistory />
         </div>
       </div>
       
