@@ -145,7 +145,7 @@ const Magnificent7 = () => {
     errorMessage: wsError
   } = useAlpacaStreamSingleton({
     symbols: TEST_SYMBOLS, // TEST: Only stream AAPL
-    enabled: useWebSocket
+    enabled: useWebSocket && !window.location.pathname.includes('/alpaca-live-chart')
   });
 
   useEffect(() => {

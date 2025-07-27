@@ -138,7 +138,7 @@ const IndexFunds = () => {
     errorMessage: wsError
   } = useAlpacaStreamSingleton({
     symbols: MAJOR_INDEX_FUNDS,
-    enabled: useWebSocket
+    enabled: useWebSocket && !window.location.pathname.includes('/alpaca-live-chart')
   });
 
   useEffect(() => {

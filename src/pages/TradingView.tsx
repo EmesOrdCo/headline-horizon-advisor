@@ -64,9 +64,11 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
   // Enable WebSocket streaming for real-time updates
+  // Disable WebSocket if user is on the live trading page to prevent connection conflicts
+  const isOnLiveTradingPage = window.location.pathname.includes('/alpaca-live-chart');
   const { streamData, isConnected } = useAlpacaStreamSingleton({
     symbols: [activeSymbol, ...watchlistSymbols],
-    enabled: !isDemo
+    enabled: !isDemo && !isOnLiveTradingPage
   });
   
   const leftSidebarTools = [

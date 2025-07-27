@@ -93,9 +93,11 @@ const StockChart: React.FC = () => {
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
   // Set up Alpaca WebSocket for real-time updates - include AAPL for Live Data Flow
+  // Disable WebSocket if user is on the live trading page to prevent connection conflicts
+  const isOnLiveTradingPage = window.location.pathname.includes('/alpaca-live-chart');
   const { streamData, isConnected } = useAlpacaStreamSingleton({
     symbols: [activeSymbol, ...watchlistSymbols],
-    enabled: true
+    enabled: !isOnLiveTradingPage
   });
   
   const leftSidebarTools = [

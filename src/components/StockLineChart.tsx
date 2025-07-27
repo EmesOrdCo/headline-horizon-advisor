@@ -199,9 +199,11 @@ const StockLineChart: React.FC<StockLineChartProps> = ({
   timeframe = '1D',
   historicalData
 }) => {
+  // Disable WebSocket if user is on the live trading page to prevent connection conflicts
+  const isOnLiveTradingPage = window.location.pathname.includes('/alpaca-live-chart');
   const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({ 
     symbols: [symbol], 
-    enabled: true 
+    enabled: !isOnLiveTradingPage 
   });
 
   const { 

@@ -69,9 +69,11 @@ export function useChartData(
   const { data: stockPrices } = useStockPrices([symbol]);
   
   // Real-time data stream
+  // Disable WebSocket if user is on the live trading page to prevent connection conflicts
+  const isOnLiveTradingPage = window.location.pathname.includes('/alpaca-live-chart');
   const { streamData, isConnected } = useAlpacaStreamSingleton({
     symbols: [symbol],
-    enabled: !isDemo
+    enabled: !isDemo && !isOnLiveTradingPage
   });
 
   // Fetch historical data
