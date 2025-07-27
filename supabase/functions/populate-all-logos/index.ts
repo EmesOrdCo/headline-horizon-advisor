@@ -65,17 +65,59 @@ Deno.serve(async (req) => {
 
     console.log(`📊 Starting batch logo population process (${batchSize} symbols)...`);
 
-    // Step 1: Get all US stocks from Finnhub
+    // Step 1: Get all US stocks from Finnhub with retry logic
     console.log('📈 Fetching all US stock symbols from Finnhub...');
     const stocksUrl = `https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${finnhubApiKey}`;
     console.log('🌐 Making request to:', stocksUrl.replace(finnhubApiKey, 'HIDDEN'));
     
-    const stocksResponse = await fetch(stocksUrl);
-    console.log('📡 Stock symbols response status:', stocksResponse.status);
+    let stocksResponse;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        stocksResponse = await fetch(stocksUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'LogoPopulator/1.0',
+            'Accept': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('📡 Stock symbols response status:', stocksResponse.status);
+        
+        if (stocksResponse.ok) {
+          break; // Success, exit retry loop
+        } else if (stocksResponse.status === 522 || stocksResponse.status >= 500) {
+          // Server error, retry
+          retryCount++;
+          console.log(`⚠️ Server error (${stocksResponse.status}), retrying... (${retryCount}/${maxRetries})`);
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 5000 * retryCount)); // Exponential backoff
+            continue;
+          }
+        } else {
+          // Client error, don't retry
+          break;
+        }
+      } catch (error) {
+        retryCount++;
+        console.log(`⚠️ Network error: ${error.message}, retrying... (${retryCount}/${maxRetries})`);
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 5000 * retryCount)); // Exponential backoff
+          continue;
+        }
+        throw error;
+      }
+    }
 
     if (!stocksResponse.ok) {
       const errorText = await stocksResponse.text();
-      console.error('❌ Failed to fetch stock symbols:', stocksResponse.statusText, errorText);
+      console.error('❌ Failed to fetch stock symbols after retries:', stocksResponse.statusText, errorText);
       throw new Error(`Failed to fetch stock symbols: ${stocksResponse.statusText} - ${errorText}`);
     }
 
