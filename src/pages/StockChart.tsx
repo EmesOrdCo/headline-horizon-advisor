@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { AdvancedTradingChart } from '@/components/chart/AdvancedTradingChart';
 
 import { 
   ArrowLeft, 
@@ -25,57 +26,6 @@ import {
 import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
-
-// TradingView Widget Component
-const TradingViewWidget: React.FC<{ symbol: string; theme: 'light' | 'dark' }> = ({ symbol, theme }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    script.type = 'text/javascript';
-    script.async = true;
-    script.innerHTML = `
-      {
-        "autosize": true,
-        "symbol": "${symbol}",
-        "timezone": "Etc/UTC",
-        "theme": "${theme}",
-        "style": "1",
-        "locale": "en",
-        "enable_publishing": false,
-        "withdateranges": true,
-        "range": "YTD",
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "details": true,
-        "hotlist": true,
-        "calendar": false,
-        "support_host": "https://www.tradingview.com"
-      }`;
-
-    if (containerRef.current) {
-      containerRef.current.appendChild(script);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
-    };
-  }, [symbol, theme]);
-
-  return (
-    <div className="tradingview-widget-container w-full h-full">
-      <div ref={containerRef} className="tradingview-widget-container__widget w-full h-full"></div>
-      <div className="tradingview-widget-copyright">
-        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-          <span className="blue-text">Track all markets on TradingView</span>
-        </a>
-      </div>
-    </div>
-  );
-};
 
 const StockChart: React.FC = () => {
   
@@ -329,9 +279,14 @@ const StockChart: React.FC = () => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* TradingView Chart */}
-          <div className="flex-1 bg-slate-900 relative min-h-0">
-            <TradingViewWidget symbol={activeSymbol} theme="dark" />
+          {/* Advanced Trading Chart using Alpaca Data */}
+          <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
+            <AdvancedTradingChart 
+              symbol={activeSymbol} 
+              theme="dark" 
+              height={window.innerHeight - 200}
+              className="w-full h-full"
+            />
             
             {/* WebSocket Monitor */}
             <div className="absolute bottom-4 left-4 z-10">
