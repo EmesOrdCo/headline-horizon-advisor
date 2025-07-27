@@ -24,9 +24,11 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [dataSource, setDataSource] = useState<'historical' | 'live' | 'error'>('historical');
+  const [historicalDataLoaded, setHistoricalDataLoaded] = useState(false);
 
   // Use the singleton WebSocket for this page only
-  const { streamData, isConnected, errorMessage } = useAlpacaStreamSingleton({
+  const { streamData, isConnected, errorMessage, connectionStatus, connect } = useAlpacaStreamSingleton({
     symbols: [symbol],
     enabled: true
   });
@@ -159,6 +161,8 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
           candlestickSeriesRef.current.setData(formatted);
           const latestPrice = formatted[formatted.length - 1].close;
           setCurrentPrice(latestPrice);
+          setHistoricalDataLoaded(true);
+          setDataSource('historical');
         }
       } else {
         throw new Error('Invalid Alpaca data format received');
@@ -166,6 +170,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
     } catch (error) {
       console.error('❌ Error fetching Alpaca historical data:', error);
       toast.error('Failed to fetch Alpaca data');
+      setDataSource('error');
     } finally {
       setIsLoading(false);
     }
@@ -190,8 +195,16 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
       setCurrentPrice(price);
       setLastUpdate(new Date().toLocaleTimeString());
+      setDataSource('live'); // Mark that we're receiving live data
     }
   }, [streamData, symbol, currentPrice]);
+
+  // Track WebSocket connection status
+  useEffect(() => {
+    if (connectionStatus === 'error') {
+      setDataSource('error');
+    }
+  }, [connectionStatus]);
 
   // Load data on component mount
   useEffect(() => {
@@ -254,6 +267,64 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         </CardHeader>
       </Card>
 
+      {/* Data Source Status Card */}
+      <Card className="bg-slate-900/50 border-slate-700">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-400">Data Source:</span>
+                {dataSource === 'live' && (
+                  <Badge className="bg-green-600 text-white">
+                    🔴 Live WebSocket Data
+                  </Badge>
+                )}
+                {dataSource === 'historical' && (
+                  <Badge variant="secondary" className="bg-yellow-600 text-white">
+                    📊 Historical Data Only
+                  </Badge>
+                )}
+                {dataSource === 'error' && (
+                  <Badge variant="destructive">
+                    ❌ Connection Failed
+                  </Badge>
+                )}
+              </div>
+              
+              {!isConnected && errorMessage && (
+                <div className="text-sm text-red-400">
+                  Error: {errorMessage}
+                </div>
+              )}
+            </div>
+            
+            {!isConnected && (
+              <Button
+                onClick={connect}
+                variant="outline"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+              >
+                🔄 Retry Connection
+              </Button>
+            )}
+          </div>
+          
+          {dataSource === 'historical' && historicalDataLoaded && (
+            <div className="mt-2 text-xs text-slate-500">
+              Showing historical data from Alpaca. Real-time WebSocket connection failed.
+              {errorMessage && ` (${errorMessage})`}
+            </div>
+          )}
+          
+          {dataSource === 'error' && (
+            <div className="mt-2 text-xs text-red-500">
+              Unable to load data. Please check your connection and try again.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Chart */}
       <Card className="bg-slate-900/50 border-slate-700">
         <CardContent className="p-0">
@@ -295,7 +366,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
             </Button>
           </div>
           <p className="text-center text-sm text-slate-400 mt-3">
-            Market orders • 1 share • Sandbox Mode • Real-time Data
+            Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
           </p>
         </CardContent>
       </Card>
