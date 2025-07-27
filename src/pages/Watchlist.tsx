@@ -14,6 +14,7 @@ import MarketTicker from "@/components/MarketTicker";
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
+import AddStocksModal from "@/components/AddStocksModal";
 import { useUserStockPrices } from "@/hooks/useUserStockPrices";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
@@ -180,6 +181,7 @@ const Watchlist = () => {
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("popular");
   const [moversFilter, setMoversFilter] = useState("stocks");
+  const [showAddStocksModal, setShowAddStocksModal] = useState(false);
 
   // Fetch user's actual stocks from database
   const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
@@ -376,13 +378,13 @@ const Watchlist = () => {
                     ETFs
                   </Button>
                 </div>
-                <Link 
-                  to="/my-stocks"
+                <Button
+                  onClick={() => setShowAddStocksModal(true)}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors ml-4"
                 >
                   <Plus className="w-4 h-4" />
                   Add Stocks
-                </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -449,12 +451,12 @@ const Watchlist = () => {
                                <p className="font-medium">No stocks in your watchlist</p>
                                <p className="text-sm">Add some stocks to start tracking your portfolio</p>
                              </div>
-                             <Link 
-                               to="/my-stocks" 
-                               className="text-emerald-400 hover:text-emerald-300 underline"
-                             >
-                               Add your first stock →
-                             </Link>
+                            <Button
+                              onClick={() => setShowAddStocksModal(true)}
+                              className="text-emerald-400 hover:text-emerald-300 underline bg-transparent border-none p-0 h-auto"
+                            >
+                              Add your first stock →
+                            </Button>
                            </div>
                          )}
                        </TableCell>
@@ -774,6 +776,13 @@ const Watchlist = () => {
           stockName={selectedChart.stockName}
         />
       )}
+      
+      
+      {/* Add Stocks Modal */}
+      <AddStocksModal 
+        open={showAddStocksModal}
+        onOpenChange={setShowAddStocksModal}
+      />
       
       <Footer />
     </div>

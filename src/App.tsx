@@ -21,7 +21,7 @@ import RecurringOrdersSettings from "./pages/settings/RecurringOrdersSettings";
 import TradingSettings from "./pages/settings/TradingSettings";
 import Watchlist from "./pages/Watchlist";
 import Portfolio from "./pages/Portfolio";
-import MyStocks from "./pages/MyStocks";
+
 import Magnificent7 from "./pages/Magnificent7";
 import IndexFunds from "./pages/IndexFunds";
 import Predictions from "./pages/Predictions";
@@ -135,14 +135,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Portfolio />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-stocks"
-                element={
-                  <ProtectedRoute>
-                    <MyStocks />
                   </ProtectedRoute>
                 }
               />
