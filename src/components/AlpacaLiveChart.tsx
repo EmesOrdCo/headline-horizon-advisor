@@ -49,15 +49,23 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         height: 400,
       });
 
-      console.log('✅ TradingView Chart created:', chart);
+      console.log('✅ TradingView Chart created');
 
-      // Add candlestick series - TradingView way
-      const candlestickSeries = (chart as any).addCandlestickSeries();
-      
-      console.log('✅ Candlestick series added:', candlestickSeries);
-
-      candlestickSeriesRef.current = candlestickSeries;
-      chartRef.current = chart;
+      // Add candlestick series - TradingView way with error handling
+      try {
+        const candlestickSeries = (chart as any).addCandlestickSeries();
+        console.log('✅ Candlestick series created successfully');
+        
+        candlestickSeriesRef.current = candlestickSeries;
+        chartRef.current = chart;
+        
+        console.log('✅ Chart and series refs set');
+      } catch (seriesError) {
+        console.error('❌ Failed to create candlestick series:', seriesError);
+        setIsLoading(false);
+        toast.error('Failed to create chart series');
+        return;
+      }
 
       // Handle resize - TradingView way
       const handleResize = () => {
