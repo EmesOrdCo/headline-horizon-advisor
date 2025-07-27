@@ -15,7 +15,7 @@ interface StreamData {
   low?: number;
   close?: number;
   sandbox?: boolean;
-  simulated?: boolean;
+  
   source?: string;
 }
 
@@ -136,31 +136,8 @@ class AlpacaStreamManager {
       this.socket.onopen = () => {
         console.log('Singleton: WebSocket connected successfully');
         this.connectionStatus = 'connected';
-        this.isAuthenticated = true; // Assume auth success for demo
         this.errorMessage = '';
-        
-        // Send immediate test data for AAPL to ensure graph shows
-        this.streamData['AAPL'] = {
-          type: 't',
-          symbol: 'AAPL',
-          price: 213.95 + Math.random() * 2 - 1, // Random price variation
-          timestamp: new Date().toISOString(),
-          volume: Math.floor(Math.random() * 100000) + 50000,
-          bid: 213.90,
-          ask: 214.00,
-          open: 213.88,
-          high: 214.50,
-          low: 213.00,
-          close: 213.95,
-          sandbox: true,
-          simulated: true,
-          source: 'alpaca_sandbox_test'
-        };
-        
         this.notifySubscribers();
-        
-        // Start generating test data every 3 seconds
-        this.startTestDataGeneration();
       };
 
       this.socket.onmessage = (event) => {
@@ -212,9 +189,8 @@ class AlpacaStreamManager {
                         high: item.h,
                         low: item.l,
                         close: item.c,
-                        sandbox: item.sandbox || true,
-                        simulated: item.simulated || true,
-                        source: item.source || 'alpaca_sandbox_test'
+                        sandbox: item.sandbox || false,
+                        source: item.source || 'alpaca_api'
                       };
                     }
                   }
@@ -308,40 +284,6 @@ class AlpacaStreamManager {
     });
   }
   
-  private startTestDataGeneration() {
-    // Generate test data every 3 seconds
-    const interval = setInterval(() => {
-      if (this.subscribers.size === 0) {
-        clearInterval(interval);
-        return;
-      }
-      
-      // Generate new AAPL data
-      const basePrice = 213.95;
-      const priceVariation = (Math.random() - 0.5) * 4; // ±$2 variation
-      const newPrice = basePrice + priceVariation;
-      
-      this.streamData['AAPL'] = {
-        type: 't',
-        symbol: 'AAPL',
-        price: Math.round(newPrice * 100) / 100,
-        timestamp: new Date().toISOString(),
-        volume: Math.floor(Math.random() * 100000) + 50000,
-        bid: newPrice - 0.05,
-        ask: newPrice + 0.05,
-        open: basePrice,
-        high: Math.max(newPrice, basePrice + 1),
-        low: Math.min(newPrice, basePrice - 1),
-        close: newPrice,
-        sandbox: true,
-        simulated: true,
-        source: 'alpaca_sandbox_test'
-      };
-      
-      console.log('🎲 Generated test data for AAPL:', this.streamData['AAPL']);
-      this.notifySubscribers();
-    }, 3000);
-  }
 }
 
 export const useAlpacaStreamSingleton = ({ symbols, enabled = true }: UseAlpacaStreamProps) => {
