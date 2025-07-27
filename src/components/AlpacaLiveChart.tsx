@@ -31,10 +31,9 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize chart
+  // Initialize chart - PURE TradingView Lightweight Charts
   useEffect(() => {
     console.log('🔧 Chart initialization started');
-    console.log('🔧 Container ref:', chartContainerRef.current);
     
     if (!chartContainerRef.current) {
       console.error('❌ Chart container not found');
@@ -42,104 +41,25 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
     }
 
     try {
-      console.log('🔧 Creating chart with lightweight-charts...');
+      console.log('🔧 Creating TradingView Lightweight Chart...');
       
-      // Create chart with TradingView default styling
+      // Create chart - TradingView default configuration
       const chart = createChart(chartContainerRef.current, {
         width: chartContainerRef.current.clientWidth,
         height: 400,
-        layout: {
-          background: { color: '#ffffff' },
-          textColor: '#333',
-        },
-        grid: {
-          vertLines: { color: '#e6e6e6' },
-          horzLines: { color: '#e6e6e6' },
-        },
-        crosshair: {
-          mode: 1,
-        },
-        rightPriceScale: {
-          borderColor: '#cccccc',
-        },
-        timeScale: {
-          borderColor: '#cccccc',
-          timeVisible: true,
-          secondsVisible: false,
-        },
       });
 
-      console.log('✅ Chart created successfully:', chart);
-      console.log('🔧 Chart methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
+      console.log('✅ TradingView Chart created:', chart);
 
-      // Try to add candlestick series
-      let candlestickSeries = null;
+      // Add candlestick series - TradingView way
+      const candlestickSeries = (chart as any).addCandlestickSeries();
       
-      try {
-        console.log('🔧 Attempting to add candlestick series...');
-        
-        // Method 1: Direct addCandlestickSeries call
-        if (typeof (chart as any).addCandlestickSeries === 'function') {
-          console.log('✅ Using direct addCandlestickSeries method');
-          candlestickSeries = (chart as any).addCandlestickSeries({
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderVisible: false,
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
-          });
-        } 
-        // Method 2: Try with type casting
-        else if (typeof (chart as any).addCandlestickSeries === 'function') {
-          console.log('✅ Using casted addCandlestickSeries method');
-          candlestickSeries = (chart as any).addCandlestickSeries({
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderVisible: false,
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
-          });
-        }
-        // Method 3: Try addSeries with candlestick type
-        else if (typeof (chart as any).addSeries === 'function') {
-          console.log('✅ Using addSeries with candlestick type');
-          candlestickSeries = (chart as any).addSeries('candlestick', {
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderVisible: false,
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
-          });
-        }
-        // Method 4: Last resort - try line series instead
-        else {
-          console.warn('⚠️ Candlestick not available, falling back to line series');
-          if (typeof (chart as any).addLineSeries === 'function') {
-            candlestickSeries = (chart as any).addLineSeries({
-              color: '#26a69a',
-              lineWidth: 2,
-            });
-          }
-        }
+      console.log('✅ Candlestick series added:', candlestickSeries);
 
-        if (candlestickSeries) {
-          console.log('✅ Series created successfully:', candlestickSeries);
-          candlestickSeriesRef.current = candlestickSeries;
-          chartRef.current = chart;
-        } else {
-          throw new Error('Failed to create any chart series');
-        }
+      candlestickSeriesRef.current = candlestickSeries;
+      chartRef.current = chart;
 
-      } catch (seriesError) {
-        console.error('❌ Error creating series:', seriesError);
-        console.log('🔧 Available chart methods:', Object.getOwnPropertyNames(chart));
-        console.log('🔧 Chart prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(chart)));
-        setIsLoading(false);
-        toast.error('Chart series creation failed');
-        return;
-      }
-
-      // Handle resize
+      // Handle resize - TradingView way
       const handleResize = () => {
         if (chartContainerRef.current && chartRef.current) {
           chartRef.current.applyOptions({
