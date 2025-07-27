@@ -29,7 +29,7 @@ import {
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useTheme } from "@/contexts/ThemeContext";
-import TechnicalIndicatorChart from "@/components/chart/TechnicalIndicatorChart";
+import SimpleLightweightChart from "@/components/chart/SimpleLightweightChart";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -371,7 +371,7 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
         <div className="flex-1 flex flex-col min-h-0">
           {/* Professional TradingView Chart */}
           <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
-            <TechnicalIndicatorChart
+            <SimpleLightweightChart
               symbol={activeSymbol}
               theme={isDarkMode ? 'dark' : 'light'}
               height={650}
