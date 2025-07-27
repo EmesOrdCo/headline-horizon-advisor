@@ -134,7 +134,7 @@ export function useChartData(
     }
 
     try {
-      console.log(`Fetching historical data for ${symbol} with timeframe ${timeframe}`);
+      console.log(`🚀 [useChartData] Starting historical data fetch for ${symbol} with timeframe ${timeframe}`);
       
       // Call historical prices edge function
       const { data, error } = await supabase.functions.invoke('historical-prices', {

@@ -48,11 +48,11 @@ const StockDetail = () => {
   // Fetch stock prices with real-time data
   const { data: stockPrices, isLoading: stockPricesLoading, refetch: refetchStockPrices } = useStockPrices([stockSymbol]);
   
-  // Real-time streaming for live updates
-  const { streamData } = useAlpacaStream({
-    symbols: [stockSymbol],
-    enabled: true
-  });
+  // DISABLE WebSocket on StockDetail to avoid conflicts with TradingView
+  // const { streamData } = useAlpacaStream({
+  //   symbols: [stockSymbol],
+  //   enabled: true
+  // });
 
   // Refetch stock prices every 30 seconds to ensure fresh data
   useEffect(() => {
