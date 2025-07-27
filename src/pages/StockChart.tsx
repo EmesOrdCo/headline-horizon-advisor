@@ -46,10 +46,10 @@ const TradingViewWidget: React.FC<{ symbol: string; theme: 'light' | 'dark' }> =
         "enable_publishing": false,
         "withdateranges": true,
         "range": "YTD",
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "details": true,
-        "hotlist": true,
+        "hide_side_toolbar": true,
+        "allow_symbol_change": false,
+        "details": false,
+        "hotlist": false,
         "calendar": false,
         "support_host": "https://www.tradingview.com"
       }`;
