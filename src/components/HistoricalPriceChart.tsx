@@ -126,19 +126,24 @@ const HistoricalPriceChart = ({ symbol, timeframe = '1Day', limit = 30, height, 
   }
 
   if (error) {
+    console.warn(`Chart error for ${symbol}:`, error);
     if (showMiniChart) {
       return (
-        <div className="w-full h-12 flex items-center justify-center text-slate-500">
-          <BarChart3 className="w-4 h-4" />
+        <div className="w-full h-12 flex items-center justify-center text-slate-500 bg-slate-800/20 rounded border border-slate-700/50">
+          <div className="flex items-center gap-1 text-xs">
+            <BarChart3 className="w-3 h-3" />
+            <span>Chart unavailable</span>
+          </div>
         </div>
       );
     }
     return (
-      <div className="h-64 flex items-center justify-center text-slate-400">
+      <div className="h-64 flex items-center justify-center text-slate-400 bg-slate-800/20 rounded-lg border border-slate-700/50">
         <div className="text-center">
           <BarChart3 className="w-8 h-8 mx-auto mb-3 text-slate-500" />
-          <p className="mb-2">Chart temporarily unavailable</p>
-          <p className="text-sm text-slate-500">Data service is currently experiencing issues</p>
+          <p className="mb-2 text-white">Charts temporarily unavailable</p>
+          <p className="text-sm text-slate-400">Finnhub API is experiencing connection issues</p>
+          <p className="text-xs text-slate-500 mt-2">Charts will automatically return when service is restored</p>
         </div>
       </div>
     );
