@@ -117,6 +117,16 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // Clean up any existing chart first
+    if (chart.current) {
+      try {
+        chart.current.remove();
+        chart.current = null;
+      } catch (error) {
+        console.error('Error removing existing chart:', error);
+      }
+    }
+
     const chartOptions = {
       layout: {
         background: { type: ColorType.Solid, color: theme === 'dark' ? '#0f172a' : '#ffffff' },
@@ -152,11 +162,17 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
         mouseWheel: true,
         pinch: true,
       },
-      width: chartContainerRef.current.clientWidth,
+      width: chartContainerRef.current.clientWidth || 800,
       height: height,
     };
 
-    chart.current = createChart(chartContainerRef.current, chartOptions);
+    try {
+      chart.current = createChart(chartContainerRef.current, chartOptions);
+    } catch (error) {
+      console.error('Error creating chart:', error);
+      setIsLoading(false);
+      return;
+    }
 
     // Try different API approaches
     try {
