@@ -204,8 +204,8 @@ const Watchlist = () => {
   };
 
   const filteredData = (): Stock[] => {
-    // Handle coming soon categories
-    if (['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter)) {
+    // Handle coming soon categories and empty categories
+    if (['crypto', 'indices', 'commodities', 'currencies', 'etfs', 'my-stocks', 'stocks'].includes(categoryFilter)) {
       return [];
     }
 
@@ -221,28 +221,8 @@ const Watchlist = () => {
     if (!stockPrices) {
       return [];
     }
-  
-    // For both 'my-stocks' and 'stocks' categories, show user's actual selected stocks
-    if (categoryFilter === 'my-stocks' || categoryFilter === 'stocks') {
-      let data: Stock[] = userStocks.map(userStock => {
-        const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
-        
-        return {
-          symbol: userStock.symbol,
-          name: getStockName(userStock.symbol),
-          price: priceData?.price || 0,
-          change: priceData?.change || 0,
-          changePercent: priceData?.changePercent || 0,
-        };
-      });
-    
-      // Sort by symbol for consistent ordering
-      data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-      
-      return data;
-    }
 
-    // For 'popular' category, show a curated list (for now, same as user stocks)
+    // For 'popular' category, show user's actual selected stocks
     if (categoryFilter === 'popular') {
       let data: Stock[] = userStocks.map(userStock => {
         const priceData = stockPrices.find((s) => s.symbol === userStock.symbol);
@@ -444,20 +424,24 @@ const Watchlist = () => {
                      // Empty state - different messages based on category
                      <TableRow>
                        <TableCell colSpan={5} className="h-32 text-center">
-                         {['crypto', 'indices', 'commodities', 'currencies', 'etfs'].includes(categoryFilter) ? (
-                           <div className="flex flex-col items-center gap-3 text-slate-400">
-                             <BarChart3 className="w-12 h-12" />
-                             <div>
-                               <p className="font-medium text-xl text-white">Coming Soon</p>
-                               <p className="text-sm">
-                                 {categoryFilter === 'crypto' && 'Cryptocurrency tracking is coming soon'}
-                                 {categoryFilter === 'indices' && 'Market indices tracking is coming soon'}
-                                 {categoryFilter === 'commodities' && 'Commodities tracking is coming soon'}
-                                 {categoryFilter === 'currencies' && 'Currency pairs tracking is coming soon'}
-                                 {categoryFilter === 'etfs' && 'ETF tracking is coming soon'}
-                               </p>
-                             </div>
-                           </div>
+                          {['crypto', 'indices', 'commodities', 'currencies', 'etfs', 'my-stocks', 'stocks'].includes(categoryFilter) ? (
+                            <div className="flex flex-col items-center gap-3 text-slate-400">
+                              <BarChart3 className="w-12 h-12" />
+                              <div>
+                                <p className="font-medium text-xl text-white">
+                                  {['my-stocks', 'stocks'].includes(categoryFilter) ? 'Coming Soon' : 'Coming Soon'}
+                                </p>
+                                <p className="text-sm">
+                                  {categoryFilter === 'crypto' && 'Cryptocurrency tracking is coming soon'}
+                                  {categoryFilter === 'indices' && 'Market indices tracking is coming soon'}
+                                  {categoryFilter === 'commodities' && 'Commodities tracking is coming soon'}
+                                  {categoryFilter === 'currencies' && 'Currency pairs tracking is coming soon'}
+                                  {categoryFilter === 'etfs' && 'ETF tracking is coming soon'}
+                                  {categoryFilter === 'my-stocks' && 'My Stocks feature is coming soon'}
+                                  {categoryFilter === 'stocks' && 'Stocks feature is coming soon'}
+                                </p>
+                              </div>
+                            </div>
                          ) : (
                            <div className="flex flex-col items-center gap-3 text-slate-400">
                              <BarChart3 className="w-12 h-12" />
