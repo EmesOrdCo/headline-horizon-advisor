@@ -159,12 +159,12 @@ export const AdvancedTradingChart: React.FC<AdvancedTradingChartProps> = ({
       grid: {
         vertLines: { 
           color: colors.grid,
-          style: 0,
+          style: 0 as any,
           visible: true,
         },
         horzLines: { 
           color: colors.grid,
-          style: 0,
+          style: 0 as any,
           visible: true,
         },
       },
@@ -219,9 +219,20 @@ export const AdvancedTradingChart: React.FC<AdvancedTradingChartProps> = ({
       height: isFullscreen ? window.innerHeight - 100 : height,
     };
 
-    chart.current = createChart(chartContainerRef.current, chartOptions);
+    try {
+      chart.current = createChart(chartContainerRef.current, chartOptions);
+      
+      // Verify chart was created successfully
+      if (!chart.current) {
+        console.error('Failed to create chart');
+        return;
+      }
 
-    // Create price line for current price will be added to series later
+      console.log('Chart created successfully', chart.current);
+    } catch (error) {
+      console.error('Error creating chart:', error);
+      return;
+    }
 
     // Handle resize
     const handleResize = () => {
@@ -242,143 +253,156 @@ export const AdvancedTradingChart: React.FC<AdvancedTradingChartProps> = ({
         chart.current = null;
       }
     };
-  }, [theme, height, showVolume, isFullscreen, colors, currentPrice, priceChange]);
+  }, [theme, height, showVolume, isFullscreen, colors]);
 
   // Update chart data
   useEffect(() => {
-    if (!chart.current || candlestickData.length === 0) return;
-
-    // Clear existing series
-    if (candlestickSeries.current) {
-      chart.current.removeSeries(candlestickSeries.current);
-      candlestickSeries.current = null;
-    }
-    if (lineSeries.current) {
-      chart.current.removeSeries(lineSeries.current);
-      lineSeries.current = null;
-    }
-    if (areaSeries.current) {
-      chart.current.removeSeries(areaSeries.current);
-      areaSeries.current = null;
-    }
-    if (volumeSeries.current) {
-      chart.current.removeSeries(volumeSeries.current);
-      volumeSeries.current = null;
+    if (!chart.current || candlestickData.length === 0) {
+      console.log('Chart not ready or no data:', { 
+        chartExists: !!chart.current, 
+        dataLength: candlestickData.length 
+      });
+      return;
     }
 
-    // Create main price series based on chart type
-    if (chartType === 'candlestick') {
-      candlestickSeries.current = (chart.current as any).addCandlestickSeries({
-        upColor: colors.upColor,
-        downColor: colors.downColor,
-        borderVisible: false,
-        wickUpColor: colors.upColor,
-        wickDownColor: colors.downColor,
-        priceFormat: {
-          type: 'price',
-          precision: 2,
-          minMove: 0.01,
-        },
-      });
-      candlestickSeries.current.setData(candlestickData);
-    } else if (chartType === 'line') {
-      lineSeries.current = (chart.current as any).addLineSeries({
-        color: colors.upColor,
-        lineWidth: 2,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 4,
-        priceFormat: {
-          type: 'price',
-          precision: 2,
-          minMove: 0.01,
-        },
-      });
-      const lineData: LineData[] = candlestickData.map(item => ({
-        time: item.time,
-        value: item.close
-      }));
-      lineSeries.current.setData(lineData);
-    } else if (chartType === 'area') {
-      areaSeries.current = (chart.current as any).addAreaSeries({
-        lineColor: colors.upColor,
-        topColor: `${colors.upColor}40`,
-        bottomColor: `${colors.upColor}00`,
-        lineWidth: 2,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 4,
-        priceFormat: {
-          type: 'price',
-          precision: 2,
-          minMove: 0.01,
-        },
-      });
-      const areaData: LineData[] = candlestickData.map(item => ({
-        time: item.time,
-        value: item.close
-      }));
-      areaSeries.current.setData(areaData);
-    }
+    console.log('Updating chart with data:', candlestickData.length, 'candles');
 
-    // Add volume series if enabled
-    if (showVolume && volumeData.length > 0) {
-      volumeSeries.current = (chart.current as any).addHistogramSeries({
-        color: colors.volumeUp,
-        priceFormat: {
-          type: 'volume',
-        },
-        priceScaleId: 'volume',
-        scaleMargins: {
-          top: 0.8,
-          bottom: 0,
-        },
-      });
-      volumeSeries.current.setData(volumeData);
-    }
+    try {
+      // Clear existing series
+      if (candlestickSeries.current) {
+        chart.current.removeSeries(candlestickSeries.current);
+        candlestickSeries.current = null;
+      }
+      if (lineSeries.current) {
+        chart.current.removeSeries(lineSeries.current);
+        lineSeries.current = null;
+      }
+      if (areaSeries.current) {
+        chart.current.removeSeries(areaSeries.current);
+        areaSeries.current = null;
+      }
+      if (volumeSeries.current) {
+        chart.current.removeSeries(volumeSeries.current);
+        volumeSeries.current = null;
+      }
 
-    // Add technical indicators
-    indicators.forEach(indicator => {
-      if (indicator.enabled) {
-        if (indicator.id === 'sma20') {
-          const smaData = calculateSMA(candlestickData, 20);
-          if (smaData.length > 0) {
-            const smaSeries = (chart.current as any).addLineSeries({
-              color: indicator.color,
-              lineWidth: 1,
-              title: indicator.name,
-            });
-            smaSeries.setData(smaData);
-            indicator.series = smaSeries;
-          }
-        } else if (indicator.id === 'sma50') {
-          const smaData = calculateSMA(candlestickData, 50);
-          if (smaData.length > 0) {
-            const smaSeries = (chart.current as any).addLineSeries({
-              color: indicator.color,
-              lineWidth: 1,
-              title: indicator.name,
-            });
-            smaSeries.setData(smaData);
-            indicator.series = smaSeries;
-          }
-        } else if (indicator.id === 'ema20') {
-          const emaData = calculateEMA(candlestickData, 20);
-          if (emaData.length > 0) {
-            const emaSeries = (chart.current as any).addLineSeries({
-              color: indicator.color,
-              lineWidth: 1,
-              title: indicator.name,
-            });
-            emaSeries.setData(emaData);
-            indicator.series = emaSeries;
+      // Create main price series based on chart type
+      if (chartType === 'candlestick') {
+        candlestickSeries.current = (chart.current as any).addCandlestickSeries({
+          upColor: colors.upColor,
+          downColor: colors.downColor,
+          borderVisible: false,
+          wickUpColor: colors.upColor,
+          wickDownColor: colors.downColor,
+          priceFormat: {
+            type: 'price',
+            precision: 2,
+            minMove: 0.01,
+          },
+        });
+        candlestickSeries.current.setData(candlestickData);
+      } else if (chartType === 'line') {
+        lineSeries.current = (chart.current as any).addLineSeries({
+          color: colors.upColor,
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          crosshairMarkerRadius: 4,
+          priceFormat: {
+            type: 'price',
+            precision: 2,
+            minMove: 0.01,
+          },
+        });
+        const lineData: LineData[] = candlestickData.map(item => ({
+          time: item.time,
+          value: item.close
+        }));
+        lineSeries.current.setData(lineData);
+      } else if (chartType === 'area') {
+        areaSeries.current = (chart.current as any).addAreaSeries({
+          lineColor: colors.upColor,
+          topColor: `${colors.upColor}40`,
+          bottomColor: `${colors.upColor}00`,
+          lineWidth: 2,
+          crosshairMarkerVisible: true,
+          crosshairMarkerRadius: 4,
+          priceFormat: {
+            type: 'price',
+            precision: 2,
+            minMove: 0.01,
+          },
+        });
+        const areaData: LineData[] = candlestickData.map(item => ({
+          time: item.time,
+          value: item.close
+        }));
+        areaSeries.current.setData(areaData);
+      }
+
+      // Add volume series if enabled
+      if (showVolume && volumeData.length > 0) {
+        volumeSeries.current = (chart.current as any).addHistogramSeries({
+          color: colors.volumeUp,
+          priceFormat: {
+            type: 'volume',
+          },
+          priceScaleId: 'volume',
+          scaleMargins: {
+            top: 0.8,
+            bottom: 0,
+          },
+        });
+        volumeSeries.current.setData(volumeData);
+      }
+
+      // Add technical indicators
+      indicators.forEach(indicator => {
+        if (indicator.enabled) {
+          if (indicator.id === 'sma20') {
+            const smaData = calculateSMA(candlestickData, 20);
+            if (smaData.length > 0) {
+              const smaSeries = (chart.current as any).addLineSeries({
+                color: indicator.color,
+                lineWidth: 1,
+                title: indicator.name,
+              });
+              smaSeries.setData(smaData);
+              indicator.series = smaSeries;
+            }
+          } else if (indicator.id === 'sma50') {
+            const smaData = calculateSMA(candlestickData, 50);
+            if (smaData.length > 0) {
+              const smaSeries = (chart.current as any).addLineSeries({
+                color: indicator.color,
+                lineWidth: 1,
+                title: indicator.name,
+              });
+              smaSeries.setData(smaData);
+              indicator.series = smaSeries;
+            }
+          } else if (indicator.id === 'ema20') {
+            const emaData = calculateEMA(candlestickData, 20);
+            if (emaData.length > 0) {
+              const emaSeries = (chart.current as any).addLineSeries({
+                color: indicator.color,
+                lineWidth: 1,
+                title: indicator.name,
+              });
+              emaSeries.setData(emaData);
+              indicator.series = emaSeries;
+            }
           }
         }
-      }
-    });
+      });
 
-    // Fit content
-    setTimeout(() => {
-      chart.current?.timeScale().fitContent();
-    }, 100);
+      // Fit content
+      setTimeout(() => {
+        chart.current?.timeScale().fitContent();
+      }, 100);
+
+    } catch (error) {
+      console.error('Error updating chart data:', error);
+    }
 
   }, [candlestickData, volumeData, chartType, showVolume, indicators, colors]);
 
