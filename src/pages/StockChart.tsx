@@ -46,7 +46,7 @@ const TradingViewWidget: React.FC<{ symbol: string; theme: 'light' | 'dark' }> =
         "enable_publishing": false,
         "withdateranges": true,
         "range": "YTD",
-        "hide_side_toolbar": true,
+        "hide_side_toolbar": false,
         "allow_symbol_change": false,
         "details": false,
         "hotlist": false,
@@ -310,22 +310,7 @@ const StockChart: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex flex-1 min-h-0">
-        {/* Left Sidebar - Drawing Tools */}
-        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
-          {leftSidebarTools.map((tool, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              size="sm"
-              className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4" />
-            </Button>
-          ))}
-        </div>
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
