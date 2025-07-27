@@ -179,7 +179,7 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
 const Watchlist = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState("overview");
+  const [categoryFilter, setCategoryFilter] = useState("popular");
 
   // Fetch user's actual stocks from database
   const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
@@ -255,10 +255,10 @@ const Watchlist = () => {
       
        <div className="px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          {/* Category Filter Bar - Moved to Top */}
+          {/* My Watchlist Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-white">Market Overview</h1>
+              <h1 className="text-3xl font-bold text-white">My Watchlist</h1>
               <div className="flex items-center gap-3">
                 {pricesLoading && (
                   <div className="flex items-center gap-2 text-slate-400">
@@ -273,17 +273,30 @@ const Watchlist = () => {
             <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-1 overflow-x-auto">
               <div className="flex items-center gap-1 min-w-max">
                 <Button
-                  variant={categoryFilter === "overview" ? "default" : "ghost"}
+                  variant={categoryFilter === "popular" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setCategoryFilter("overview")}
+                  onClick={() => setCategoryFilter("popular")}
                   className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "overview" 
+                    categoryFilter === "popular" 
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
                 >
                   <BarChart className="w-4 h-4 mr-2" />
-                  Overview
+                  Popular
+                </Button>
+                <Button
+                  variant={categoryFilter === "my-stocks" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setCategoryFilter("my-stocks")}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                    categoryFilter === "my-stocks" 
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  My Stocks
                 </Button>
                 <Button
                   variant={categoryFilter === "stocks" ? "default" : "ghost"}
@@ -367,10 +380,14 @@ const Watchlist = () => {
             </div>
           </div>
 
-          {/* My Personal Watchlist Section */}
+          {/* Current Watchlist Content */}
           <div className="mb-16">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">My Personal Watchlist</h2>
+              <h2 className="text-2xl font-bold text-white">
+                {categoryFilter === "my-stocks" ? "My Stocks" : 
+                 categoryFilter === "popular" ? "Popular Stocks" : 
+                 categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}
+              </h2>
               <Link 
                 to="/my-stocks"
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -529,133 +546,115 @@ const Watchlist = () => {
         </div>
       </div>
 
-      {/* Biggest Movers Section */}
+      {/* Daily Movers - Top 5 Leaderboard Style */}
       <div className="max-w-7xl mx-auto mt-8 mb-8 px-4 sm:px-6">
-        <div className="mb-8">
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                  Biggest Movers
-                  {categoryFilter !== "overview" && (
-                    <span className="text-emerald-400 ml-2">
-                      - {categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}
-                    </span>
-                  )}
-                </h2>
-                <p className="text-slate-400 text-sm sm:text-base">
-                  Top 3 biggest gainers and losers in the selected category with the largest price movements today
-                </p>
-              </div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-white">Daily Movers</h2>
+            <span className="text-slate-400 text-sm flex items-center gap-1">
+              Today's biggest gainers and losers.
               <Button
                 onClick={() => refetch()}
                 disabled={moversLoading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-white p-1"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${moversLoading ? 'animate-spin' : ''}`} />
-                Refresh Data
+                <RefreshCw className={`w-3 h-3 ${moversLoading ? 'animate-spin' : ''}`} />
               </Button>
-            </div>
+            </span>
           </div>
-          
-          <div className="flex items-center gap-2 mt-3">
-            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
-              LIVE DATA
-            </Badge>
-            <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-400">
-              AI SENTIMENT
-            </Badge>
-            {moversData?.lastUpdated && (
-              <span className="text-slate-500 text-sm">
-                Last updated: {new Date(moversData.lastUpdated).toLocaleTimeString()}
-              </span>
-            )}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-slate-300 border-slate-600 hover:bg-slate-700"
+          >
+            View All
+          </Button>
         </div>
 
         {moversLoading && (
-          <div className="text-center py-12">
-            <div className="text-white text-lg mb-2">Analyzing comprehensive market data...</div>
-            <div className="text-slate-400 text-sm">Processing stock prices and sentiment analysis</div>
+          <div className="text-center py-8">
+            <div className="text-slate-400">Loading market data...</div>
           </div>
         )}
 
         {moversError && (
-          <div className="text-center py-12">
-            <div className="text-red-400 text-lg mb-2">Error loading data</div>
-            <div className="text-slate-400 text-sm">{moversError.message}</div>
+          <div className="text-center py-8">
+            <div className="text-red-400">{moversError.message}</div>
           </div>
         )}
 
         {moversData && !moversLoading && (
-          <>
-            {categoryFilter === "overview" || categoryFilter === "stocks" ? (
-              <>
-                {/* Top Gainers Section */}
-                {moversData.gainers.length > 0 && (
-                  <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <TrendingUp className="w-6 h-6 text-emerald-400" />
-                      <h3 className="text-2xl font-bold text-white">Top 3 Gainers</h3>
-                      <Badge className="bg-emerald-500 text-white">
-                        Ranked by % gain
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {moversData.gainers.map((stock, index) => (
-                        <MoverCard key={stock.symbol} stock={stock} isGainer={true} rank={index + 1} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Top Losers Section */}
-                {moversData.losers.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 mb-6">
-                      <TrendingDown className="w-6 h-6 text-red-400" />
-                      <h3 className="text-2xl font-bold text-white">Top 3 Losers</h3>
-                      <Badge className="bg-red-500 text-white">
-                        Ranked by % loss
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {moversData.losers.map((stock, index) => (
-                        <MoverCard key={stock.symbol} stock={stock} isGainer={false} rank={index + 1} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              /* Placeholder for other asset types */
-              <div className="text-center py-16">
-                <div className="max-w-md mx-auto">
-                  <div className="text-6xl mb-4">🚧</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
-                  <p className="text-slate-400">
-                    {categoryFilter === "crypto" && "Cryptocurrency movers will be available soon."}
-                    {categoryFilter === "indices" && "Index fund movers will be available soon."}
-                    {categoryFilter === "commodities" && "Commodities movers will be available soon."}
-                    {categoryFilter === "currencies" && "Currency pair movers will be available soon."}
-                    {categoryFilter === "etfs" && "ETF movers will be available soon."}
-                  </p>
-                  <p className="text-slate-500 text-sm mt-2">
-                    Currently showing stock market data only. More asset types coming in future updates.
-                  </p>
-                  <Link 
-                    to="/my-stocks"
-                    className="inline-flex items-center gap-2 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Stocks to Watchlist
-                  </Link>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top 5 Gainers */}
+            <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-lg font-semibold text-white">Top Gainers</h3>
               </div>
-            )}
-          </>
+              <div className="space-y-3">
+                {moversData.gainers.slice(0, 5).map((stock, index) => (
+                  <div key={stock.symbol} className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 bg-emerald-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <CompanyLogo 
+                          symbol={stock.symbol} 
+                          logoUrl={getLogoUrl(stock.symbol)} 
+                          size="sm" 
+                        />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{stock.symbol}</div>
+                        <div className="text-slate-400 text-sm truncate max-w-32">{stock.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-emerald-400 font-bold">+{stock.changePercent.toFixed(2)}%</div>
+                      <div className="text-slate-300 text-sm">${stock.price.toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top 5 Losers */}
+            <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingDown className="w-5 h-5 text-red-400" />
+                <h3 className="text-lg font-semibold text-white">Top Losers</h3>
+              </div>
+              <div className="space-y-3">
+                {moversData.losers.slice(0, 5).map((stock, index) => (
+                  <div key={stock.symbol} className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <CompanyLogo 
+                          symbol={stock.symbol} 
+                          logoUrl={getLogoUrl(stock.symbol)} 
+                          size="sm" 
+                        />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{stock.symbol}</div>
+                        <div className="text-slate-400 text-sm truncate max-w-32">{stock.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-red-400 font-bold">{stock.changePercent.toFixed(2)}%</div>
+                      <div className="text-slate-300 text-sm">${stock.price.toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
