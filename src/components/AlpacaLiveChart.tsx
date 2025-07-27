@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface AlpacaBar {
+  t: string; // timestamp
+  o: number; // open
+  h: number; // high
+  l: number; // low
+  c: number; // close
+  v: number; // volume
+}
 
 interface AlpacaTrade {
   T: string; // message type
@@ -11,83 +21,10 @@ interface AlpacaTrade {
   t: string; // timestamp
 }
 
-interface TradingViewWidgetProps {
-  symbol: string;
-  onPriceUpdate?: (price: number) => void;
-}
-
-// TradingView Widget Component
-const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({ symbol, onPriceUpdate }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Clear any existing widget
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-    }
-
-    // Create TradingView script
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => {
-      if ((window as any).TradingView && containerRef.current) {
-        widgetRef.current = new (window as any).TradingView.widget({
-          container_id: containerRef.current.id,
-          width: '100%',
-          height: 500,
-          symbol: `NASDAQ:${symbol}`,
-          interval: '1',
-          timezone: 'Etc/UTC',
-          theme: 'light',
-          style: '1',
-          locale: 'en',
-          enable_publishing: false,
-          allow_symbol_change: true,
-          details: true,
-          hotlist: true,
-          calendar: true,
-          studies: [
-            'RSI@tv-basicstudies',
-            'MASimple@tv-basicstudies'
-          ],
-          show_popup_button: true,
-          popup_width: '1000',
-          popup_height: '650',
-          no_referral_id: false,
-          onChartReady: () => {
-            console.log('TradingView chart is ready');
-          }
-        });
-      }
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [symbol]);
-
-  // Generate unique ID for each widget instance
-  const widgetId = `tradingview-widget-${symbol}-${Math.random().toString(36).substr(2, 9)}`;
-
-  return (
-    <div 
-      id={widgetId}
-      ref={containerRef}
-      className="w-full h-[500px] border border-gray-200 rounded-lg"
-    />
-  );
-};
-
 const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   
   const [isConnected, setIsConnected] = useState(false);
@@ -95,10 +32,91 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>('');
 
-  // Fetch current price from Alpaca
-  const fetchCurrentPrice = async () => {
+  // Initialize Lightweight Charts with Alpaca data
+  useEffect(() => {
+    console.log('Initializing Lightweight Chart for Alpaca data...');
+    
+    if (!chartContainerRef.current) {
+      console.error('Chart container not found');
+      return;
+    }
+
     try {
-      console.log('📊 Fetching current price for', symbol);
+      // Create chart using Lightweight Charts
+      const chart = createChart(chartContainerRef.current, {
+        width: chartContainerRef.current.clientWidth,
+        height: 500,
+        layout: {
+          background: { color: '#ffffff' },
+          textColor: '#333',
+        },
+        grid: {
+          vertLines: { color: '#e6e6e6' },
+          horzLines: { color: '#e6e6e6' },
+        },
+        crosshair: {
+          mode: 1,
+        },
+        rightPriceScale: {
+          borderColor: '#cccccc',
+        },
+        timeScale: {
+          borderColor: '#cccccc',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      console.log('Lightweight Chart initialized');
+
+      // Add candlestick series for Alpaca data
+      const candleSeries = (chart as any).addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+      
+      console.log('Candlestick series created for Alpaca data');
+
+      candlestickSeriesRef.current = candleSeries;
+      chartRef.current = chart;
+
+      // Handle resize
+      const handleResize = () => {
+        if (chartContainerRef.current && chartRef.current) {
+          chartRef.current.applyOptions({
+            width: chartContainerRef.current.clientWidth,
+          });
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        console.log('Cleaning up Lightweight Chart...');
+        window.removeEventListener('resize', handleResize);
+        if (chartRef.current) {
+          chartRef.current.remove();
+        }
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+
+    } catch (error) {
+      console.error('Chart initialization failed:', error);
+      setIsLoading(false);
+      toast.error('Chart initialization failed');
+    }
+  }, []);
+
+  // Fetch historical data from Alpaca
+  const fetchHistoricalData = async () => {
+    try {
+      console.log('📊 Fetching Alpaca historical data for', symbol);
+      setIsLoading(true);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -107,52 +125,83 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('stock-price', {
-        body: { symbols: [symbol] }
+      console.log('✅ Session found, calling Alpaca historical data edge function...');
+
+      // Call our edge function to get Alpaca historical data
+      const { data, error } = await supabase.functions.invoke('alpaca-historical-data', {
+        body: { 
+          symbol,
+          timeframe: '1Min',
+          limit: 1000
+        }
       });
 
+      console.log('📊 Alpaca edge function response:', { data, error });
+
       if (error) {
-        console.error('❌ Error fetching price:', error);
+        console.error('❌ Alpaca edge function error:', error);
         throw error;
       }
 
-      if (data && Array.isArray(data) && data.length > 0) {
-        const stockData = data[0];
-        setCurrentPrice(stockData.price || 0);
-        console.log('Current price set to:', stockData.price);
+      if (data?.bars && Array.isArray(data.bars)) {
+        console.log('Alpaca historical data loaded:', data.bars.length, 'bars');
+        
+        const formatted: CandlestickData[] = data.bars.map((bar: AlpacaBar) => ({
+          time: Math.floor(new Date(bar.t).getTime() / 1000) as any,
+          open: bar.o,
+          high: bar.h,
+          low: bar.l,
+          close: bar.c,
+        }));
+
+        console.log('Alpaca data formatted for chart:', formatted.length, 'candles');
+
+        if (candlestickSeriesRef.current && formatted.length > 0) {
+          console.log('Setting chart data with Alpaca bars:', formatted.length);
+          candlestickSeriesRef.current.setData(formatted);
+          
+          const latestPrice = formatted[formatted.length - 1].close;
+          setCurrentPrice(latestPrice);
+          console.log('Current price from Alpaca data:', latestPrice);
+        } else {
+          console.warn('No series or no Alpaca data - Series:', !!candlestickSeriesRef.current, 'Data length:', formatted.length);
+        }
+      } else {
+        console.error('❌ Invalid Alpaca data format received:', data);
+        throw new Error('Invalid Alpaca data format received');
       }
     } catch (error) {
-      console.error('❌ Error fetching current price:', error);
-      toast.error('Failed to fetch current price: ' + (error as any).message);
+      console.error('❌ Error fetching Alpaca historical data:', error);
+      toast.error('Failed to fetch Alpaca data: ' + (error as any).message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Connect to Alpaca WebSocket for real-time price updates
+  // Connect to Alpaca WebSocket for real-time updates
   const connectWebSocket = async () => {
     try {
-      console.log('Starting WebSocket connection...');
+      console.log('Starting Alpaca WebSocket connection...');
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.error('No session for WebSocket');
+        console.error('No session for Alpaca WebSocket');
         return;
       }
 
-      // Use our Supabase edge function WebSocket endpoint
+      // Use our Supabase edge function WebSocket endpoint for Alpaca
       const wsUrl = `wss://gjtswpgjrznbrnmvmpno.supabase.co/functions/v1/alpaca-stream`;
       
-      console.log('Connecting to WebSocket:', wsUrl);
+      console.log('Connecting to Alpaca WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('Alpaca WebSocket connected');
         setIsConnected(true);
-        toast.success('Connected to live data feed');
+        toast.success('Connected to Alpaca live data feed');
         
-        // Subscribe to trades for the symbol after connection
-        console.log('Subscribing to symbol:', symbol);
+        // Subscribe to Alpaca trades for the symbol
+        console.log('Subscribing to Alpaca symbol:', symbol);
         const subscribeMessage = { 
           type: 'subscribe',
           symbols: [symbol]
@@ -162,55 +211,80 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
       ws.onmessage = (event) => {
         try {
-          console.log('WebSocket message received:', event.data);
+          console.log('Alpaca WebSocket message received:', event.data);
           const data = JSON.parse(event.data);
           
-          // Handle different message types from Alpaca
+          // Handle Alpaca trade messages
           if (Array.isArray(data)) {
-            // Handle array of trade messages
             data.forEach(msg => {
               if (msg.T === 't' && msg.S === symbol) {
                 const trade = msg;
                 const price = trade.p;
-                console.log('Trade update:', { symbol, price });
+                const timestamp = Math.floor(new Date(trade.t).getTime() / 1000);
+
+                console.log('Alpaca trade update:', { symbol, price, timestamp });
+
+                // Update chart with new Alpaca trade price
+                if (candlestickSeriesRef.current) {
+                  candlestickSeriesRef.current.update({
+                    time: timestamp as any,
+                    close: price,
+                    open: currentPrice || price,
+                    high: Math.max(currentPrice || price, price),
+                    low: Math.min(currentPrice || price, price),
+                  });
+                }
+
                 setCurrentPrice(price);
                 setLastUpdate(new Date().toLocaleTimeString());
               }
             });
           } else if (data.type === 'trade' && data.symbol === symbol) {
-            // Handle single trade message
             const price = data.data.p;
-            console.log('Trade update:', { symbol, price });
+            const timestamp = Math.floor(new Date(data.data.t).getTime() / 1000);
+
+            console.log('Alpaca single trade update:', { symbol, price, timestamp });
+
+            if (candlestickSeriesRef.current) {
+              candlestickSeriesRef.current.update({
+                time: timestamp as any,
+                close: price,
+                open: currentPrice || price,
+                high: Math.max(currentPrice || price, price),
+                low: Math.min(currentPrice || price, price),
+              });
+            }
+
             setCurrentPrice(price);
             setLastUpdate(new Date().toLocaleTimeString());
           } else {
-            console.log('Other WebSocket data:', data);
+            console.log('Other Alpaca WebSocket data:', data);
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error, event.data);
+          console.error('Error parsing Alpaca WebSocket message:', error, event.data);
         }
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
+        console.log('Alpaca WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
-        toast.info('Disconnected from live data feed');
+        toast.info('Disconnected from Alpaca live data feed');
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('Alpaca WebSocket error:', error);
         setIsConnected(false);
-        toast.error('WebSocket connection error');
+        toast.error('Alpaca WebSocket connection error');
       };
 
       wsRef.current = ws;
     } catch (error) {
-      console.error('Error setting up WebSocket:', error);
-      toast.error('Failed to connect to live data');
+      console.error('Error setting up Alpaca WebSocket:', error);
+      toast.error('Failed to connect to Alpaca live data');
     }
   };
 
-  // Place buy/sell order
+  // Place buy/sell order via Alpaca
   const placeOrder = async (side: 'buy' | 'sell') => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -218,6 +292,8 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         toast.error('Please log in to place orders');
         return;
       }
+
+      console.log(`Placing ${side} order via Alpaca for ${symbol}`);
 
       const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
         body: {
@@ -231,14 +307,15 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
       if (error) throw error;
 
-      toast.success(`${side.toUpperCase()} order placed successfully for ${symbol}`);
+      toast.success(`${side.toUpperCase()} order placed via Alpaca for ${symbol}`);
+      console.log('Alpaca order successful:', data);
     } catch (error: any) {
-      console.error('Error placing order:', error);
-      toast.error(`Failed to place ${side} order: ${error.message}`);
+      console.error('Error placing Alpaca order:', error);
+      toast.error(`Failed to place ${side} order via Alpaca: ${error.message}`);
     }
   };
 
-  // Load data on component mount and cleanup on unmount
+  // Load Alpaca data on component mount
   useEffect(() => {
     // Clean up any existing WebSocket connections first
     if (wsRef.current) {
@@ -246,12 +323,12 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       wsRef.current = null;
     }
     
-    fetchCurrentPrice();
+    fetchHistoricalData();
     connectWebSocket();
     
     // Cleanup on component unmount
     return () => {
-      console.log('Component unmounting - cleaning up WebSocket');
+      console.log('Component unmounting - cleaning up Alpaca WebSocket');
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
@@ -262,67 +339,67 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
   return (
     <div className="w-full space-y-6">
-      {/* Header with Price and Status */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
+      {/* Header with Alpaca Price and Status */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
         <div className="flex items-center space-x-4">
-          <h2 className="text-3xl font-bold text-gray-800">{symbol} Live Trading</h2>
+          <h2 className="text-3xl font-bold text-gray-800">{symbol} Alpaca Live Trading</h2>
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
             <span className="text-sm text-gray-600">
-              {isConnected ? 'Live Feed Active' : 'Disconnected'}
+              {isConnected ? 'Alpaca Live Feed Active' : 'Disconnected from Alpaca'}
             </span>
           </div>
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-green-600">${currentPrice.toFixed(2)}</div>
           <div className="text-sm text-gray-600">
-            {lastUpdate ? `Last Update: ${lastUpdate}` : 'Current Price'}
+            {lastUpdate ? `Alpaca Update: ${lastUpdate}` : 'Alpaca Current Price'}
           </div>
         </div>
       </div>
 
-      {/* TradingView Chart */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      {/* Lightweight Chart with Alpaca Data */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+        <div 
+          ref={chartContainerRef} 
+          className="w-full h-[500px]"
+        />
         {isLoading && (
-          <div className="flex items-center justify-center h-[500px] bg-gray-50">
-            <div className="text-lg text-gray-600">Loading TradingView chart...</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+            <div className="text-lg text-gray-600">Loading Alpaca chart data...</div>
           </div>
         )}
-        <TradingViewWidget 
-          symbol={symbol} 
-          onPriceUpdate={setCurrentPrice}
-        />
       </div>
 
-      {/* Trading Controls */}
+      {/* Alpaca Trading Controls */}
       <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h3 className="text-xl font-semibold mb-4 text-center">Quick Trading</h3>
+        <h3 className="text-xl font-semibold mb-4 text-center">Alpaca Quick Trading</h3>
         <div className="flex justify-center space-x-6">
           <Button
             onClick={() => placeOrder('buy')}
             className="bg-green-600 hover:bg-green-700 text-white px-12 py-3 text-lg"
             disabled={!isConnected || isLoading}
           >
-            🟢 BUY {symbol}
+            🟢 BUY {symbol} via Alpaca
           </Button>
           <Button
             onClick={() => placeOrder('sell')}
             className="bg-red-600 hover:bg-red-700 text-white px-12 py-3 text-lg"
             disabled={!isConnected || isLoading}
           >
-            🔴 SELL {symbol}
+            🔴 SELL {symbol} via Alpaca
           </Button>
         </div>
         <p className="text-center text-sm text-gray-500 mt-3">
-          Market orders • 1 share • Alpaca Sandbox Mode
+          Market orders • 1 share • Alpaca Sandbox Mode • Real Alpaca Data
         </p>
       </div>
 
-      {/* Info Banner */}
-      <div className="text-center text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-        <p className="font-semibold">📊 Live Trading Dashboard</p>
-        <p>TradingView Professional Charts • Alpaca Markets Integration • Real-time Data Feed</p>
-        <p className="text-xs mt-1">⚠️ Sandbox Environment - No Real Money Involved</p>
+      {/* Alpaca Info Banner */}
+      <div className="text-center text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+        <p className="font-semibold">📊 Pure Alpaca Trading Dashboard</p>
+        <p>Lightweight Charts • 100% Alpaca Markets Data • Real-time Alpaca Feed</p>
+        <p className="text-xs mt-1">⚠️ Alpaca Sandbox Environment - No Real Money Involved</p>
       </div>
     </div>
   );
