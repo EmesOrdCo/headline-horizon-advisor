@@ -30,6 +30,7 @@ import StockChart from "./pages/StockChart";
 import StockAnalysis from "./pages/StockAnalysis";
 import StockData from "./pages/StockData";
 import AdvancedTradingView from "./pages/AdvancedTradingView";
+import TradingView from "./pages/TradingView";
 import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -216,14 +217,30 @@ const App = () => (
                   </ProtectedRoute>
                 }
                 />
-              <Route
-                path="/advanced-trading-view"
-                element={
-                  <ProtectedRoute>
-                    <AdvancedTradingView />
-                  </ProtectedRoute>
-                }
-                />
+               <Route
+                 path="/advanced-trading-view"
+                 element={
+                   <ProtectedRoute>
+                     <AdvancedTradingView />
+                   </ProtectedRoute>
+                 }
+                 />
+               <Route
+                 path="/trading-view/:symbol?"
+                 element={
+                   <ProtectedRoute>
+                     <TradingView />
+                   </ProtectedRoute>
+                 }
+                 />
+               <Route
+                 path="/trading-view-demo/:symbol?"
+                 element={
+                   <ProtectedRoute>
+                     <TradingView isDemo={true} />
+                   </ProtectedRoute>
+                 }
+                 />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
