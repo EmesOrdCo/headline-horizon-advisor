@@ -1,19 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// Store WebSocket connections
-const connections = new Map<string, WebSocket>()
-
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+  console.log('alpaca-websocket function called')
+  
   // Handle WebSocket upgrade
   if (req.headers.get("upgrade") !== "websocket") {
     return new Response("Expected websocket", { status: 400 })
@@ -26,6 +15,7 @@ serve(async (req) => {
   const alpacaSecret = Deno.env.get('ALPACA_SECRET_KEY')
 
   if (!alpacaApiKey || !alpacaSecret) {
+    console.error('Missing Alpaca credentials')
     socket.close(1000, "Alpaca API credentials not configured")
     return response
   }
@@ -33,7 +23,7 @@ serve(async (req) => {
   let alpacaWs: WebSocket | null = null
 
   socket.onopen = () => {
-    console.log("Client connected")
+    console.log("Client connected to WebSocket")
     
     // Connect to Alpaca WebSocket
     alpacaWs = new WebSocket("wss://stream.data.sandbox.alpaca.markets/v2/stocks")
@@ -49,12 +39,16 @@ serve(async (req) => {
     }
 
     alpacaWs.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log("Alpaca message:", data)
-      
-      // Forward data to client
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(data))
+      try {
+        const data = JSON.parse(event.data)
+        console.log("Alpaca message:", data)
+        
+        // Forward data to client
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(data))
+        }
+      } catch (error) {
+        console.error("Error parsing Alpaca message:", error)
       }
     }
 
@@ -79,6 +73,7 @@ serve(async (req) => {
           trades: [message.symbol],
           quotes: [message.symbol]
         }))
+        console.log(`Subscribed to ${message.symbol}`)
       }
     } catch (error) {
       console.error("Error parsing client message:", error)

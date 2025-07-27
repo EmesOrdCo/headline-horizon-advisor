@@ -31,6 +31,7 @@ import StockAnalysis from "./pages/StockAnalysis";
 import StockData from "./pages/StockData";
 import AdvancedTradingView from "./pages/AdvancedTradingView";
 import TradingView from "./pages/TradingView";
+import AlpacaLiveChartDemo from "./pages/AlpacaLiveChartDemo";
 import Wallet from "./pages/Wallet";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -238,6 +239,14 @@ const App = () => (
                  element={
                    <ProtectedRoute>
                      <TradingView isDemo={true} />
+                   </ProtectedRoute>
+                 }
+                 />
+               <Route
+                 path="/alpaca-live-chart/:symbol?"
+                 element={
+                   <ProtectedRoute>
+                     <AlpacaLiveChartDemo />
                    </ProtectedRoute>
                  }
                  />

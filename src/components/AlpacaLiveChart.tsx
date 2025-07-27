@@ -147,15 +147,16 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Call our edge function to establish WebSocket connection
-      const { data, error } = await supabase.functions.invoke('alpaca-websocket', {
-        body: { symbol, action: 'connect' }
-      });
-
-      if (error) throw error;
-
-      // Set up WebSocket connection to our edge function
-      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/functions/v1/alpaca-stream`;
+      // Get the WebSocket URL for our edge function
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.hostname;
+      const port = window.location.port ? `:${window.location.port}` : '';
+      
+      // For production Supabase projects, use the correct format
+      const projectId = 'gjtswpgjrznbrnmvmpno'; // Your Supabase project ID
+      const wsUrl = `${protocol}//${projectId}.supabase.co/functions/v1/alpaca-websocket`;
+      
+      console.log('Connecting to WebSocket:', wsUrl);
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

@@ -285,6 +285,14 @@ const StockChart: React.FC = () => {
             >
               Data
             </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-sm px-3 py-1 text-slate-300 hover:text-white hover:bg-slate-700"
+              onClick={() => navigate(`/alpaca-live-chart/${activeSymbol}`)}
+            >
+              Alpaca Live
+            </Button>
           </div>
         </div>
       </div>

@@ -6,6 +6,8 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('alpaca-place-order function called')
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -13,17 +15,18 @@ serve(async (req) => {
 
   try {
     const { symbol, qty, side, type, time_in_force } = await req.json()
+    console.log(`Placing ${side} order for ${qty} shares of ${symbol}`)
 
-    // Get Alpaca API credentials and account ID
-    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY')
-    const alpacaSecret = Deno.env.get('ALPACA_SECRET_KEY')
-    const alpacaAccountId = Deno.env.get('ALPACA_ACCOUNT_ID')
+    // Get Alpaca API credentials - using trader credentials for orders
+    const alpacaApiKey = Deno.env.get('ALPACA_TRADER_API_KEY') || Deno.env.get('ALPACA_API_KEY')
+    const alpacaSecret = Deno.env.get('ALPACA_TRADER_SECRET_KEY') || Deno.env.get('ALPACA_SECRET_KEY')
 
-    if (!alpacaApiKey || !alpacaSecret || !alpacaAccountId) {
-      throw new Error('Alpaca API credentials or account ID not configured')
+    if (!alpacaApiKey || !alpacaSecret) {
+      console.error('Missing Alpaca trader credentials')
+      throw new Error('Alpaca trader API credentials not configured')
     }
 
-    // Place order via Alpaca Broker API
+    // For sandbox/paper trading, we'll use the trading API directly
     const orderData = {
       symbol,
       qty: parseInt(qty),
@@ -32,7 +35,10 @@ serve(async (req) => {
       time_in_force
     }
 
-    const url = `https://broker-api.sandbox.alpaca.markets/v1/trading/accounts/${alpacaAccountId}/orders`
+    console.log('Order data:', orderData)
+
+    // Use the trading API for paper trading
+    const url = 'https://paper-api.alpaca.markets/v2/orders'
     
     const response = await fetch(url, {
       method: 'POST',
@@ -44,12 +50,15 @@ serve(async (req) => {
       body: JSON.stringify(orderData)
     })
 
+    const responseText = await response.text()
+    console.log('Alpaca response:', response.status, responseText)
+
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Alpaca Broker API error: ${response.status} ${errorText}`)
+      throw new Error(`Alpaca Trading API error: ${response.status} ${responseText}`)
     }
 
-    const data = await response.json()
+    const data = JSON.parse(responseText)
+    console.log('Order placed successfully:', data)
 
     return new Response(
       JSON.stringify(data),

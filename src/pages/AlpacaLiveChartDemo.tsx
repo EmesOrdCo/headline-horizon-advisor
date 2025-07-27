@@ -1,10 +1,13 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import AlpacaLiveChart from '@/components/AlpacaLiveChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Info } from 'lucide-react';
 
 const AlpacaLiveChartDemo: React.FC = () => {
+  const { symbol } = useParams<{ symbol: string }>();
+  const currentSymbol = symbol || 'AAPL';
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div className="text-center space-y-4">
@@ -58,7 +61,7 @@ const AlpacaLiveChartDemo: React.FC = () => {
       </Card>
 
       {/* Live Chart Component */}
-      <AlpacaLiveChart symbol="AAPL" />
+      <AlpacaLiveChart symbol={currentSymbol} />
 
       <Card>
         <CardHeader>
