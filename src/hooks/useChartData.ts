@@ -1,220 +1,344 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChartData, OHLCData, TimeFrame } from '@/types/chart';
+import { useStockPrices } from '@/hooks/useStockPrices';
+import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { supabase } from '@/integrations/supabase/client';
+import { CandlestickData, HistogramData, UTCTimestamp } from 'lightweight-charts';
 
-const generateMockData = (symbol: string, timeFrame: TimeFrame, count: number = 1000): OHLCData[] => {
-  const data: OHLCData[] = [];
-  let basePrice = 100 + Math.random() * 100;
-  const now = Date.now();
-  
-  const timeFrameMs = {
-    '1m': 60 * 1000,
-    '5m': 5 * 60 * 1000,
-    '15m': 15 * 60 * 1000,
-    '1h': 60 * 60 * 1000,
-    '4h': 4 * 60 * 60 * 1000,
-    '1d': 24 * 60 * 60 * 1000,
-    '1w': 7 * 24 * 60 * 60 * 1000
-  };
-  
-  const interval = timeFrameMs[timeFrame];
-  
-  for (let i = count - 1; i >= 0; i--) {
-    const timestamp = now - i * interval;
-    
-    // Generate realistic OHLC data with some volatility
-    const volatility = 0.02;
-    const change = (Math.random() - 0.5) * volatility * basePrice;
-    const open = basePrice;
-    
-    const high = open + Math.random() * Math.abs(change) * 2;
-    const low = open - Math.random() * Math.abs(change) * 2;
-    const close = open + change;
-    
-    // Ensure OHLC relationships are maintained
-    const realHigh = Math.max(open, close, high);
-    const realLow = Math.min(open, close, low);
-    
-    const volume = Math.floor(Math.random() * 1000000) + 100000;
-    
-    data.push({
-      timestamp,
-      open,
-      high: realHigh,
-      low: realLow,
-      close,
-      volume
-    });
-    
-    basePrice = close;
-  }
-  
-  return data;
+interface UseChartDataProps {
+  symbol: string;
+  timeframe: string;
+  isDemo?: boolean;
+}
+
+interface HistoricalData {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+// Overload for SimpleLightweightChart (object params)
+export function useChartData(params: UseChartDataProps): {
+  candlestickData: CandlestickData[];
+  volumeData: HistogramData[];
+  currentPrice: number | null;
+  priceChange: number;
+  priceChangePercent: number;
+  isLoading: boolean;
+  isConnected: boolean;
+  refresh: () => Promise<void>;
 };
 
-export const useChartData = (symbol: string, timeFrame: TimeFrame) => {
-  const [chartData, setChartData] = useState<ChartData>({
-    symbol,
-    data: [],
-    lastUpdate: Date.now()
-  });
+// Overload for TradingChart (separate params)
+export function useChartData(symbol: string, timeframe: string): {
+  chartData: {
+    symbol: string;
+    data: Array<{
+      timestamp: number;
+      open: number;
+      high: number;
+      low: number;
+      close: number;
+      volume: number;
+    }>;
+    lastUpdate: number;
+  };
+  isLoading: boolean;
+};
+
+export function useChartData(
+  symbolOrParams: string | UseChartDataProps, 
+  timeframe?: string
+): any {
+  // Determine which interface is being used
+  const isObjectParam = typeof symbolOrParams === 'object';
+  const symbol = isObjectParam ? symbolOrParams.symbol : symbolOrParams;
+  const tf = isObjectParam ? symbolOrParams.timeframe : timeframe || '1h';
+  const isDemo = isObjectParam ? symbolOrParams.isDemo || false : false;
+  const [candlestickData, setCandlestickData] = useState<CandlestickData[]>([]);
+  const [volumeData, setVolumeData] = useState<HistogramData[]>([]);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [priceChange, setPriceChange] = useState<number>(0);
+  const [priceChangePercent, setPriceChangePercent] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPriceRef = useRef<number | null>(null);
 
-  const loadInitialData = useCallback(async () => {
-    setIsLoading(true);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+  // Fetch current stock price
+  const { data: stockPrices } = useStockPrices([symbol]);
+  
+  // Real-time data stream
+  const { streamData, isConnected } = useAlpacaStreamSingleton({
+    symbols: [symbol],
+    enabled: !isDemo
+  });
+
+  // Fetch historical data
+  const fetchHistoricalData = useCallback(async () => {
+    if (isDemo) {
+      // Generate realistic demo data
+      const generateDemoData = (): { candlestickData: CandlestickData[], volumeData: HistogramData[] } => {
+        const candlestickData: CandlestickData[] = [];
+        const volumeData: HistogramData[] = [];
+        const basePrice = 213.95; // AAPL current price
+        const baseVolume = 50000000; // Realistic volume
+        
+        for (let i = 0; i < 100; i++) {
+          const time = (Math.floor(Date.now() / 1000) - (100 - i) * 3600) as UTCTimestamp;
+          const priceVariation = (Math.random() - 0.5) * 10;
+          const open = basePrice + priceVariation + (i * 0.1);
+          const close = open + (Math.random() - 0.5) * 5;
+          const high = Math.max(open, close) + Math.random() * 3;
+          const low = Math.min(open, close) - Math.random() * 3;
+          const volume = baseVolume + (Math.random() - 0.5) * baseVolume * 0.5;
+          
+          candlestickData.push({
+            time,
+            open: Number(open.toFixed(2)),
+            high: Number(high.toFixed(2)),
+            low: Number(low.toFixed(2)),
+            close: Number(close.toFixed(2))
+          });
+
+          volumeData.push({
+            time,
+            value: Math.floor(volume),
+            color: close > open ? '#10b981' : '#ef4444'
+          });
+        }
+        
+        return { candlestickData, volumeData };
+      };
+
+      const demoData = generateDemoData();
+      setCandlestickData(demoData.candlestickData);
+      setVolumeData(demoData.volumeData);
       
-      const mockData = generateMockData(symbol, timeFrame);
+      if (demoData.candlestickData.length > 0) {
+        const lastCandle = demoData.candlestickData[demoData.candlestickData.length - 1];
+        setCurrentPrice(lastCandle.close);
+        lastPriceRef.current = lastCandle.close;
+        
+        if (demoData.candlestickData.length > 1) {
+          const prevCandle = demoData.candlestickData[demoData.candlestickData.length - 2];
+          const change = lastCandle.close - prevCandle.close;
+          const changePercent = (change / prevCandle.close) * 100;
+          setPriceChange(change);
+          setPriceChangePercent(changePercent);
+        }
+      }
       
-      setChartData({
-        symbol,
-        data: mockData,
-        lastUpdate: Date.now()
-      });
-    } catch (error) {
-      console.error('Failed to load chart data:', error);
-    } finally {
       setIsLoading(false);
-    }
-  }, [symbol, timeFrame]);
-
-  const connectWebSocket = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
 
     try {
-      // In a real implementation, this would connect to your WebSocket server
-      // For demo purposes, we'll simulate real-time updates
-      const simulateRealTimeUpdates = () => {
-        setInterval(() => {
-          setChartData(prevData => {
-            if (prevData.data.length === 0) return prevData;
+      console.log(`Fetching historical data for ${symbol} with timeframe ${timeframe}`);
+      
+      // Call historical prices edge function
+      const { data, error } = await supabase.functions.invoke('historical-prices', {
+        body: { 
+          symbol, 
+          timeframe,
+          limit: 100 
+        },
+      });
+
+      if (error) {
+        console.error('Error fetching historical data:', error);
+        throw error;
+      }
+
+      if (data && data.bars && Array.isArray(data.bars)) {
+        console.log(`Received ${data.bars.length} historical bars for ${symbol}`);
+        
+        const processedCandlestickData: CandlestickData[] = data.bars.map((bar: any) => ({
+          time: Math.floor(new Date(bar.timestamp || bar.t).getTime() / 1000) as UTCTimestamp,
+          open: Number(bar.open || bar.o),
+          high: Number(bar.high || bar.h),
+          low: Number(bar.low || bar.l),
+          close: Number(bar.close || bar.c)
+        }));
+
+        const processedVolumeData: HistogramData[] = data.bars.map((bar: any) => ({
+          time: Math.floor(new Date(bar.timestamp || bar.t).getTime() / 1000) as UTCTimestamp,
+          value: Number(bar.volume || bar.v),
+          color: (bar.close || bar.c) > (bar.open || bar.o) ? '#10b981' : '#ef4444'
+        }));
+
+        setCandlestickData(processedCandlestickData);
+        setVolumeData(processedVolumeData);
+
+        if (processedCandlestickData.length > 0) {
+          const lastCandle = processedCandlestickData[processedCandlestickData.length - 1];
+          setCurrentPrice(lastCandle.close);
+          lastPriceRef.current = lastCandle.close;
+          
+          if (processedCandlestickData.length > 1) {
+            const prevCandle = processedCandlestickData[processedCandlestickData.length - 2];
+            const change = lastCandle.close - prevCandle.close;
+            const changePercent = (change / prevCandle.close) * 100;
+            setPriceChange(change);
+            setPriceChangePercent(changePercent);
+          }
+        }
+      } else {
+        console.warn('No historical data received for', symbol);
+        // Fall back to demo data structure with current price
+        if (stockPrices && stockPrices.length > 0) {
+          const currentStock = stockPrices.find(s => s.symbol === symbol);
+          if (currentStock) {
+            const basePrice = currentStock.price;
+            const demoData: CandlestickData[] = [];
+            const demoVolume: HistogramData[] = [];
             
-            const lastCandle = prevData.data[prevData.data.length - 1];
-            const now = Date.now();
+            for (let i = 0; i < 50; i++) {
+              const time = (Math.floor(Date.now() / 1000) - (50 - i) * 3600) as UTCTimestamp;
+              const priceVariation = (Math.random() - 0.5) * 5;
+              const open = basePrice + priceVariation;
+              const close = open + (Math.random() - 0.5) * 2;
+              const high = Math.max(open, close) + Math.random() * 1;
+              const low = Math.min(open, close) - Math.random() * 1;
+              
+              demoData.push({
+                time,
+                open: Number(open.toFixed(2)),
+                high: Number(high.toFixed(2)),
+                low: Number(low.toFixed(2)),
+                close: Number(close.toFixed(2))
+              });
+
+              demoVolume.push({
+                time,
+                value: Math.floor(Math.random() * 1000000) + 500000,
+                color: close > open ? '#10b981' : '#ef4444'
+              });
+            }
             
-            // Update the last candle or add a new one
-            const timeDiff = now - lastCandle.timestamp;
-            const timeFrameMs = {
-              '1m': 60 * 1000,
-              '5m': 5 * 60 * 1000,
-              '15m': 15 * 60 * 1000,
-              '1h': 60 * 60 * 1000,
-              '4h': 4 * 60 * 60 * 1000,
-              '1d': 24 * 60 * 60 * 1000,
-              '1w': 7 * 24 * 60 * 60 * 1000
+            setCandlestickData(demoData);
+            setVolumeData(demoVolume);
+            setCurrentPrice(basePrice);
+            lastPriceRef.current = basePrice;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchHistoricalData:', error);
+      // Fall back to basic demo data
+      const fallbackData: CandlestickData[] = [{
+        time: Math.floor(Date.now() / 1000) as UTCTimestamp,
+        open: 200,
+        high: 205,
+        low: 195,
+        close: 202
+      }];
+      setCandlestickData(fallbackData);
+      setCurrentPrice(202);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [symbol, tf, isDemo, stockPrices]);
+
+  // Update with real-time data
+  useEffect(() => {
+    if (!isDemo && streamData && streamData[symbol]) {
+      const liveData = streamData[symbol];
+      console.log('📊 Updating chart with live data:', liveData);
+
+      if (liveData.price && liveData.price > 0) {
+        setCurrentPrice(liveData.price);
+        
+        // Calculate price change if we have a previous price
+        if (lastPriceRef.current !== null) {
+          const change = liveData.price - lastPriceRef.current;
+          const changePercent = (change / lastPriceRef.current) * 100;
+          setPriceChange(change);
+          setPriceChangePercent(changePercent);
+        }
+
+        // Update the last candlestick with new price data
+        setCandlestickData(prev => {
+          if (prev.length === 0) return prev;
+          
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          const lastCandle = updated[lastIndex];
+          
+          // Update the last candle with new price
+          updated[lastIndex] = {
+            ...lastCandle,
+            close: liveData.price,
+            high: Math.max(lastCandle.high, liveData.price),
+            low: Math.min(lastCandle.low, liveData.price)
+          };
+          
+          return updated;
+        });
+
+        // Update volume data if available
+        if (liveData.volume) {
+          setVolumeData(prev => {
+            if (prev.length === 0) return prev;
+            
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              value: liveData.volume,
+              color: liveData.price > (candlestickData[lastIndex]?.open || liveData.price) ? '#10b981' : '#ef4444'
             };
             
-            const interval = timeFrameMs[timeFrame];
-            
-            if (timeDiff >= interval) {
-              // Create new candle
-              const change = (Math.random() - 0.5) * 0.01 * lastCandle.close;
-              const newCandle: OHLCData = {
-                timestamp: lastCandle.timestamp + interval,
-                open: lastCandle.close,
-                high: lastCandle.close + Math.random() * Math.abs(change),
-                low: lastCandle.close - Math.random() * Math.abs(change),
-                close: lastCandle.close + change,
-                volume: Math.floor(Math.random() * 1000000) + 100000
-              };
-              
-              // Ensure OHLC relationships
-              newCandle.high = Math.max(newCandle.open, newCandle.close, newCandle.high);
-              newCandle.low = Math.min(newCandle.open, newCandle.close, newCandle.low);
-              
-              return {
-                ...prevData,
-                data: [...prevData.data, newCandle],
-                lastUpdate: now
-              };
-            } else {
-              // Update current candle
-              const change = (Math.random() - 0.5) * 0.005 * lastCandle.close;
-              const updatedCandle: OHLCData = {
-                ...lastCandle,
-                close: lastCandle.close + change,
-                high: Math.max(lastCandle.high, lastCandle.close + change),
-                low: Math.min(lastCandle.low, lastCandle.close + change),
-                volume: lastCandle.volume + Math.floor(Math.random() * 10000)
-              };
-              
-              const newData = [...prevData.data];
-              newData[newData.length - 1] = updatedCandle;
-              
-              return {
-                ...prevData,
-                data: newData,
-                lastUpdate: now
-              };
-            }
+            return updated;
           });
-        }, 1000); // Update every second
-      };
-      
-      simulateRealTimeUpdates();
-      
-    } catch (error) {
-      console.error('WebSocket connection failed:', error);
-      
-      // Retry connection after 5 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, 5000);
+        }
+      }
     }
-  }, [timeFrame]);
+  }, [streamData, symbol, isDemo, candlestickData]);
 
-  const addDataPoint = useCallback((newData: OHLCData) => {
-    setChartData(prevData => ({
-      ...prevData,
-      data: [...prevData.data, newData],
-      lastUpdate: Date.now()
-    }));
-  }, []);
-
-  const updateLastDataPoint = useCallback((updatedData: Partial<OHLCData>) => {
-    setChartData(prevData => {
-      if (prevData.data.length === 0) return prevData;
-      
-      const newData = [...prevData.data];
-      const lastIndex = newData.length - 1;
-      newData[lastIndex] = { ...newData[lastIndex], ...updatedData };
-      
-      return {
-        ...prevData,
-        data: newData,
-        lastUpdate: Date.now()
-      };
-    });
-  }, []);
-
+  // Load historical data on mount and when symbol/timeframe changes
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    fetchHistoricalData();
+  }, [fetchHistoricalData]);
 
+  // Update current price from stock prices hook when available
   useEffect(() => {
-    connectWebSocket();
-    
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+    if (stockPrices && stockPrices.length > 0) {
+      const currentStock = stockPrices.find(s => s.symbol === symbol);
+      if (currentStock && currentStock.price > 0) {
+        setCurrentPrice(currentStock.price);
+        setPriceChange(currentStock.change);
+        setPriceChangePercent(currentStock.changePercent);
+        
+        if (lastPriceRef.current === null) {
+          lastPriceRef.current = currentStock.price;
+        }
       }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [connectWebSocket]);
+    }
+  }, [stockPrices, symbol]);
 
   return {
-    chartData,
+    candlestickData,
+    volumeData,
+    currentPrice,
+    priceChange,
+    priceChangePercent,
     isLoading,
-    addDataPoint,
-    updateLastDataPoint,
-    refetch: loadInitialData
+    isConnected: !isDemo ? isConnected : true,
+    refresh: fetchHistoricalData,
+    // Legacy interface for TradingChart compatibility
+    chartData: {
+      symbol,
+      data: candlestickData.map((candle, index) => ({
+        timestamp: Number(candle.time) * 1000,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+        volume: volumeData[index]?.value || 0
+      })),
+      lastUpdate: Date.now()
+    }
   };
 };

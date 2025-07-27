@@ -18,6 +18,7 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-react';
+import { useChartData } from '@/hooks/useChartData';
 
 interface SimpleLightweightChartProps {
   symbol: string;
@@ -59,6 +60,7 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
   const chart = useRef<IChartApi | null>(null);
   const mainSeries = useRef<any>(null);
   const volumeSeries = useRef<any>(null);
+  const lastUpdateTime = useRef<number>(0);
   
   const [chartState, setChartState] = useState<ChartState>({
     chartType: 'candlestick',
@@ -80,7 +82,14 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
   const [priceChange, setPriceChange] = useState<number>(0);
   const [priceChangePercent, setPriceChangePercent] = useState<number>(0);
 
-  // Generate demo data
+  // Use chart data hook for live data
+  const chartDataHook = useChartData({
+    symbol,
+    timeframe: chartState.timeframe,
+    isDemo
+  });
+
+  // Generate demo data fallback
   const generateDemoData = useCallback((): { candlestickData: CandlestickData[], volumeData: HistogramData[] } => {
     const candlestickData: CandlestickData[] = [];
     const volumeData: HistogramData[] = [];
@@ -228,16 +237,28 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
         }
       }
 
-      // Load data
-      const chartData = isDemo ? generateDemoData() : { candlestickData: data, volumeData };
+      // Load data from hook or fallback
+      const chartData = chartDataHook?.candlestickData?.length > 0 
+        ? { 
+            candlestickData: chartDataHook.candlestickData, 
+            volumeData: chartDataHook.volumeData 
+          }
+        : isDemo 
+          ? generateDemoData() 
+          : { candlestickData: data, volumeData };
       
       // Set main chart data
       if (mainSeries.current && chartData.candlestickData.length > 0) {
         if (chartState.chartType === 'candlestick') {
           mainSeries.current.setData(chartData.candlestickData);
           const lastCandle = chartData.candlestickData[chartData.candlestickData.length - 1];
-          setCurrentPrice(lastCandle.close);
-          if (chartData.candlestickData.length > 1) {
+          const hookPrice = chartDataHook?.currentPrice;
+          setCurrentPrice(hookPrice || lastCandle.close);
+          
+          if (chartDataHook?.priceChange !== undefined && chartDataHook?.priceChangePercent !== undefined) {
+            setPriceChange(chartDataHook.priceChange);
+            setPriceChangePercent(chartDataHook.priceChangePercent);
+          } else if (chartData.candlestickData.length > 1) {
             const prevCandle = chartData.candlestickData[chartData.candlestickData.length - 2];
             const change = lastCandle.close - prevCandle.close;
             const changePercent = (change / prevCandle.close) * 100;
@@ -251,7 +272,8 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
             value: item.close
           }));
           mainSeries.current.setData(lineData);
-          setCurrentPrice(lineData[lineData.length - 1]?.value || 0);
+          const hookPrice = chartDataHook?.currentPrice;
+          setCurrentPrice(hookPrice || lineData[lineData.length - 1]?.value || 0);
         }
       }
 
@@ -270,7 +292,7 @@ export const SimpleLightweightChart: React.FC<SimpleLightweightChartProps> = ({
     setTimeout(() => {
       try {
         chart.current?.timeScale().fitContent();
-        setIsLoading(false);
+        setIsLoading(chartDataHook?.isLoading ?? false);
       } catch (error) {
         console.error('Error fitting content:', error);
         setIsLoading(false);
