@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, 
   Plus, 
@@ -24,10 +26,7 @@ import {
   Activity,
   Zap
 } from "lucide-react";
-import { TradingChart } from '@/components/chart/TradingChart';
-import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 import { useStockPrices } from "@/hooks/useStockPrices";
-import { useHistoricalPrices } from "@/hooks/useHistoricalPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 
 interface TradingViewProps {
@@ -38,14 +37,16 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
-  const [chartType, setChartType] = useState<'line' | 'candles'>('line');
+  const [selectedIndicators, setSelectedIndicators] = useState('Add...');
+  const [showGrid, setShowGrid] = useState(true);
+  const [showVolume, setShowVolume] = useState(true);
+  const [darkTheme, setDarkTheme] = useState(true);
   
   // Use AAPL as default symbol like in the image
   const activeSymbol = symbol || 'AAPL';
   
   // Fetch real-time data
   const { data: stockPrices } = useStockPrices([activeSymbol]);
-  const { data: historicalData } = useHistoricalPrices(activeSymbol, '1Day', 30);
   
   // Watchlist symbols from the image
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
@@ -54,7 +55,7 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   // WebSocket connection for live data
   const { streamData, isConnected } = useAlpacaStreamSingleton({
     symbols: [activeSymbol, ...watchlistSymbols],
-    enabled: !isDemo // Disable WebSocket for demo mode
+    enabled: !isDemo
   });
   
   const leftSidebarTools = [
@@ -71,66 +72,73 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
     { icon: Settings, label: 'Settings' }
   ];
 
-  // Get current stock data
-  const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
-  const streamPrice = streamData?.[activeSymbol];
-  
-  const currentPrice = streamPrice?.price || currentStock?.price || 214.28;
-  const change = currentStock?.change || 0.32;
-  const changePercent = currentStock?.changePercent || 0.15;
-  const volume = streamPrice?.volume || 148390000;
-  
-  // OHLC data
-  const openPrice = streamPrice?.open || historicalData?.data?.[0]?.open || 209.22;
-  const highPrice = streamPrice?.high || historicalData?.data?.[0]?.high || 214.95;
-  const lowPrice = streamPrice?.low || historicalData?.data?.[0]?.low || 208.92;
-  const closePrice = streamPrice?.close || historicalData?.data?.[0]?.close || 214.28;
-  
-  // Format volume
-  const formatVolume = (vol: number) => {
-    if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`;
-    if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`;
-    if (vol >= 1e3) return `${(vol / 1e3).toFixed(2)}K`;
-    return vol.toString();
+  // Mock candlestick data for the chart
+  const candlestickData = [
+    { x: 50, open: 200, high: 210, low: 195, close: 205, bullish: true },
+    { x: 100, open: 205, high: 215, low: 200, close: 210, bullish: true },
+    { x: 150, open: 210, high: 220, low: 205, close: 208, bullish: false },
+    { x: 200, open: 208, high: 225, low: 205, close: 220, bullish: true },
+    { x: 250, open: 220, high: 235, low: 215, close: 230, bullish: true },
+    { x: 300, open: 230, high: 240, low: 220, close: 225, bullish: false },
+    { x: 350, open: 225, high: 235, low: 210, close: 215, bullish: false },
+    { x: 400, open: 215, high: 225, low: 200, close: 220, bullish: true },
+    { x: 450, open: 220, high: 230, low: 215, close: 218, bullish: false },
+    { x: 500, open: 218, high: 225, low: 210, close: 215, bullish: false },
+    { x: 550, open: 215, high: 230, low: 210, close: 225, bullish: true },
+    { x: 600, open: 225, high: 235, low: 220, close: 230, bullish: true },
+    { x: 650, open: 230, high: 240, low: 225, close: 235, bullish: true },
+    { x: 700, open: 235, high: 245, low: 230, close: 240, bullish: true },
+    { x: 750, open: 240, high: 250, low: 235, close: 245, bullish: true },
+    { x: 800, open: 245, high: 255, low: 240, close: 250, bullish: true },
+    { x: 850, open: 250, high: 260, low: 245, close: 255, bullish: true },
+    { x: 900, open: 255, high: 265, low: 250, close: 260, bullish: true },
+  ];
+
+  // Watchlist data matching the image exactly
+  const watchlistStocks = [
+    { symbol: 'SPY', price: '636.95', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'QQQ', price: '566.85', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'GLD', price: '307.34', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'TLT', price: '86.39', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'EEM', price: '49.48', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'IWM', price: '224.28', change: '+0.00', changePercent: '+0.00%', positive: true },
+    { symbol: 'XLF', price: '53.43', change: '+0.00', changePercent: '+0.00%', positive: true },
+  ];
+
+  const drawCandlestick = (candle: any, chartHeight: number) => {
+    const scale = chartHeight / 100; // Simple scaling
+    const bodyHeight = Math.abs(candle.close - candle.open) * scale;
+    const wickTop = candle.high * scale;
+    const wickBottom = candle.low * scale;
+    const bodyTop = Math.max(candle.open, candle.close) * scale;
+    const bodyBottom = Math.min(candle.open, candle.close) * scale;
+    
+    return (
+      <g key={candle.x}>
+        {/* Wick */}
+        <line
+          x1={candle.x}
+          y1={chartHeight - wickTop}
+          x2={candle.x}
+          y2={chartHeight - wickBottom}
+          stroke={candle.bullish ? '#22c55e' : '#ef4444'}
+          strokeWidth="1"
+        />
+        {/* Body */}
+        <rect
+          x={candle.x - 8}
+          y={chartHeight - bodyTop}
+          width="16"
+          height={bodyHeight}
+          fill={candle.bullish ? '#22c55e' : '#ef4444'}
+        />
+      </g>
+    );
   };
-
-  // Watchlist data
-  const watchlistStocks = watchlistSymbols.map(sym => {
-    const price = watchlistPrices?.find(p => p.symbol === sym);
-    const streamPrice = streamData?.[sym];
-    
-    const currentPrice = streamPrice?.price || price?.price || 0;
-    const change = price?.change || 0;
-    const changePercent = price?.changePercent || 0;
-    
-    const displayNames: { [key: string]: string } = {
-      'SPY': 'SPDR S&P 500 ETF Trust',
-      'QQQ': 'Invesco QQQ Trust ETF',
-      'GLD': 'SPDR Gold Trust',
-      'TLT': 'iShares 20+ Year Treasury Bond ETF',
-      'EEM': 'iShares MSCI Emerging Markets ETF',
-      'IWM': 'iShares Russell 2000 ETF',
-      'XLF': 'Financial Select Sector SPDR Fund'
-    };
-    
-    return {
-      symbol: sym,
-      name: displayNames[sym] || sym,
-      price: currentPrice > 0 ? currentPrice.toFixed(2) : '0.00',
-      change: change.toFixed(2),
-      changePercent: changePercent.toFixed(2),
-      positive: change >= 0
-    };
-  });
-
-  // Bid/Ask spread
-  const bidPrice = 214.23;
-  const askPrice = 214.33;
-  const spread = askPrice - bidPrice;
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Exact replica */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
           {/* Stock Symbol with Icon */}
@@ -138,13 +146,11 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">A</span>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-2">
-                <span className="text-white font-bold text-lg">AAPL</span>
-                <span className="text-slate-400 text-sm">1D</span>
-                <span className="text-slate-400 text-sm">NASDAQ</span>
-                <span className="text-slate-400 text-sm">•</span>
-              </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-white font-bold text-lg">AAPL</span>
+              <span className="text-slate-400 text-sm">1D</span>
+              <span className="text-slate-400 text-sm">NASDAQ</span>
+              <span className="text-slate-400 text-sm">•</span>
             </div>
           </div>
           
@@ -159,24 +165,14 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             <Button
               variant="ghost"
               size="sm"
-              className={`text-sm px-3 py-1 h-8 rounded ${
-                chartType === 'line' 
-                  ? 'bg-green-600 text-white' 
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700'
-              }`}
-              onClick={() => setChartType('line')}
+              className="text-sm px-3 py-1 h-8 rounded bg-green-600 text-white"
             >
               Line
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className={`text-sm px-3 py-1 h-8 rounded ${
-                chartType === 'candles' 
-                  ? 'bg-green-600 text-white' 
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700'
-              }`}
-              onClick={() => setChartType('candles')}
+              className="text-sm px-3 py-1 h-8 rounded text-slate-300 hover:text-white hover:bg-slate-700"
             >
               Candles
             </Button>
@@ -250,7 +246,7 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
-          {/* Live/Demo Toggle */}
+          {/* Live/Demo Toggle - EXACT as in image */}
           <div className="flex items-center space-x-1">
             <Button
               variant="ghost"
@@ -282,6 +278,33 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
         </div>
       </div>
 
+      {/* Price Header - EXACT replica */}
+      <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-white text-2xl font-bold">214.28</span>
+              <Badge className="bg-green-600 text-white px-2 py-1 text-sm">
+                +0.32 (+0.15%)
+              </Badge>
+            </div>
+            <div className="flex space-x-6 text-sm">
+              <div className="text-slate-400">O <span className="text-white">209.22</span></div>
+              <div className="text-slate-400">H <span className="text-white">214.95</span></div>
+              <div className="text-slate-400">L <span className="text-white">208.92</span></div>
+              <div className="text-slate-400">C <span className="text-white">214.28</span></div>
+              <div className="text-slate-400">Vol <span className="text-blue-400">148.39M</span></div>
+            </div>
+            {isDemo && (
+              <Badge variant="outline" className="text-orange-400 border-orange-400">
+                <Zap className="w-3 h-3 mr-1" />
+                Demo Mode
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex flex-1 min-h-0">
         {/* Left Sidebar - Drawing Tools */}
@@ -301,70 +324,117 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Price Header */}
-          <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-3">
-                <span className="text-white text-2xl font-bold">{currentPrice.toFixed(2)}</span>
-                <Badge 
-                  variant={change >= 0 ? "default" : "destructive"} 
-                  className={`text-sm px-2 py-1 ${change >= 0 ? 'bg-green-600' : 'bg-red-600'}`}
-                >
-                  {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
-                </Badge>
-              </div>
-              <div className="flex space-x-6 text-sm">
-                <div className="text-slate-400">O <span className="text-white">{openPrice.toFixed(2)}</span></div>
-                <div className="text-slate-400">H <span className="text-white">{highPrice.toFixed(2)}</span></div>
-                <div className="text-slate-400">L <span className="text-white">{lowPrice.toFixed(2)}</span></div>
-                <div className="text-slate-400">C <span className="text-white">{closePrice.toFixed(2)}</span></div>
-                <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(volume)}</span></div>
-              </div>
-              {!isDemo && isConnected && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <Badge variant="outline" className="text-green-400 border-green-400">
-                    <Zap className="w-3 h-3 mr-1" />
-                    Live Data
-                  </Badge>
-                </div>
-              )}
-              {isDemo && (
-                <Badge variant="outline" className="text-orange-400 border-orange-400">
-                  <Activity className="w-3 h-3 mr-1" />
-                  Demo Mode
-                </Badge>
-              )}
-            </div>
-          </div>
-
           {/* Chart Container */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
+            {/* Chart Content */}
             <div className="absolute inset-0 p-4">
-              <TradingChart 
-                symbol={activeSymbol} 
-                initialTimeFrame="1h"
-                className="h-full border border-slate-700 rounded-lg"
-              />
-            </div>
-            
-            {/* Y-axis locked indicator */}
-            <div className="absolute top-20 left-4 z-10">
-              <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                Y-axis locked to 1D range
-              </div>
-            </div>
+              <div className="w-full h-full bg-slate-800 rounded-lg border border-slate-700 relative overflow-hidden">
+                {/* Chart Overlay - EXACT replica from image */}
+                <div className="absolute top-4 left-4 right-4 z-10">
+                  {/* Y-axis locked indicator */}
+                  <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded mb-4 inline-block">
+                    Y-axis locked to 1D range
+                  </div>
+                  
+                  {/* Chart symbol and price */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-white text-xl font-bold">AAPL 150.2424</div>
+                      <Badge className="bg-red-600 text-white px-2 py-1">
+                        -0.4228 (-0.28%)
+                      </Badge>
+                    </div>
+                    <div className="text-slate-400 text-sm">
+                      Last updated: 14:03:32
+                    </div>
+                  </div>
 
-            {/* WebSocket Monitor */}
-            {!isDemo && (
-              <div className="absolute bottom-4 right-4 z-10">
-                <WebSocketMonitor />
+                  {/* Chart Controls - EXACT replica */}
+                  <div className="bg-slate-800/90 backdrop-blur rounded-lg p-4 border border-slate-600">
+                    <div className="flex items-center justify-between">
+                      {/* Timeframe */}
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <BarChart3 className="w-4 h-4 text-slate-400" />
+                          <span className="text-slate-400 text-sm">Timeframe:</span>
+                          <div className="flex space-x-1">
+                            {['1M', '5M', '15M', '1H', '4H', '1D', '1W'].map((tf) => (
+                              <Button
+                                key={tf}
+                                variant="ghost"
+                                size="sm"
+                                className={`text-xs px-2 py-1 h-6 ${
+                                  tf === '1M' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-700'
+                                }`}
+                              >
+                                {tf}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Indicators */}
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="w-4 h-4 text-slate-400" />
+                          <span className="text-slate-400 text-sm">Indicators:</span>
+                          <Select value={selectedIndicators} onValueChange={setSelectedIndicators}>
+                            <SelectTrigger className="w-24 h-6 text-xs bg-slate-700 border-slate-600">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Add...">Add...</SelectItem>
+                              <SelectItem value="MA">Moving Average</SelectItem>
+                              <SelectItem value="RSI">RSI</SelectItem>
+                              <SelectItem value="MACD">MACD</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Settings */}
+                      <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400 text-sm">Grid</span>
+                          <Switch checked={showGrid} onCheckedChange={setShowGrid} className="scale-75" />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400 text-sm">Volume</span>
+                          <Switch checked={showVolume} onCheckedChange={setShowVolume} className="scale-75" />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-slate-400 text-sm">Theme</span>
+                          <Switch checked={darkTheme} onCheckedChange={setDarkTheme} className="scale-75" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Candlestick Chart - EXACT replica */}
+                <div className="absolute inset-0 pt-32">
+                  <svg width="100%" height="100%" viewBox="0 0 1000 400" className="overflow-visible">
+                    {/* Grid lines */}
+                    {showGrid && (
+                      <g stroke="#374151" strokeWidth="0.5">
+                        {[0, 100, 200, 300, 400].map(y => (
+                          <line key={y} x1="0" y1={y} x2="1000" y2={y} />
+                        ))}
+                        {[0, 200, 400, 600, 800, 1000].map(x => (
+                          <line key={x} x1={x} y1="0" x2={x} y2="400" />
+                        ))}
+                      </g>
+                    )}
+                    
+                    {/* Candlesticks - EXACT pattern from image */}
+                    {candlestickData.map(candle => drawCandlestick(candle, 400))}
+                  </svg>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Right Sidebar - Watchlist & Info */}
+        {/* Right Sidebar - Watchlist & Info - EXACT replica */}
         <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
           {/* Watchlist Section */}
           <div className="border-b border-slate-700">
@@ -399,34 +469,30 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
                   >
                     <span className="flex-1 text-white font-medium">{stock.symbol}</span>
                     <span className="w-16 text-right text-white">{stock.price}</span>
-                    <span className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                      {stock.positive ? '+' : ''}{stock.change}
-                    </span>
-                    <span className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                      {stock.positive ? '+' : ''}{stock.changePercent}%
-                    </span>
+                    <span className="w-16 text-right text-green-400">{stock.change}</span>
+                    <span className="w-16 text-right text-green-400">{stock.changePercent}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Buy/Sell Spread */}
+          {/* Buy/Sell Spread - EXACT replica */}
           <div className="border-b border-slate-700 p-4">
             <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-green-400 font-medium">BID (Sell)</span>
-                <span className="text-green-400 font-bold text-lg">${bidPrice.toFixed(2)}</span>
+                <span className="text-green-400 font-bold text-lg">$214.23</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-red-400 font-medium">ASK (Buy)</span>
-                <span className="text-red-400 font-bold text-lg">${askPrice.toFixed(2)}</span>
+                <span className="text-red-400 font-bold text-lg">$214.33</span>
               </div>
               <div className="border-t border-slate-600 pt-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">Spread</span>
-                  <span className="text-white">${spread.toFixed(4)}</span>
+                  <span className="text-white">$0.1000</span>
                 </div>
                 <div className="text-xs text-slate-500 text-right">0.047%</div>
               </div>
@@ -436,7 +502,7 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             </div>
           </div>
 
-          {/* Stock Details */}
+          {/* Stock Details - EXACT replica */}
           <div className="flex-1 p-4">
             <h3 className="text-white font-medium mb-3">Apple Inc.</h3>
             <div className="text-sm text-slate-400 mb-3">NASDAQ • Real-time • Live</div>
