@@ -36,80 +36,101 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   useEffect(() => {
     console.log('Initializing Lightweight Chart for Alpaca data...');
     
-    if (!chartContainerRef.current) {
-      console.error('Chart container not found');
-      return;
-    }
+    // Add delay to ensure DOM is ready
+    const initChart = () => {
+      if (!chartContainerRef.current) {
+        console.error('Chart container not found');
+        setIsLoading(false);
+        toast.error('Chart container not available');
+        return;
+      }
 
-    try {
-      // Create chart using Lightweight Charts
-      const chart = createChart(chartContainerRef.current, {
-        width: chartContainerRef.current.clientWidth,
-        height: 500,
-        layout: {
-          background: { color: '#ffffff' },
-          textColor: '#333',
-        },
-        grid: {
-          vertLines: { color: '#e6e6e6' },
-          horzLines: { color: '#e6e6e6' },
-        },
-        crosshair: {
-          mode: 1,
-        },
-        rightPriceScale: {
-          borderColor: '#cccccc',
-        },
-        timeScale: {
-          borderColor: '#cccccc',
-          timeVisible: true,
-          secondsVisible: false,
-        },
-      });
+      try {
+        // Ensure container has proper dimensions
+        const containerWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+        
+        console.log('Container width:', containerWidth);
+        console.log('Container element:', chartContainerRef.current);
+        
+        // Create chart using Lightweight Charts
+        const chart = createChart(chartContainerRef.current, {
+          width: containerWidth,
+          height: 500,
+          layout: {
+            background: { color: '#ffffff' },
+            textColor: '#333',
+          },
+          grid: {
+            vertLines: { color: '#e6e6e6' },
+            horzLines: { color: '#e6e6e6' },
+          },
+          crosshair: {
+            mode: 1,
+          },
+          rightPriceScale: {
+            borderColor: '#cccccc',
+          },
+          timeScale: {
+            borderColor: '#cccccc',
+            timeVisible: true,
+            secondsVisible: false,
+          },
+        });
 
-      console.log('Lightweight Chart initialized');
+        console.log('Lightweight Chart initialized successfully');
 
-      // Add candlestick series for Alpaca data
-      const candleSeries = (chart as any).addCandlestickSeries({
-        upColor: '#26a69a',
-        downColor: '#ef5350',
-        borderVisible: false,
-        wickUpColor: '#26a69a',
-        wickDownColor: '#ef5350',
-      });
-      
-      console.log('Candlestick series created for Alpaca data');
+        // Add candlestick series for Alpaca data
+        const candleSeries = (chart as any).addCandlestickSeries({
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+        
+        console.log('Candlestick series created for Alpaca data');
 
-      candlestickSeriesRef.current = candleSeries;
-      chartRef.current = chart;
+        candlestickSeriesRef.current = candleSeries;
+        chartRef.current = chart;
 
-      // Handle resize
-      const handleResize = () => {
-        if (chartContainerRef.current && chartRef.current) {
-          chartRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
-          });
-        }
-      };
+        // Handle resize
+        const handleResize = () => {
+          if (chartContainerRef.current && chartRef.current) {
+            const newWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+            chartRef.current.applyOptions({
+              width: newWidth,
+            });
+          }
+        };
 
-      window.addEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
 
-      return () => {
-        console.log('Cleaning up Lightweight Chart...');
-        window.removeEventListener('resize', handleResize);
-        if (chartRef.current) {
-          chartRef.current.remove();
-        }
-        if (wsRef.current) {
-          wsRef.current.close();
-        }
-      };
+        // Success notification
+        toast.success('Chart initialized successfully');
 
-    } catch (error) {
-      console.error('Chart initialization failed:', error);
-      setIsLoading(false);
-      toast.error('Chart initialization failed');
-    }
+      } catch (error) {
+        console.error('Chart initialization failed:', error);
+        setIsLoading(false);
+        toast.error('Chart initialization failed: ' + (error as any).message);
+      }
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(initChart);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      console.log('Cleaning up Lightweight Chart...');
+      window.removeEventListener('resize', () => {});
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
   }, []);
 
   // Fetch historical data from Alpaca
@@ -359,13 +380,14 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       </div>
 
       {/* Lightweight Chart with Alpaca Data */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 relative">
         <div 
           ref={chartContainerRef} 
           className="w-full h-[500px]"
+          style={{ minHeight: '500px', minWidth: '100%' }}
         />
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
             <div className="text-lg text-gray-600">Loading Alpaca chart data...</div>
           </div>
         )}
