@@ -11,7 +11,7 @@ import Auth from "./pages/Auth";
 
 import Dashboard from "./pages/Dashboard";
 import DashboardShowcase from "./pages/DashboardShowcase";
-import BrokerDashboard from "./pages/BrokerDashboard";
+
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import DisplaySettings from "./pages/settings/DisplaySettings";
@@ -55,14 +55,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <StockDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/broker"
-                element={
-                  <ProtectedRoute>
-                    <BrokerDashboard />
                   </ProtectedRoute>
                 }
               />
