@@ -93,8 +93,8 @@ serve(async (req) => {
 
     console.log(`📅 Date range: ${startDateStr} to ${endDateStr}`);
 
-    // Build Alpaca API URL
-    const alpacaUrl = new URL('https://paper-api.alpaca.markets/v2/stocks/bars');
+    // Build Alpaca API URL - Use data API for historical data (not paper-api)
+    const alpacaUrl = new URL('https://data.alpaca.markets/v2/stocks/bars');
     alpacaUrl.searchParams.set('symbols', symbol);
     alpacaUrl.searchParams.set('timeframe', alpacaTimeframe);
     alpacaUrl.searchParams.set('start', startDateStr);
@@ -117,16 +117,24 @@ serve(async (req) => {
     if (!alpacaResponse.ok) {
       const errorText = await alpacaResponse.text();
       console.error(`❌ Alpaca API error: ${alpacaResponse.status} - ${errorText}`);
-      return new Response(
-        JSON.stringify({ 
-          error: `Alpaca API error: ${alpacaResponse.status}`,
-          details: errorText
-        }),
-        { 
-          status: alpacaResponse.status, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      console.error(`🔗 Failed URL: ${alpacaUrl.toString()}`);
+      console.error(`📅 Date range: ${startDateStr} to ${endDateStr}`);
+      console.error(`🔑 Using API key prefix: ${alpacaApiKey?.substring(0, 8)}...`);
+      
+      // If 403, likely need data subscription or different account type
+      if (alpacaResponse.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: `Alpaca data access forbidden. Your account may need a data subscription.`,
+            details: `403 Forbidden - Check your Alpaca account data permissions. Historical data may require a paid subscription.`,
+            alpacaError: errorText
+          }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
     }
 
     const alpacaData = await alpacaResponse.json();
