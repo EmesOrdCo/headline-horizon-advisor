@@ -60,17 +60,26 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       },
     });
 
-    // Add candlestick series using the correct API
-    const candlestickSeries = (chart as any).addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
+    console.log('Chart created:', chart);
+    console.log('Available methods:', Object.getOwnPropertyNames(chart));
+
+    // Add candlestick series using the correct API with validation
+    if (typeof (chart as any).addCandlestickSeries === 'function') {
+      const candlestickSeries = (chart as any).addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+      candlestickSeriesRef.current = candlestickSeries;
+    } else {
+      console.error('addCandlestickSeries method not found on chart object');
+      console.log('Chart object:', chart);
+      return;
+    }
 
     chartRef.current = chart;
-    candlestickSeriesRef.current = candlestickSeries;
 
     // Handle resize
     const handleResize = () => {
