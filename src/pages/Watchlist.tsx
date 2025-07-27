@@ -177,9 +177,9 @@ const MoverCard = ({ stock, isGainer, rank }: { stock: any, isGainer: boolean, r
 };
 
 const Watchlist = () => {
-  const [activeTab, setActiveTab] = useState("all");
   const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("popular");
+  const [moversFilter, setMoversFilter] = useState("stocks");
 
   // Fetch user's actual stocks from database
   const { data: userStocks, isLoading: userStocksLoading, error: userStocksError } = useUserStocks();
@@ -230,17 +230,8 @@ const Watchlist = () => {
       };
     });
   
-    // Filter based on active tab
-    if (activeTab === "gainers") {
-      data = data.filter((stock) => stock.change > 0);
-      data = data.sort((a, b) => b.changePercent - a.changePercent);
-    } else if (activeTab === "losers") {
-      data = data.filter((stock) => stock.change < 0);
-      data = data.sort((a, b) => a.changePercent - b.changePercent);
-    } else {
-      // Sort by symbol for consistent ordering
-      data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-    }
+    // Sort by symbol for consistent ordering
+    data = data.sort((a, b) => a.symbol.localeCompare(b.symbol));
     
     return data;
   };
@@ -271,139 +262,126 @@ const Watchlist = () => {
             </div>
             
             <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-1 overflow-x-auto">
-              <div className="flex items-center gap-1 min-w-max">
-                <Button
-                  variant={categoryFilter === "popular" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("popular")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "popular" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 min-w-max">
+                  <Button
+                    variant={categoryFilter === "popular" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("popular")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "popular" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <BarChart className="w-4 h-4 mr-2" />
+                    Popular
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "my-stocks" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("my-stocks")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "my-stocks" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    My Stocks
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "stocks" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("stocks")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "stocks" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Stocks
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "crypto" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("crypto")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "crypto" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Bitcoin className="w-4 h-4 mr-2" />
+                    Crypto
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "indices" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("indices")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "indices" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Indices
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "commodities" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("commodities")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "commodities" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Commodities
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "currencies" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("currencies")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "currencies" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Currencies
+                  </Button>
+                  <Button
+                    variant={categoryFilter === "etfs" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCategoryFilter("etfs")}
+                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                      categoryFilter === "etfs" 
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Building className="w-4 h-4 mr-2" />
+                    ETFs
+                  </Button>
+                </div>
+                <Link 
+                  to="/my-stocks"
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors ml-4"
                 >
-                  <BarChart className="w-4 h-4 mr-2" />
-                  Popular
-                </Button>
-                <Button
-                  variant={categoryFilter === "my-stocks" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("my-stocks")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "my-stocks" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  My Stocks
-                </Button>
-                <Button
-                  variant={categoryFilter === "stocks" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("stocks")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "stocks" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Stocks
-                </Button>
-                <Button
-                  variant={categoryFilter === "crypto" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("crypto")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "crypto" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <Bitcoin className="w-4 h-4 mr-2" />
-                  Crypto
-                </Button>
-                <Button
-                  variant={categoryFilter === "indices" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("indices")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "indices" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Indices
-                </Button>
-                <Button
-                  variant={categoryFilter === "commodities" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("commodities")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "commodities" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  Commodities
-                </Button>
-                <Button
-                  variant={categoryFilter === "currencies" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("currencies")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "currencies" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Currencies
-                </Button>
-                <Button
-                  variant={categoryFilter === "etfs" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCategoryFilter("etfs")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    categoryFilter === "etfs" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <Building className="w-4 h-4 mr-2" />
-                  ETFs
-                </Button>
+                  <Plus className="w-4 h-4" />
+                  Add Stocks
+                </Link>
               </div>
             </div>
           </div>
 
           {/* Current Watchlist Content */}
           <div className="mb-16">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">
-                {categoryFilter === "my-stocks" ? "My Stocks" : 
-                 categoryFilter === "popular" ? "Popular Stocks" : 
-                 categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}
-              </h2>
-              <Link 
-                to="/my-stocks"
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add Stocks
-              </Link>
-            </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="bg-slate-800 border-slate-700">
-              <TabsTrigger value="all" className="data-[state=active]:bg-emerald-600">All Stocks</TabsTrigger>
-              <TabsTrigger value="gainers" className="data-[state=active]:bg-emerald-600">Gainers</TabsTrigger>
-              <TabsTrigger value="losers" className="data-[state=active]:bg-emerald-600">Losers</TabsTrigger>
-            </TabsList>
-
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl">
               <Table>
                 <TableHeader>
@@ -443,23 +421,14 @@ const Watchlist = () => {
                           <BarChart3 className="w-12 h-12" />
                           <div>
                             <p className="font-medium">No stocks in your watchlist</p>
-                            <p className="text-sm">
-                              {activeTab === "gainers" 
-                                ? "No stocks with positive gains today" 
-                                : activeTab === "losers" 
-                                  ? "No stocks with losses today"
-                                  : "Add some stocks to start tracking your portfolio"
-                              }
-                            </p>
+                            <p className="text-sm">Add some stocks to start tracking your portfolio</p>
                           </div>
-                          {activeTab === "all" && (
-                            <Link 
-                              to="/my-stocks" 
-                              className="text-emerald-400 hover:text-emerald-300 underline"
-                            >
-                              Add your first stock →
-                            </Link>
-                          )}
+                          <Link 
+                            to="/my-stocks" 
+                            className="text-emerald-400 hover:text-emerald-300 underline"
+                          >
+                            Add your first stock →
+                          </Link>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -541,7 +510,6 @@ const Watchlist = () => {
                  </div>
                 )}
             </div>
-          </Tabs>
           </div>
         </div>
       </div>
@@ -549,7 +517,7 @@ const Watchlist = () => {
       {/* Daily Movers - Top 5 Leaderboard Style */}
       <div className="max-w-7xl mx-auto mt-8 mb-8 px-4 sm:px-6">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-white">Daily Movers</h2>
             <span className="text-slate-400 text-sm flex items-center gap-1">
               Today's biggest gainers and losers.
@@ -564,6 +532,52 @@ const Watchlist = () => {
               </Button>
             </span>
           </div>
+          
+          {/* Movers Category Filter */}
+          <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-1 overflow-x-auto mb-4">
+            <div className="flex items-center gap-1 min-w-max">
+              <Button
+                variant={moversFilter === "stocks" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("stocks")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "stocks" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Stocks
+              </Button>
+              <Button
+                variant={moversFilter === "crypto" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("crypto")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "crypto" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <Bitcoin className="w-4 h-4 mr-2" />
+                Crypto
+              </Button>
+              <Button
+                variant={moversFilter === "indices" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setMoversFilter("indices")}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+                  moversFilter === "indices" 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Indices
+              </Button>
+            </div>
+          </div>
+          
           <Button
             variant="outline"
             size="sm"
