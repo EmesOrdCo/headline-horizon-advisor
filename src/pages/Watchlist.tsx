@@ -425,7 +425,7 @@ const Watchlist = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {userStocksLoading ? (
+                  {userStocksLoading || pricesLoading ? (
                     // Loading skeleton rows
                     Array.from({ length: 3 }).map((_, index) => (
                       <TableRow key={index} className="border-slate-700">
