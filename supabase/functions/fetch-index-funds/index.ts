@@ -23,7 +23,7 @@ serve(async (req) => {
 
   try {
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY_2') || Deno.env.get('OPENAI_API_KEY');
 
     if (!marketauxApiKey || !openaiApiKey) {
       throw new Error('Missing API keys - MarketAux or OpenAI');
