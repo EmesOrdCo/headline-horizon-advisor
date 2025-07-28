@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -21,6 +21,8 @@ import { useSEO } from "@/hooks/useSEO";
 import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
+import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import CompanyLogo from "@/components/CompanyLogo";
 
 const Dashboard = () => {
   useSEO({
@@ -48,10 +50,14 @@ const Dashboard = () => {
   // Get real movers data (limit to 3 each for the dashboard)
   const topGainers = biggestMovers?.gainers?.slice(0, 3) || [];
   const topLosers = biggestMovers?.losers?.slice(0, 3) || [];
-
-  console.log('BiggestMovers data:', biggestMovers);
-  console.log('TopGainers:', topGainers);
-  console.log('TopLosers:', topLosers);
+  
+  // Get company logos for the movers
+  const { data: biggestMoversData, isLoading: biggestMoversLoading } = useBiggestMovers();
+  const moversSymbols = [
+    ...(topGainers.map(stock => stock.symbol) || []),
+    ...(topLosers.map(stock => stock.symbol) || [])
+  ];
+  const { getLogoUrl } = useCompanyLogos(moversSymbols);
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -251,51 +257,76 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Gainers Column */}
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-400 mr-1" />
-                      <span className="text-slate-300 font-medium text-lg">Top Gainers</span>
-                    </div>
-                    <div className="space-y-2">
-                      {topGainers.map((stock) => (
-                        <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-emerald-500/10">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-white text-sm">{stock.symbol}</span>
-                            <span className="text-sm text-emerald-400">+{stock.changePercent.toFixed(2)}%</span>
-                          </div>
-                          <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
-                        </div>
-                      ))}
+                {biggestMoversLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Loading market movers...</span>
                     </div>
                   </div>
-                  
-                  {/* Losers Column */}
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <TrendingDown className="w-4 h-4 text-red-400 mr-1" />
-                      <span className="text-slate-300 font-medium text-lg">Top Losers</span>
-                    </div>
-                    <div className="space-y-2">
-                      {topLosers.map((stock) => (
-                        <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-red-500/10">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-white text-sm">{stock.symbol}</span>
-                            <span className="text-sm text-red-400">{stock.changePercent.toFixed(2)}%</span>
-                          </div>
-                          <div className="text-slate-400 text-xs truncate">${stock.price.toFixed(2)}</div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Gainers Column */}
+                      <div>
+                        <div className="flex items-center mb-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-400 mr-1" />
+                          <span className="text-slate-300 font-medium text-lg">Top Gainers</span>
                         </div>
-                      ))}
+                        <div className="space-y-2">
+                          {topGainers.map((stock) => (
+                            <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-emerald-500/10">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CompanyLogo 
+                                    symbol={stock.symbol} 
+                                    logoUrl={getLogoUrl(stock.symbol)} 
+                                    size="sm" 
+                                  />
+                                  <span className="font-medium text-white text-sm">{stock.symbol}</span>
+                                </div>
+                                <span className="text-sm text-emerald-400">+{stock.changePercent.toFixed(2)}%</span>
+                              </div>
+                              <div className="text-slate-400 text-xs truncate ml-6">${stock.price.toFixed(2)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Losers Column */}
+                      <div>
+                        <div className="flex items-center mb-2">
+                          <TrendingDown className="w-4 h-4 text-red-400 mr-1" />
+                          <span className="text-slate-300 font-medium text-lg">Top Losers</span>
+                        </div>
+                        <div className="space-y-2">
+                          {topLosers.map((stock) => (
+                            <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-red-500/10">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CompanyLogo 
+                                    symbol={stock.symbol} 
+                                    logoUrl={getLogoUrl(stock.symbol)} 
+                                    size="sm" 
+                                  />
+                                  <span className="font-medium text-white text-sm">{stock.symbol}</span>
+                                </div>
+                                <span className="text-sm text-red-400">{stock.changePercent.toFixed(2)}%</span>
+                              </div>
+                              <div className="text-slate-400 text-xs truncate ml-6">${stock.price.toFixed(2)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                <Link to="/biggest-movers" className="block mt-4">
-                  <Button variant="outline" size="sm" className="w-full text-xs">
-                    View All Market Movers
-                  </Button>
-                </Link>
+                    
+                    <Link to="/watchlist#daily-movers" className="block mt-4">
+                      <Button variant="outline" size="sm" className="w-full text-xs">
+                        View All Market Movers
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
