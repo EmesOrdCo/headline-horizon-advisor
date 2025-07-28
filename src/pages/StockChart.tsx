@@ -134,7 +134,14 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
     return () => {
       clearTimeout(timeoutId);
       if (chartRef.current) {
-        chartRef.current.remove();
+        try {
+          chartRef.current.remove();
+        } catch (error) {
+          console.warn('Chart already disposed:', error);
+        } finally {
+          chartRef.current = null;
+          candlestickSeriesRef.current = null;
+        }
       }
     };
   }, []);
