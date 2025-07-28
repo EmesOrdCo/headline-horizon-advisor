@@ -7,29 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Popular stocks to track for movers
-const TRACKED_STOCKS = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corp.' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
-  { symbol: 'TSLA', name: 'Tesla Inc.' },
-  { symbol: 'META', name: 'Meta Platforms Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.' },
-  { symbol: 'NFLX', name: 'Netflix Inc.' },
-  { symbol: 'DIS', name: 'Walt Disney Co.' },
-  { symbol: 'V', name: 'Visa Inc.' },
-  { symbol: 'JPM', name: 'JPMorgan Chase & Co.' },
-  { symbol: 'JNJ', name: 'Johnson & Johnson' },
-  { symbol: 'WMT', name: 'Walmart Inc.' },
-  { symbol: 'PG', name: 'Procter & Gamble Co.' },
-  { symbol: 'UNH', name: 'UnitedHealth Group Inc.' },
-  { symbol: 'MA', name: 'Mastercard Inc.' },
-  { symbol: 'HD', name: 'Home Depot Inc.' },
-  { symbol: 'BAC', name: 'Bank of America Corp.' },
-  { symbol: 'ABBV', name: 'AbbVie Inc.' },
-  { symbol: 'CRM', name: 'Salesforce Inc.' }
+// Popular stocks from watchlist (same as in frontend)
+const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+const POPULAR_STOCKS = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX', 'DIS', 
+  'V', 'JPM', 'JNJ', 'WMT', 'PG', 'UNH', 'MA', 'HD', 'BAC', 'ABBV', 'CRM'
 ];
+
+// Combine all watchlist stocks for movers calculation
+const ALL_WATCHLIST_STOCKS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...POPULAR_STOCKS.filter(s => !MAGNIFICENT_7.includes(s))];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -37,88 +24,79 @@ serve(async (req) => {
   }
 
   try {
-    const alpacaApiKey = Deno.env.get('ALPACA_API_KEY');
-    const alpacaSecretKey = Deno.env.get('ALPACA_SECRET_KEY');
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-
-    if (!alpacaApiKey || !alpacaSecretKey) {
-      throw new Error('Missing Alpaca API credentials');
-    }
-
-    console.log('Fetching biggest gainers and losers using Alpaca quotes API...');
-
-    const headers = {
-      'APCA-API-KEY-ID': alpacaApiKey,
-      'APCA-API-SECRET-KEY': alpacaSecretKey,
-    };
-
-    // Get quotes for all tracked stocks
-    const symbols = TRACKED_STOCKS.map(s => s.symbol).join(',');
     
-    // Get current quotes
-    const quotesUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${symbols}&feed=iex`;
-    console.log(`Fetching current quotes from: ${quotesUrl}`);
-    
-    const quotesResponse = await fetch(quotesUrl, { headers });
-    
-    if (!quotesResponse.ok) {
-      console.error(`Failed to fetch quotes: ${quotesResponse.status}`);
-      throw new Error('Failed to fetch current stock quotes');
-    }
+    console.log('Fetching biggest gainers and losers from watchlist stocks...');
 
-    const quotesData = await quotesResponse.json();
-    console.log(`Received quotes for ${Object.keys(quotesData.quotes || {}).length} symbols`);
-
-    // Get previous day's closing prices to calculate change
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    // Format as YYYY-MM-DD
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbols}&timeframe=1Day&start=${yesterdayStr}&end=${yesterdayStr}&adjustment=raw&feed=iex`;
-    console.log(`Fetching previous day bars from: ${barsUrl}`);
-    
-    const barsResponse = await fetch(barsUrl, { headers });
-    
-    let previousCloses: { [symbol: string]: number } = {};
-    
-    if (barsResponse.ok) {
-      const barsData = await barsResponse.json();
-      console.log(`Received bars for ${Object.keys(barsData.bars || {}).length} symbols`);
-      
-      for (const [symbol, bars] of Object.entries(barsData.bars || {})) {
-        const barArray = bars as any[];
-        if (barArray && barArray.length > 0) {
-          const lastBar = barArray[barArray.length - 1];
-          previousCloses[symbol] = lastBar.c; // closing price
-        }
-      }
-    } else {
-      console.warn(`Failed to fetch previous day data: ${barsResponse.status}`);
-    }
-
-    // Calculate movers from the data
+    // Get stock prices for all watchlist stocks using the stock-price function
     const stockMovers: any[] = [];
     
-    for (const stock of TRACKED_STOCKS) {
-      const quote = quotesData.quotes?.[stock.symbol];
-      const previousClose = previousCloses[stock.symbol];
-      
-      if (quote && previousClose) {
-        // Use mid-point of bid/ask as current price
-        const currentPrice = (quote.ap + quote.bp) / 2;
-        const change = currentPrice - previousClose;
-        const changePercent = (change / previousClose) * 100;
+    for (const symbol of ALL_WATCHLIST_STOCKS) {
+      try {
+        console.log(`Fetching price data for ${symbol}...`);
         
-        stockMovers.push({
-          symbol: stock.symbol,
-          name: stock.name,
-          price: parseFloat(currentPrice.toFixed(2)),
-          change: parseFloat(change.toFixed(2)),
-          changePercent: parseFloat(changePercent.toFixed(2)),
-          volume: quote.as ? `${Math.round(quote.as / 1000000)}M` : 'N/A'
+        const priceResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/stock-price`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+          },
+          body: JSON.stringify({ symbol })
         });
+        
+        if (priceResponse.ok) {
+          const priceData = await priceResponse.json();
+          
+          if (priceData && priceData.changePercent != null) {
+            // Get company name from symbol
+            const getCompanyName = (symbol: string): string => {
+              const companies: Record<string, string> = {
+                'AAPL': 'Apple Inc.',
+                'MSFT': 'Microsoft Corporation',
+                'GOOGL': 'Alphabet Inc.',
+                'AMZN': 'Amazon.com Inc.',
+                'NVDA': 'NVIDIA Corporation',
+                'TSLA': 'Tesla Inc.',
+                'META': 'Meta Platforms Inc.',
+                'NFLX': 'Netflix Inc.',
+                'DIS': 'Walt Disney Co.',
+                'V': 'Visa Inc.',
+                'JPM': 'JPMorgan Chase & Co.',
+                'JNJ': 'Johnson & Johnson',
+                'WMT': 'Walmart Inc.',
+                'PG': 'Procter & Gamble Co.',
+                'UNH': 'UnitedHealth Group Inc.',
+                'MA': 'Mastercard Inc.',
+                'HD': 'Home Depot Inc.',
+                'BAC': 'Bank of America Corp.',
+                'ABBV': 'AbbVie Inc.',
+                'CRM': 'Salesforce Inc.',
+                'SPY': 'SPDR S&P 500 ETF',
+                'QQQ': 'Invesco QQQ Trust',
+                'DIA': 'SPDR Dow Jones Industrial Average ETF'
+              };
+              return companies[symbol] || `${symbol} Corp.`;
+            };
+            
+            stockMovers.push({
+              symbol: symbol,
+              name: getCompanyName(symbol),
+              price: parseFloat(priceData.price?.toFixed(2) || '0'),
+              change: parseFloat(priceData.change?.toFixed(2) || '0'),
+              changePercent: parseFloat(priceData.changePercent?.toFixed(2) || '0'),
+              volume: 'N/A' // Volume not available from stock-price function
+            });
+          }
+        } else {
+          console.warn(`Failed to fetch price for ${symbol}: ${priceResponse.status}`);
+        }
+        
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        console.error(`Error fetching price for ${symbol}:`, error);
       }
     }
 
