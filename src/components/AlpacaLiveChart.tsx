@@ -1,168 +1,215 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChartCanvas } from '@/components/chart/ChartCanvas';
-import { ChartControls } from '@/components/chart/ChartControls';
-import { useAlpacaHistoricalData } from '@/hooks/useAlpacaHistoricalData';
-import { 
-  ChartState, 
-  TimeFrame, 
-  TechnicalIndicator, 
-  ViewportState, 
-  ChartDimensions,
-  CrosshairData,
-  TooltipData,
-  ChartSettings
-} from '@/types/chart';
-import { calculatePriceRange, calculateTimeRange, calculateVisibleRange } from '@/utils/chartUtils';
+import React, { useEffect, useRef, useState } from 'react';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+
+interface AlpacaBar {
+  t: string; // timestamp
+  o: number; // open
+  h: number; // high
+  l: number; // low
+  c: number; // close
+  v: number; // volume
+}
 
 const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => {
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>('1m');
-  const [indicators, setIndicators] = useState<TechnicalIndicator[]>([]);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<any>(null);
   
-  // Get timeframe in Alpaca format
-  const getAlpacaTimeframe = (tf: TimeFrame): string => {
-    const mapping: Record<TimeFrame, string> = {
-      '1m': '1Min',
-      '5m': '5Min', 
-      '15m': '15Min',
-      '1h': '1Hour',
-      '4h': '4Hour',
-      '1d': '1Day',
-      '1w': '1Week'
-    };
-    return mapping[tf] || '1Min';
-  };
+  const [currentPrice, setCurrentPrice] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [dataSource, setDataSource] = useState<'historical' | 'live' | 'error'>('historical');
+  const [historicalDataLoaded, setHistoricalDataLoaded] = useState(false);
 
-  const { chartData, isLoading } = useAlpacaHistoricalData(symbol, getAlpacaTimeframe(timeFrame));
-
-  const [chartState, setChartState] = useState<ChartState>({
-    data: chartData,
-    viewport: {
-      scale: 1,
-      translateX: 0,
-      translateY: 0,
-      startIndex: 0,
-      endIndex: 100
-    },
-    dimensions: {
-      width: 800,
-      height: 600,
-      chartWidth: 720,
-      chartHeight: 480,
-      marginTop: 20,
-      marginBottom: 60,
-      marginLeft: 80,
-      marginRight: 20
-    },
-    priceRange: { min: 0, max: 100, range: 100 },
-    timeRange: { start: Date.now() - 86400000, end: Date.now() },
-    settings: {
-      candleWidth: 8,
-      candleSpacing: 2,
-      gridLines: true,
-      showVolume: true,
-      theme: 'dark'
-    },
-    indicators,
-    crosshair: { x: 0, y: 0, timestamp: 0, price: 0, visible: false },
-    tooltip: { x: 0, y: 0, ohlc: { timestamp: 0, open: 0, high: 0, low: 0, close: 0, volume: 0 }, visible: false },
-    timeFrame,
-    isLoading,
-    isDragging: false,
-    isZooming: false
+  // Use the singleton WebSocket for this page only
+  const { streamData, isConnected, errorMessage, connectionStatus, connect } = useAlpacaStreamSingleton({
+    symbols: [symbol],
+    enabled: true
   });
 
-  // Update chart state when data changes
+  // Initialize Lightweight Charts
   useEffect(() => {
-    setChartState(prev => ({
-      ...prev,
-      data: chartData,
-      isLoading,
-      timeFrame
-    }));
-  }, [chartData, isLoading, timeFrame]);
-
-  // Recalculate ranges when data or viewport changes
-  useEffect(() => {
-    if (chartData.data.length === 0) return;
-
-    const { startIndex, endIndex } = calculateVisibleRange(
-      chartState.viewport,
-      chartState.dimensions.chartWidth,
-      chartState.settings.candleWidth,
-      chartState.settings.candleSpacing
-    );
-
-    const priceRange = calculatePriceRange(chartData.data, startIndex, endIndex);
-    const timeRange = calculateTimeRange(chartData.data, startIndex, endIndex);
-
-    setChartState(prev => ({
-      ...prev,
-      viewport: { ...prev.viewport, startIndex, endIndex },
-      priceRange,
-      timeRange
-    }));
-  }, [chartData, chartState.viewport.scale, chartState.viewport.translateX, chartState.dimensions, chartState.settings]);
-
-  // Calculate price info
-  const currentPrice = chartData.data.length > 0 
-    ? chartData.data[chartData.data.length - 1].close
-    : 0;
+    console.log('Initializing Lightweight Chart for Alpaca data...');
     
-  const priceChange = chartData.data.length > 1 
-    ? chartData.data[chartData.data.length - 1].close - chartData.data[chartData.data.length - 2].close
-    : 0;
-    
-  const priceChangePercent = chartData.data.length > 1 
-    ? (priceChange / chartData.data[chartData.data.length - 2].close) * 100
-    : 0;
+    const initChart = () => {
+      if (!chartContainerRef.current) {
+        console.error('Chart container not found');
+        setIsLoading(false);
+        return;
+      }
 
-  // Event handlers
-  const handleViewportChange = useCallback((viewport: ViewportState) => {
-    setChartState(prev => ({ ...prev, viewport }));
-  }, []);
+      try {
+        const containerWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+        
+        // Create chart with dark theme to match website
+        const chart = createChart(chartContainerRef.current, {
+          width: containerWidth,
+          height: 500,
+          layout: {
+            background: { color: '#0f172a' },
+            textColor: '#e2e8f0',
+          },
+          grid: {
+            vertLines: { color: '#1e293b' },
+            horzLines: { color: '#1e293b' },
+          },
+          crosshair: {
+            mode: 1,
+          },
+          rightPriceScale: {
+            borderColor: '#475569',
+          },
+          timeScale: {
+            borderColor: '#475569',
+            timeVisible: true,
+            secondsVisible: false,
+          },
+        });
 
-  const handleCrosshairChange = useCallback((crosshair: CrosshairData) => {
-    setChartState(prev => ({ ...prev, crosshair }));
-  }, []);
+        // Add candlestick series
+        const candleSeries = chart.addSeries(CandlestickSeries, {
+          upColor: '#10b981',
+          downColor: '#ef4444',
+          borderVisible: false,
+          wickUpColor: '#10b981',
+          wickDownColor: '#ef4444',
+        });
+        
+        candlestickSeriesRef.current = candleSeries;
+        chartRef.current = chart;
 
-  const handleTooltipChange = useCallback((tooltip: TooltipData) => {
-    setChartState(prev => ({ ...prev, tooltip }));
-  }, []);
+        // Handle resize
+        const handleResize = () => {
+          if (chartContainerRef.current && chartRef.current) {
+            const newWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+            chartRef.current.applyOptions({
+              width: newWidth,
+            });
+          }
+        };
 
-  const handleTimeFrameChange = useCallback((newTimeFrame: TimeFrame) => {
-    setTimeFrame(newTimeFrame);
-  }, []);
+        window.addEventListener('resize', handleResize);
+        toast.success('Chart initialized successfully');
 
-  const handleIndicatorToggle = useCallback((indicatorId: string) => {
-    setIndicators(prev => 
-      prev.map(indicator => 
-        indicator.id === indicatorId 
-          ? { ...indicator, visible: !indicator.visible }
-          : indicator
-      )
-    );
-  }, []);
+        return () => {
+          window.removeEventListener('resize', handleResize);
+        };
 
-  const handleIndicatorAdd = useCallback((indicator: Omit<TechnicalIndicator, 'id'>) => {
-    const newIndicator: TechnicalIndicator = {
-      ...indicator,
-      id: `${indicator.type}-${Date.now()}`
+      } catch (error) {
+        console.error('Chart initialization failed:', error);
+        setIsLoading(false);
+        toast.error('Chart initialization failed');
+      }
     };
-    setIndicators(prev => [...prev, newIndicator]);
+
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(initChart);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
+    };
   }, []);
 
-  const handleSettingsChange = useCallback((newSettings: Partial<ChartSettings>) => {
-    setChartState(prev => ({
-      ...prev,
-      settings: { ...prev.settings, ...newSettings }
-    }));
-  }, []);
+  // Fetch historical data from Alpaca
+  const fetchHistoricalData = async () => {
+    try {
+      console.log('📊 Fetching Alpaca historical data for', symbol);
+      setIsLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to access trading features');
+        return;
+      }
+
+      // Call our edge function to get Alpaca historical data
+      const { data, error } = await supabase.functions.invoke('alpaca-historical-data', {
+        body: { 
+          symbol,
+          timeframe: '1Min',
+          limit: 1000
+        }
+      });
+
+      if (error) {
+        console.error('❌ Alpaca edge function error:', error);
+        throw error;
+      }
+
+      if (data?.bars && Array.isArray(data.bars)) {
+        console.log('Alpaca historical data loaded:', data.bars.length, 'bars');
+        
+        const formatted: CandlestickData[] = data.bars.map((bar: AlpacaBar) => ({
+          time: Math.floor(new Date(bar.t).getTime() / 1000) as any,
+          open: bar.o,
+          high: bar.h,
+          low: bar.l,
+          close: bar.c,
+        }));
+
+        if (candlestickSeriesRef.current && formatted.length > 0) {
+          candlestickSeriesRef.current.setData(formatted);
+          const latestPrice = formatted[formatted.length - 1].close;
+          setCurrentPrice(latestPrice);
+          setHistoricalDataLoaded(true);
+          setDataSource('historical');
+        }
+      } else {
+        throw new Error('Invalid Alpaca data format received');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching Alpaca historical data:', error);
+      toast.error('Failed to fetch Alpaca data');
+      setDataSource('error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle real-time updates from WebSocket
+  useEffect(() => {
+    if (streamData[symbol]) {
+      const trade = streamData[symbol];
+      const price = trade.price;
+      const timestamp = Math.floor(new Date(trade.timestamp).getTime() / 1000);
+
+      if (candlestickSeriesRef.current && price) {
+        candlestickSeriesRef.current.update({
+          time: timestamp as any,
+          close: price,
+          open: currentPrice || price,
+          high: Math.max(currentPrice || price, price),
+          low: Math.min(currentPrice || price, price),
+        });
+      }
+
+      setCurrentPrice(price);
+      setLastUpdate(new Date().toLocaleTimeString());
+      setDataSource('live'); // Mark that we're receiving live data
+    }
+  }, [streamData, symbol, currentPrice]);
+
+  // Track WebSocket connection status
+  useEffect(() => {
+    if (connectionStatus === 'error') {
+      setDataSource('error');
+    }
+  }, [connectionStatus]);
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchHistoricalData();
+  }, [symbol]);
 
   // Place buy/sell order via Alpaca
   const placeOrder = async (side: 'buy' | 'sell') => {
@@ -192,66 +239,106 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-96">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading Alpaca chart data...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Main Chart */}
-      <Card>
+      {/* Header with Price and Status */}
+      <Card className="bg-slate-900/50 border-slate-700">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <CardTitle className="flex items-center space-x-2">
-                <span>{symbol}</span>
-                <Badge variant="outline">Alpaca</Badge>
-              </CardTitle>
+              <CardTitle className="text-2xl text-white">{symbol} Live Trading</CardTitle>
+              <Badge variant={isConnected ? "default" : "destructive"} className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                {isConnected ? 'Live Feed Active' : 'Disconnected'}
+              </Badge>
+              {errorMessage && (
+                <Badge variant="destructive" className="text-xs">
+                  {errorMessage}
+                </Badge>
+              )}
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  ${currentPrice.toFixed(2)}
-                </div>
-                <div className={`text-sm ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
-                </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-emerald-400">${currentPrice.toFixed(2)}</div>
+              <div className="text-sm text-slate-400">
+                {lastUpdate ? `Updated: ${lastUpdate}` : 'Current Price'}
               </div>
             </div>
           </div>
         </CardHeader>
+      </Card>
 
-        <CardContent className="space-y-4">
-          <ChartControls
-            timeFrame={timeFrame}
-            onTimeFrameChange={handleTimeFrameChange}
-            indicators={indicators}
-            onIndicatorToggle={handleIndicatorToggle}
-            onIndicatorAdd={handleIndicatorAdd}
-            showGrid={chartState.settings.gridLines}
-            onGridToggle={(show) => handleSettingsChange({ gridLines: show })}
-            showVolume={chartState.settings.showVolume}
-            onVolumeToggle={(show) => handleSettingsChange({ showVolume: show })}
-            theme={chartState.settings.theme}
-            onThemeToggle={() => handleSettingsChange({ theme: chartState.settings.theme === 'dark' ? 'light' : 'dark' })}
-          />
+      {/* Data Source Status Card */}
+      <Card className="bg-slate-900/50 border-slate-700">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-400">Data Source:</span>
+                {dataSource === 'live' && (
+                  <Badge className="bg-green-600 text-white">
+                    🔴 Live WebSocket Data
+                  </Badge>
+                )}
+                {dataSource === 'historical' && (
+                  <Badge variant="secondary" className="bg-yellow-600 text-white">
+                    📊 Historical Data Only
+                  </Badge>
+                )}
+                {dataSource === 'error' && (
+                  <Badge variant="destructive">
+                    ❌ Connection Failed
+                  </Badge>
+                )}
+              </div>
+              
+              {!isConnected && errorMessage && (
+                <div className="text-sm text-red-400">
+                  Error: {errorMessage}
+                </div>
+              )}
+            </div>
+            
+            {!isConnected && (
+              <Button
+                onClick={connect}
+                variant="outline"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+              >
+                🔄 Retry Connection
+              </Button>
+            )}
+          </div>
+          
+          {dataSource === 'historical' && historicalDataLoaded && (
+            <div className="mt-2 text-xs text-slate-500">
+              Showing historical data from Alpaca. Real-time WebSocket connection failed.
+              {errorMessage && ` (${errorMessage})`}
+            </div>
+          )}
+          
+          {dataSource === 'error' && (
+            <div className="mt-2 text-xs text-red-500">
+              Unable to load data. Please check your connection and try again.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          <div className="h-96">
-            <ChartCanvas
-              chartState={chartState}
-              onViewportChange={handleViewportChange}
-              onCrosshairChange={handleCrosshairChange}
-              onTooltipChange={handleTooltipChange}
+      {/* Chart */}
+      <Card className="bg-slate-900/50 border-slate-700">
+        <CardContent className="p-0">
+          <div className="relative">
+            <div 
+              ref={chartContainerRef} 
+              className="w-full h-[500px]"
+              style={{ minHeight: '500px', minWidth: '100%' }}
             />
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
+                <div className="text-lg text-slate-300">Loading chart data...</div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -259,25 +346,27 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       {/* Trading Controls */}
       <Card className="bg-slate-900/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-center text-white">Alpaca Paper Trading</CardTitle>
+          <CardTitle className="text-center text-white">Quick Trading</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center space-x-6">
             <Button
               onClick={() => placeOrder('buy')}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
+              disabled={!isConnected || isLoading}
             >
               🟢 BUY {symbol}
             </Button>
             <Button
               onClick={() => placeOrder('sell')}
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
+              disabled={!isConnected || isLoading}
             >
               🔴 SELL {symbol}
             </Button>
           </div>
           <p className="text-center text-sm text-slate-400 mt-3">
-            Market orders • 1 share • Paper Trading • Alpaca Historical Data
+            Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
           </p>
         </CardContent>
       </Card>
