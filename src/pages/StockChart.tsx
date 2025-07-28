@@ -420,6 +420,7 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
 };
 
 const StockChart: React.FC = () => {
+  console.log('StockChart component loaded - WebSocketMonitor should be removed');
   
   const { symbol } = useParams<{ symbol: string }>();
   const navigate = useNavigate();
