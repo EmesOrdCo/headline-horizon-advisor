@@ -10,11 +10,6 @@ import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RSSHeadlines from "@/components/RSSHeadlines";
 import AutoRefreshAnalytics from "@/components/AutoRefreshAnalytics";
-import { SourceArticles } from "@/components/NewsCard/SourceArticles";
-import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
-import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
-import { DetailedAnalysis } from "@/components/NewsCard/DetailedAnalysis";
-import AINewsInsights from "@/components/StockDetail/AINewsInsights";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
@@ -23,6 +18,7 @@ import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import CompanyLogo from "@/components/CompanyLogo";
+import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 
 const Dashboard = () => {
   useSEO({
@@ -168,72 +164,28 @@ const Dashboard = () => {
       <main className="pt-8 sm:pt-12 p-3 sm:p-4 w-[95%] mx-auto">
 
 
-        {/* TOP SECTION - Modified to include breaking news */}
+        {/* Main grid layout */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-12">
-          {/* Main Content - Breaking News Section */}
+          {/* Main Content Area */}
           <div className="lg:col-span-4 space-y-8">
-            {/* 
-              BREAKING NEWS SECTION
-              Purpose: Display the biggest global headline affecting stocks
-              This could include major geopolitical events, significant tech announcements, 
-              economic developments, or other world events that impact financial markets.
-              Updated daily with the most market-moving news.
-            */}
-            <Card className="bg-gradient-to-br from-red-950/30 to-slate-800/50 border-red-500/30">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-6 h-6 text-red-400 animate-pulse" />
-                    <Badge className="bg-red-600 text-white text-sm font-bold">BREAKING</Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">Updated 12 minutes ago</span>
-                  </div>
-                </div>
-
-                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                  S&P 500 Hits Record on Signs Economy in Good Shape
-                </h1>
-
-                <p className="text-xl text-slate-300 mb-6 leading-relaxed">
-                  Economically sensitive shares outperformed after solid retail sales and a drop in jobless claims, 
-                  signaling continued economic resilience despite recent market volatility and geopolitical tensions.
-                </p>
-
-                <div className="flex items-center gap-4 mb-6">
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Market Positive
-                  </Badge>
-                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    Economic Data
-                  </Badge>
-                  <span className="text-slate-400 text-sm">
-                    Impact: High • Confidence: 94%
-                  </span>
-                </div>
-
-                {/* AI Analysis Section */}
-                <AIAnalysisSection 
-                  symbol="SPY"
-                  sentiment="Bullish"
-                  confidence={94}
-                  isHistorical={false}
-                  sourceLinksCount={5}
-                />
-
-                <SentimentIndicator 
-                  sentiment="Bullish"
-                  category="Market Positive"
-                />
-
-                <DetailedAnalysis 
-                  symbol="SPY"
-                  sentiment="Bullish"
-                  confidence={94}
-                />
-              </CardContent>
-            </Card>
+            {/* Most Pressing Headline */}
+            {mostPressingHeadline && (
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <NewsCard 
+                    symbol={mostPressingHeadline.symbol}
+                    title={mostPressingHeadline.title}
+                    description={mostPressingHeadline.description}
+                    confidence={mostPressingHeadline.ai_confidence}
+                    sentiment={mostPressingHeadline.ai_sentiment}
+                    category={mostPressingHeadline.category}
+                    isHistorical={mostPressingHeadline.ai_reasoning?.includes('Historical')}
+                    sourceLinks={mostPressingHeadline.source_links || "[]"}
+                    stockPrice={getStockPrice(mostPressingHeadline.symbol)}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
           
           {/* Sidebar */}
@@ -350,26 +302,17 @@ const Dashboard = () => {
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2 h-full">
-                      <NewsCard 
-                        symbol={topMagnificent7Story.symbol}
-                        title={generateCompositeHeadline(topMagnificent7Story)}
-                        description={topMagnificent7Story.description}
-                        confidence={topMagnificent7Story.ai_confidence}
-                        sentiment={topMagnificent7Story.ai_sentiment}
-                        category={topMagnificent7Story.category}
-                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        sourceLinks="[]"
-                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
-                      />
-                    </div>
-                    {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-y-auto">
-                      <AINewsInsights symbol={topMagnificent7Story.symbol} />
-                    </div>
-                  </div>
+                  <NewsCard 
+                    symbol={topMagnificent7Story.symbol}
+                    title={generateCompositeHeadline(topMagnificent7Story)}
+                    description={topMagnificent7Story.description}
+                    confidence={topMagnificent7Story.ai_confidence}
+                    sentiment={topMagnificent7Story.ai_sentiment}
+                    category={topMagnificent7Story.category}
+                    isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                    sourceLinks={topMagnificent7Story.source_links || "[]"}
+                    stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -394,27 +337,17 @@ const Dashboard = () => {
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700 h-full">
                 <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2 h-full">
-                      <NewsCard 
-                        symbol={topIndexFundStory.symbol}
-                        title={generateCompositeHeadline(topIndexFundStory)}
-                        description={topIndexFundStory.description}
-                        confidence={topIndexFundStory.ai_confidence}
-                        sentiment={topIndexFundStory.ai_sentiment}
-                        category={topIndexFundStory.category}
-                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                        sourceLinks="[]"
-                        stockPrice={getStockPrice(topIndexFundStory.symbol)}
-                      />
-                    </div>
-                    
-                    {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-y-auto">
-                      <AINewsInsights symbol={topIndexFundStory.symbol} />
-                    </div>
-                  </div>
+                  <NewsCard 
+                    symbol={topIndexFundStory.symbol}
+                    title={generateCompositeHeadline(topIndexFundStory)}
+                    description={topIndexFundStory.description}
+                    confidence={topIndexFundStory.ai_confidence}
+                    sentiment={topIndexFundStory.ai_sentiment}
+                    category={topIndexFundStory.category}
+                    isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                    sourceLinks={topIndexFundStory.source_links || "[]"}
+                    stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                  />
                 </CardContent>
               </Card>
             </div>
