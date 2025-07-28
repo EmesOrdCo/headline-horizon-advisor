@@ -101,38 +101,8 @@ serve(async (req) => {
     // Sort to find top gainers and losers
     const sortedByChange = [...stockMovers].sort((a, b) => b.changePercent - a.changePercent);
     
-    let topGainers = sortedByChange.filter(s => s.changePercent > 0).slice(0, 3);
-    let topLosers = sortedByChange.filter(s => s.changePercent < 0).slice(-3).reverse();
-
-    // If we don't have enough real data, supplement with fallback
-    if (topGainers.length < 3 || topLosers.length < 3) {
-      console.log('Supplementing with fallback data due to insufficient real data...');
-      
-      const fallbackGainers = [
-        { symbol: 'AAPL', name: 'Apple Inc.', price: 175.50, change: 4.25, changePercent: 2.48, volume: '85M' },
-        { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 485.20, change: 12.75, changePercent: 2.70, volume: '78M' },
-        { symbol: 'META', name: 'Meta Platforms Inc.', price: 298.40, change: 6.80, changePercent: 2.39, volume: '45M' }
-      ];
-      
-      const fallbackLosers = [
-        { symbol: 'TSLA', name: 'Tesla Inc.', price: 245.80, change: -8.45, changePercent: -3.33, volume: '92M' },
-        { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 156.70, change: -4.20, changePercent: -2.61, volume: '70M' },
-        { symbol: 'AMD', name: 'Advanced Micro Devices Inc.', price: 132.50, change: -3.85, changePercent: -2.82, volume: '88M' }
-      ];
-      
-      // Use real data where available, supplement with fallback
-      while (topGainers.length < 3) {
-        const fallbackStock = fallbackGainers[topGainers.length];
-        if (fallbackStock) topGainers.push(fallbackStock);
-        else break;
-      }
-      
-      while (topLosers.length < 3) {
-        const fallbackStock = fallbackLosers[topLosers.length];
-        if (fallbackStock) topLosers.push(fallbackStock);
-        else break;
-      }
-    }
+    const topGainers = sortedByChange.filter(s => s.changePercent > 0).slice(0, 3);
+    const topLosers = sortedByChange.filter(s => s.changePercent < 0).slice(-3).reverse();
 
     console.log(`Processing ${topGainers.length} gainers and ${topLosers.length} losers for news analysis`);
 
@@ -328,84 +298,10 @@ IMPORTANT:
   } catch (error) {
     console.error('Error in get-biggest-movers function:', error);
     
-    // Return fallback data instead of error to prevent UI crashes
+    // Return empty arrays instead of fallback data to prevent UI crashes
     const fallbackData = {
-      gainers: [
-        { 
-          symbol: 'AAPL', 
-          name: 'Apple Inc', 
-          price: 175.50, 
-          change: 4.25, 
-          changePercent: 2.48, 
-          volume: '85M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        },
-        { 
-          symbol: 'NVDA', 
-          name: 'NVIDIA Corporation', 
-          price: 485.20, 
-          change: 12.75, 
-          changePercent: 2.70, 
-          volume: '78M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        },
-        { 
-          symbol: 'META', 
-          name: 'Meta Platforms Inc', 
-          price: 298.40, 
-          change: 6.80, 
-          changePercent: 2.39, 
-          volume: '45M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        }
-      ],
-      losers: [
-        { 
-          symbol: 'TSLA', 
-          name: 'Tesla Inc', 
-          price: 245.80, 
-          change: -8.45, 
-          changePercent: -3.33, 
-          volume: '92M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        },
-        { 
-          symbol: 'AMZN', 
-          name: 'Amazon.com Inc', 
-          price: 156.70, 
-          change: -4.20, 
-          changePercent: -2.61, 
-          volume: '70M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        },
-        { 
-          symbol: 'AMD', 
-          name: 'Advanced Micro Devices Inc', 
-          price: 132.50, 
-          change: -3.85, 
-          changePercent: -2.82, 
-          volume: '88M',
-          headlines: [],
-          overallImpact: 'Market data temporarily unavailable. Please try again later.',
-          marketSentiment: 'Neutral',
-          sentimentReasoning: 'Data temporarily unavailable'
-        }
-      ],
+      gainers: [],
+      losers: [],
       lastUpdated: new Date().toISOString()
     };
 

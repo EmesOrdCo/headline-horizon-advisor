@@ -605,7 +605,6 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
-                  disabled
                 >
                   <Bitcoin className="w-4 h-4 mr-2" />
                   Crypto
@@ -619,7 +618,6 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
-                  disabled
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Indices
@@ -633,7 +631,6 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
-                  disabled
                 >
                   <Globe className="w-4 h-4 mr-2" />
                   Commodities
@@ -647,7 +644,6 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
-                  disabled
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
                   Currencies
@@ -661,7 +657,6 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
-                  disabled
                 >
                   <Building className="w-4 h-4 mr-2" />
                   ETFs
