@@ -48,7 +48,7 @@ const StockAnalysis: React.FC = () => {
             variant="ghost" 
             size="sm" 
             className="text-slate-300 hover:text-white"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/watchlist')}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Watchlist
