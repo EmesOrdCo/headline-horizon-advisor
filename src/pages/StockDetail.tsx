@@ -19,6 +19,7 @@ import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStream } from "@/hooks/useAlpacaStream";
 import { useSEO } from "@/hooks/useSEO";
 import { getCompanyName } from "@/utils/stockUtils";
+import CompanyLogo from "@/components/CompanyLogo";
 
 const StockDetail = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -131,10 +132,8 @@ const StockDetail = () => {
             <div className="flex items-center justify-between">
               {/* Left side - Stock info */}
               <div className="flex items-center space-x-4">
-                {/* Stock Icon */}
-                <div className="w-16 h-16 bg-emerald-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">{stockSymbol.slice(0, 2)}</span>
-                </div>
+                {/* Real Stock Logo */}
+                <CompanyLogo symbol={stockSymbol} size="lg" />
                 
                 {/* Stock Details */}
                 <div>

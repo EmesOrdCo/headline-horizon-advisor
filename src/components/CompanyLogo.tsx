@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CompanyLogoProps {
   symbol: string;
@@ -7,8 +8,39 @@ interface CompanyLogoProps {
   className?: string;
 }
 
-const CompanyLogo = ({ symbol, logoUrl, size = 'md', className = '' }: CompanyLogoProps) => {
+const CompanyLogo = ({ symbol, logoUrl: propLogoUrl, size = 'md', className = '' }: CompanyLogoProps) => {
   const [imageError, setImageError] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(propLogoUrl || null);
+  const [loading, setLoading] = useState(!propLogoUrl);
+
+  useEffect(() => {
+    if (!propLogoUrl && symbol) {
+      fetchLogoFromDB();
+    }
+  }, [symbol, propLogoUrl]);
+
+  const fetchLogoFromDB = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('company_logos')
+        .select('logo_url')
+        .eq('symbol', symbol.toUpperCase())
+        .single();
+
+      if (error) {
+        console.error('Error fetching logo:', error);
+        setLogoUrl(null);
+      } else {
+        setLogoUrl(data?.logo_url || null);
+      }
+    } catch (err) {
+      console.error('Error fetching logo:', err);
+      setLogoUrl(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getSizeClasses = () => {
     switch (size) {
@@ -35,6 +67,15 @@ const CompanyLogo = ({ symbol, logoUrl, size = 'md', className = '' }: CompanyLo
         return 'text-xs';
     }
   };
+
+  // Show loading state briefly
+  if (loading) {
+    return (
+      <div className={`${getSizeClasses()} bg-slate-600 rounded-lg flex items-center justify-center animate-pulse ${className}`}>
+        <div className="w-4 h-4 bg-slate-500 rounded"></div>
+      </div>
+    );
+  }
 
   // If no logo URL or image failed to load, show fallback
   if (!logoUrl || imageError) {

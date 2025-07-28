@@ -29,6 +29,7 @@ import {
   Star
  } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
+import CompanyLogo from "@/components/CompanyLogo";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -512,11 +513,9 @@ const StockChart: React.FC = () => {
       {/* Top Navigation Bar - Exact replica */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
-          {/* Stock Symbol with Icon */}
+          {/* Stock Symbol with Real Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-bold">{activeSymbol?.charAt(0) || 'A'}</span>
-            </div>
+            <CompanyLogo symbol={activeSymbol || 'AAPL'} size="md" />
             <div className="flex items-center space-x-2">
               <span className="text-white font-bold text-lg">{activeSymbol}</span>
               <span className="text-slate-400 text-sm">{selectedTimeframe}</span>

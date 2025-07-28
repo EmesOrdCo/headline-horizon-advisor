@@ -30,6 +30,7 @@ import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LiveTradingViewChart } from "@/components/chart/LiveTradingViewChart";
+import CompanyLogo from "@/components/CompanyLogo";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -154,13 +155,22 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
       {/* Top Navigation Bar - Exact replica */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
-          {/* Stock Symbol with Icon */}
+          {/* Go Back Button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-slate-300 hover:text-white"
+            onClick={() => navigate('/dashboard')}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Watchlist
+          </Button>
+
+          {/* Stock Symbol with Real Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-bold">A</span>
-            </div>
+            <CompanyLogo symbol={activeSymbol} size="md" />
             <div className="flex items-center space-x-2">
-              <span className="text-white font-bold text-lg">AAPL</span>
+              <span className="text-white font-bold text-lg">{activeSymbol}</span>
               <span className="text-slate-400 text-sm">1D</span>
               <span className="text-slate-400 text-sm">NASDAQ</span>
               <span className="text-slate-400 text-sm">•</span>

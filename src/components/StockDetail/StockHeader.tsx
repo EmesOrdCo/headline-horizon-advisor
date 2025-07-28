@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import CompanyLogo from "@/components/CompanyLogo";
 
 interface StockHeaderProps {
   symbol: string;
@@ -31,10 +32,8 @@ const StockHeader = ({ symbol, stockInfo, cameFromWatchlist }: StockHeaderProps)
       
       {/* Stock Info Header */}
       <div className="flex items-start gap-4">
-        {/* Stock Icon */}
-        <div className="w-16 h-16 bg-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-lg">{symbol.slice(0, 2)}</span>
-        </div>
+        {/* Real Stock Logo */}
+        <CompanyLogo symbol={symbol} size="lg" className="flex-shrink-0" />
         
         {/* Stock Details */}
         <div className="flex-1">

@@ -2,7 +2,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CompanyLogo from "@/components/CompanyLogo";
-import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { X, TrendingUp, TrendingDown, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -36,7 +35,6 @@ interface RealTimeStockCardProps {
 const RealTimeStockCard = ({ stock, streamData, isConnected, onRemove }: RealTimeStockCardProps) => {
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
-  const { getLogoUrl } = useCompanyLogos([stock.symbol]);
 
   useEffect(() => {
     if (streamData?.price && previousPrice !== null) {
@@ -68,7 +66,6 @@ const RealTimeStockCard = ({ stock, streamData, isConnected, onRemove }: RealTim
       <div className="flex items-center gap-3">
         <CompanyLogo 
           symbol={stock.symbol} 
-          logoUrl={getLogoUrl(stock.symbol)} 
           size="sm" 
         />
         <div className="flex flex-col gap-1">

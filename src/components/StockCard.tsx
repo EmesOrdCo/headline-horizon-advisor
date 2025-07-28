@@ -2,7 +2,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CompanyLogo from "@/components/CompanyLogo";
-import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { X, TrendingUp, TrendingDown } from "lucide-react";
 
 interface StockPrice {
@@ -26,14 +25,12 @@ interface StockCardProps {
 
 const StockCard = ({ stock, stockPrice, onRemove }: StockCardProps) => {
   console.log(`StockCard for ${stock.symbol}:`, { stock, stockPrice });
-  const { getLogoUrl } = useCompanyLogos([stock.symbol]);
   
   return (
     <div className="flex items-center justify-between bg-slate-700/50 border border-slate-600 rounded-lg p-3 min-w-[200px]">
       <div className="flex items-center gap-3">
         <CompanyLogo 
           symbol={stock.symbol} 
-          logoUrl={getLogoUrl(stock.symbol)} 
           size="sm" 
         />
         <div>

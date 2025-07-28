@@ -14,6 +14,7 @@ import {
   Star
 } from "lucide-react";
 import AllDataTab from "@/components/StockDetail/AllDataTab";
+import CompanyLogo from "@/components/CompanyLogo";
 
 const StockData: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -46,27 +47,17 @@ const StockData: React.FC = () => {
             variant="ghost" 
             size="sm" 
             className="text-slate-300 hover:text-white"
-            onClick={() => navigate(`/stock-chart/${symbol}`)}
+            onClick={() => navigate('/dashboard')}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Watchlist
           </Button>
           
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold">N</span>
-            </div>
+            <CompanyLogo symbol={symbol || 'AAPL'} size="sm" />
             <span className="text-white font-medium">{symbol}</span>
             <span className="text-slate-400">All Data</span>
           </div>
-
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-slate-300 hover:text-white hover:bg-slate-700"
-            onClick={() => navigate('/dashboard')}
-          >
-            <span className="text-sm">Back to Watchlist</span>
-          </Button>
         </div>
 
         <div className="flex items-center space-x-2">
