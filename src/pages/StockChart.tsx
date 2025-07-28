@@ -310,12 +310,11 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white text-lg">Trading Panel</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Order Type Selection */}
+    <div className="w-full">
+      <h3 className="text-white text-lg font-medium mb-4">Trading Panel</h3>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
+        {/* Order Type */}
         <div>
           <label className="text-sm text-slate-300 block mb-2">Order Type</label>
           <Select value={orderType} onValueChange={(value: any) => setOrderType(value)}>
@@ -330,20 +329,20 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
           </Select>
         </div>
 
-        {/* Quantity Input */}
+        {/* Quantity */}
         <div>
           <label className="text-sm text-slate-300 block mb-2">Quantity</label>
           <Input
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Number of shares"
+            placeholder="Shares"
             className="bg-slate-700 border-slate-600 text-white"
             min="1"
           />
         </div>
 
-        {/* Limit Price (only for limit orders) */}
+        {/* Limit Price (conditional) */}
         {orderType === 'limit' && (
           <div>
             <label className="text-sm text-slate-300 block mb-2">Limit Price</label>
@@ -351,7 +350,7 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
               type="number"
               value={limitPrice}
               onChange={(e) => setLimitPrice(e.target.value)}
-              placeholder="Price per share"
+              placeholder="$0.00"
               className="bg-slate-700 border-slate-600 text-white"
               step="0.01"
             />
@@ -367,55 +366,58 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
             </SelectTrigger>
             <SelectContent className="bg-slate-700 border-slate-600">
               <SelectItem value="day" className="text-white">Day</SelectItem>
-              <SelectItem value="gtc" className="text-white">Good Till Canceled</SelectItem>
-              <SelectItem value="ioc" className="text-white">Immediate or Cancel</SelectItem>
-              <SelectItem value="fok" className="text-white">Fill or Kill</SelectItem>
+              <SelectItem value="gtc" className="text-white">GTC</SelectItem>
+              <SelectItem value="ioc" className="text-white">IOC</SelectItem>
+              <SelectItem value="fok" className="text-white">FOK</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Extended Hours Toggle */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="extended-hours"
-            checked={extendedHours}
-            onChange={(e) => setExtendedHours(e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded"
-          />
-          <label htmlFor="extended-hours" className="text-sm text-slate-300">
-            Extended Hours Trading
-          </label>
+        <div className="flex flex-col">
+          <label className="text-sm text-slate-300 block mb-2">Options</label>
+          <div className="flex items-center space-x-2 h-10">
+            <input
+              type="checkbox"
+              id="extended-hours"
+              checked={extendedHours}
+              onChange={(e) => setExtendedHours(e.target.checked)}
+              className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded"
+            />
+            <label htmlFor="extended-hours" className="text-sm text-slate-300">
+              Extended Hours
+            </label>
+          </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <Button
             onClick={() => placeOrder('buy')}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 h-10"
             disabled={!userAccountId || isPlacingOrder}
           >
-            {isPlacingOrder ? 'Placing...' : 'BUY'}
+            {isPlacingOrder ? '...' : 'BUY'}
           </Button>
           <Button
             onClick={() => placeOrder('sell')}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3"
+            className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 h-10"
             disabled={!userAccountId || isPlacingOrder}
           >
-            {isPlacingOrder ? 'Placing...' : 'SELL'}
+            {isPlacingOrder ? '...' : 'SELL'}
           </Button>
         </div>
+      </div>
 
-        {/* Account Status */}
-        <div className="text-xs text-center">
-          {userAccountId ? (
-            <span className="text-green-400">✓ Alpaca Account Linked</span>
-          ) : (
-            <span className="text-red-400">⚠ Complete Alpaca onboarding to enable trading</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {/* Account Status */}
+      <div className="text-xs text-center mt-3">
+        {userAccountId ? (
+          <span className="text-green-400">✓ Alpaca Account Linked</span>
+        ) : (
+          <span className="text-red-400">⚠ Complete Alpaca onboarding to enable trading</span>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -726,11 +728,6 @@ const StockChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Professional Trading Panel */}
-          <div className="border-b border-slate-700 p-4">
-            <TradingPanel symbol={activeSymbol} />
-          </div>
-
           {/* Stock Details - EXACT replica */}
           <div className="flex-1 p-4">
             <h3 className="text-white font-medium mb-3">{companyName}</h3>
@@ -767,6 +764,11 @@ const StockChart: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Bottom Trading Panel - Full Width */}
+      <div className="border-t border-slate-700 bg-slate-800/50 p-4 flex-shrink-0">
+        <TradingPanel symbol={activeSymbol} />
       </div>
     </div>
   );
