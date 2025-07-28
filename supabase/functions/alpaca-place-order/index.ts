@@ -85,6 +85,14 @@ serve(async (req) => {
             errorMessage = "This stock is not available for trading.";
           } else if (errorMessage.toLowerCase().includes('market_closed')) {
             errorMessage = "Market is currently closed. Orders will be queued for next trading session.";
+          } else if (errorMessage.toLowerCase().includes('wash trade')) {
+            errorMessage = "Cannot place this order due to wash trade rules. You may have a conflicting order or position.";
+          } else if (errorMessage.toLowerCase().includes('insufficient qty') || errorMessage.toLowerCase().includes('not enough shares')) {
+            errorMessage = "You don't have enough shares to sell. Check your current position.";
+          } else if (errorMessage.toLowerCase().includes('position not found') || errorMessage.toLowerCase().includes('no position')) {
+            errorMessage = "You don't own any shares of this stock to sell.";
+          } else if (errorMessage.toLowerCase().includes('opposite side') && errorMessage.toLowerCase().includes('order exists')) {
+            errorMessage = "Cannot place this order because you have a conflicting order already pending.";
           }
         }
       } catch (parseError) {
