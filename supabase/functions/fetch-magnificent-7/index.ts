@@ -36,36 +36,15 @@ serve(async (req) => {
     const apiCalls = 2; // Reduced calls to focus on most recent
     const articlesPerCall = 50; // Increased articles per call
     
-    // Calculate date range - prioritize TODAY but include recent articles as fallback
-    const endDate = new Date();
-    // Add 1 day to end date to ensure we capture today's articles 
-    endDate.setDate(endDate.getDate() + 1);
-    
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 2); // Extend to 2 days for better coverage
-    
-    const formatDate = (date) => date.toISOString().split('T')[0];
-    const startDateStr = formatDate(startDate);
-    const endDateStr = formatDate(endDate);
-    
-    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (2 days with TODAY priority)`);
-    
-    // Also try without date restrictions for most recent available
-    console.log('IMPORTANT: If no articles from today exist in API, will show most recent available articles');
+    // Focus on most recent articles only - no date filtering to get latest available
+    console.log('Fetching most recent articles available from MarketAux...');
     
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
       
       try {
-        // Try to get the most recent articles with multiple source preferences
-        let apiUrl;
-        if (i === 1) {
-          // First call: Try with date filter
-          apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
-        } else {
-          // Second call: Try without strict date filter to get most recent available
-          apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
-        }
+        // Get the most recent articles available (no date filter to ensure we get latest)
+        const apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
         
         console.log(`API Call ${i}: ${i === 1 ? 'With date filter' : 'Most recent available'}`);
         const response = await fetch(apiUrl);
