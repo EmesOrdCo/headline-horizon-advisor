@@ -50,7 +50,7 @@ const Profile = () => {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('first_name, last_name, email, date_of_birth, profile_image_url')
+          .select('first_name, last_name, full_name, email, date_of_birth, profile_image_url')
           .eq('id', user.id)
           .single();
 
@@ -62,8 +62,22 @@ const Profile = () => {
             variant: "destructive",
           });
         } else if (profile) {
-          setFirstName(profile.first_name || '');
-          setLastName(profile.last_name || '');
+          // Use first_name and last_name if available, otherwise extract from full_name
+          let firstName = profile.first_name || '';
+          let lastName = profile.last_name || '';
+          
+          if (!firstName && !lastName && profile.full_name) {
+            const nameParts = profile.full_name.trim().split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts[nameParts.length - 1] || '';
+            // If only one word in full_name, use it as first name
+            if (nameParts.length === 1) {
+              lastName = '';
+            }
+          }
+          
+          setFirstName(firstName);
+          setLastName(lastName);
           setEmail(profile.email || user.email || '');
           setDateOfBirth(profile.date_of_birth || '');
           setProfileImageUrl(profile.profile_image_url || '');
