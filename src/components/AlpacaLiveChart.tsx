@@ -258,6 +258,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       }
 
       const orderData = {
+        account_id: userAccountId,
         symbol,
         qty: '1',
         side,
@@ -267,10 +268,16 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
       console.log('Placing Alpaca order:', orderData);
       
-      const result = await alpacaPlaceOrder(userAccountId, orderData);
+      const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
+        body: orderData
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
       
       toast.success(`${side.toUpperCase()} order placed successfully for ${symbol}`, {
-        description: `Order ID: ${result.id}`
+        description: `Order ID: ${data.id}`
       });
       
     } catch (error: any) {
