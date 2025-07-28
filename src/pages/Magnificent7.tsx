@@ -379,16 +379,17 @@ const Magnificent7 = () => {
                               <CompanyLogo symbol={symbol} className="w-8 h-8" />
                               <Badge className="bg-emerald-600 text-white font-semibold">{symbol}</Badge>
                               <span className="text-white font-medium">{symbol} Corporation</span>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                              }`}>
-                                {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
-                              </span>
                             </div>
                             
                             {/* Technical Data Spread Out */}
                             {!stockData?.error && (
                               <div className="flex items-center gap-6 text-sm">
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Price</div>
+                                  <div className="text-white font-medium">
+                                    ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Change</div>
                                   <div className={`font-medium ${
@@ -422,31 +423,15 @@ const Magnificent7 = () => {
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            {!stockData?.error && (
-                              <div className="bg-slate-600/30 border border-slate-500 rounded-lg px-4 py-2 text-center">
-                                <div className="text-white font-bold text-lg">
-                                  ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
-                                </div>
-                                <div className={`text-xs font-medium ${
-                                  stockData?.change && stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                                }`}>
-                                  {stockData?.change && stockData.change >= 0 ? '+' : ''}
-                                  {stockData?.change ? stockData.change.toFixed(2) : '0.00'} 
-                                  ({stockData?.changePercent ? (stockData.changePercent >= 0 ? '+' : '') + stockData.changePercent.toFixed(2) : '0.00'}%)
-                                </div>
-                              </div>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
-                              className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                            >
-                              <BarChart3 className="w-4 h-4 mr-2" />
-                              Chart
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Chart
+                          </Button>
                         </div>
                         
                         {stockData?.error && (
@@ -496,16 +481,17 @@ const Magnificent7 = () => {
                               <CompanyLogo symbol={symbol} className="w-8 h-8" />
                               <Badge className="bg-emerald-600 text-white font-semibold">{symbol}</Badge>
                               <span className="text-white font-medium">{symbol} Corporation</span>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                              }`}>
-                                {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
-                              </span>
                             </div>
                             
                             {/* Technical Data Spread Out */}
                             {!stockData?.error && (
                               <div className="flex items-center gap-6 text-sm">
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Price</div>
+                                  <div className="text-white font-medium">
+                                    ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Change</div>
                                   <div className={`font-medium ${
@@ -539,31 +525,15 @@ const Magnificent7 = () => {
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            {!stockData?.error && (
-                              <div className="bg-slate-600/30 border border-slate-500 rounded-lg px-4 py-2 text-center">
-                                <div className="text-white font-bold text-lg">
-                                  ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
-                                </div>
-                                <div className={`text-xs font-medium ${
-                                  stockData?.change && stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                                }`}>
-                                  {stockData?.change && stockData.change >= 0 ? '+' : ''}
-                                  {stockData?.change ? stockData.change.toFixed(2) : '0.00'} 
-                                  ({stockData?.changePercent ? (stockData.changePercent >= 0 ? '+' : '') + stockData.changePercent.toFixed(2) : '0.00'}%)
-                                </div>
-                              </div>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
-                              className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
-                            >
-                              <BarChart3 className="w-4 h-4 mr-2" />
-                              Chart
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Chart
+                          </Button>
                         </div>
                         
                         {stockData?.error && (
