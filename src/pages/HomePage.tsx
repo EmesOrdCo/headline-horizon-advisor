@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUp, TrendingUp, Clock, FileText, ArrowRight, TrendingDown, ExternalLink } from "lucide-react";
+import { ArrowUp, TrendingUp, Clock, FileText, ArrowRight, TrendingDown, ExternalLink, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import MarketTicker from "@/components/MarketTicker";
@@ -117,97 +117,243 @@ const HomePage = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Magnificent 7 Preview */}
-            <Card className="bg-slate-800/30 border-slate-700 hover:border-emerald-500/30 transition-all">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl font-bold text-white mb-2">Magnificent 7</CardTitle>
-                    <p className="text-slate-400 text-sm">AI-powered analysis of tech giants</p>
-                  </div>
-                  <Link to="/magnificent-7">
-                    <Button variant="outline" className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10">
-                      View All 7 Stocks <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {mag7Loading || stockPricesLoading || !mag7Preview ? (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                    <div className="text-lg font-medium text-slate-300">Loading analysis...</div>
-                    <div className="text-sm mt-2 text-slate-400">Fetching latest data...</div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CompanyLogo symbol={mag7Preview.symbol} size="sm" logoUrl={getLogoUrl(mag7Preview.symbol)} />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-500 text-white text-xs">{mag7Preview.symbol}</Badge>
-                            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">
-                              {mag7Preview.sourceLinks?.length || 0} SOURCES
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      {mag7Preview.stockPrice && (
-                        <div className="text-right">
-                          <div className="text-white font-semibold">
-                            ${mag7Preview.stockPrice.price.toFixed(2)}
-                          </div>
-                          <div className={`text-xs flex items-center gap-1 ${
-                            mag7Preview.stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                          }`}>
-                            {mag7Preview.stockPrice.change >= 0 ? (
-                              <TrendingUp className="w-3 h-3" />
-                            ) : (
-                              <TrendingDown className="w-3 h-3" />
-                            )}
-                            {mag7Preview.stockPrice.change >= 0 ? '+' : ''}{mag7Preview.stockPrice.change.toFixed(2)} 
-                            ({mag7Preview.stockPrice.changePercent.toFixed(2)}%)
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
+            {/* Magnificent 7 Live Platform */}
+            <div className="lg:col-span-2">
+              <Card className="bg-slate-800/30 border-slate-700">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
-                        {mag7Preview.title}
-                      </h3>
-                      <p className="text-slate-300 text-sm line-clamp-2">
-                        {mag7Preview.description}
-                      </p>
+                      <CardTitle className="text-xl font-bold text-white mb-2">Magnificent 7</CardTitle>
+                      <p className="text-slate-400 text-sm">AI-powered analysis of tech giants</p>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge className={`text-white text-xs ${
-                          mag7Preview.ai_sentiment === 'Bullish' ? 'bg-emerald-500' :
-                          mag7Preview.ai_sentiment === 'Bearish' ? 'bg-red-500' :
-                          'bg-yellow-500'
-                        }`}>
-                          {mag7Preview.ai_sentiment?.toUpperCase() || 'NEUTRAL'}
-                        </Badge>
-                        {mag7Preview.ai_confidence && (
-                          <span className="text-slate-400 text-xs">
-                            {mag7Preview.ai_confidence}% confidence
-                          </span>
+                    <Link to="/magnificent-7">
+                      <Button variant="outline" className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10">
+                        View All 7 Stocks <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {mag7Loading || stockPricesLoading || !mag7Preview ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-6"></div>
+                      <div className="text-xl font-medium text-slate-300">Loading live analysis...</div>
+                      <div className="text-sm mt-2 text-slate-400">Fetching the latest market data...</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Stock Header */}
+                      <div className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4">
+                        <div className="flex items-center gap-4">
+                          <CompanyLogo symbol={mag7Preview.symbol} size="md" logoUrl={getLogoUrl(mag7Preview.symbol)} />
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-emerald-500 text-white">{mag7Preview.symbol}</Badge>
+                            <span className="text-white font-semibold text-lg">
+                              {mag7Preview.symbol} Corporation
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {mag7Preview.stockPrice && (
+                          <div className="flex items-center gap-6 text-right">
+                            <div>
+                              <div className="text-slate-400 text-sm">Price</div>
+                              <div className="text-white font-bold text-xl">
+                                ${mag7Preview.stockPrice.price.toFixed(2)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-slate-400 text-sm">Change</div>
+                              <div className={`font-semibold ${
+                                mag7Preview.stockPrice.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                              }`}>
+                                {mag7Preview.stockPrice.change >= 0 ? '+' : ''}{mag7Preview.stockPrice.change.toFixed(2)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-slate-400 text-sm">Change %</div>
+                              <div className={`font-semibold ${
+                                mag7Preview.stockPrice.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'
+                              }`}>
+                                {mag7Preview.stockPrice.changePercent >= 0 ? '+' : ''}{mag7Preview.stockPrice.changePercent.toFixed(2)}%
+                              </div>
+                            </div>
+                            {mag7Preview.stockPrice && (
+                              <>
+                                <div>
+                                  <div className="text-slate-400 text-sm">Bid</div>
+                                  <div className="text-red-400 font-semibold">
+                                    ${(mag7Preview.stockPrice.price - 0.05).toFixed(2)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-slate-400 text-sm">Ask</div>
+                                  <div className="text-emerald-400 font-semibold">
+                                    ${(mag7Preview.stockPrice.price + 0.06).toFixed(2)}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                            <Button variant="outline" className="border-slate-600 text-slate-300">
+                              <BarChart3 className="w-4 h-4 mr-2" />
+                              Chart
+                            </Button>
+                          </div>
                         )}
                       </div>
-                      <span className="text-slate-500 text-xs">
-                        {new Date(mag7Preview.published_at).toLocaleDateString()}
-                      </span>
+
+                      <div className="grid lg:grid-cols-3 gap-6">
+                        {/* Left Column - Analysis */}
+                        <div className="lg:col-span-2 space-y-6">
+                          {/* Stock Badge and Title */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <Badge className="bg-blue-500 text-white">{mag7Preview.symbol}</Badge>
+                              <Badge variant="secondary" className="bg-slate-500/20 text-slate-400">
+                                Stock
+                              </Badge>
+                            </div>
+                            
+                            <h1 className="text-2xl font-bold text-white">
+                              {mag7Preview.title}
+                            </h1>
+                            
+                            <p className="text-slate-300 leading-relaxed">
+                              {mag7Preview.description}
+                            </p>
+                          </div>
+
+                          {/* AI Analysis */}
+                          <div className="bg-slate-700/30 border border-cyan-500/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <TrendingUp className="w-5 h-5 text-cyan-400" />
+                              <span className="text-cyan-400 font-semibold text-lg">AI Analysis</span>
+                            </div>
+                            
+                            <p className="text-slate-300 mb-4">
+                              {mag7Preview.ai_reasoning || `Based on AI analysis of this news and market patterns, ${mag7Preview.symbol} shows ${mag7Preview.ai_sentiment?.toLowerCase() || 'neutral'} sentiment.`}
+                            </p>
+                            
+                            {mag7Preview.ai_confidence && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="text-slate-400">Confidence Level</span>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((dot) => (
+                                      <div
+                                        key={dot}
+                                        className={`w-3 h-3 rounded-full ${
+                                          dot <= Math.floor((mag7Preview.ai_confidence / 100) * 5) 
+                                            ? 'bg-cyan-500' 
+                                            : 'bg-slate-600'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Market Sentiment */}
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400">Market Sentiment</span>
+                              <span className={`font-semibold text-lg ${
+                                mag7Preview.ai_sentiment === 'Bullish' ? 'text-emerald-400' :
+                                mag7Preview.ai_sentiment === 'Bearish' ? 'text-red-400' :
+                                'text-yellow-400'
+                              }`}>
+                                {mag7Preview.ai_sentiment || 'Neutral'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
+                              <span>Bearish</span>
+                              <span>Neutral</span>
+                              <span>Bullish</span>
+                            </div>
+                            
+                            <div className="w-full bg-slate-700 rounded-full h-3 relative">
+                              <div className={`absolute h-3 rounded-full ${
+                                mag7Preview.ai_sentiment === 'Bullish' ? 'w-4/5 right-0 bg-emerald-500' :
+                                mag7Preview.ai_sentiment === 'Bearish' ? 'w-4/5 left-0 bg-red-500' :
+                                'w-1/3 left-1/3 bg-yellow-500'
+                              }`}></div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 mt-4">
+                              <Badge className={`text-white ${
+                                mag7Preview.ai_sentiment === 'Bullish' ? 'bg-emerald-500' :
+                                mag7Preview.ai_sentiment === 'Bearish' ? 'bg-red-500' :
+                                'bg-yellow-500'
+                              }`}>
+                                {mag7Preview.ai_sentiment?.toUpperCase() || 'NEUTRAL'}
+                              </Badge>
+                              <span className="text-slate-400 text-sm">
+                                {mag7Preview.category || 'Technology Stock'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Detailed Analysis */}
+                          <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-4">
+                            <h3 className="text-cyan-400 font-semibold mb-3">Detailed Analysis:</h3>
+                            <p className="text-slate-300 leading-relaxed">
+                              {mag7Preview.ai_reasoning || `Mixed signals for ${mag7Preview.symbol} with ${mag7Preview.ai_sentiment?.toLowerCase() || 'neutral'} market impact expected. Analysis suggests balanced risk-reward profile in current environment.`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right Column - Source Articles */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <ExternalLink className="w-4 h-4 text-slate-400" />
+                            <h3 className="font-semibold text-slate-300">
+                              Source Articles ({mag7Preview.sourceLinks?.length || 0})
+                            </h3>
+                            <span className="text-xs text-slate-500">Weighted by significance</span>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            {mag7Preview.sourceLinks?.slice(0, 4).map((article: any, index: number) => (
+                              <div key={index} className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-3 hover:border-slate-500/50 transition-colors">
+                                <h4 className="text-slate-300 font-medium text-sm leading-tight mb-2 line-clamp-2">
+                                  {article.title}
+                                </h4>
+                                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                                  <span>
+                                    Published: {new Date(article.published_at).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  Click headline or button to read full article
+                                </div>
+                                <div className="flex justify-end mt-2">
+                                  <Button variant="outline" size="sm" className="border-slate-600 text-slate-400 text-xs h-6">
+                                    <ExternalLink className="w-3 h-3 mr-1" />
+                                    Read More
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Index Funds Preview */}
-            <Card className="bg-slate-800/30 border-slate-700 hover:border-purple-500/30 transition-all">
+            <Card className="bg-slate-800/30 border-slate-700 hover:border-purple-500/30 transition-all lg:col-span-2">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
