@@ -1,11 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineStyle } from 'lightweight-charts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { 
+  TrendingUp, 
+  BarChart3, 
+  Crosshair, 
+  Minus, 
+  TrendingDown, 
+  Square, 
+  Triangle, 
+  Circle, 
+  Type, 
+  Ruler, 
+  Grid,
+  Volume,
+  Activity,
+  Target,
+  MousePointer
+} from 'lucide-react';
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -26,6 +45,14 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [dataSource, setDataSource] = useState<'historical' | 'live' | 'error'>('historical');
   const [historicalDataLoaded, setHistoricalDataLoaded] = useState(false);
+  
+  // Chart control states
+  const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
+  const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area'>('candlestick');
+  const [activeTool, setActiveTool] = useState<string>('cursor');
+  const [showGrid, setShowGrid] = useState(true);
+  const [showVolume, setShowVolume] = useState(false);
+  const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
 
   // Use the singleton WebSocket for this page only
   const { streamData, isConnected, errorMessage, connectionStatus, connect } = useAlpacaStreamSingleton({
@@ -325,51 +352,190 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         </CardContent>
       </Card>
 
-      {/* Chart */}
-      <Card className="bg-slate-900/50 border-slate-700">
-        <CardContent className="p-0">
-          <div className="relative">
-            <div 
-              ref={chartContainerRef} 
-              className="w-full h-[500px]"
-              style={{ minHeight: '500px', minWidth: '100%' }}
-            />
-            {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
-                <div className="text-lg text-slate-300">Loading chart data...</div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* TradingView-Style Chart Controls */}
+      <div className="flex gap-4">
+        {/* Left Sidebar - Drawing Tools */}
+        <Card className="bg-slate-900/50 border-slate-700 w-16">
+          <CardContent className="p-2 space-y-2">
+            {/* Tool buttons */}
+            {[
+              { id: 'cursor', icon: MousePointer, label: 'Cursor' },
+              { id: 'crosshair', icon: Crosshair, label: 'Crosshair' },
+              { id: 'trend-line', icon: TrendingUp, label: 'Trend Line' },
+              { id: 'horizontal', icon: Minus, label: 'Horizontal Line' },
+              { id: 'rectangle', icon: Square, label: 'Rectangle' },
+              { id: 'triangle', icon: Triangle, label: 'Triangle' },
+              { id: 'circle', icon: Circle, label: 'Circle' },
+              { id: 'text', icon: Type, label: 'Text' },
+              { id: 'ruler', icon: Ruler, label: 'Ruler' },
+            ].map((tool) => (
+              <Button
+                key={tool.id}
+                variant={activeTool === tool.id ? "default" : "ghost"}
+                size="sm"
+                className="w-10 h-10 p-0"
+                onClick={() => setActiveTool(tool.id)}
+                title={tool.label}
+              >
+                <tool.icon className="h-4 w-4" />
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
 
-      {/* Trading Controls */}
-      <Card className="bg-slate-900/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-center text-white">Quick Trading</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center space-x-6">
-            <Button
-              onClick={() => placeOrder('buy')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected || isLoading}
-            >
-              🟢 BUY {symbol}
-            </Button>
-            <Button
-              onClick={() => placeOrder('sell')}
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected || isLoading}
-            >
-              🔴 SELL {symbol}
-            </Button>
-          </div>
-          <p className="text-center text-sm text-slate-400 mt-3">
-            Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
-          </p>
-        </CardContent>
-      </Card>
+        {/* Main Chart Area */}
+        <div className="flex-1 space-y-4">
+          {/* Top Chart Controls */}
+          <Card className="bg-slate-900/50 border-slate-700">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                {/* Timeframe Selector */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-slate-400">Timeframe:</span>
+                  <div className="flex space-x-1">
+                    {['1m', '5m', '15m', '30m', '1h', '4h', '1D'].map((tf) => (
+                      <Button
+                        key={tf}
+                        variant={selectedTimeframe === tf ? "default" : "ghost"}
+                        size="sm"
+                        className="px-3 py-1 h-8 text-xs"
+                        onClick={() => setSelectedTimeframe(tf)}
+                      >
+                        {tf}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator orientation="vertical" className="h-6" />
+
+                {/* Chart Type */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-slate-400">Chart:</span>
+                  <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
+                    <SelectTrigger className="w-32 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="candlestick">Candlestick</SelectItem>
+                      <SelectItem value="line">Line</SelectItem>
+                      <SelectItem value="area">Area</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator orientation="vertical" className="h-6" />
+
+                {/* Indicators */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-slate-400">Indicators:</span>
+                  <Select onValueChange={(value) => {
+                    if (!activeIndicators.includes(value)) {
+                      setActiveIndicators([...activeIndicators, value]);
+                    }
+                  }}>
+                    <SelectTrigger className="w-32 h-8">
+                      <SelectValue placeholder="Add..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sma">SMA (20)</SelectItem>
+                      <SelectItem value="ema">EMA (20)</SelectItem>
+                      <SelectItem value="rsi">RSI (14)</SelectItem>
+                      <SelectItem value="macd">MACD</SelectItem>
+                      <SelectItem value="bollinger">Bollinger Bands</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Display Options */}
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant={showGrid ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => setShowGrid(!showGrid)}
+                    title="Toggle Grid"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={showVolume ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => setShowVolume(!showVolume)}
+                    title="Toggle Volume"
+                  >
+                    <Volume className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Active Indicators */}
+              {activeIndicators.length > 0 && (
+                <div className="flex items-center space-x-2 mt-4 pt-4 border-t border-slate-700">
+                  <span className="text-sm text-slate-400">Active:</span>
+                  {activeIndicators.map((indicator) => (
+                    <Badge
+                      key={indicator}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-red-600"
+                      onClick={() => setActiveIndicators(activeIndicators.filter(i => i !== indicator))}
+                    >
+                      {indicator.toUpperCase()} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Chart */}
+          <Card className="bg-slate-900/50 border-slate-700">
+            <CardContent className="p-0">
+              <div className="relative">
+                <div 
+                  ref={chartContainerRef} 
+                  className="w-full h-[500px]"
+                  style={{ minHeight: '500px', minWidth: '100%' }}
+                />
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
+                    <div className="text-lg text-slate-300">Loading chart data...</div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trading Controls */}
+          <Card className="bg-slate-900/50 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-center text-white">Quick Trading</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-center space-x-6">
+                <Button
+                  onClick={() => placeOrder('buy')}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
+                  disabled={!isConnected || isLoading}
+                >
+                  🟢 BUY {symbol}
+                </Button>
+                <Button
+                  onClick={() => placeOrder('sell')}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
+                  disabled={!isConnected || isLoading}
+                >
+                  🔴 SELL {symbol}
+                </Button>
+              </div>
+              <p className="text-center text-sm text-slate-400 mt-3">
+                Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
