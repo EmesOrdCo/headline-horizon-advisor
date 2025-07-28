@@ -416,17 +416,17 @@ const Magnificent7 = () => {
                     <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
                       {/* Compact Stock Header */}
                       <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
                               <CompanyLogo symbol={symbol} className="w-8 h-8" />
                               <Badge className="bg-emerald-600 text-white font-semibold">{symbol}</Badge>
                               <span className="text-white font-medium">{symbol} Corporation</span>
                             </div>
                             
-                            {/* Technical Data Spread Out Evenly */}
+                            {/* Technical Data Spread Out Evenly Across Full Width */}
                             {!stockData?.error && (
-                              <div className="flex items-center justify-between flex-1 text-sm px-8">
+                              <div className="flex items-center justify-evenly flex-1 text-sm mx-12">
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Price</div>
                                   <div className="text-white font-medium">
@@ -518,17 +518,17 @@ const Magnificent7 = () => {
                     <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
                       {/* Compact Stock Header */}
                       <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
                               <CompanyLogo symbol={symbol} className="w-8 h-8" />
                               <Badge className="bg-emerald-600 text-white font-semibold">{symbol}</Badge>
                               <span className="text-white font-medium">{symbol} Corporation</span>
                             </div>
                             
-                            {/* Technical Data Spread Out Evenly */}
+                            {/* Technical Data Spread Out Evenly Across Full Width */}
                             {!stockData?.error && (
-                              <div className="flex items-center justify-between flex-1 text-sm px-8">
+                              <div className="flex items-center justify-evenly flex-1 text-sm mx-12">
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Price</div>
                                   <div className="text-white font-medium">
