@@ -513,6 +513,17 @@ const StockChart: React.FC = () => {
       {/* Top Navigation Bar - Exact replica */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
+          {/* Go Back Button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-slate-300 hover:text-white"
+            onClick={() => navigate('/watchlist')}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Watchlist
+          </Button>
+
           {/* Stock Symbol with Real Logo */}
           <div className="flex items-center space-x-2">
             <CompanyLogo symbol={activeSymbol || 'AAPL'} size="md" />
