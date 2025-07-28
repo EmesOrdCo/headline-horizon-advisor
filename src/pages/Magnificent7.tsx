@@ -424,9 +424,9 @@ const Magnificent7 = () => {
                               <span className="text-white font-medium">{symbol} Corporation</span>
                             </div>
                             
-                            {/* Technical Data Spread Out */}
+                            {/* Technical Data Spread Out Evenly */}
                             {!stockData?.error && (
-                              <div className="flex items-center gap-6 text-sm">
+                              <div className="flex items-center justify-between flex-1 text-sm px-8">
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Price</div>
                                   <div className="text-white font-medium">
@@ -526,9 +526,9 @@ const Magnificent7 = () => {
                               <span className="text-white font-medium">{symbol} Corporation</span>
                             </div>
                             
-                            {/* Technical Data Spread Out */}
+                            {/* Technical Data Spread Out Evenly */}
                             {!stockData?.error && (
-                              <div className="flex items-center gap-6 text-sm">
+                              <div className="flex items-center justify-between flex-1 text-sm px-8">
                                 <div className="text-center">
                                   <div className="text-slate-400 text-xs">Price</div>
                                   <div className="text-white font-medium">
