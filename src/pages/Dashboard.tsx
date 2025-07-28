@@ -49,6 +49,10 @@ const Dashboard = () => {
   const topGainers = biggestMovers?.gainers?.slice(0, 3) || [];
   const topLosers = biggestMovers?.losers?.slice(0, 3) || [];
 
+  console.log('BiggestMovers data:', biggestMovers);
+  console.log('TopGainers:', topGainers);
+  console.log('TopLosers:', topLosers);
+
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
   };
