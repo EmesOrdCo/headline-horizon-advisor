@@ -9,6 +9,7 @@ import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RealTimePriceChart from "@/components/RealTimePriceChart";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
+import ChartModal from "@/components/ChartModal";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useMagnificent7Articles, useFetchMagnificent7 } from "@/hooks/useMagnificent7";
 import { useStockPrices } from "@/hooks/useStockPrices";
@@ -66,6 +67,7 @@ const Magnificent7 = () => {
   const fetchNews = useFetchMagnificent7();
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
+  const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
   const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
   const { toast } = useToast();
 
@@ -423,101 +425,93 @@ const Magnificent7 = () => {
               return (
                 <div key={symbol} className="w-full">
                   <Card className="mb-6 bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center justify-between">
-                        <span>{symbol} - Live Price</span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                        }`}>
-                          {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
-                        </span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {stockData?.error ? (
-                        <div className="bg-red-900/20 border border-red-600/50 rounded-lg p-4">
-                          <div className="text-center text-red-400">
-                            <div className="text-lg font-bold">No Data</div>
-                            <div className="text-sm text-red-300 mt-1">
-                              {stockData.errorMessage || 'Unable to fetch stock price'}
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="bg-emerald-600 text-white font-semibold">{symbol}</Badge>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
+                              }`}>
+                                {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
+                              </span>
                             </div>
+                            <h3 className="text-white font-medium">{symbol} Corporation</h3>
                           </div>
                         </div>
-                      ) : (
-                        <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
-                          <div className="text-center mb-4">
-                            <div className="text-2xl font-bold text-white mb-1">
-                              ${stockData.price.toFixed(2)}
+                        <div className="text-right">
+                          {stockData?.error ? (
+                            <div className="text-red-400">
+                              <div className="text-lg font-bold">No Data</div>
+                              <div className="text-xs text-red-300">
+                                {stockData.errorMessage || 'Unable to fetch price'}
+                              </div>
                             </div>
-                            
-                            {!stockData.isRealTime && (
-                              <div className={`flex items-center justify-center gap-2 text-sm ${
-                                stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                          ) : (
+                            <>
+                              <div className="text-white text-xl font-bold">
+                                ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
+                              </div>
+                              <div className={`flex items-center justify-end gap-1 text-sm ${
+                                stockData?.change && stockData.change >= 0 
+                                  ? 'text-emerald-400' 
+                                  : 'text-red-400'
                               }`}>
-                                {stockData.change >= 0 ? (
+                                {stockData?.change && stockData.change >= 0 ? (
                                   <TrendingUp className="w-4 h-4" />
                                 ) : (
                                   <TrendingDown className="w-4 h-4" />
                                 )}
                                 <span>
-                                  {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} 
-                                  ({stockData.changePercent >= 0 ? '+' : ''}{stockData.changePercent.toFixed(2)}%)
+                                  {stockData?.change && stockData.change >= 0 ? '+' : ''}
+                                  {stockData?.change ? stockData.change.toFixed(2) : '0.00'} 
+                                  ({stockData?.changePercent ? (stockData.changePercent >= 0 ? '+' : '') + stockData.changePercent.toFixed(2) : '0.00'}%)
                                 </span>
                               </div>
-                            )}
-                          </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
 
-                          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-600">
-                            <div className="text-center">
-                              <div className="text-sm font-bold text-red-400">
-                                ${stockData.bidPrice.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-slate-400">Bid</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-sm font-bold text-emerald-400">
-                                ${stockData.askPrice.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-slate-400">Ask</div>
-                            </div>
+                      {/* Compact Bid/Ask if available */}
+                      {stockData?.bidPrice && stockData?.askPrice && (
+                        <div className="flex items-center gap-4 mb-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Bid:</span>
+                            <span className="text-red-400 font-medium">${stockData.bidPrice.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">Ask:</span>
+                            <span className="text-emerald-400 font-medium">${stockData.askPrice.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
 
-                  {/* Historical Price Chart for each stock */}
-                  <Card className="mb-8 bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">
-                        Historical Price Chart ({symbol})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-slate-700/30 rounded-lg p-4">
-                        <HistoricalPriceChart symbol={symbol} limit={30} />
+                      {/* Chart Icon Button */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
+                          className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                        >
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          View Chart
+                        </Button>
+                        {showCharts && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Real-Time Data
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Live Chart if enabled */}
-                  {showCharts && (
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
-                      <CardHeader>
-                        <CardTitle className="text-white">
-                          {symbol} {useWebSocket ? 'Live' : 'Real-Time'} Price Chart
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="bg-slate-700/30 rounded-lg p-4">
-                          <RealTimePriceChart
-                            data={priceHistory[symbol] || []}
-                            symbol={symbol}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
 
                   {/* News Analysis Section for each stock */}
                   {article ? (
@@ -563,6 +557,16 @@ const Magnificent7 = () => {
           </div>
         </div>
       </div>
+      
+      {/* Chart Modal */}
+      {selectedChart && (
+        <ChartModal
+          isOpen={!!selectedChart}
+          onClose={() => setSelectedChart(null)}
+          symbol={selectedChart.symbol}
+          stockName={selectedChart.stockName}
+        />
+      )}
       
       <Footer />
     </div>
