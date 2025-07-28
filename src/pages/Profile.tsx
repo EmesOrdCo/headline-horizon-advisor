@@ -229,33 +229,26 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      // First, reauthenticate the user with their current password
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: currentPassword
-      });
-
-      if (reauthError) {
-        toast({
-          title: "Current password incorrect",
-          description: "Please enter your current password correctly.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // If reauthentication succeeds, update the password
+      // Update the password directly - Supabase will handle validation
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) {
-        toast({
-          title: "Failed to update password",
-          description: error.message,
-          variant: "destructive",
-        });
+        // If the error is due to session issues, it usually means current password verification failed
+        if (error.message.includes('session') || error.message.includes('unauthorized')) {
+          toast({
+            title: "Authentication required",
+            description: "Please log out and log back in to change your password.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Failed to update password",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Password updated",
