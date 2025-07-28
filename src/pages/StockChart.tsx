@@ -510,33 +510,28 @@ const StockChart: React.FC = () => {
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
-      {/* Top Navigation Bar - Exact replica */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
-        <div className="flex items-center space-x-4">
-          {/* Go Back Button */}
+      {/* Top Navigation Bar - Compact layout */}
+      <div className="flex items-center justify-between px-2 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          {/* Go Back Button - Compact */}
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-slate-300 hover:text-white"
+            className="text-slate-300 hover:text-white p-1 min-w-fit"
             onClick={() => navigate('/watchlist')}
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Watchlist
+            <ArrowLeft className="w-4 h-4" />
           </Button>
 
-          {/* Stock Symbol with Real Logo */}
-          <div className="flex items-center space-x-2">
-            <CompanyLogo symbol={activeSymbol || 'AAPL'} size="md" />
-            <div className="flex items-center space-x-2">
-              <span className="text-white font-bold text-lg">{activeSymbol}</span>
-              <span className="text-slate-400 text-sm">{selectedTimeframe}</span>
-              <span className="text-slate-400 text-sm">{exchange}</span>
-              <span className="text-slate-400 text-sm">•</span>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Historical data" />
-            </div>
+          {/* Stock Symbol with Real Logo - Compact */}
+          <div className="flex items-center space-x-1 min-w-0">
+            <CompanyLogo symbol={activeSymbol || 'AAPL'} size="sm" />
+            <span className="text-white font-bold text-base">{activeSymbol}</span>
+            <span className="text-slate-400 text-xs hidden sm:inline">{exchange}</span>
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Historical data" />
           </div>
           
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white p-1 min-w-fit">
             <Plus className="w-4 h-4" />
           </Button>
         </div>
