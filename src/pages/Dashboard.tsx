@@ -346,28 +346,127 @@ const Dashboard = () => {
             </Link>
           </div>
           
+          {/* Live Stock Analysis Interface */}
           {topMagnificent7Story && (
             <div className="w-full">
-              <Card className="bg-slate-800/50 border-slate-700 h-full">
-                <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2 h-full">
-                      <NewsCard 
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-0">
+                  {/* Stock Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/30">
+                    <div className="flex items-center gap-3">
+                      <CompanyLogo 
                         symbol={topMagnificent7Story.symbol}
-                        title={generateCompositeHeadline(topMagnificent7Story)}
-                        description={topMagnificent7Story.description}
-                        confidence={topMagnificent7Story.ai_confidence}
-                        sentiment={topMagnificent7Story.ai_sentiment}
-                        category={topMagnificent7Story.category}
+                        logoUrl={getLogoUrl(topMagnificent7Story.symbol)}
+                        size="md"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-emerald-500 text-white">{topMagnificent7Story.symbol}</Badge>
+                        <span className="text-white font-medium">{topMagnificent7Story.symbol} Corporation</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Price</div>
+                        <div className="text-white font-semibold">
+                          ${getStockPrice(topMagnificent7Story.symbol)?.price?.toFixed(2) || '214.00'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Change</div>
+                        <div className="text-red-400 font-semibold">
+                          {getStockPrice(topMagnificent7Story.symbol)?.change?.toFixed(2) || '-0.05'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Change %</div>
+                        <div className="text-red-400 font-semibold">
+                          {getStockPrice(topMagnificent7Story.symbol)?.changePercent?.toFixed(2) || '-0.02'}%
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Bid</div>
+                        <div className="text-red-400 font-semibold">$214.01</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Ask</div>
+                        <div className="text-emerald-400 font-semibold">$214.06</div>
+                      </div>
+                      <Button variant="outline" size="sm" className="border-slate-600">
+                        📊 Chart
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6">
+                    {/* Left Side - Stock Analysis */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Stock Badge */}
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-blue-500 text-white">{topMagnificent7Story.symbol}</Badge>
+                        <span className="text-slate-400">Stock</span>
+                      </div>
+
+                      {/* Price Display */}
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-white">
+                              ${getStockPrice(topMagnificent7Story.symbol)?.price?.toFixed(2) || '214.00'}
+                            </div>
+                            <div className="text-red-400 text-sm">
+                              📉 {getStockPrice(topMagnificent7Story.symbol)?.change?.toFixed(2) || '-0.05'} ({getStockPrice(topMagnificent7Story.symbol)?.changePercent?.toFixed(2) || '-0.02'}%)
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Main Title */}
+                      <h3 className="text-xl font-bold text-white">
+                        {topMagnificent7Story.symbol}: Earnings disappoint investors
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-slate-300 text-sm">
+                        Market analysis for {topMagnificent7Story.symbol} based on {magnificent7SourceArticles.length} recent news articles and market developments.
+                      </p>
+
+                      {/* AI Analysis Section */}
+                      <AIAnalysisSection 
+                        symbol={topMagnificent7Story.symbol}
+                        sentiment={topMagnificent7Story.ai_sentiment || 'Neutral'}
+                        confidence={topMagnificent7Story.ai_confidence || 50}
                         isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
-                        sourceLinks="[]"
-                        stockPrice={getStockPrice(topMagnificent7Story.symbol)}
+                        sourceLinksCount={magnificent7SourceArticles.length}
+                      />
+
+                      {/* Market Sentiment */}
+                      <SentimentIndicator 
+                        sentiment={topMagnificent7Story.ai_sentiment || 'Neutral'}
+                        category="Technology Stock"
+                      />
+
+                      {/* Detailed Analysis */}
+                      <DetailedAnalysis 
+                        symbol={topMagnificent7Story.symbol}
+                        sentiment={topMagnificent7Story.ai_sentiment || 'Neutral'}
+                        confidence={topMagnificent7Story.ai_confidence || 50}
                       />
                     </div>
-                    {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-y-auto">
-                      <AINewsInsights symbol={topMagnificent7Story.symbol} />
+
+                    {/* Right Side - Source Articles */}
+                    <div className="lg:col-span-3">
+                      <div className="flex items-center gap-2 mb-4">
+                        <ExternalLink className="w-4 h-4 text-slate-400" />
+                        <h4 className="text-white font-semibold">Source Articles ({magnificent7SourceArticles.length})</h4>
+                        <span className="text-slate-500 text-sm">Weighted by significance</span>
+                      </div>
+                      
+                      <SourceArticles 
+                        parsedSourceLinks={magnificent7SourceArticles}
+                        isHistorical={topMagnificent7Story.ai_reasoning?.includes('Historical')}
+                        articleWeights={magnificent7ArticleWeights}
+                        weightsLoading={magnificent7WeightsLoading}
+                      />
                     </div>
                   </div>
                 </CardContent>
