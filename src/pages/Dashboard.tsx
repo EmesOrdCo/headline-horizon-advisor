@@ -20,6 +20,7 @@ import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
 import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
+import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 
 const Dashboard = () => {
   useSEO({
@@ -30,6 +31,7 @@ const Dashboard = () => {
 
   const { data: newsData, isLoading } = useNews();
   const { data: stockPrices } = useStockPrices();
+  const { data: biggestMovers } = useBiggestMovers();
 
   const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
@@ -43,18 +45,9 @@ const Dashboard = () => {
     indexFundSymbols: MAJOR_INDEX_FUNDS
   });
 
-  // Dummy data for biggest movers
-  const dummyGainers = [
-    { symbol: "NVDA", name: "NVIDIA Corp", price: 124.36, changePercent: 8.42 },
-    { symbol: "TSLA", name: "Tesla Inc", price: 215.89, changePercent: 6.73 },
-    { symbol: "AMD", name: "Advanced Micro Devices", price: 98.76, changePercent: 5.21 }
-  ];
-
-  const dummyLosers = [
-    { symbol: "INTC", name: "Intel Corp", price: 34.29, changePercent: -7.82 },
-    { symbol: "MU", name: "Micron Technology", price: 76.34, changePercent: -5.42 },
-    { symbol: "PYPL", name: "PayPal Holdings", price: 62.18, changePercent: -4.68 }
-  ];
+  // Get real movers data (limit to 3 each for the dashboard)
+  const topGainers = biggestMovers?.gainers?.slice(0, 3) || [];
+  const topLosers = biggestMovers?.losers?.slice(0, 3) || [];
 
   const getStockPrice = (symbol: string) => {
     return stockPrices?.find(stock => stock.symbol === symbol);
@@ -262,7 +255,7 @@ const Dashboard = () => {
                       <span className="text-slate-300 font-medium text-lg">Top Gainers</span>
                     </div>
                     <div className="space-y-2">
-                      {dummyGainers.map((stock) => (
+                      {topGainers.map((stock) => (
                         <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-emerald-500/10">
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-white text-sm">{stock.symbol}</span>
@@ -281,7 +274,7 @@ const Dashboard = () => {
                       <span className="text-slate-300 font-medium text-lg">Top Losers</span>
                     </div>
                     <div className="space-y-2">
-                      {dummyLosers.map((stock) => (
+                      {topLosers.map((stock) => (
                         <div key={stock.symbol} className="p-2 bg-slate-800/70 rounded border border-red-500/10">
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-white text-sm">{stock.symbol}</span>
