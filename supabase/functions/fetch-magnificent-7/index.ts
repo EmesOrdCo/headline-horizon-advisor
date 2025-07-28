@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -13,90 +12,116 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-
 
   try {
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY_2') || Deno.env.get('OPENAI_API_KEY');
 
     if (!marketauxApiKey || !openaiApiKey) {
-      throw new Error('Missing API keys - MarketAux or OpenAI');
+      throw new Error('Missing required API keys');
     }
 
     console.log('Starting Magnificent 7 news fetching...');
+
+    const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
+    const magnificent7Query = MAGNIFICENT_7.join(',');
     
+    // Fetch articles from multiple API calls to get more comprehensive coverage
     const allArticles = [];
-
-    // Fetch news for Magnificent 7 stocks (3 API calls to get 60 articles)
-    for (let apiCall = 0; apiCall < 3; apiCall++) {
-      console.log(`Making Magnificent 7 API call ${apiCall + 1}/3...`);
-      
-      const newsResponse = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${MAGNIFICENT_7.join(',')}&filter_entities=true&language=en&limit=20&page=${apiCall}&api_token=${marketauxApiKey}`
-      );
-
-      if (!newsResponse.ok) {
-        console.error(`MarketAux API error for Magnificent 7: ${newsResponse.status}`);
-        continue;
-      }
-
-      const newsData = await newsResponse.json();
-      const articles = newsData.data || [];
-      
-      console.log(`Fetched ${articles.length} Magnificent 7 articles from API call ${apiCall + 1}`);
-      allArticles.push(...articles);
-
-      if (apiCall < 2) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-
-    // Remove duplicates based on title
-    const uniqueArticles = [];
-    const seenTitles = new Set();
+    const apiCalls = 3;
     
-    for (const article of allArticles) {
-      if (!seenTitles.has(article.title)) {
-        seenTitles.add(article.title);
-        uniqueArticles.push(article);
+    for (let i = 1; i <= apiCalls; i++) {
+      console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
+      
+      const offset = (i - 1) * 20;
+      const response = await fetch(
+        `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=20&api_token=${marketauxApiKey}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && Array.isArray(data.data)) {
+          allArticles.push(...data.data);
+          console.log(`Fetched ${data.data.length} Magnificent 7 articles from API call ${i}`);
+        }
       }
     }
+
+    // Remove duplicates based on URL
+    const uniqueArticles = allArticles.filter((article, index, self) => 
+      index === self.findIndex(a => a.url === article.url)
+    );
 
     console.log(`Unique Magnificent 7 articles: ${uniqueArticles.length}`);
 
-    // Sort by date
-    uniqueArticles.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    // Clear existing Magnificent 7 articles first
+    for (const symbol of MAGNIFICENT_7) {
+      await supabase.from('news_articles').delete().eq('symbol', symbol);
+    }
 
-    // Group articles by impacted stocks
-    const stockArticles = new Map();
+    // Store ALL articles immediately for hyperlinking, regardless of AI analysis success
+    console.log('Storing all articles for immediate hyperlinking...');
+    const allStoredArticles = [];
     
-    // Initialize empty arrays for each stock
+    for (const article of uniqueArticles) {
+      const articleToStore = {
+        title: article.title,
+        description: article.description || 'No description available',
+        url: article.url,
+        published_at: article.published_at,
+        symbol: 'MARKET', // Will be updated based on analysis
+        category: 'Market News',
+        ai_confidence: 70, // Default confidence
+        ai_sentiment: 'Neutral', // Default sentiment
+        ai_reasoning: 'Market news article - analysis pending',
+        source_links: JSON.stringify([{
+          title: article.title,
+          url: article.url,
+          published_at: article.published_at,
+          description: article.description || 'No description available'
+        }])
+      };
+
+      allStoredArticles.push(articleToStore);
+      
+      // Store article immediately
+      const { error } = await supabase
+        .from('news_articles')
+        .insert(articleToStore);
+        
+      if (error && !error.message.includes('duplicate')) {
+        console.error(`Error storing article ${article.title}:`, error);
+      }
+    }
+
+    // Now create stock-specific analysis
+    const stockArticles = new Map();
     MAGNIFICENT_7.forEach(symbol => {
       stockArticles.set(symbol, []);
     });
 
-    // Process each article to determine stock impact and group them
+    // Process articles for AI analysis (but articles are already stored for hyperlinking)
     for (const article of uniqueArticles.slice(0, 20)) {
       console.log(`Analyzing article impact: ${article.title}`);
 
       try {
         const impactAnalysisPrompt = `
-You are a professional financial analyst. Analyze this news article and determine which of the following Magnificent 7 stocks would be significantly impacted by this news:
+Analyze this news article and determine which stocks from the Magnificent 7 would be meaningfully impacted by this news.
 
-Stocks to consider: ${MAGNIFICENT_7.join(', ')}
+Magnificent 7 stocks: AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META
 
 Article:
 Title: ${article.title}
-Description: ${article.description || 'No description available'}
+Description: ${article.description}
+URL: ${article.url}
 Published: ${article.published_at}
 
-Provide a JSON response with this structure:
+Respond in JSON format:
 {
   "impacted_stocks": ["SYMBOL1", "SYMBOL2"],
   "reasoning": "Brief explanation of why these stocks are impacted"
@@ -197,11 +222,9 @@ CONFIDENCE SCALE (use FULL range 60-100):
 - 66-75: (2 dots) Weak directional signals - minor news with limited market relevance
 - 60-65: (1 dot) Very weak signals - minimal news or highly contradictory information
 
-Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push toward higher confidence levels when the news clearly supports a direction.
+Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push toward higher confidence levels when the news clearly supports a direction.`;
 
-Focus on the overall trend and sentiment across all articles for ${symbol}.`;
-
-          const compositeResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${openaiApiKey}`,
@@ -212,7 +235,7 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
               messages: [
                 {
                   role: 'system',
-                  content: 'You are a professional financial analyst. Provide comprehensive market analysis based on multiple news sources in valid JSON format only.'
+                  content: 'You are a professional financial analyst. Provide comprehensive market analysis in valid JSON format only.'
                 },
                 {
                   role: 'user',
@@ -220,32 +243,31 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
                 }
               ],
               response_format: { type: "json_object" },
-              temperature: 0.7
+              temperature: 0.3
             }),
           });
 
-          if (compositeResponse.ok) {
-            const compositeData = await compositeResponse.json();
-            const analysis = JSON.parse(compositeData.choices[0].message.content);
+          if (analysisResponse.ok) {
+            const analysisData = await analysisResponse.json();
+            const analysis = JSON.parse(analysisData.choices[0].message.content);
 
-            // Create source links array
-            const sourceLinks = articles.slice(0, 5).map(article => ({
-              title: article.title,
-              url: article.url,
-              published_at: article.published_at
-            }));
-
+            // Store the composite analysis with source links
             processedAnalyses.push({
               symbol,
-              title: `${symbol} Composite Market Analysis`,
-              description: `Comprehensive analysis based on ${articles.length} recent news articles`,
+              title: `${symbol} Market Analysis - ${analysis.sentiment} Outlook`,
+              description: analysis.reasoning,
               url: `https://finance.yahoo.com/quote/${symbol}`,
               published_at: new Date().toISOString(),
               category: analysis.category || 'Technology Stock',
-              ai_confidence: analysis.confidence,
-              ai_sentiment: analysis.sentiment,
+              ai_confidence: parseInt(analysis.confidence) || 75,
+              ai_sentiment: analysis.sentiment || 'Neutral',
               ai_reasoning: analysis.reasoning,
-              source_links: JSON.stringify(sourceLinks),
+              source_links: JSON.stringify(articles.slice(0, 5).map(article => ({
+                title: article.title,
+                url: article.url,
+                published_at: article.published_at,
+                description: article.description || 'No description available'
+              }))),
               is_main_analysis: true,
               is_historical: false
             });
@@ -279,14 +301,9 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
       }
     }
 
-    // Store articles in database
+    // Store composite analyses
     console.log('Storing Magnificent 7 composite analyses in database...');
     
-    // Clear existing Magnificent 7 articles
-    for (const symbol of MAGNIFICENT_7) {
-      await supabase.from('news_articles').delete().eq('symbol', symbol);
-    }
-
     // Insert processed analyses
     for (const analysis of processedAnalyses) {
       const { error } = await supabase
@@ -316,7 +333,8 @@ Focus on the overall trend and sentiment across all articles for ${symbol}.`;
       assetType: 'Magnificent 7',
       analysesProcessed: processedAnalyses.length,
       stocksAnalyzed: processedAnalyses.filter(a => !a.is_historical).length,
-      message: 'Magnificent 7 stocks processed successfully with composite analysis from multiple sources'
+      totalArticlesStored: allStoredArticles.length,
+      message: 'Magnificent 7 stocks processed successfully with all articles stored for hyperlinking'
     };
 
     console.log(`🎉 Successfully processed ${summary.analysesProcessed} composite analyses for ${summary.stocksAnalyzed} stocks`);
