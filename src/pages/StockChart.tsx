@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { createChart, IChartApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 import { 
   ArrowLeft, 
@@ -26,53 +29,281 @@ import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 
-// TradingView Widget Component
-const TradingViewWidget: React.FC<{ symbol: string; theme: 'light' | 'dark' }> = ({ symbol, theme }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+interface AlpacaBar {
+  t: string; // timestamp
+  o: number; // open
+  h: number; // high
+  l: number; // low
+  c: number; // close
+  v: number; // volume
+}
 
+// Alpaca Chart Widget Component
+const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<any>(null);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [userAccountId, setUserAccountId] = useState<string | null>(null);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // Initialize Lightweight Charts
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    script.type = 'text/javascript';
-    script.async = true;
-    script.innerHTML = `
-      {
-        "autosize": true,
-        "symbol": "${symbol}",
-        "timezone": "Etc/UTC",
-        "theme": "${theme}",
-        "style": "1",
-        "locale": "en",
-        "enable_publishing": false,
-        "withdateranges": true,
-        "range": "YTD",
-        "hide_side_toolbar": false,
-        "allow_symbol_change": false,
-        "details": false,
-        "hotlist": false,
-        "calendar": false,
-        "support_host": "https://www.tradingview.com"
-      }`;
+    const initChart = () => {
+      if (!chartContainerRef.current) {
+        setIsLoading(false);
+        return;
+      }
 
-    if (containerRef.current) {
-      containerRef.current.appendChild(script);
-    }
+      try {
+        const containerWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+        
+        // Create chart with dark theme to match website
+        const chart = createChart(chartContainerRef.current, {
+          width: containerWidth,
+          height: 500,
+          layout: {
+            background: { color: '#0f172a' },
+            textColor: '#e2e8f0',
+          },
+          grid: {
+            vertLines: { color: '#1e293b' },
+            horzLines: { color: '#1e293b' },
+          },
+          crosshair: {
+            mode: 1,
+          },
+          rightPriceScale: {
+            borderColor: '#475569',
+          },
+          timeScale: {
+            borderColor: '#475569',
+            timeVisible: true,
+            secondsVisible: false,
+          },
+        });
 
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+        // Add candlestick series
+        const candleSeries = chart.addSeries(CandlestickSeries, {
+          upColor: '#10b981',
+          downColor: '#ef4444',
+          borderVisible: false,
+          wickUpColor: '#10b981',
+          wickDownColor: '#ef4444',
+        });
+        
+        candlestickSeriesRef.current = candleSeries;
+        chartRef.current = chart;
+
+        // Handle resize
+        const handleResize = () => {
+          if (chartContainerRef.current && chartRef.current) {
+            const newWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
+            chartRef.current.applyOptions({
+              width: newWidth,
+            });
+          }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          window.removeEventListener('resize', handleResize);
+        };
+
+      } catch (error) {
+        console.error('Chart initialization failed:', error);
+        setIsLoading(false);
       }
     };
-  }, [symbol, theme]);
+
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(initChart);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
+    };
+  }, []);
+
+  // Fetch historical data from Alpaca
+  const fetchHistoricalData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to access trading features');
+        return;
+      }
+
+      // Call our edge function to get Alpaca historical data
+      const { data, error } = await supabase.functions.invoke('alpaca-historical-data', {
+        body: { 
+          symbol,
+          timeframe: '1Min',
+          limit: 1000
+        }
+      });
+
+      if (error) {
+        console.error('❌ Alpaca edge function error:', error);
+        throw error;
+      }
+
+      if (data?.bars && Array.isArray(data.bars)) {
+        const formatted: CandlestickData[] = data.bars.map((bar: AlpacaBar) => ({
+          time: Math.floor(new Date(bar.t).getTime() / 1000) as any,
+          open: bar.o,
+          high: bar.h,
+          low: bar.l,
+          close: bar.c,
+        }));
+
+        if (candlestickSeriesRef.current && formatted.length > 0) {
+          candlestickSeriesRef.current.setData(formatted);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error fetching Alpaca historical data:', error);
+      toast.error('Failed to fetch Alpaca data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get user's Alpaca account ID
+  useEffect(() => {
+    const getUserAccount = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('alpaca_account_id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.alpaca_account_id) {
+          setUserAccountId(profile.alpaca_account_id);
+        }
+      } catch (error) {
+        console.error('Error getting user account:', error);
+      }
+    };
+
+    getUserAccount();
+  }, []);
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchHistoricalData();
+  }, [symbol]);
+
+  // Place buy/sell order via Alpaca
+  const placeOrder = async (side: 'buy' | 'sell') => {
+    if (!userAccountId) {
+      toast.error('Alpaca account not linked. Please complete onboarding first.');
+      return;
+    }
+
+    setIsPlacingOrder(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to place orders');
+        return;
+      }
+
+      const orderData = {
+        account_id: userAccountId,
+        symbol,
+        qty: '1',
+        side,
+        type: 'market' as const,
+        time_in_force: 'gtc' as const
+      };
+
+      const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
+        body: orderData
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast.success(`${side.toUpperCase()} order placed successfully for ${symbol}`, {
+        description: `Order ID: ${data.id}`
+      });
+      
+    } catch (error: any) {
+      console.error('Error placing Alpaca order:', error);
+      
+      let errorMessage = error.message || 'Unknown error occurred';
+      
+      if (errorMessage.includes('insufficient')) {
+        errorMessage = 'Insufficient buying power to place order';
+      } else if (errorMessage.includes('market closed') || errorMessage.includes('not tradable')) {
+        errorMessage = 'Market is currently closed or asset not tradable';
+      } else if (errorMessage.includes('forbidden') || errorMessage.includes('403')) {
+        errorMessage = 'Trading not permitted. Check account status.';
+      } else if (errorMessage.includes('404')) {
+        errorMessage = 'Asset not found or account access denied';
+      }
+      
+      toast.error(`Failed to place ${side} order`, {
+        description: errorMessage
+      });
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
 
   return (
-    <div className="tradingview-widget-container w-full h-full">
-      <div ref={containerRef} className="tradingview-widget-container__widget w-full h-full"></div>
-      <div className="tradingview-widget-copyright">
-        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-          <span className="blue-text">Track all markets on TradingView</span>
-        </a>
+    <div className="w-full h-full flex flex-col">
+      {/* Chart Container */}
+      <div className="flex-1 relative">
+        <div 
+          ref={chartContainerRef} 
+          className="w-full h-full"
+          style={{ minHeight: '500px', minWidth: '100%' }}
+        />
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
+            <div className="text-lg text-slate-300">Loading chart data...</div>
+          </div>
+        )}
       </div>
+      
+      {/* Buy/Sell Buttons */}
+      <div className="flex justify-center space-x-4 p-4 bg-slate-800/50 border-t border-slate-700">
+        <Button
+          onClick={() => placeOrder('buy')}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
+          disabled={!userAccountId || isPlacingOrder}
+        >
+          {isPlacingOrder ? '...' : '🟢 BUY'} {symbol}
+        </Button>
+        <Button
+          onClick={() => placeOrder('sell')}
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
+          disabled={!userAccountId || isPlacingOrder}
+        >
+          {isPlacingOrder ? '...' : '🔴 SELL'} {symbol}
+        </Button>
+      </div>
+      
+      {!userAccountId && (
+        <div className="text-center text-xs text-red-400 pb-2">
+          Complete Alpaca onboarding to enable trading
+        </div>
+      )}
     </div>
   );
 };
@@ -324,9 +555,9 @@ const StockChart: React.FC = () => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* TradingView Chart */}
+          {/* Alpaca Chart */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
-            <TradingViewWidget symbol={activeSymbol} theme="dark" />
+            <AlpacaChartWidget symbol={activeSymbol} />
             
             {/* WebSocket Monitor */}
             <div className="absolute bottom-4 left-4 z-10">
