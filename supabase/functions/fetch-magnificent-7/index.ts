@@ -31,16 +31,29 @@ serve(async (req) => {
     const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
     const magnificent7Query = MAGNIFICENT_7.join(',');
     
-    // Fetch articles from multiple API calls to get more comprehensive coverage
+    // Fetch articles from multiple API calls with extended time range and more articles
     const allArticles = [];
-    const apiCalls = 3;
+    const apiCalls = 5; // Increased from 3 to 5
+    const articlesPerCall = 30; // Increased from 20 to 30
+    
+    // Calculate date range - go back 14 days instead of 7 for more articles
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 14); // Extended to 14 days
+    
+    const formatDate = (date) => date.toISOString().split('T')[0];
+    const startDateStr = formatDate(startDate);
+    const endDateStr = formatDate(endDate);
+    
+    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (14 days)`);
     
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
       
       try {
+        // Add date range and increase limit for more comprehensive coverage
         const response = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=20&api_token=${marketauxApiKey}`
+          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}`
         );
         
         if (response.ok) {
@@ -80,8 +93,8 @@ serve(async (req) => {
     const processedAnalyses = [];
     let successfulAnalyses = 0;
 
-    // Process each article to determine stock impact and group them
-    for (const article of uniqueArticles.slice(0, 20)) {
+    // Process more articles to ensure we find enough for each stock
+    for (const article of uniqueArticles.slice(0, 50)) { // Increased from 20 to 50
       console.log(`Analyzing article impact: ${article.title}`);
 
       try {
@@ -142,13 +155,13 @@ Response format: {"impacted_stocks": ["SYMBOL1", "SYMBOL2"]}`;
           const keywordMatches = [];
           
           const stockKeywords = {
-            'AAPL': ['apple', 'iphone', 'ipad', 'mac', 'ios'],
-            'MSFT': ['microsoft', 'windows', 'azure', 'office', 'teams'],
-            'GOOGL': ['google', 'alphabet', 'android', 'youtube', 'search'],
-            'AMZN': ['amazon', 'aws', 'prime', 'alexa', 'bezos'],
-            'NVDA': ['nvidia', 'gpu', 'ai chip', 'datacenter', 'gaming'],
-            'TSLA': ['tesla', 'musk', 'electric vehicle', 'ev', 'autopilot'],
-            'META': ['meta', 'facebook', 'instagram', 'whatsapp', 'metaverse']
+            'AAPL': ['apple', 'iphone', 'ipad', 'mac', 'ios', 'tim cook'],
+            'MSFT': ['microsoft', 'windows', 'azure', 'office', 'teams', 'copilot'],
+            'GOOGL': ['google', 'alphabet', 'android', 'youtube', 'search', 'chrome'],
+            'AMZN': ['amazon', 'aws', 'prime', 'alexa', 'bezos', 'cloud computing'],
+            'NVDA': ['nvidia', 'gpu', 'ai chip', 'datacenter', 'gaming', 'artificial intelligence', 'machine learning', 'geforce', 'rtx', 'cuda', 'jensen huang'],
+            'TSLA': ['tesla', 'musk', 'electric vehicle', 'ev', 'autopilot', 'elon'],
+            'META': ['meta', 'facebook', 'instagram', 'whatsapp', 'metaverse', 'zuckerberg']
           };
           
           for (const [symbol, keywords] of Object.entries(stockKeywords)) {
@@ -177,6 +190,43 @@ Response format: {"impacted_stocks": ["SYMBOL1", "SYMBOL2"]}`;
     }
 
     console.log(`Successfully analyzed ${successfulAnalyses} articles with stock associations`);
+
+    // Ensure minimum 3 articles per stock by using broader article assignment
+    for (const symbol of MAGNIFICENT_7) {
+      const articles = stockArticles.get(symbol);
+      if (articles.length < 3) {
+        console.log(`${symbol} has only ${articles.length} articles, finding more...`);
+        
+        // Find additional articles using broader keyword matching
+        const additionalArticles = uniqueArticles.filter(article => {
+          const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
+          const isAlreadyAssigned = articles.some(existing => existing.url === article.url);
+          
+          if (isAlreadyAssigned) return false;
+          
+          // Broader matching for each stock
+          const broadKeywords = {
+            'AAPL': ['tech', 'technology', 'smartphone', 'earnings', 'stock market'],
+            'MSFT': ['tech', 'technology', 'cloud', 'software', 'earnings'],
+            'GOOGL': ['tech', 'technology', 'internet', 'advertising', 'earnings'],
+            'AMZN': ['tech', 'technology', 'e-commerce', 'retail', 'earnings'],
+            'NVDA': ['tech', 'technology', 'chip', 'semiconductor', 'ai', 'earnings'],
+            'TSLA': ['auto', 'automotive', 'electric', 'tech', 'earnings'],
+            'META': ['tech', 'technology', 'social media', 'internet', 'earnings']
+          };
+          
+          return broadKeywords[symbol]?.some(keyword => articleText.includes(keyword));
+        }).slice(0, 3 - articles.length);
+        
+        // Add these additional articles
+        for (const additionalArticle of additionalArticles) {
+          articles.push(additionalArticle);
+          console.log(`Added additional article for ${symbol}: ${additionalArticle.title}`);
+        }
+        
+        stockArticles.set(symbol, articles);
+      }
+    }
 
     // Create composite analysis for each stock that has relevant articles
     for (const [symbol, articles] of stockArticles.entries()) {
