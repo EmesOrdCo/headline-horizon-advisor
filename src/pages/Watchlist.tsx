@@ -21,7 +21,7 @@ import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useUserStocks } from "@/hooks/useUserStocks";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
-import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
+
 import Footer from "@/components/Footer";
 
 interface Stock {
@@ -288,7 +288,7 @@ const Watchlist = () => {
                     <span className="text-sm">Loading real-time prices...</span>
                   </div>
                 )}
-                <LogoPopulationTrigger />
+                
               </div>
             </div>
             

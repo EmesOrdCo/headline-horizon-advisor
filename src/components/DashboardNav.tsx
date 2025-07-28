@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import RefreshControlButton from "./RefreshControlButton";
+
 import FeedbackModal from "./FeedbackModal";
 import {
   DropdownMenu,
@@ -126,7 +126,7 @@ const DashboardNav = () => {
               <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             )}
             
-            <RefreshControlButton />
+            
             
             <Button 
               onClick={handleSignOut}
