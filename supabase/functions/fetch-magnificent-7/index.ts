@@ -38,17 +38,24 @@ serve(async (req) => {
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
       
-      const offset = (i - 1) * 20;
-      const response = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=20&api_token=${marketauxApiKey}`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && Array.isArray(data.data)) {
-          allArticles.push(...data.data);
-          console.log(`Fetched ${data.data.length} Magnificent 7 articles from API call ${i}`);
+      try {
+        const response = await fetch(
+          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=20&api_token=${marketauxApiKey}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && Array.isArray(data.data)) {
+            allArticles.push(...data.data);
+            console.log(`Fetched ${data.data.length} Magnificent 7 articles from API call ${i}`);
+          } else {
+            console.log(`No articles returned from API call ${i}:`, data);
+          }
+        } else {
+          console.error(`API call ${i} failed with status:`, response.status, await response.text());
         }
+      } catch (error) {
+        console.error(`Error in API call ${i}:`, error);
       }
     }
 
@@ -64,48 +71,15 @@ serve(async (req) => {
       await supabase.from('news_articles').delete().eq('symbol', symbol);
     }
 
-    // Store ALL articles immediately for hyperlinking, regardless of AI analysis success
-    console.log('Storing all articles for immediate hyperlinking...');
-    const allStoredArticles = [];
-    
-    for (const article of uniqueArticles) {
-      const articleToStore = {
-        title: article.title,
-        description: article.description || 'No description available',
-        url: article.url,
-        published_at: article.published_at,
-        symbol: 'MARKET', // Will be updated based on analysis
-        category: 'Market News',
-        ai_confidence: 70, // Default confidence
-        ai_sentiment: 'Neutral', // Default sentiment
-        ai_reasoning: 'Market news article - analysis pending',
-        source_links: JSON.stringify([{
-          title: article.title,
-          url: article.url,
-          published_at: article.published_at,
-          description: article.description || 'No description available'
-        }])
-      };
-
-      allStoredArticles.push(articleToStore);
-      
-      // Store article immediately
-      const { error } = await supabase
-        .from('news_articles')
-        .insert(articleToStore);
-        
-      if (error && !error.message.includes('duplicate')) {
-        console.error(`Error storing article ${article.title}:`, error);
-      }
-    }
-
-    // Now create stock-specific analysis
+    // Initialize stock articles mapping
     const stockArticles = new Map();
     MAGNIFICENT_7.forEach(symbol => {
       stockArticles.set(symbol, []);
     });
 
-    // Process articles for AI analysis (but articles are already stored for hyperlinking)
+    const processedAnalyses = [];
+
+    // Process each article to determine stock impact and group them
     for (const article of uniqueArticles.slice(0, 20)) {
       console.log(`Analyzing article impact: ${article.title}`);
 
@@ -152,25 +126,24 @@ Only include stocks that would be meaningfully affected by this news. If no stoc
           }),
         });
 
-        if (!impactResponse.ok) {
-          console.error(`OpenAI impact analysis failed for article: ${article.title}`);
-          continue;
-        }
+        if (impactResponse.ok) {
+          const impactData = await impactResponse.json();
+          const impactAnalysis = JSON.parse(impactData.choices[0].message.content);
+          
+          console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_stocks?.join(', ') || 'No stocks impacted'}`);
 
-        const impactData = await impactResponse.json();
-        const impactAnalysis = JSON.parse(impactData.choices[0].message.content);
-        
-        console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_stocks.join(', ')}`);
-
-        if (impactAnalysis.impacted_stocks && impactAnalysis.impacted_stocks.length > 0) {
-          // Add this article to each impacted stock's collection
-          for (const symbol of impactAnalysis.impacted_stocks) {
-            if (MAGNIFICENT_7.includes(symbol)) {
-              const existingArticles = stockArticles.get(symbol);
-              existingArticles.push(article);
-              stockArticles.set(symbol, existingArticles);
+          if (impactAnalysis.impacted_stocks && impactAnalysis.impacted_stocks.length > 0) {
+            // Add this article to each impacted stock's collection
+            for (const symbol of impactAnalysis.impacted_stocks) {
+              if (MAGNIFICENT_7.includes(symbol)) {
+                const existingArticles = stockArticles.get(symbol);
+                existingArticles.push(article);
+                stockArticles.set(symbol, existingArticles);
+              }
             }
           }
+        } else {
+          console.error(`OpenAI impact analysis failed for article: ${article.title}`, await impactResponse.text());
         }
 
         // Delay between articles to respect rate limits
@@ -180,8 +153,6 @@ Only include stocks that would be meaningfully affected by this news. If no stoc
         console.error(`❌ Error analyzing article "${article.title}":`, error);
       }
     }
-
-    const processedAnalyses = [];
 
     // Create composite analysis for each stock that has relevant articles
     for (const [symbol, articles] of stockArticles.entries()) {
@@ -273,6 +244,8 @@ Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push t
             });
 
             console.log(`✅ Successfully created composite analysis for ${symbol}: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence based on ${articles.length} articles`);
+          } else {
+            console.error(`Failed to create composite analysis for ${symbol}:`, await analysisResponse.text());
           }
 
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -333,8 +306,8 @@ Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push t
       assetType: 'Magnificent 7',
       analysesProcessed: processedAnalyses.length,
       stocksAnalyzed: processedAnalyses.filter(a => !a.is_historical).length,
-      totalArticlesStored: allStoredArticles.length,
-      message: 'Magnificent 7 stocks processed successfully with all articles stored for hyperlinking'
+      totalArticlesFetched: uniqueArticles.length,
+      message: `Magnificent 7 stocks processed successfully. Fetched ${uniqueArticles.length} articles, analyzed ${processedAnalyses.filter(a => !a.is_historical).length} stocks with current news.`
     };
 
     console.log(`🎉 Successfully processed ${summary.analysesProcessed} composite analyses for ${summary.stocksAnalyzed} stocks`);
