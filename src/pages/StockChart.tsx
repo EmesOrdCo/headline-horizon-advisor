@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createChart, IChartApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,9 +28,7 @@ import {
   MoreHorizontal,
   Star
  } from "lucide-react";
-import { WebSocketMonitor } from '@/components/WebSocketMonitor';
 import { useStockPrices } from "@/hooks/useStockPrices";
-import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -45,10 +46,8 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
   const candlestickSeriesRef = useRef<any>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [userAccountId, setUserAccountId] = useState<string | null>(null);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // Initialize Lightweight Charts
+  // Initialize Lightweight Charts with proper margins
   useEffect(() => {
     const initChart = () => {
       if (!chartContainerRef.current) {
@@ -59,7 +58,7 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
       try {
         const containerWidth = Math.max(chartContainerRef.current.clientWidth || 800, 400);
         
-        // Create chart with dark theme to match website
+        // Create chart with dark theme and proper layout
         const chart = createChart(chartContainerRef.current, {
           width: containerWidth,
           height: 500,
@@ -76,6 +75,10 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
           },
           rightPriceScale: {
             borderColor: '#475569',
+            visible: true,
+          },
+          leftPriceScale: {
+            visible: false,
           },
           timeScale: {
             borderColor: '#475569',
@@ -176,6 +179,37 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
     }
   };
 
+  // Load data on component mount
+  useEffect(() => {
+    fetchHistoricalData();
+  }, [symbol]);
+
+  return (
+    <div className="w-full h-full">
+      <div 
+        ref={chartContainerRef} 
+        className="w-full h-full"
+        style={{ minHeight: '500px', minWidth: '100%' }}
+      />
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
+          <div className="text-lg text-slate-300">Loading chart data...</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Professional Trading Panel Component
+const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const [userAccountId, setUserAccountId] = useState<string | null>(null);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderType, setOrderType] = useState<'market' | 'limit' | 'stop'>('market');
+  const [quantity, setQuantity] = useState('1');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'ioc' | 'fok'>('gtc');
+  const [extendedHours, setExtendedHours] = useState(false);
+
   // Get user's Alpaca account ID
   useEffect(() => {
     const getUserAccount = async () => {
@@ -200,15 +234,20 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
     getUserAccount();
   }, []);
 
-  // Load data on component mount
-  useEffect(() => {
-    fetchHistoricalData();
-  }, [symbol]);
-
   // Place buy/sell order via Alpaca
   const placeOrder = async (side: 'buy' | 'sell') => {
     if (!userAccountId) {
       toast.error('Alpaca account not linked. Please complete onboarding first.');
+      return;
+    }
+
+    if (!quantity || parseInt(quantity) <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+
+    if (orderType === 'limit' && (!limitPrice || parseFloat(limitPrice) <= 0)) {
+      toast.error('Please enter a valid limit price');
       return;
     }
 
@@ -221,14 +260,19 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
         return;
       }
 
-      const orderData = {
+      const orderData: any = {
         account_id: userAccountId,
         symbol,
-        qty: '1',
+        qty: quantity,
         side,
-        type: 'market' as const,
-        time_in_force: 'gtc' as const
+        type: orderType,
+        time_in_force: timeInForce,
+        extended_hours: extendedHours
       };
+
+      if (orderType === 'limit') {
+        orderData.limit_price = limitPrice;
+      }
 
       const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
         body: orderData
@@ -238,8 +282,8 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
         throw new Error(error.message);
       }
       
-      toast.success(`${side.toUpperCase()} order placed successfully for ${symbol}`, {
-        description: `Order ID: ${data.id}`
+      toast.success(`${side.toUpperCase()} order placed successfully`, {
+        description: `${quantity} shares of ${symbol} - Order ID: ${data.id}`
       });
       
     } catch (error: any) {
@@ -266,45 +310,112 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Chart Container */}
-      <div className="flex-1 relative">
-        <div 
-          ref={chartContainerRef} 
-          className="w-full h-full"
-          style={{ minHeight: '500px', minWidth: '100%' }}
-        />
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
-            <div className="text-lg text-slate-300">Loading chart data...</div>
+    <Card className="bg-slate-800/50 border-slate-700">
+      <CardHeader>
+        <CardTitle className="text-white text-lg">Trading Panel</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Order Type Selection */}
+        <div>
+          <label className="text-sm text-slate-300 block mb-2">Order Type</label>
+          <Select value={orderType} onValueChange={(value: any) => setOrderType(value)}>
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectItem value="market" className="text-white">Market</SelectItem>
+              <SelectItem value="limit" className="text-white">Limit</SelectItem>
+              <SelectItem value="stop" className="text-white">Stop</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Quantity Input */}
+        <div>
+          <label className="text-sm text-slate-300 block mb-2">Quantity</label>
+          <Input
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="Number of shares"
+            className="bg-slate-700 border-slate-600 text-white"
+            min="1"
+          />
+        </div>
+
+        {/* Limit Price (only for limit orders) */}
+        {orderType === 'limit' && (
+          <div>
+            <label className="text-sm text-slate-300 block mb-2">Limit Price</label>
+            <Input
+              type="number"
+              value={limitPrice}
+              onChange={(e) => setLimitPrice(e.target.value)}
+              placeholder="Price per share"
+              className="bg-slate-700 border-slate-600 text-white"
+              step="0.01"
+            />
           </div>
         )}
-      </div>
-      
-      {/* Buy/Sell Buttons */}
-      <div className="flex justify-center space-x-4 p-4 bg-slate-800/50 border-t border-slate-700">
-        <Button
-          onClick={() => placeOrder('buy')}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
-          disabled={!userAccountId || isPlacingOrder}
-        >
-          {isPlacingOrder ? '...' : '🟢 BUY'} {symbol}
-        </Button>
-        <Button
-          onClick={() => placeOrder('sell')}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
-          disabled={!userAccountId || isPlacingOrder}
-        >
-          {isPlacingOrder ? '...' : '🔴 SELL'} {symbol}
-        </Button>
-      </div>
-      
-      {!userAccountId && (
-        <div className="text-center text-xs text-red-400 pb-2">
-          Complete Alpaca onboarding to enable trading
+
+        {/* Time in Force */}
+        <div>
+          <label className="text-sm text-slate-300 block mb-2">Time in Force</label>
+          <Select value={timeInForce} onValueChange={(value: any) => setTimeInForce(value)}>
+            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectItem value="day" className="text-white">Day</SelectItem>
+              <SelectItem value="gtc" className="text-white">Good Till Canceled</SelectItem>
+              <SelectItem value="ioc" className="text-white">Immediate or Cancel</SelectItem>
+              <SelectItem value="fok" className="text-white">Fill or Kill</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
-    </div>
+
+        {/* Extended Hours Toggle */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="extended-hours"
+            checked={extendedHours}
+            onChange={(e) => setExtendedHours(e.target.checked)}
+            className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded"
+          />
+          <label htmlFor="extended-hours" className="text-sm text-slate-300">
+            Extended Hours Trading
+          </label>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-3">
+          <Button
+            onClick={() => placeOrder('buy')}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3"
+            disabled={!userAccountId || isPlacingOrder}
+          >
+            {isPlacingOrder ? 'Placing...' : 'BUY'}
+          </Button>
+          <Button
+            onClick={() => placeOrder('sell')}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3"
+            disabled={!userAccountId || isPlacingOrder}
+          >
+            {isPlacingOrder ? 'Placing...' : 'SELL'}
+          </Button>
+        </div>
+
+        {/* Account Status */}
+        <div className="text-xs text-center">
+          {userAccountId ? (
+            <span className="text-green-400">✓ Alpaca Account Linked</span>
+          ) : (
+            <span className="text-red-400">⚠ Complete Alpaca onboarding to enable trading</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -323,14 +434,6 @@ const StockChart: React.FC = () => {
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
   
-  // Set up Alpaca WebSocket for real-time updates - include AAPL for Live Data Flow
-  // Disable WebSocket if user is on the live trading page to prevent connection conflicts
-  const isOnLiveTradingPage = window.location.pathname.includes('/alpaca-live-chart');
-  const { streamData, isConnected } = useAlpacaStreamSingleton({
-    symbols: [activeSymbol, ...watchlistSymbols],
-    enabled: !isOnLiveTradingPage
-  });
-  
   const leftSidebarTools = [
     { icon: Crosshair, label: 'Cursor' },
     { icon: Move, label: 'Hand' },
@@ -348,10 +451,9 @@ const StockChart: React.FC = () => {
   // Create watchlist with REAL data from APIs
   const watchlistStocks = watchlistSymbols.map(sym => {
     const price = watchlistPrices?.find(p => p.symbol === sym);
-    const streamPrice = streamData?.[sym];
     
-    // Use REAL API data - prioritize stream data, then API data
-    const currentPrice = streamPrice?.price || price?.price || 0;
+    // Use REAL API data
+    const currentPrice = price?.price || 0;
     const change = price?.change || 0;
     const changePercent = price?.changePercent || 0;
     
@@ -366,12 +468,11 @@ const StockChart: React.FC = () => {
 
   // Get current stock info using REAL data from APIs
   const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
-  const streamPrice = streamData?.[activeSymbol];
   
-  // Use REAL data from APIs - prioritize stream data, then API data, then fallback
-  const currentPrice = streamPrice?.price || currentStock?.price || 0;
-  const bidPrice = streamPrice?.bid || currentStock?.bidPrice || (currentPrice * 0.999);
-  const askPrice = streamPrice?.ask || currentStock?.askPrice || (currentPrice * 1.001);
+  // Use REAL data from APIs
+  const currentPrice = currentStock?.price || 0;
+  const bidPrice = currentStock?.bidPrice || (currentPrice * 0.999);
+  const askPrice = currentStock?.askPrice || (currentPrice * 1.001);
   const spread = askPrice - bidPrice;
   const spreadPercent = bidPrice > 0 ? ((spread / bidPrice) * 100) : 0;
   
@@ -418,9 +519,7 @@ const StockChart: React.FC = () => {
               <span className="text-slate-400 text-sm">{selectedTimeframe}</span>
               <span className="text-slate-400 text-sm">{exchange}</span>
               <span className="text-slate-400 text-sm">•</span>
-              {isConnected && (
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Live data" />
-              )}
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Historical data" />
             </div>
           </div>
           
@@ -518,14 +617,6 @@ const StockChart: React.FC = () => {
             >
               Data
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-sm px-3 py-1 text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => navigate(`/alpaca-live-chart/${activeSymbol}`)}
-            >
-              Alpaca Live
-            </Button>
           </div>
         </div>
       </div>
@@ -556,15 +647,8 @@ const StockChart: React.FC = () => {
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Alpaca Chart */}
-          <div className="flex-1 bg-slate-900 relative min-h-0">
+          <div className="flex-1 bg-slate-900 relative min-h-0 pl-4">
             <AlpacaChartWidget symbol={activeSymbol} />
-            
-            {/* WebSocket Monitor */}
-            <div className="absolute bottom-4 left-4 z-10">
-              <div className="scale-75 origin-bottom-left">
-                <WebSocketMonitor />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -639,6 +723,11 @@ const StockChart: React.FC = () => {
             <div className="mt-3 text-xs text-slate-500">
               Real-time bid/ask prices for {activeSymbol}
             </div>
+          </div>
+
+          {/* Professional Trading Panel */}
+          <div className="border-b border-slate-700 p-4">
+            <TradingPanel symbol={activeSymbol} />
           </div>
 
           {/* Stock Details - EXACT replica */}
