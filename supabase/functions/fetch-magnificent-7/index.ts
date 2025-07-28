@@ -31,36 +31,53 @@ serve(async (req) => {
     const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
     const magnificent7Query = MAGNIFICENT_7.join(',');
     
-    // Fetch articles from multiple API calls with extended time range and more articles
+    // Fetch articles from multiple API calls - fewer calls, more articles per call for recent focus
     const allArticles = [];
-    const apiCalls = 5; // Increased from 3 to 5
-    const articlesPerCall = 30; // Increased from 20 to 30
+    const apiCalls = 2; // Reduced calls to focus on most recent
+    const articlesPerCall = 50; // Increased articles per call
     
-    // Calculate date range - focus on most recent 3 days for freshest news
+    // Calculate date range - prioritize TODAY but include recent articles as fallback
     const endDate = new Date();
+    // Add 1 day to end date to ensure we capture today's articles 
+    endDate.setDate(endDate.getDate() + 1);
+    
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 3); // Reduced to 3 days for most recent articles
+    startDate.setDate(startDate.getDate() - 2); // Extend to 2 days for better coverage
     
     const formatDate = (date) => date.toISOString().split('T')[0];
     const startDateStr = formatDate(startDate);
     const endDateStr = formatDate(endDate);
     
-    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (3 days - focusing on recent news)`);
+    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (2 days with TODAY priority)`);
+    
+    // Also try without date restrictions for most recent available
+    console.log('IMPORTANT: If no articles from today exist in API, will show most recent available articles');
     
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
       
       try {
-        // Add date range and sort by published date descending for most recent first
-        const response = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}&sort=published_desc`
-        );
+        // Try to get the most recent articles with multiple source preferences
+        let apiUrl;
+        if (i === 1) {
+          // First call: Try with date filter
+          apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
+        } else {
+          // Second call: Try without strict date filter to get most recent available
+          apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
+        }
+        
+        console.log(`API Call ${i}: ${i === 1 ? 'With date filter' : 'Most recent available'}`);
+        const response = await fetch(apiUrl);
         
         if (response.ok) {
           const data = await response.json();
           if (data.data && Array.isArray(data.data)) {
             allArticles.push(...data.data);
             console.log(`Fetched ${data.data.length} Magnificent 7 articles from API call ${i}`);
+            if (data.data.length > 0) {
+              console.log(`Date range in fetched articles: ${data.data[data.data.length - 1]?.published_at} to ${data.data[0]?.published_at}`);
+            }
           } else {
             console.log(`No articles returned from API call ${i}:`, data);
           }
@@ -72,14 +89,20 @@ serve(async (req) => {
       }
     }
 
-    // Remove duplicates based on URL and sort by publish date (most recent first)
+    // Remove duplicates based on URL and sort by publish date (TODAY FIRST!)
     const uniqueArticles = allArticles
       .filter((article, index, self) => 
         index === self.findIndex(a => a.url === article.url)
       )
       .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
 
+    // Get today's date for prioritization
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
     console.log(`Unique Magnificent 7 articles: ${uniqueArticles.length}`);
+    console.log(`Articles from TODAY (${today}): ${uniqueArticles.filter(a => a.published_at.startsWith(today)).length}`);
+    console.log(`Articles from YESTERDAY (${yesterday}): ${uniqueArticles.filter(a => a.published_at.startsWith(yesterday)).length}`);
     console.log(`Most recent article date: ${uniqueArticles[0]?.published_at}`);
     console.log(`Oldest article date: ${uniqueArticles[uniqueArticles.length - 1]?.published_at}`);
 
@@ -97,8 +120,8 @@ serve(async (req) => {
     const processedAnalyses = [];
     let successfulAnalyses = 0;
 
-    // Process more articles to ensure we find enough for each stock
-    for (const article of uniqueArticles.slice(0, 50)) { // Increased from 20 to 50
+    // Process TOP articles to ensure we get the most recent ones
+    for (const article of uniqueArticles.slice(0, 30)) { // Focus on top 30 most recent
       console.log(`Analyzing article impact: ${article.title}`);
 
       try {
