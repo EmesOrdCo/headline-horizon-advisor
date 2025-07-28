@@ -7,16 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Popular stocks from watchlist (same as in frontend)
+// Popular stocks from watchlist (stocks only, no ETFs/index funds)
 const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
-const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
 const POPULAR_STOCKS = [
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX', 'DIS', 
   'V', 'JPM', 'JNJ', 'WMT', 'PG', 'UNH', 'MA', 'HD', 'BAC', 'ABBV', 'CRM'
 ];
 
-// Combine all watchlist stocks for movers calculation
-const ALL_WATCHLIST_STOCKS = [...MAGNIFICENT_7, ...MAJOR_INDEX_FUNDS, ...POPULAR_STOCKS.filter(s => !MAGNIFICENT_7.includes(s))];
+// Only use individual stocks for movers calculation (exclude ETFs/index funds)
+const ALL_WATCHLIST_STOCKS = [...new Set(POPULAR_STOCKS)]; // Remove duplicates
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -71,10 +70,7 @@ serve(async (req) => {
                 'HD': 'Home Depot Inc.',
                 'BAC': 'Bank of America Corp.',
                 'ABBV': 'AbbVie Inc.',
-                'CRM': 'Salesforce Inc.',
-                'SPY': 'SPDR S&P 500 ETF',
-                'QQQ': 'Invesco QQQ Trust',
-                'DIA': 'SPDR Dow Jones Industrial Average ETF'
+                'CRM': 'Salesforce Inc.'
               };
               return companies[symbol] || `${symbol} Corp.`;
             };
