@@ -31,12 +31,11 @@ const Navigation = () => {
           <a href="#features" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">Features</a>
           <a href="#how-it-works" className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white transition-colors font-medium">How it Works</a>
           
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button (disabled) */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleTheme}
-            className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"
+            className="text-gray-700 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white cursor-default"
           >
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -65,12 +64,11 @@ const Navigation = () => {
 
         {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Mobile Theme Toggle */}
+          {/* Mobile Theme Toggle (disabled) */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleTheme}
-            className="text-gray-700 dark:text-slate-300"
+            className="text-gray-700 dark:text-slate-300 cursor-default"
           >
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
