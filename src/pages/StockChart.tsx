@@ -100,6 +100,11 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
         candlestickSeriesRef.current = candleSeries;
         chartRef.current = chart;
 
+        // Load data immediately after chart initialization
+        setTimeout(() => {
+          fetchHistoricalData();
+        }, 200);
+
         // Handle resize
         const handleResize = () => {
           if (chartContainerRef.current && chartRef.current) {
@@ -180,10 +185,12 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
     }
   };
 
-  // Load data on component mount
+  // Load data on component mount and when chart is ready
   useEffect(() => {
-    fetchHistoricalData();
-  }, [symbol]);
+    if (chartRef.current && candlestickSeriesRef.current) {
+      fetchHistoricalData();
+    }
+  }, [symbol, chartRef.current, candlestickSeriesRef.current]);
 
   return (
     <div className="w-full h-full">
