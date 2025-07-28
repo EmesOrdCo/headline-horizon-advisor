@@ -1,13 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
-import { TradingChart } from '@/components/chart/TradingChart';
-import { useTheme } from '@/contexts/ThemeContext';
+import { AlpacaTradingChart } from '@/components/chart/AlpacaTradingChart';
+import { useAlpacaHistoricalData } from '@/hooks/useAlpacaHistoricalData';
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -19,36 +17,8 @@ interface AlpacaBar {
 }
 
 const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => {
-  const { isDarkMode } = useTheme();
-  const [currentPrice, setCurrentPrice] = useState<number>(0);
-  const [lastUpdate, setLastUpdate] = useState<string>('');
-  const [dataSource, setDataSource] = useState<'historical' | 'live' | 'error'>('historical');
-
-  // Use the singleton WebSocket for this page only
-  const { streamData, isConnected, errorMessage, connectionStatus, connect } = useAlpacaStreamSingleton({
-    symbols: [symbol],
-    enabled: true
-  });
-
-  // Handle real-time updates from WebSocket
-  useEffect(() => {
-    if (streamData[symbol]) {
-      const trade = streamData[symbol];
-      const price = trade.price;
-      setCurrentPrice(price);
-      setLastUpdate(new Date().toLocaleTimeString());
-      setDataSource('live'); // Mark that we're receiving live data
-    }
-  }, [streamData, symbol]);
-
-  // Track WebSocket connection status
-  useEffect(() => {
-    if (connectionStatus === 'error') {
-      setDataSource('error');
-    } else if (connectionStatus === 'connected') {
-      setDataSource('live');
-    }
-  }, [connectionStatus]);
+  // Use Alpaca historical data
+  const { chartData, isLoading, currentPrice, error, refresh } = useAlpacaHistoricalData(symbol, '1Min');
 
   // Place buy/sell order via Alpaca
   const placeOrder = async (side: 'buy' | 'sell') => {
@@ -85,14 +55,14 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <CardTitle className="text-2xl text-white">{symbol} Live Trading</CardTitle>
-              <Badge variant={isConnected ? "default" : "destructive"} className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                {isConnected ? 'Live Feed Active' : 'Disconnected'}
+              <CardTitle className="text-2xl text-white">{symbol} Alpaca Trading</CardTitle>
+              <Badge variant={error ? "destructive" : "default"} className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'}`} />
+                {error ? 'Data Error' : 'Historical Data'}
               </Badge>
-              {errorMessage && (
+              {error && (
                 <Badge variant="destructive" className="text-xs">
-                  {errorMessage}
+                  {error}
                 </Badge>
               )}
             </div>
@@ -101,7 +71,7 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
                 ${currentPrice > 0 ? currentPrice.toFixed(2) : '--'}
               </div>
               <div className="text-sm text-slate-400">
-                {lastUpdate ? `Updated: ${lastUpdate}` : 'Current Price'}
+                Alpaca Historical Price
               </div>
             </div>
           </div>
@@ -115,46 +85,36 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-slate-400">Data Source:</span>
-                {dataSource === 'live' && (
-                  <Badge className="bg-green-600 text-white">
-                    🔴 Live WebSocket Data
-                  </Badge>
-                )}
-                {dataSource === 'historical' && (
-                  <Badge variant="secondary" className="bg-yellow-600 text-white">
-                    📊 Historical Data Only
-                  </Badge>
-                )}
-                {dataSource === 'error' && (
-                  <Badge variant="destructive">
-                    ❌ Connection Failed
-                  </Badge>
-                )}
+                <Badge className="bg-blue-600 text-white">
+                  📊 Alpaca Historical Data
+                </Badge>
+                <span className="text-xs text-slate-500">
+                  ({chartData.data.length} bars loaded)
+                </span>
               </div>
               
-              {!isConnected && errorMessage && (
+              {error && (
                 <div className="text-sm text-red-400">
-                  Error: {errorMessage}
+                  Error: {error}
                 </div>
               )}
             </div>
             
-            {!isConnected && (
-              <Button
-                onClick={connect}
-                variant="outline"
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-              >
-                🔄 Retry Connection
-              </Button>
-            )}
+            <Button
+              onClick={refresh}
+              variant="outline"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+              disabled={isLoading}
+            >
+              🔄 Refresh Data
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* TradingView Chart with Controls */}
-      <TradingChart 
+      {/* TradingView-Style Chart with Alpaca Data */}
+      <AlpacaTradingChart 
         symbol={symbol}
         initialTimeFrame="1m"
         className="bg-slate-900/50 border-slate-700"
@@ -163,27 +123,27 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
       {/* Trading Controls */}
       <Card className="bg-slate-900/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-center text-white">Quick Trading</CardTitle>
+          <CardTitle className="text-center text-white">Alpaca Paper Trading</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center space-x-6">
             <Button
               onClick={() => placeOrder('buy')}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected}
+              disabled={isLoading || !!error}
             >
               🟢 BUY {symbol}
             </Button>
             <Button
               onClick={() => placeOrder('sell')}
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected}
+              disabled={isLoading || !!error}
             >
               🔴 SELL {symbol}
             </Button>
           </div>
           <p className="text-center text-sm text-slate-400 mt-3">
-            Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
+            Market orders • 1 share • Paper Trading • Alpaca Historical Data
           </p>
         </CardContent>
       </Card>
