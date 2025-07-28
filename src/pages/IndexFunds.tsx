@@ -610,9 +610,10 @@ const IndexFunds = () => {
                   ) : (
                     <Card className="mb-8 bg-slate-800/50 border-slate-700">
                       <CardContent className="p-6">
-                        <div className="text-center text-slate-400">
-                          <div className="text-lg font-medium">No news analysis available for {symbol}</div>
-                          <div className="text-sm mt-2">Try refreshing news data to get the latest analysis</div>
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                          <div className="text-lg font-medium text-slate-300">Loading analysis for {symbol}</div>
+                          <div className="text-sm mt-2 text-slate-400">Fetching the latest market data...</div>
                         </div>
                       </CardContent>
                     </Card>
