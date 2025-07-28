@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
@@ -172,6 +173,20 @@ const Magnificent7 = () => {
     });
   }, [wsData, TEST_SYMBOLS, useWebSocket]);
 
+  // Auto-refresh news when page loads
+  useEffect(() => {
+    const autoRefresh = async () => {
+      try {
+        await fetchNews();
+        await refetch();
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+    
+    autoRefresh();
+  }, []); // Only run once on mount
+
   const getStockPrice = (symbol: string) => {
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
     if (apiPrice && apiPrice.price > 0) {
@@ -304,14 +319,6 @@ const Magnificent7 = () => {
                 </Link>
                 <div className="flex items-center gap-4">
                   <Button 
-                    onClick={() => setShowCharts(!showCharts)}
-                    variant="outline" 
-                    className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    {showCharts ? 'Hide Charts' : 'Show Charts'}
-                  </Button>
-                  <Button 
                     onClick={handleRefreshNews}
                     disabled={isFetching}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -348,7 +355,7 @@ const Magnificent7 = () => {
           )}
 
           {/* All Magnificent 7 Stock Analysis Sections */}
-          <div className="space-y-12">
+          <div className="space-y-8">
             {MAGNIFICENT_7_SYMBOLS.map((symbol) => {
               const stockData = getBestStockData(symbol);
               const article = newsData?.find(item => 
@@ -366,11 +373,47 @@ const Magnificent7 = () => {
               
               const compositeHeadline = article ? generateCompositeHeadline(article) : `${symbol}: Market Analysis`;
               
+              // Show loading state while stock prices are loading
+              if (stockPricesLoading) {
+                return (
+                  <Card key={symbol} className="mb-8 bg-slate-800/50 border-slate-700">
+                    <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="w-8 h-8 rounded" />
+                            <Skeleton className="w-16 h-6 rounded" />
+                            <Skeleton className="w-24 h-4 rounded" />
+                          </div>
+                          <div className="flex items-center gap-6 text-sm">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                              <div key={index} className="text-center">
+                                <Skeleton className="w-12 h-3 mb-1" />
+                                <Skeleton className="w-16 h-4" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Skeleton className="w-20 h-8 rounded" />
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-center h-32">
+                        <div className="flex items-center gap-3 text-slate-400">
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          <span className="text-sm">Loading stock data...</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
               return (
                 <div key={symbol} className="w-full">
                   {/* Integrated Stock Info and News Analysis */}
                   {article ? (
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
                       {/* Compact Stock Header */}
                       <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
                         <div className="flex items-center justify-between">
@@ -427,7 +470,7 @@ const Magnificent7 = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
-                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover-scale"
                           >
                             <BarChart3 className="w-4 h-4 mr-2" />
                             Chart
@@ -472,7 +515,7 @@ const Magnificent7 = () => {
                     </Card>
                   ) : (
                     /* Standalone Stock Card when no news */
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
                       {/* Compact Stock Header */}
                       <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
                         <div className="flex items-center justify-between">
@@ -529,7 +572,7 @@ const Magnificent7 = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Corporation` })}
-                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover-scale"
                           >
                             <BarChart3 className="w-4 h-4 mr-2" />
                             Chart
