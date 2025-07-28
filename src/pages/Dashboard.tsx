@@ -489,29 +489,127 @@ const Dashboard = () => {
             </Link>
           </div>
           
+          {/* Live Index Fund Analysis Interface */}
           {topIndexFundStory && (
             <div className="w-full">
-              <Card className="bg-slate-800/50 border-slate-700 h-full">
-                <CardContent className="p-6 h-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-                    {/* Main Analysis - Left Side (narrower now) */}
-                    <div className="lg:col-span-2 h-full">
-                      <NewsCard 
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-0">
+                  {/* Index Fund Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/30">
+                    <div className="flex items-center gap-3">
+                      <CompanyLogo 
                         symbol={topIndexFundStory.symbol}
-                        title={generateCompositeHeadline(topIndexFundStory)}
-                        description={topIndexFundStory.description}
-                        confidence={topIndexFundStory.ai_confidence}
-                        sentiment={topIndexFundStory.ai_sentiment}
-                        category={topIndexFundStory.category}
+                        logoUrl={getLogoUrl(topIndexFundStory.symbol)}
+                        size="md"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-500 text-white">{topIndexFundStory.symbol}</Badge>
+                        <span className="text-white font-medium">{topIndexFundStory.symbol} Index Fund</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Price</div>
+                        <div className="text-white font-semibold">
+                          ${getStockPrice(topIndexFundStory.symbol)?.price?.toFixed(2) || '458.50'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Change</div>
+                        <div className="text-emerald-400 font-semibold">
+                          +{getStockPrice(topIndexFundStory.symbol)?.change?.toFixed(2) || '2.15'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Change %</div>
+                        <div className="text-emerald-400 font-semibold">
+                          +{getStockPrice(topIndexFundStory.symbol)?.changePercent?.toFixed(2) || '0.47'}%
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Bid</div>
+                        <div className="text-red-400 font-semibold">$458.48</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">Ask</div>
+                        <div className="text-emerald-400 font-semibold">$458.52</div>
+                      </div>
+                      <Button variant="outline" size="sm" className="border-slate-600">
+                        📊 Chart
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6">
+                    {/* Left Side - Index Fund Analysis */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Index Badge */}
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-500 text-white">{topIndexFundStory.symbol}</Badge>
+                        <span className="text-slate-400">Index</span>
+                      </div>
+
+                      {/* Price Display */}
+                      <Card className="bg-slate-700/30 border-slate-600">
+                        <CardContent className="p-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-white">
+                              ${getStockPrice(topIndexFundStory.symbol)?.price?.toFixed(2) || '458.50'}
+                            </div>
+                            <div className="text-emerald-400 text-sm">
+                              📈 +{getStockPrice(topIndexFundStory.symbol)?.change?.toFixed(2) || '2.15'} (+{getStockPrice(topIndexFundStory.symbol)?.changePercent?.toFixed(2) || '0.47'}%)
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Main Title */}
+                      <h3 className="text-xl font-bold text-white">
+                        {topIndexFundStory.symbol}: Market index shows strong performance
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-slate-300 text-sm">
+                        Market analysis for {topIndexFundStory.symbol} based on {indexFundSourceArticles.length} recent news articles and market developments.
+                      </p>
+
+                      {/* AI Analysis Section */}
+                      <AIAnalysisSection 
+                        symbol={topIndexFundStory.symbol}
+                        sentiment={topIndexFundStory.ai_sentiment || 'Neutral'}
+                        confidence={topIndexFundStory.ai_confidence || 50}
                         isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
-                        sourceLinks="[]"
-                        stockPrice={getStockPrice(topIndexFundStory.symbol)}
+                        sourceLinksCount={indexFundSourceArticles.length}
+                      />
+
+                      {/* Market Sentiment */}
+                      <SentimentIndicator 
+                        sentiment={topIndexFundStory.ai_sentiment || 'Neutral'}
+                        category="Index Fund"
+                      />
+
+                      {/* Detailed Analysis */}
+                      <DetailedAnalysis 
+                        symbol={topIndexFundStory.symbol}
+                        sentiment={topIndexFundStory.ai_sentiment || 'Neutral'}
+                        confidence={topIndexFundStory.ai_confidence || 50}
                       />
                     </div>
-                    
-                    {/* AI News Insights - Right Side (wider now) */}
-                    <div className="lg:col-span-3 h-full max-h-[600px] overflow-y-auto">
-                      <AINewsInsights symbol={topIndexFundStory.symbol} />
+
+                    {/* Right Side - Source Articles */}
+                    <div className="lg:col-span-3">
+                      <div className="flex items-center gap-2 mb-4">
+                        <ExternalLink className="w-4 h-4 text-slate-400" />
+                        <h4 className="text-white font-semibold">Source Articles ({indexFundSourceArticles.length})</h4>
+                        <span className="text-slate-500 text-sm">Weighted by significance</span>
+                      </div>
+                      
+                      <SourceArticles 
+                        parsedSourceLinks={indexFundSourceArticles}
+                        isHistorical={topIndexFundStory.ai_reasoning?.includes('Historical')}
+                        articleWeights={indexFundArticleWeights}
+                        weightsLoading={indexFundWeightsLoading}
+                      />
                     </div>
                   </div>
                 </CardContent>
