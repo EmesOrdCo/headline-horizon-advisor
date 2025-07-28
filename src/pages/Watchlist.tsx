@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, ExternalLink, Loader2, BarChart3, RefreshCw, Crown, Target, BarChart, Bitcoin, Globe, DollarSign, Building, Plus, Clock } from "lucide-react";
 
 import DashboardNav from "@/components/DashboardNav";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
@@ -584,32 +584,6 @@ const Watchlist = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 min-w-max">
                 <Button
-                  variant={moversFilter === "popular" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setMoversFilter("popular")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    moversFilter === "popular" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <BarChart className="w-4 h-4 mr-2" />
-                  Popular
-                </Button>
-                <Button
-                  variant={moversFilter === "my-stocks" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setMoversFilter("my-stocks")}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    moversFilter === "my-stocks" 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                  }`}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  My Stocks
-                </Button>
-                <Button
                   variant={moversFilter === "stocks" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setMoversFilter("stocks")}
@@ -631,6 +605,7 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
+                  disabled
                 >
                   <Bitcoin className="w-4 h-4 mr-2" />
                   Crypto
@@ -644,6 +619,7 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
+                  disabled
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Indices
@@ -657,6 +633,7 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
+                  disabled
                 >
                   <Globe className="w-4 h-4 mr-2" />
                   Commodities
@@ -670,6 +647,7 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
+                  disabled
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
                   Currencies
@@ -683,6 +661,7 @@ const Watchlist = () => {
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
+                  disabled
                 >
                   <Building className="w-4 h-4 mr-2" />
                   ETFs
@@ -711,7 +690,20 @@ const Watchlist = () => {
           </div>
         )}
 
-        {moversData && !moversLoading && (
+        {moversFilter !== "stocks" ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-8 max-w-md">
+              <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Coming Soon</h3>
+              <p className="text-slate-400">
+                {moversFilter.charAt(0).toUpperCase() + moversFilter.slice(1)} market data will be available soon. 
+                Stay tuned for updates!
+              </p>
+            </div>
+          </div>
+        ) : moversData && !moversLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top 5 Gainers */}
             <div className="bg-slate-800/30 backdrop-blur border border-slate-700 rounded-lg p-4">
