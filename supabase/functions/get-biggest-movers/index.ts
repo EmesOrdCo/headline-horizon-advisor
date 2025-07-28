@@ -7,6 +7,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Popular stocks to track for movers
+const TRACKED_STOCKS = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'MSFT', name: 'Microsoft Corp.' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+  { symbol: 'TSLA', name: 'Tesla Inc.' },
+  { symbol: 'META', name: 'Meta Platforms Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA Corp.' },
+  { symbol: 'NFLX', name: 'Netflix Inc.' },
+  { symbol: 'DIS', name: 'Walt Disney Co.' },
+  { symbol: 'V', name: 'Visa Inc.' },
+  { symbol: 'JPM', name: 'JPMorgan Chase & Co.' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson' },
+  { symbol: 'WMT', name: 'Walmart Inc.' },
+  { symbol: 'PG', name: 'Procter & Gamble Co.' },
+  { symbol: 'UNH', name: 'UnitedHealth Group Inc.' },
+  { symbol: 'MA', name: 'Mastercard Inc.' },
+  { symbol: 'HD', name: 'Home Depot Inc.' },
+  { symbol: 'BAC', name: 'Bank of America Corp.' },
+  { symbol: 'ABBV', name: 'AbbVie Inc.' },
+  { symbol: 'CRM', name: 'Salesforce Inc.' }
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,79 +42,123 @@ serve(async (req) => {
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    if (!alpacaApiKey || !alpacaSecretKey || !marketauxApiKey || !openaiApiKey) {
-      throw new Error('Missing required API keys');
+    if (!alpacaApiKey || !alpacaSecretKey) {
+      throw new Error('Missing Alpaca API credentials');
     }
 
-    console.log('Fetching biggest gainers and losers from Alpaca screener...');
+    console.log('Fetching biggest gainers and losers using Alpaca quotes API...');
 
-    // Fetch biggest gainers
-    const gainersResponse = await fetch('https://data.alpaca.markets/v1beta1/screener/stocks/gainers?top=10', {
-      headers: {
-        'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaSecretKey,
-      },
-    });
+    const headers = {
+      'APCA-API-KEY-ID': alpacaApiKey,
+      'APCA-API-SECRET-KEY': alpacaSecretKey,
+    };
 
-    // Fetch biggest losers
-    const losersResponse = await fetch('https://data.alpaca.markets/v1beta1/screener/stocks/losers?top=10', {
-      headers: {
-        'APCA-API-KEY-ID': alpacaApiKey,
-        'APCA-API-SECRET-KEY': alpacaSecretKey,
-      },
-    });
-
-    let gainersData = [];
-    let losersData = [];
-
-    if (gainersResponse.ok) {
-      const gainersResult = await gainersResponse.json();
-      console.log(`Fetched ${gainersResult.stocks?.length || 0} gainers from screener`);
-      gainersData = gainersResult.stocks || [];
-    } else {
-      console.error('Failed to fetch gainers:', gainersResponse.status);
+    // Get quotes for all tracked stocks
+    const symbols = TRACKED_STOCKS.map(s => s.symbol).join(',');
+    
+    // Get current quotes
+    const quotesUrl = `https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=${symbols}&feed=iex`;
+    console.log(`Fetching current quotes from: ${quotesUrl}`);
+    
+    const quotesResponse = await fetch(quotesUrl, { headers });
+    
+    if (!quotesResponse.ok) {
+      console.error(`Failed to fetch quotes: ${quotesResponse.status}`);
+      throw new Error('Failed to fetch current stock quotes');
     }
 
-    if (losersResponse.ok) {
-      const losersResult = await losersResponse.json();
-      console.log(`Fetched ${losersResult.stocks?.length || 0} losers from screener`);
-      losersData = losersResult.stocks || [];
-    } else {
-      console.error('Failed to fetch losers:', losersResponse.status);
-    }
+    const quotesData = await quotesResponse.json();
+    console.log(`Received quotes for ${Object.keys(quotesData.quotes || {}).length} symbols`);
 
-    // If we don't have enough data from screener API, fall back to sample data
-    if (gainersData.length === 0 && losersData.length === 0) {
-      console.log('No screener data available, using fallback data...');
+    // Get previous day's closing prices to calculate change
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    // Format as YYYY-MM-DD
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    const barsUrl = `https://data.alpaca.markets/v2/stocks/bars?symbols=${symbols}&timeframe=1Day&start=${yesterdayStr}&end=${yesterdayStr}&adjustment=raw&feed=iex`;
+    console.log(`Fetching previous day bars from: ${barsUrl}`);
+    
+    const barsResponse = await fetch(barsUrl, { headers });
+    
+    let previousCloses: { [symbol: string]: number } = {};
+    
+    if (barsResponse.ok) {
+      const barsData = await barsResponse.json();
+      console.log(`Received bars for ${Object.keys(barsData.bars || {}).length} symbols`);
       
-      const fallbackData = [
-        { symbol: 'AAPL', name: 'Apple Inc', price: 175.50, change: 4.25, changePercent: 2.48, volume: '85M' },
-        { symbol: 'TSLA', name: 'Tesla Inc', price: 245.80, change: -8.45, changePercent: -3.33, volume: '92M' },
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 485.20, change: 12.75, changePercent: 2.70, volume: '78M' },
-        { symbol: 'MSFT', name: 'Microsoft Corporation', price: 378.90, change: -5.60, changePercent: -1.46, volume: '65M' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc', price: 142.30, change: 3.80, changePercent: 2.74, volume: '55M' },
-        { symbol: 'AMZN', name: 'Amazon.com Inc', price: 156.70, change: -4.20, changePercent: -2.61, volume: '70M' },
-        { symbol: 'META', name: 'Meta Platforms Inc', price: 298.40, change: 6.80, changePercent: 2.39, volume: '45M' },
-        { symbol: 'AMD', name: 'Advanced Micro Devices Inc', price: 132.50, change: -3.85, changePercent: -2.82, volume: '88M' }
+      for (const [symbol, bars] of Object.entries(barsData.bars || {})) {
+        const barArray = bars as any[];
+        if (barArray && barArray.length > 0) {
+          const lastBar = barArray[barArray.length - 1];
+          previousCloses[symbol] = lastBar.c; // closing price
+        }
+      }
+    } else {
+      console.warn(`Failed to fetch previous day data: ${barsResponse.status}`);
+    }
+
+    // Calculate movers from the data
+    const stockMovers: any[] = [];
+    
+    for (const stock of TRACKED_STOCKS) {
+      const quote = quotesData.quotes?.[stock.symbol];
+      const previousClose = previousCloses[stock.symbol];
+      
+      if (quote && previousClose) {
+        // Use mid-point of bid/ask as current price
+        const currentPrice = (quote.ap + quote.bp) / 2;
+        const change = currentPrice - previousClose;
+        const changePercent = (change / previousClose) * 100;
+        
+        stockMovers.push({
+          symbol: stock.symbol,
+          name: stock.name,
+          price: parseFloat(currentPrice.toFixed(2)),
+          change: parseFloat(change.toFixed(2)),
+          changePercent: parseFloat(changePercent.toFixed(2)),
+          volume: quote.as ? `${Math.round(quote.as / 1000000)}M` : 'N/A'
+        });
+      }
+    }
+
+    console.log(`Calculated price changes for ${stockMovers.length} stocks`);
+
+    // Sort to find top gainers and losers
+    const sortedByChange = [...stockMovers].sort((a, b) => b.changePercent - a.changePercent);
+    
+    let topGainers = sortedByChange.filter(s => s.changePercent > 0).slice(0, 3);
+    let topLosers = sortedByChange.filter(s => s.changePercent < 0).slice(-3).reverse();
+
+    // If we don't have enough real data, supplement with fallback
+    if (topGainers.length < 3 || topLosers.length < 3) {
+      console.log('Supplementing with fallback data due to insufficient real data...');
+      
+      const fallbackGainers = [
+        { symbol: 'AAPL', name: 'Apple Inc.', price: 175.50, change: 4.25, changePercent: 2.48, volume: '85M' },
+        { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 485.20, change: 12.75, changePercent: 2.70, volume: '78M' },
+        { symbol: 'META', name: 'Meta Platforms Inc.', price: 298.40, change: 6.80, changePercent: 2.39, volume: '45M' }
       ];
       
-      gainersData = fallbackData.filter(s => s.changePercent > 0).slice(0, 3);
-      losersData = fallbackData.filter(s => s.changePercent < 0).slice(0, 3);
+      const fallbackLosers = [
+        { symbol: 'TSLA', name: 'Tesla Inc.', price: 245.80, change: -8.45, changePercent: -3.33, volume: '92M' },
+        { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 156.70, change: -4.20, changePercent: -2.61, volume: '70M' },
+        { symbol: 'AMD', name: 'Advanced Micro Devices Inc.', price: 132.50, change: -3.85, changePercent: -2.82, volume: '88M' }
+      ];
+      
+      // Use real data where available, supplement with fallback
+      while (topGainers.length < 3) {
+        const fallbackStock = fallbackGainers[topGainers.length];
+        if (fallbackStock) topGainers.push(fallbackStock);
+        else break;
+      }
+      
+      while (topLosers.length < 3) {
+        const fallbackStock = fallbackLosers[topLosers.length];
+        if (fallbackStock) topLosers.push(fallbackStock);
+        else break;
+      }
     }
-
-    // Process screener data to match our expected format
-    const processScreenerStock = (stock: any) => ({
-      symbol: stock.symbol,
-      name: stock.name || stock.symbol,
-      price: parseFloat(stock.price?.toFixed(2) || '0'),
-      change: parseFloat(stock.change?.toFixed(2) || '0'),
-      changePercent: parseFloat(stock.percent_change?.toFixed(2) || '0'),
-      volume: stock.volume ? `${Math.round(stock.volume / 1000000)}M` : 'N/A'
-    });
-
-    // Take top 3 from each category and process them
-    const topGainers = gainersData.slice(0, 3).map(processScreenerStock);
-    const topLosers = losersData.slice(0, 3).map(processScreenerStock);
 
     console.log(`Processing ${topGainers.length} gainers and ${topLosers.length} losers for news analysis`);
 
