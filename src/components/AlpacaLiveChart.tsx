@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -26,12 +27,17 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [dataSource, setDataSource] = useState<'historical' | 'live' | 'error'>('historical');
   const [historicalDataLoaded, setHistoricalDataLoaded] = useState(false);
+  const [userAccountId, setUserAccountId] = useState<string | null>(null);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   // Use the singleton WebSocket for this page only
   const { streamData, isConnected, errorMessage, connectionStatus, connect } = useAlpacaStreamSingleton({
     symbols: [symbol],
     enabled: true
   });
+
+  // Use Alpaca broker for trading operations
+  const { placeOrder: alpacaPlaceOrder, loading: brokerLoading } = useAlpacaBroker();
 
   // Initialize Lightweight Charts
   useEffect(() => {
@@ -206,6 +212,30 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
     }
   }, [connectionStatus]);
 
+  // Get user's Alpaca account ID
+  useEffect(() => {
+    const getUserAccount = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('alpaca_account_id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.alpaca_account_id) {
+          setUserAccountId(profile.alpaca_account_id);
+        }
+      } catch (error) {
+        console.error('Error getting user account:', error);
+      }
+    };
+
+    getUserAccount();
+  }, []);
+
   // Load data on component mount
   useEffect(() => {
     fetchHistoricalData();
@@ -213,6 +243,13 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
 
   // Place buy/sell order via Alpaca
   const placeOrder = async (side: 'buy' | 'sell') => {
+    if (!userAccountId) {
+      toast.error('Alpaca account not linked. Please complete onboarding first.');
+      return;
+    }
+
+    setIsPlacingOrder(true);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -220,22 +257,43 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
-        body: {
-          symbol,
-          qty: 1,
-          side,
-          type: 'market',
-          time_in_force: 'gtc'
-        }
+      const orderData = {
+        symbol,
+        qty: '1',
+        side,
+        type: 'market' as const,
+        time_in_force: 'gtc' as const
+      };
+
+      console.log('Placing Alpaca order:', orderData);
+      
+      const result = await alpacaPlaceOrder(userAccountId, orderData);
+      
+      toast.success(`${side.toUpperCase()} order placed successfully for ${symbol}`, {
+        description: `Order ID: ${result.id}`
       });
-
-      if (error) throw error;
-
-      toast.success(`${side.toUpperCase()} order placed via Alpaca for ${symbol}`);
+      
     } catch (error: any) {
       console.error('Error placing Alpaca order:', error);
-      toast.error(`Failed to place ${side} order: ${error.message}`);
+      
+      // Handle specific Alpaca error messages
+      let errorMessage = error.message || 'Unknown error occurred';
+      
+      if (errorMessage.includes('insufficient')) {
+        errorMessage = 'Insufficient buying power to place order';
+      } else if (errorMessage.includes('market closed') || errorMessage.includes('not tradable')) {
+        errorMessage = 'Market is currently closed or asset not tradable';
+      } else if (errorMessage.includes('forbidden') || errorMessage.includes('403')) {
+        errorMessage = 'Trading not permitted. Check account status.';
+      } else if (errorMessage.includes('404')) {
+        errorMessage = 'Asset not found or account access denied';
+      }
+      
+      toast.error(`Failed to place ${side} order`, {
+        description: errorMessage
+      });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -353,21 +411,26 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
             <Button
               onClick={() => placeOrder('buy')}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected || isLoading}
+              disabled={!userAccountId || isPlacingOrder || brokerLoading}
             >
-              🟢 BUY {symbol}
+              {isPlacingOrder ? '...' : '🟢 BUY'} {symbol}
             </Button>
             <Button
               onClick={() => placeOrder('sell')}
               className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
-              disabled={!isConnected || isLoading}
+              disabled={!userAccountId || isPlacingOrder || brokerLoading}
             >
-              🔴 SELL {symbol}
+              {isPlacingOrder ? '...' : '🔴 SELL'} {symbol}
             </Button>
           </div>
           <p className="text-center text-sm text-slate-400 mt-3">
-            Market orders • 1 share • Sandbox Mode • {dataSource === 'live' ? 'Real-time Data' : dataSource === 'historical' ? 'Historical Data' : 'No Data'}
+            Market orders • 1 share • Sandbox Mode • {userAccountId ? 'Account Linked' : 'No Account Linked'}
           </p>
+          {!userAccountId && (
+            <p className="text-center text-xs text-red-400 mt-1">
+              Complete Alpaca onboarding to enable trading
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
