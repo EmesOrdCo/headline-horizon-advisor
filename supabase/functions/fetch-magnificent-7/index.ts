@@ -36,24 +36,24 @@ serve(async (req) => {
     const apiCalls = 5; // Increased from 3 to 5
     const articlesPerCall = 30; // Increased from 20 to 30
     
-    // Calculate date range - go back 14 days instead of 7 for more articles
+    // Calculate date range - focus on most recent 3 days for freshest news
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 14); // Extended to 14 days
+    startDate.setDate(endDate.getDate() - 3); // Reduced to 3 days for most recent articles
     
     const formatDate = (date) => date.toISOString().split('T')[0];
     const startDateStr = formatDate(startDate);
     const endDateStr = formatDate(endDate);
     
-    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (14 days)`);
+    console.log(`Fetching articles from ${startDateStr} to ${endDateStr} (3 days - focusing on recent news)`);
     
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Magnificent 7 API call ${i}/${apiCalls}...`);
       
       try {
-        // Add date range and increase limit for more comprehensive coverage
+        // Add date range and sort by published date descending for most recent first
         const response = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}`
+          `https://api.marketaux.com/v1/news/all?symbols=${magnificent7Query}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&published_after=${startDateStr}&published_before=${endDateStr}&sort=published_desc`
         );
         
         if (response.ok) {
@@ -72,12 +72,16 @@ serve(async (req) => {
       }
     }
 
-    // Remove duplicates based on URL
-    const uniqueArticles = allArticles.filter((article, index, self) => 
-      index === self.findIndex(a => a.url === article.url)
-    );
+    // Remove duplicates based on URL and sort by publish date (most recent first)
+    const uniqueArticles = allArticles
+      .filter((article, index, self) => 
+        index === self.findIndex(a => a.url === article.url)
+      )
+      .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
 
     console.log(`Unique Magnificent 7 articles: ${uniqueArticles.length}`);
+    console.log(`Most recent article date: ${uniqueArticles[0]?.published_at}`);
+    console.log(`Oldest article date: ${uniqueArticles[uniqueArticles.length - 1]?.published_at}`);
 
     // Clear existing Magnificent 7 articles first
     for (const symbol of MAGNIFICENT_7) {
