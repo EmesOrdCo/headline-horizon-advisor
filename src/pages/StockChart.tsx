@@ -31,6 +31,7 @@ import {
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
 import { BuySellButtons } from "@/components/BuySellButtons";
+import { TradingModal } from "@/components/TradingModal";
 import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
 import { useChartDrawing } from "@/hooks/useChartDrawing";
 
@@ -483,20 +484,30 @@ const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
 
         {/* Action Buttons */}
         <div className="flex space-x-2">
-          <Button
-            onClick={() => placeOrder('buy')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 h-10"
-            disabled={!userAccountId || isPlacingOrder}
+          <TradingModal 
+            symbol={symbol} 
+            currentPrice={0} // Will be calculated inside modal
+            initialMode="buy"
           >
-            {isPlacingOrder ? '...' : 'BUY'}
-          </Button>
-          <Button
-            onClick={() => placeOrder('sell')}
-            className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 h-10"
-            disabled={!userAccountId || isPlacingOrder}
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 h-10"
+              disabled={!userAccountId || isPlacingOrder}
+            >
+              {isPlacingOrder ? '...' : 'BUY'}
+            </Button>
+          </TradingModal>
+          <TradingModal 
+            symbol={symbol} 
+            currentPrice={0} // Will be calculated inside modal
+            initialMode="sell"
           >
-            {isPlacingOrder ? '...' : 'SELL'}
-          </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 h-10"
+              disabled={!userAccountId || isPlacingOrder}
+            >
+              {isPlacingOrder ? '...' : 'SELL'}
+            </Button>
+          </TradingModal>
         </div>
       </div>
 
@@ -759,12 +770,24 @@ const StockChart: React.FC = () => {
               <div className="text-slate-400">C <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(1000000)}</span></div>
               <div className="flex items-center space-x-2 ml-4">
-                <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
-                  Sell ${bidPrice.toFixed(2)}
-                </button>
-                <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
-                  Buy ${askPrice.toFixed(2)}
-                </button>
+                <TradingModal 
+                  symbol={activeSymbol} 
+                  currentPrice={currentPrice} 
+                  initialMode="sell"
+                >
+                  <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
+                    Sell ${bidPrice.toFixed(2)}
+                  </button>
+                </TradingModal>
+                <TradingModal 
+                  symbol={activeSymbol} 
+                  currentPrice={currentPrice} 
+                  initialMode="buy"
+                >
+                  <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
+                    Buy ${askPrice.toFixed(2)}
+                  </button>
+                </TradingModal>
               </div>
             </div>
           </div>

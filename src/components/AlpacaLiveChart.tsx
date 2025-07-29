@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAlpacaStreamSingleton } from '@/hooks/useAlpacaStreamSingleton';
+import { TradingModal } from "@/components/TradingModal";
 import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
 
 interface AlpacaBar {
@@ -415,20 +416,30 @@ const AlpacaLiveChart: React.FC<{ symbol?: string }> = ({ symbol = 'AAPL' }) => 
         </CardHeader>
         <CardContent>
           <div className="flex justify-center space-x-6">
-            <Button
-              onClick={() => placeOrder('buy')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
-              disabled={!userAccountId || isPlacingOrder || brokerLoading}
+            <TradingModal 
+              symbol={symbol} 
+              currentPrice={currentPrice} 
+              initialMode="buy"
             >
-              {isPlacingOrder ? '...' : '🟢 BUY'} {symbol}
-            </Button>
-            <Button
-              onClick={() => placeOrder('sell')}
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
-              disabled={!userAccountId || isPlacingOrder || brokerLoading}
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg"
+                disabled={!userAccountId || isPlacingOrder || brokerLoading}
+              >
+                {isPlacingOrder ? '...' : '🟢 BUY'} {symbol}
+              </Button>
+            </TradingModal>
+            <TradingModal 
+              symbol={symbol} 
+              currentPrice={currentPrice} 
+              initialMode="sell"
             >
-              {isPlacingOrder ? '...' : '🔴 SELL'} {symbol}
-            </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg"
+                disabled={!userAccountId || isPlacingOrder || brokerLoading}
+              >
+                {isPlacingOrder ? '...' : '🔴 SELL'} {symbol}
+              </Button>
+            </TradingModal>
           </div>
           <p className="text-center text-sm text-slate-400 mt-3">
             Market orders • 1 share • Sandbox Mode • {userAccountId ? 'Account Linked' : 'No Account Linked'}
