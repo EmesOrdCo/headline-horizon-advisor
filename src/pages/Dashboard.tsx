@@ -420,30 +420,12 @@ const Dashboard = () => {
                           ${getStockPrice(topMagnificent7Story.symbol)?.price?.toFixed(2) || '214.00'}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Change</div>
-                        <div className="text-red-400 font-semibold">
-                          {getStockPrice(topMagnificent7Story.symbol)?.change?.toFixed(2) || '-0.05'}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Change %</div>
-                        <div className="text-red-400 font-semibold">
-                          {getStockPrice(topMagnificent7Story.symbol)?.changePercent?.toFixed(2) || '-0.02'}%
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Bid</div>
-                        <div className="text-red-400 font-semibold">$214.01</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Ask</div>
-                        <div className="text-emerald-400 font-semibold">$214.06</div>
-                      </div>
-                      <Button variant="outline" size="sm" className="border-slate-600">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Chart
-                      </Button>
+                      <Link to={`/stock-chart?symbol=${topMagnificent7Story.symbol}`}>
+                        <Button variant="outline" size="sm" className="border-slate-600">
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          Chart
+                        </Button>
+                      </Link>
                     </div>
                   </div>
 
@@ -584,30 +566,12 @@ const Dashboard = () => {
                           ${getStockPrice(topIndexFundStory.symbol)?.price?.toFixed(2) || '458.50'}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Change</div>
-                        <div className="text-emerald-400 font-semibold">
-                          +{getStockPrice(topIndexFundStory.symbol)?.change?.toFixed(2) || '2.15'}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Change %</div>
-                        <div className="text-emerald-400 font-semibold">
-                          +{getStockPrice(topIndexFundStory.symbol)?.changePercent?.toFixed(2) || '0.47'}%
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Bid</div>
-                        <div className="text-red-400 font-semibold">$458.48</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">Ask</div>
-                        <div className="text-emerald-400 font-semibold">$458.52</div>
-                      </div>
-                      <Button variant="outline" size="sm" className="border-slate-600">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Chart
-                      </Button>
+                      <Link to={`/stock-chart?symbol=${topIndexFundStory.symbol}`}>
+                        <Button variant="outline" size="sm" className="border-slate-600">
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          Chart
+                        </Button>
+                      </Link>
                     </div>
                   </div>
 
