@@ -89,35 +89,29 @@ export const BuySellButtons = () => {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Buy Button with Ask Price */}
-      <Button
-        onClick={handleBuy}
-        className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 h-auto"
-        size="sm"
-      >
-        <div className="flex flex-col items-center leading-tight">
-          <div className="font-medium">BUY</div>
-          <div className="text-xs opacity-90">${askPrice.toFixed(2)}</div>
-        </div>
-      </Button>
-
-      {/* Sell Button with Bid Price */}
+      {/* Sell Button with Bid Price (styled like reference image) */}
       <Button
         onClick={handleSell}
-        className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 h-auto"
+        className="bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10 text-sm px-4 py-2 h-auto rounded-full"
         size="sm"
       >
-        <div className="flex flex-col items-center leading-tight">
-          <div className="font-medium">SELL</div>
-          <div className="text-xs opacity-90">${bidPrice.toFixed(2)}</div>
+        <div className="flex items-center space-x-1">
+          <div className="font-medium">S</div>
+          <div className="font-bold">{bidPrice.toFixed(2)}</div>
         </div>
       </Button>
 
-      {/* Symbol and Spread Info */}
-      <div className="hidden sm:flex flex-col text-xs text-slate-400 ml-2">
-        <div className="font-medium">{currentSymbol}</div>
-        <div className="text-xs">${spread.toFixed(4)}</div>
-      </div>
+      {/* Buy Button with Ask Price (styled like reference image) */}
+      <Button
+        onClick={handleBuy}
+        className="bg-transparent border border-green-500 text-green-400 hover:bg-green-500/10 text-sm px-4 py-2 h-auto rounded-full"
+        size="sm"
+      >
+        <div className="flex items-center space-x-1">
+          <div className="font-medium">B</div>
+          <div className="font-bold">{askPrice.toFixed(2)}</div>
+        </div>
+      </Button>
     </div>
   );
 };
