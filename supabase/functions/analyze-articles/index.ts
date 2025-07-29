@@ -76,6 +76,9 @@ Rules:
 
     console.log(`Sending ${articlesText.length} characters of article data to OpenAI for ${symbol}...`);
 
+    // Add rate limiting delay to prevent quota exhaustion
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+
     let chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {

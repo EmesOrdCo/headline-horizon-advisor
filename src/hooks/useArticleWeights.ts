@@ -53,7 +53,8 @@ export const useArticleWeights = ({
       return data.weights || [];
     },
     enabled: enabled && articles && articles.length > 0,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    retry: 1
+    staleTime: 60 * 60 * 1000, // 1 hour (increased from 30 minutes)
+    retry: 1,
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 };

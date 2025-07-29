@@ -77,6 +77,9 @@ Weight scale:
 - 1: Minimal impact, slight influence
 `;
 
+    // Add rate limiting delay to prevent quota exhaustion
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 second delay
+
     let response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
