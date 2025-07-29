@@ -194,15 +194,15 @@ const Wallet = () => {
             {selectedAccount && (
               <TransferHistory accountId={selectedAccount.id} />
             )}
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            
             {/* Bank Account Management */}
             {selectedAccount && (
               <BankAccountManager accountId={selectedAccount.id} />
             )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
             
             {/* Invite Friends Card */}
             <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
