@@ -30,24 +30,70 @@ const TransferHistory = ({ accountId }: TransferHistoryProps) => {
   const loadTransfers = async () => {
     setIsLoading(true);
     try {
-      // Get activities which includes transfer information
-      const activities = await getActivities(accountId, { 
-        activity_types: 'TRANS' 
-      });
+      console.log('Loading transfers for account:', accountId);
+      
+      // Try multiple activity types to capture all transfer-related activities
+      const activityTypes = ['ACATC', 'ACATS', 'CSD', 'CSR', 'DIV', 'DIVNRA', 'DIVCGL', 'DIVCGS', 'DIVFEE', 'DIVFT', 'DIVNRA', 'DIVROC', 'DIVTW', 'DIVTXEX', 'FEE', 'JNLC', 'JNLS', 'MA', 'NC', 'OPASN', 'OPEXP', 'OPXRC', 'PTC', 'PTR', 'REORG', 'SSO', 'SSP'];
+      
+      let allActivities: any[] = [];
+      
+      // Try to get general activities first
+      try {
+        const activities = await getActivities(accountId, { 
+          activity_types: 'TRANS,CSD,CSR,JNLC,JNLS,ACATC,ACATS' 
+        });
+        console.log('Activities response:', activities);
+        allActivities = activities || [];
+      } catch (activityError) {
+        console.log('Activities endpoint failed, trying alternative approach:', activityError);
+      }
+      
+      // If no activities found, try without activity_types filter to get all
+      if (allActivities.length === 0) {
+        try {
+          const allData = await getActivities(accountId, {});
+          console.log('All activities response:', allData);
+          allActivities = allData || [];
+        } catch (allError) {
+          console.log('All activities endpoint also failed:', allError);
+        }
+      }
       
       // Transform activities to transfer format
-      const transferData = activities
-        .filter((activity: any) => activity.activity_type === 'TRANS')
-        .map((activity: any) => ({
-          id: activity.id,
-          amount: activity.net_amount || activity.qty || '0',
-          direction: parseFloat(activity.net_amount || '0') > 0 ? 'INCOMING' : 'OUTGOING',
-          status: activity.status || 'COMPLETE',
-          created_at: activity.transaction_time || activity.created_at,
-          transfer_type: activity.type || 'ACH',
-          reason: activity.description || 'Transfer'
-        }));
+      const transferData = allActivities
+        .filter((activity: any) => {
+          // Filter for transfer-related activities
+          const isTransfer = activity.activity_type === 'TRANS' || 
+                           activity.activity_type === 'CSD' ||  // Cash disbursement
+                           activity.activity_type === 'CSR' ||  // Cash receipt
+                           activity.activity_type === 'JNLC' || // Journal entry cash
+                           activity.activity_type === 'JNLS' || // Journal entry security
+                           activity.activity_type === 'ACATC' || // ACATS cash
+                           activity.activity_type === 'ACATS' || // ACATS security
+                           activity.type === 'ACH' ||
+                           activity.type === 'WIRE' ||
+                           (activity.side && (activity.side === 'buy' || activity.side === 'sell'));
+          
+          console.log('Activity:', activity.activity_type, 'isTransfer:', isTransfer);
+          return isTransfer;
+        })
+        .map((activity: any) => {
+          const amount = activity.net_amount || activity.qty || activity.amount || '0';
+          const numericAmount = parseFloat(amount);
+          
+          return {
+            id: activity.id || activity.transaction_id || `${Date.now()}-${Math.random()}`,
+            amount: Math.abs(numericAmount).toString(),
+            direction: (numericAmount > 0 ? 'INCOMING' : 'OUTGOING') as 'INCOMING' | 'OUTGOING',
+            status: activity.status || 'COMPLETE',
+            created_at: activity.transaction_time || activity.activity_time || activity.created_at || new Date().toISOString(),
+            transfer_type: activity.activity_type || activity.type || 'Transfer',
+            reason: activity.description || activity.activity_type || 'Transfer'
+          };
+        })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
+      console.log('Processed transfer data:', transferData);
       setTransfers(transferData);
     } catch (error) {
       console.error('Failed to load transfer history:', error);

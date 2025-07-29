@@ -244,20 +244,49 @@ serve(async (req) => {
         break;
 
       case 'get_activities':
-        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/activities`;
-        const activityParams = new URLSearchParams();
-        if (data?.activity_types) activityParams.append('activity_types', data.activity_types);
-        if (data?.date) activityParams.append('date', data.date);
-        if (activityParams.toString()) url += `?${activityParams.toString()}`;
+        // Try different activity endpoints to find transfers
+        const activityUrls = [
+          `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/activities`,
+          `${BROKER_BASE_URL}/v1/accounts/${account_id}/activities`, 
+          `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/activities/TRANS`,
+          `${BROKER_BASE_URL}/v1/accounts/${account_id}/transfers`
+        ];
         
-        response = await fetch(url, {
-          method: 'GET',
-          headers,
-        });
+        let activitiesFound = false;
         
-        // Handle 404 for activities as it's common for new accounts
-        if (response.status === 404) {
-          console.log('Activities endpoint returned 404 - returning empty array for new account');
+        for (const baseUrl of activityUrls) {
+          try {
+            url = baseUrl;
+            const activityParams = new URLSearchParams();
+            if (data?.activity_types && !url.includes('/transfers')) {
+              activityParams.append('activity_types', data.activity_types);
+            }
+            if (data?.date) activityParams.append('date', data.date);
+            if (activityParams.toString()) url += `?${activityParams.toString()}`;
+            
+            console.log(`Trying activities URL: ${url}`);
+            
+            response = await fetch(url, {
+              method: 'GET',
+              headers,
+            });
+            
+            if (response.ok) {
+              activitiesFound = true;
+              console.log(`Successfully found activities at: ${url}`);
+              break;
+            } else {
+              console.log(`Activities URL failed (${response.status}): ${url}`);
+            }
+          } catch (urlError) {
+            console.log(`Error trying URL ${url}:`, urlError);
+            continue;
+          }
+        }
+        
+        // If none of the URLs worked, return empty array
+        if (!activitiesFound) {
+          console.log('All activities endpoints returned 404 - returning empty array for new account');
           return new Response(JSON.stringify({
             success: true,
             action,
