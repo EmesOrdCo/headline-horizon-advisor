@@ -180,12 +180,35 @@ serve(async (req) => {
         break;
 
       case 'create_journal':
-        url = `${BROKER_BASE_URL}/v1/journals`;
-        response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(data),
-        });
+        console.log('=== ALPACA BROKER API CREATE_JOURNAL ===');
+        
+        // For withdrawals (to alpaca-funding-source), handle as ACH transfer instead
+        if (data.to_account === 'alpaca-funding-source') {
+          console.log('Converting withdrawal to ACH transfer simulation...');
+          
+          // In sandbox, simulate withdrawal using transfers endpoint instead of journals
+          // This is more appropriate for fund withdrawals
+          const transferData = {
+            amount: data.amount,
+            direction: 'OUTGOING',
+            reason: `Withdrawal - ${data.amount}`
+          };
+          
+          url = `${BROKER_BASE_URL}/v1/accounts/${data.from_account}/transfers`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(transferData),
+          });
+        } else {
+          // Regular journal transfer between accounts
+          url = `${BROKER_BASE_URL}/v1/journals`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data),
+          });
+        }
         break;
 
       case 'get_assets':
