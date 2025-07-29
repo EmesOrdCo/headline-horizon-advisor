@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Building2, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { useAlpacaBroker } from "@/hooks/useAlpacaBroker";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface BankAccount {
@@ -26,20 +28,9 @@ interface BankAccountManagerProps {
 }
 
 const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([
-    {
-      id: 'demo_bank_1',
-      nickname: 'Main Checking',
-      bank_name: 'Demo Bank',
-      account_type: 'checking',
-      account_number: '****6789',
-      routing_number: '021000021',
-      status: 'ACTIVE',
-      is_default: true,
-      created_at: new Date().toISOString()
-    }
-  ]);
-  
+  const { user } = useAuth();
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [newAccount, setNewAccount] = useState({
     nickname: '',
@@ -51,7 +42,59 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
 
   const { createACHRelationship, loading } = useAlpacaBroker();
 
+  // Load user's bank accounts from database
+  const loadBankAccounts = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('user_bank_accounts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('alpaca_account_id', accountId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading bank accounts:', error);
+        setBankAccounts([]);
+        return;
+      }
+
+      const formattedAccounts: BankAccount[] = (data || []).map(account => ({
+        id: account.id,
+        nickname: account.nickname,
+        bank_name: account.bank_name || 'Unknown Bank',
+        account_type: account.account_type,
+        account_number: `****${account.account_number_last_four}`,
+        routing_number: account.routing_number,
+        status: account.status as 'ACTIVE' | 'PENDING' | 'INACTIVE',
+        is_default: account.is_default,
+        created_at: account.created_at
+      }));
+
+      setBankAccounts(formattedAccounts);
+    } catch (error) {
+      console.error('Failed to load bank accounts:', error);
+      setBankAccounts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load bank accounts on component mount and when user/accountId changes
+  useEffect(() => {
+    if (user && accountId) {
+      loadBankAccounts();
+    }
+  }, [user, accountId]);
+
   const handleAddBankAccount = async () => {
+    if (!user) {
+      toast.error('Please log in to add a bank account');
+      return;
+    }
+
     if (!newAccount.nickname || !newAccount.account_number || !newAccount.routing_number) {
       toast.error('Please fill in all required fields');
       return;
@@ -59,8 +102,8 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
 
     try {
       const achData = {
-        account_owner_name: 'Demo User',
-        bank_account_type: newAccount.account_type.toUpperCase(), // Convert to uppercase for Alpaca API
+        account_owner_name: user.email || 'Demo User',
+        bank_account_type: newAccount.account_type.toUpperCase(),
         bank_account_number: newAccount.account_number,
         bank_routing_number: newAccount.routing_number,
         nickname: newAccount.nickname,
@@ -68,21 +111,38 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         default: bankAccounts.length === 0
       };
 
-      const result = await createACHRelationship(accountId, achData);
-      
-      const newBankAccount: BankAccount = {
-        id: result.id || `demo_bank_${Date.now()}`,
-        nickname: newAccount.nickname,
-        bank_name: newAccount.bank_name || 'Unknown Bank',
-        account_type: newAccount.account_type,
-        account_number: `****${newAccount.account_number.slice(-4)}`,
-        routing_number: newAccount.routing_number,
-        status: 'ACTIVE',
-        is_default: bankAccounts.length === 0,
-        created_at: new Date().toISOString()
-      };
+      // Try to create ACH relationship via Alpaca
+      let alpacaRelationshipId = null;
+      try {
+        const result = await createACHRelationship(accountId, achData);
+        alpacaRelationshipId = result.id;
+      } catch (alpacaError) {
+        console.warn('Alpaca ACH creation failed, continuing with database-only storage:', alpacaError);
+      }
 
-      setBankAccounts(prev => [...prev, newBankAccount]);
+      // Save to our database regardless of Alpaca success
+      const { data: dbResult, error: dbError } = await supabase
+        .from('user_bank_accounts')
+        .insert({
+          user_id: user.id,
+          alpaca_account_id: accountId,
+          nickname: newAccount.nickname,
+          bank_name: newAccount.bank_name || 'Unknown Bank',
+          account_type: newAccount.account_type,
+          account_number_last_four: newAccount.account_number.slice(-4),
+          routing_number: newAccount.routing_number,
+          status: 'ACTIVE',
+          is_default: bankAccounts.length === 0,
+          alpaca_relationship_id: alpacaRelationshipId
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        throw dbError;
+      }
+
+      // Reset form and reload accounts
       setNewAccount({
         nickname: '',
         bank_name: '',
@@ -91,35 +151,19 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         routing_number: ''
       });
       setIsAddingAccount(false);
-      toast.success('Bank account added successfully!');
+      
+      await loadBankAccounts(); // Reload from database
+      
+      if (alpacaRelationshipId) {
+        toast.success('Bank account added successfully!');
+      } else {
+        toast.success('Bank account saved! (Sandbox mode)');
+        toast.info('Note: This is a sandbox simulation');
+      }
       
     } catch (error) {
       console.error('Failed to add bank account:', error);
-      
-      // For sandbox mode, still add a demo account
-      const newBankAccount: BankAccount = {
-        id: `demo_bank_${Date.now()}`,
-        nickname: newAccount.nickname,
-        bank_name: newAccount.bank_name || 'Demo Bank',
-        account_type: newAccount.account_type,
-        account_number: `****${newAccount.account_number.slice(-4)}`,
-        routing_number: newAccount.routing_number,
-        status: 'ACTIVE',
-        is_default: bankAccounts.length === 0,
-        created_at: new Date().toISOString()
-      };
-
-      setBankAccounts(prev => [...prev, newBankAccount]);
-      setNewAccount({
-        nickname: '',
-        bank_name: '',
-        account_type: 'checking',
-        account_number: '',
-        routing_number: ''
-      });
-      setIsAddingAccount(false);
-      toast.success('Demo bank account added successfully!');
-      toast.info('Note: This is a sandbox simulation');
+      toast.error('Failed to add bank account. Please try again.');
     }
   };
 
@@ -231,7 +275,15 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {bankAccounts.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-16 bg-slate-700/40 rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        ) : bankAccounts.length === 0 ? (
           <div className="text-center py-8">
             <Building2 className="w-12 h-12 text-slate-500 mx-auto mb-4" />
             <p className="text-slate-400 mb-4">No bank accounts linked</p>
