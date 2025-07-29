@@ -1,27 +1,19 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Wallet as WalletIcon, 
-  RefreshCw, 
-  Plus, 
-  DollarSign, 
-  CreditCard,
-  History,
-  ArrowUpRight,
-  ArrowDownLeft,
-  TrendingUp,
-  Banknote
-} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Plus, Wallet as WalletIcon, Users, DollarSign, RefreshCw } from "lucide-react";
 import DashboardNav from "@/components/DashboardNav";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 import { useAccountData } from "@/hooks/useAccountData";
-import BankAccountStatus from "@/components/BankAccountStatus";
+import ACHTransferModal from "@/components/ACHTransferModal";
+import SimulateDepositModal from "@/components/SimulateDepositModal";
 import TransferHistory from "@/components/TransferHistory";
+import BankAccountStatus from "@/components/BankAccountStatus";
+import BankAccountManager from "@/components/BankAccountManager";
 import FundingSimulation from "@/components/broker/FundingSimulation";
 
 const Wallet = () => {
@@ -32,6 +24,8 @@ const Wallet = () => {
   });
 
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [showACHTransfer, setShowACHTransfer] = useState(false);
+  const [showSimulateDeposit, setShowSimulateDeposit] = useState(false);
   const { totalValue, availableCash, isLoading, refreshData, selectedAccount } = useAccountData();
   
   const currentTime = new Date().toLocaleString("en-US", {
@@ -47,235 +41,211 @@ const Wallet = () => {
     return `${currencySymbols[currency as keyof typeof currencySymbols]}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const friendAvatars = [
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
+    "https://images.unsplash.com/photo-1494790108755-2616b612b647?w=40&h=40&fit=crop&crop=face",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face"
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 dark:from-slate-900 dark:to-slate-800">
       <DashboardNav />
       
       <div className="max-w-7xl mx-auto p-6 space-y-6 pb-20">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <WalletIcon className="h-8 w-8 text-emerald-400" />
-            <h1 className="text-3xl font-bold text-white">Wallet</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={refreshData} 
-              disabled={isLoading} 
-              variant="outline" 
-              size="sm"
-              className="border-slate-600 hover:bg-slate-700"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-              <SelectTrigger className="w-20 border-slate-600 bg-slate-800">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="GBP">GBP</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center gap-3 mb-8">
+          <WalletIcon className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Wallet Dashboard</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Portfolio Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Total Portfolio Value */}
-              <Card className="bg-slate-800/50 border-slate-700 col-span-1 md:col-span-2">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-slate-300 text-lg">Total Portfolio Value</CardTitle>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4 text-emerald-400" />
-                      <span className="text-emerald-400 text-sm font-medium">+2.3%</span>
-                    </div>
+            {/* Total Value Card */}
+            <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-medium text-gray-700 dark:text-slate-300">
+                    Your Total Value
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={refreshData} 
+                      disabled={isLoading} 
+                      variant="outline" 
+                      size="sm"
+                      className="border-emerald-200 dark:border-emerald-500/30"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <SelectTrigger className="w-20 border-emerald-200 dark:border-emerald-500/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="GBP">GBP</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2">
-                    <div className="text-4xl font-bold text-white">
-                      {isLoading ? (
-                        <div className="animate-pulse bg-slate-600 h-12 w-48 rounded"></div>
-                      ) : (
-                        formatCurrency(totalValue)
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-400">
-                      Last updated at {currentTime}
-                    </p>
-                  </div>
-                </CardHeader>
-              </Card>
-
-              {/* Available Cash */}
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader className="pb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-emerald-500/20 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-emerald-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white text-lg">Available Cash</CardTitle>
-                      <p className="text-slate-400 text-sm">Ready for trading</p>
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold text-white">
+                </div>
+                <div className="space-y-2">
+                  <div className="text-4xl font-bold text-gray-900 dark:text-white">
                     {isLoading ? (
-                      <div className="animate-pulse bg-slate-600 h-8 w-32 rounded"></div>
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-12 w-48 rounded"></div>
                     ) : (
-                      formatCurrency(availableCash)
+                      formatCurrency(totalValue)
                     )}
                   </div>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                    Last update at {currentTime}
+                  </p>
+                </div>
+                {/* Progress bar placeholder */}
+                <div className="w-full h-2 bg-gray-200 dark:bg-slate-600 rounded-full mt-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={() => setShowACHTransfer(true)}
+                    disabled={!selectedAccount}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Funds via ACH
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSimulateDeposit(true)}
+                    disabled={!selectedAccount}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Simulate Deposit
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Account Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* GBP Account */}
+              <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
+                      <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <CardTitle className="text-xl text-gray-900 dark:text-white">GBP Account</CardTitle>
+                  </div>
                 </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
+                    ) : (
+                      formatCurrency(availableCash, 'GBP')
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed">
+                    Available cash ready for trading and investments.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Investment Account */}
+              <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg">
+                      <WalletIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <CardTitle className="text-xl text-gray-900 dark:text-white">Investment Account</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
+                    ) : (
+                      formatCurrency(totalValue, 'GBP')
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-600 dark:text-slate-400">Available USD</div>
+                    <div className="text-xl font-semibold text-gray-700 dark:text-slate-300">
+                      {isLoading ? (
+                        <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-6 w-24 rounded"></div>
+                      ) : (
+                        formatCurrency(availableCash, 'USD')
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             </div>
 
-            {/* Account Management Tabs */}
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Account Management</CardTitle>
-                <p className="text-slate-400">Manage your funding, transfers, and transaction history</p>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="funding" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-slate-700">
-                    <TabsTrigger value="funding" className="data-[state=active]:bg-slate-600">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Funds
-                    </TabsTrigger>
-                    <TabsTrigger value="accounts" className="data-[state=active]:bg-slate-600">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Bank Accounts
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="data-[state=active]:bg-slate-600">
-                      <History className="w-4 h-4 mr-2" />
-                      Transaction History
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="funding" className="mt-6">
-                    {selectedAccount ? (
-                      <FundingSimulation 
-                        accountId={selectedAccount.id} 
-                        accountData={selectedAccount}
-                        onFundingComplete={refreshData} 
-                      />
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-slate-400">No account selected</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="accounts" className="mt-6">
-                    {selectedAccount ? (
-                      <BankAccountStatus 
-                        accountId={selectedAccount.id}
-                        onAddNewBank={() => {}}
-                      />
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-slate-400">No account selected</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="history" className="mt-6">
-                    {selectedAccount ? (
-                      <TransferHistory accountId={selectedAccount.id} />
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-slate-400">No account selected</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            {/* Bank Account Manager */}
+            {selectedAccount && (
+              <BankAccountManager accountId={selectedAccount.id} />
+            )}
+
+            {/* Transfer History */}
+            {selectedAccount && (
+              <TransferHistory accountId={selectedAccount.id} />
+            )}
+
+            {/* Account Funding Section */}
+            {selectedAccount && (
+              <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl text-gray-900 dark:text-white">Account Funding</CardTitle>
+                  <p className="text-slate-600 dark:text-slate-400">Simulate account funding and transfers (Sandbox Environment)</p>
+                </CardHeader>
+                <CardContent>
+                  <FundingSimulation 
+                    accountId={selectedAccount.id} 
+                    accountData={selectedAccount}
+                    onFundingComplete={refreshData} 
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Account Status */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            {/* Bank Account Status */}
+            {selectedAccount && (
+              <BankAccountStatus 
+                accountId={selectedAccount.id}
+                onAddNewBank={() => setShowACHTransfer(true)}
+              />
+            )}
+            
+            {/* Invite Friends Card */}
+            <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-white text-lg">Account Status</CardTitle>
+                <CardTitle className="text-lg text-gray-900 dark:text-white">
+                  Invite friends and trade together
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Account Type</span>
-                    <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
-                      Sandbox
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Trading Status</span>
-                    <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                      Active
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Account ID</span>
-                    <span className="text-white text-sm font-mono">
-                      {selectedAccount?.account_number?.slice(-6) || '------'}
-                    </span>
-                  </div>
+                <p className="text-sm text-gray-600 dark:text-slate-400">
+                  Refer a friend and share the power of social investing on MarketSensor.
+                </p>
+                <div className="flex -space-x-2 mb-4">
+                  {friendAvatars.map((avatar, index) => (
+                    <Avatar key={index} className="border-2 border-white dark:border-slate-800 w-10 h-10">
+                      <AvatarImage src={avatar} />
+                      <AvatarFallback>U{index + 1}</AvatarFallback>
+                    </Avatar>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  className="w-full justify-start bg-emerald-600 hover:bg-emerald-700 text-white"
-                  disabled={!selectedAccount}
-                >
-                  <ArrowUpRight className="w-4 h-4 mr-2" />
-                  Add Funds
+                <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                  <Users className="h-4 w-4 mr-2" />
+                  Invite
                 </Button>
-                <Button 
-                  className="w-full justify-start bg-slate-700 hover:bg-slate-600 text-white"
-                  variant="outline"
-                  disabled={!selectedAccount}
-                >
-                  <ArrowDownLeft className="w-4 h-4 mr-2" />
-                  Withdraw Funds
-                </Button>
-                <Button 
-                  className="w-full justify-start bg-slate-700 hover:bg-slate-600 text-white"
-                  variant="outline"
-                  disabled={!selectedAccount}
-                >
-                  <Banknote className="w-4 h-4 mr-2" />
-                  View Statements
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Account Information */}
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Environment Notice</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                    <p className="text-yellow-400 text-sm">
-                      <span className="font-semibold">Sandbox Mode:</span> All transactions are simulated and no real money is involved.
-                    </p>
-                  </div>
-                  <p className="text-slate-400 text-sm">
-                    You can safely test all funding and trading features without any financial risk.
-                  </p>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -283,6 +253,34 @@ const Wallet = () => {
       </div>
 
       <Footer />
+      
+      {/* ACH Transfer Modal */}
+      {selectedAccount && (
+        <ACHTransferModal
+          isOpen={showACHTransfer}
+          onClose={() => setShowACHTransfer(false)}
+          accountId={selectedAccount.id}
+          accountNumber={selectedAccount.account_number}
+          onTransferComplete={() => {
+            refreshData();
+            setShowACHTransfer(false);
+          }}
+        />
+      )}
+
+      {/* Simulate Deposit Modal */}
+      {selectedAccount && (
+        <SimulateDepositModal
+          isOpen={showSimulateDeposit}
+          onClose={() => setShowSimulateDeposit(false)}
+          accountId={selectedAccount.id}
+          accountNumber={selectedAccount.account_number}
+          onDepositComplete={() => {
+            refreshData();
+            setShowSimulateDeposit(false);
+          }}
+        />
+      )}
     </div>
   );
 };
