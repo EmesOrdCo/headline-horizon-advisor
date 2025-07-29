@@ -84,6 +84,11 @@ const TradingChatBot: React.FC = () => {
 
       // Call OpenAI trading assistant
       console.log('🚀 Calling trading-assistant edge function...');
+      
+      // First test if the function exists
+      console.log('Supabase client available:', !!supabase);
+      console.log('Functions available:', !!supabase.functions);
+      
       const { data, error } = await supabase.functions.invoke('trading-assistant', {
         body: {
           message: inputValue,
@@ -93,6 +98,8 @@ const TradingChatBot: React.FC = () => {
       });
 
       console.log('📥 Edge function response:', { data, error });
+      console.log('📥 Response data type:', typeof data);
+      console.log('📥 Error details:', error);
 
       if (error) {
         console.error('🚨 Trading assistant error:', error);
