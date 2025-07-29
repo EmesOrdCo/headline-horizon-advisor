@@ -26,11 +26,13 @@ import {
   Eye,
   Settings,
   MoreHorizontal,
-  Star
+  Star,
+  Clock
  } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
 import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
+import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
 import { useChartDrawing } from "@/hooks/useChartDrawing";
 
@@ -491,6 +493,20 @@ const StockChart: React.FC = () => {
               Data
             </Button>
           </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
+          {/* Pending Orders Button */}
+          <PendingOrdersModal>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-sm px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-medium"
+            >
+              <Clock className="w-4 h-4 mr-1" />
+              Pending Orders
+            </Button>
+          </PendingOrdersModal>
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
