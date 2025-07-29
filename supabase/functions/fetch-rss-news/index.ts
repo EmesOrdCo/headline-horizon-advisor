@@ -246,13 +246,29 @@ serve(async (req) => {
   }
 
   try {
-    // TEMPORARY: Pause all MarketAux API calls to conserve rate limits
-    console.log('⏸️ MarketAux API calls are temporarily paused to conserve rate limits');
+    // Use existing articles from database instead of MarketAux API
+    console.log('💾 Using existing articles from database to conserve API tokens');
+    
+    // Fetch recent headlines from database
+    const { data: existingHeadlines, error: fetchError } = await supabase
+      .from('news_articles')
+      .select('*')
+      .eq('symbol', 'GENERAL')
+      .order('published_at', { ascending: false })
+      .limit(15);
+
+    if (fetchError) {
+      console.error('Error fetching existing headlines:', fetchError);
+    }
+
+    const headlines = existingHeadlines || [];
+    console.log(`📰 Found ${headlines.length} existing headlines in database`);
+
     return new Response(JSON.stringify({
       success: true,
-      message: 'MarketAux API calls temporarily paused',
-      headlineCount: 0,
-      headlines: []
+      message: `Using ${headlines.length} existing headlines from database`,
+      headlineCount: headlines.length,
+      headlines: headlines.slice(0, 5) // Return first 5 as preview
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

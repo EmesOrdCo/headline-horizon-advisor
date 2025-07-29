@@ -19,71 +19,46 @@ serve(async (req) => {
   }
 
   try {
-    const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY_2') || Deno.env.get('OPENAI_API_KEY');
 
-    if (!marketauxApiKey || !openaiApiKey) {
-      throw new Error('Missing required API keys');
+    if (!openaiApiKey) {
+      throw new Error('Missing OpenAI API key');
     }
 
-    console.log('Starting Index Funds news fetching...');
+    console.log('💾 Using existing articles from database to conserve API tokens');
 
     const INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
-    const indexFundsQuery = INDEX_FUNDS.join(',');
     
-    // Fetch articles from multiple API calls - fewer calls, more articles per call for recent focus
-    const allArticles = [];
-    const apiCalls = 2; // Reduced calls to focus on most recent
-    const articlesPerCall = 50; // Increased articles per call
-    
-    // Focus on most recent articles only - no date filtering to get latest available
-    console.log('Fetching most recent articles available from MarketAux...');
-    
-    for (let i = 1; i <= apiCalls; i++) {
-      console.log(`Making Index Funds API call ${i}/${apiCalls}...`);
-      
-      try {
-        // Get the most recent articles available (no date filter to ensure we get latest)
-        const apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${indexFundsQuery}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
-        
-        console.log(`API Call ${i}: ${i === 1 ? 'With date filter' : 'Most recent available'}`);
-        const response = await fetch(apiUrl);
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && Array.isArray(data.data)) {
-            allArticles.push(...data.data);
-            console.log(`Fetched ${data.data.length} Index Funds articles from API call ${i}`);
-            if (data.data.length > 0) {
-              console.log(`Date range in fetched articles: ${data.data[data.data.length - 1]?.published_at} to ${data.data[0]?.published_at}`);
-            }
-          } else {
-            console.log(`No articles returned from API call ${i}:`, data);
-          }
-        } else {
-          console.error(`API call ${i} failed with status:`, response.status, await response.text());
-        }
-      } catch (error) {
-        console.error(`Error in API call ${i}:`, error);
-      }
+    // Fetch existing articles from database instead of MarketAux
+    const { data: existingArticles, error: fetchError } = await supabase
+      .from('news_articles')
+      .select('*')
+      .neq('symbol', 'GENERAL') // Exclude general headlines
+      .order('published_at', { ascending: false })
+      .limit(100);
+
+    if (fetchError) {
+      console.error('Error fetching existing articles:', fetchError);
     }
 
-    // Remove duplicates based on URL and sort by publish date (TODAY FIRST!)
-    const uniqueArticles = allArticles
-      .filter((article, index, self) => 
-        index === self.findIndex(a => a.url === article.url)
-      )
-      .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+    const allArticles = existingArticles || [];
+    console.log(`📚 Found ${allArticles.length} existing articles in database`);
+
+    // Convert database articles to MarketAux-like format
+    const uniqueArticles = allArticles.map(article => ({
+      title: article.title,
+      description: article.description,
+      url: article.url,
+      published_at: article.published_at
+    })).sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
 
     // Get today's date for prioritization
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    console.log(`Unique Index Funds articles: ${uniqueArticles.length}`);
+    console.log(`📰 Using ${uniqueArticles.length} existing articles for analysis`);
     console.log(`Articles from TODAY (${today}): ${uniqueArticles.filter(a => a.published_at.startsWith(today)).length}`);
     console.log(`Articles from YESTERDAY (${yesterday}): ${uniqueArticles.filter(a => a.published_at.startsWith(yesterday)).length}`);
-    console.log(`Most recent article date: ${uniqueArticles[0]?.published_at}`);
-    console.log(`Oldest article date: ${uniqueArticles[uniqueArticles.length - 1]?.published_at}`);
 
     // Clear existing Index Fund articles first
     for (const symbol of INDEX_FUNDS) {
