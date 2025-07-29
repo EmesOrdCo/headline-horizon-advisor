@@ -185,43 +185,14 @@ const Wallet = () => {
               </Card>
             </div>
 
-            {/* Bank Account Manager */}
-            {selectedAccount && (
-              <BankAccountManager accountId={selectedAccount.id} />
-            )}
-
             {/* Transfer History */}
             {selectedAccount && (
               <TransferHistory accountId={selectedAccount.id} />
-            )}
-
-            {/* Account Funding Section */}
-            {selectedAccount && (
-              <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-xl text-gray-900 dark:text-white">Account Funding</CardTitle>
-                  <p className="text-slate-600 dark:text-slate-400">Simulate account funding and transfers (Sandbox Environment)</p>
-                </CardHeader>
-                <CardContent>
-                  <FundingSimulation 
-                    accountId={selectedAccount.id} 
-                    accountData={selectedAccount}
-                    onFundingComplete={refreshData} 
-                  />
-                </CardContent>
-              </Card>
             )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Bank Account Status */}
-            {selectedAccount && (
-              <BankAccountStatus 
-                accountId={selectedAccount.id}
-                onAddNewBank={() => setShowACHTransfer(true)}
-              />
-            )}
             
             {/* Invite Friends Card */}
             <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
