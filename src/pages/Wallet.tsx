@@ -26,6 +26,7 @@ const Wallet = () => {
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [showACHTransfer, setShowACHTransfer] = useState(false);
   const [showSimulateDeposit, setShowSimulateDeposit] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState(0.79); // USD to GBP rate (approximate)
   const { totalValue, availableCash, isLoading, refreshData, selectedAccount } = useAccountData();
   
   const currentTime = new Date().toLocaleString("en-US", {
@@ -38,7 +39,9 @@ const Wallet = () => {
 
   const formatCurrency = (value: number, currency: string = selectedCurrency) => {
     const currencySymbols = { USD: '$', GBP: '£' };
-    return `${currencySymbols[currency as keyof typeof currencySymbols]}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Convert USD to GBP if needed (Alpaca provides USD values)
+    const convertedValue = currency === 'GBP' ? value * exchangeRate : value;
+    return `${currencySymbols[currency as keyof typeof currencySymbols]}${convertedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const friendAvatars = [
@@ -193,6 +196,39 @@ const Wallet = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            
+            {/* Bank Account Management */}
+            {selectedAccount && (
+              <BankAccountManager accountId={selectedAccount.id} />
+            )}
+            
+            {/* Add Funds Card */}
+            <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-gray-900 dark:text-white">
+                  Add Funds
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  onClick={() => setShowACHTransfer(true)}
+                  disabled={!selectedAccount}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Link Bank & Transfer
+                </Button>
+                <Button 
+                  onClick={() => setShowSimulateDeposit(true)}
+                  disabled={!selectedAccount}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Simulate Deposit
+                </Button>
+              </CardContent>
+            </Card>
             
             {/* Invite Friends Card */}
             <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">

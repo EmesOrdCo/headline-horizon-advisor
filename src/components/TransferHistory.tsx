@@ -32,63 +32,88 @@ const TransferHistory = ({ accountId }: TransferHistoryProps) => {
     try {
       console.log('Loading transfers for account:', accountId);
       
-      // Try multiple activity types to capture all transfer-related activities
-      const activityTypes = ['ACATC', 'ACATS', 'CSD', 'CSR', 'DIV', 'DIVNRA', 'DIVCGL', 'DIVCGS', 'DIVFEE', 'DIVFT', 'DIVNRA', 'DIVROC', 'DIVTW', 'DIVTXEX', 'FEE', 'JNLC', 'JNLS', 'MA', 'NC', 'OPASN', 'OPEXP', 'OPXRC', 'PTC', 'PTR', 'REORG', 'SSO', 'SSP'];
-      
+      // Try to get all activities first without filtering
       let allActivities: any[] = [];
-      
-      // Try to get general activities first
       try {
-        const activities = await getActivities(accountId, { 
-          activity_types: 'TRANS,CSD,CSR,JNLC,JNLS,ACATC,ACATS' 
-        });
-        console.log('Activities response:', activities);
-        allActivities = activities || [];
+        const activities = await getActivities(accountId, {});
+        console.log('All activities response:', activities);
+        allActivities = Array.isArray(activities) ? activities : [];
       } catch (activityError) {
-        console.log('Activities endpoint failed, trying alternative approach:', activityError);
+        console.log('Activities endpoint failed:', activityError);
       }
       
-      // If no activities found, try without activity_types filter to get all
+      // If still no activities, try with just transfer types
       if (allActivities.length === 0) {
         try {
-          const allData = await getActivities(accountId, {});
-          console.log('All activities response:', allData);
-          allActivities = allData || [];
-        } catch (allError) {
-          console.log('All activities endpoint also failed:', allError);
+          const transferActivities = await getActivities(accountId, { 
+            activity_types: 'TRANS,CSD,CSR,JNLC,JNLS,ACATC,ACATS' 
+          });
+          console.log('Transfer activities response:', transferActivities);
+          allActivities = Array.isArray(transferActivities) ? transferActivities : [];
+        } catch (transferError) {
+          console.log('Transfer activities also failed:', transferError);
         }
       }
       
-      // Transform activities to transfer format
+      console.log('Final activities array:', allActivities);
+      
+      // Process activities into transfers
       const transferData = allActivities
         .filter((activity: any) => {
-          // Filter for transfer-related activities
-          const isTransfer = activity.activity_type === 'TRANS' || 
-                           activity.activity_type === 'CSD' ||  // Cash disbursement
-                           activity.activity_type === 'CSR' ||  // Cash receipt
-                           activity.activity_type === 'JNLC' || // Journal entry cash
-                           activity.activity_type === 'JNLS' || // Journal entry security
-                           activity.activity_type === 'ACATC' || // ACATS cash
-                           activity.activity_type === 'ACATS' || // ACATS security
-                           activity.type === 'ACH' ||
-                           activity.type === 'WIRE' ||
-                           (activity.side && (activity.side === 'buy' || activity.side === 'sell'));
+          if (!activity || typeof activity !== 'object') {
+            console.log('Invalid activity object:', activity);
+            return false;
+          }
           
-          console.log('Activity:', activity.activity_type, 'isTransfer:', isTransfer);
+          // Check for transfer-related activities
+          const activityType = activity.activity_type || activity.type;
+          const isTransfer = activityType === 'TRANS' || 
+                           activityType === 'CSD' ||  // Cash disbursement
+                           activityType === 'CSR' ||  // Cash receipt
+                           activityType === 'JNLC' || // Journal entry cash
+                           activityType === 'JNLS' || // Journal entry security
+                           activityType === 'ACATC' || // ACATS cash
+                           activityType === 'ACATS' || // ACATS security
+                           activityType === 'ACH' ||
+                           activityType === 'WIRE' ||
+                           (activity.description && activity.description.toLowerCase().includes('deposit')) ||
+                           (activity.description && activity.description.toLowerCase().includes('withdrawal')) ||
+                           (activity.symbol === 'USD' && activity.qty);
+          
+          console.log('Activity type:', activityType, 'isTransfer:', isTransfer, 'activity:', activity);
           return isTransfer;
         })
         .map((activity: any) => {
-          const amount = activity.net_amount || activity.qty || activity.amount || '0';
-          const numericAmount = parseFloat(amount);
+          // Extract amount from various possible fields
+          const amount = activity.net_amount || 
+                        activity.qty || 
+                        activity.amount || 
+                        activity.principal_amount ||
+                        activity.gross_amount ||
+                        '0';
+          
+          const numericAmount = parseFloat(amount.toString());
+          const absoluteAmount = Math.abs(numericAmount);
           
           return {
-            id: activity.id || activity.transaction_id || `${Date.now()}-${Math.random()}`,
-            amount: Math.abs(numericAmount).toString(),
-            direction: (numericAmount > 0 ? 'INCOMING' : 'OUTGOING') as 'INCOMING' | 'OUTGOING',
+            id: activity.id || 
+                activity.transaction_id || 
+                activity.activity_id ||
+                `${Date.now()}-${Math.random()}`,
+            amount: absoluteAmount.toString(),
+            direction: (numericAmount >= 0 ? 'INCOMING' : 'OUTGOING') as 'INCOMING' | 'OUTGOING',
             status: activity.status || 'COMPLETE',
-            created_at: activity.transaction_time || activity.activity_time || activity.created_at || new Date().toISOString(),
-            transfer_type: activity.activity_type || activity.type || 'Transfer',
-            reason: activity.description || activity.activity_type || 'Transfer'
+            created_at: activity.transaction_time || 
+                        activity.activity_time || 
+                        activity.created_at || 
+                        activity.date ||
+                        new Date().toISOString(),
+            transfer_type: activity.activity_type || 
+                         activity.type || 
+                         'Transfer',
+            reason: activity.description || 
+                   activity.activity_type || 
+                   `${activity.activity_type || 'Transfer'} - ${activity.symbol || ''}`
           };
         })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
