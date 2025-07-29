@@ -26,24 +26,39 @@ export const PendingOrdersModal = ({ children }: PendingOrdersModalProps) => {
   const [cancelingOrders, setCancelingOrders] = useState<Set<string>>(new Set());
 
   const loadPendingOrders = async () => {
-    if (!selectedAccount?.id) return;
+    console.log('🔍 Loading pending orders...');
+    console.log('Selected Account:', selectedAccount);
+    console.log('Account ID:', selectedAccount?.id);
+    
+    if (!selectedAccount?.id) {
+      console.log('❌ No selected account ID, cannot load orders');
+      return;
+    }
 
     setIsLoadingOrders(true);
     try {
+      console.log('📡 Fetching orders for account:', selectedAccount.id);
+      
       // Fetch orders with pending statuses
       const allOrders = await getOrders(selectedAccount.id, { 
         status: 'open', 
         limit: 50 
       });
       
+      console.log('📋 All orders received:', allOrders);
+      console.log('📋 Number of orders:', allOrders.length);
+      
       // Filter for pending orders (not filled or cancelled)
       const pendingOrders = allOrders.filter(order => 
         ['new', 'partially_filled', 'pending_new', 'accepted', 'pending_cancel', 'pending_replace'].includes(order.status)
       );
       
+      console.log('⏳ Pending orders filtered:', pendingOrders);
+      console.log('⏳ Number of pending orders:', pendingOrders.length);
+      
       setOrders(pendingOrders);
     } catch (error) {
-      console.error('Failed to load orders:', error);
+      console.error('❌ Failed to load orders:', error);
       toast.error('Failed to load pending orders');
     } finally {
       setIsLoadingOrders(false);
