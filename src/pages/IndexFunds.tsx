@@ -323,42 +323,6 @@ const IndexFunds = () => {
                     <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
                     {isFetching ? 'Fetching...' : 'Refresh News'}
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="default"
-                    className="text-amber-400 border-amber-400 hover:bg-amber-400/10"
-                    onClick={async () => {
-                      try {
-                        console.log('🔧 Fixing Index Fund article assignments...');
-                        const { data, error } = await supabase.functions.invoke('fix-index-fund-articles');
-                        if (error) {
-                          console.error('❌ Error:', error);
-                          toast({
-                            title: "Error",
-                            description: "Failed to fix article assignments",
-                            variant: "destructive",
-                          });
-                        } else {
-                          console.log('✅ Success:', data);
-                          toast({
-                            title: "Success",
-                            description: `Fixed ${data.updatedCount} article assignments`,
-                          });
-                          // Refresh the data
-                          refetch();
-                        }
-                      } catch (error) {
-                        console.error('❌ Exception:', error);
-                        toast({
-                          title: "Error", 
-                          description: "An error occurred",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
-                    Fix Articles
-                  </Button>
                 </div>
               </div>
               <div>
