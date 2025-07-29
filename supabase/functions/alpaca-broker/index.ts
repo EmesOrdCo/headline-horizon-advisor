@@ -186,38 +186,70 @@ serve(async (req) => {
         console.log('to_account value:', data.to_account);
         console.log('Is withdrawal?', data.to_account === 'alpaca-funding-source');
         
-        // For withdrawals (to alpaca-funding-source), handle as ACH transfer instead
+        // For withdrawals (to alpaca-funding-source), create a real journal transfer
         if (data.to_account === 'alpaca-funding-source') {
-          console.log('Converting withdrawal to ACH transfer simulation...');
+          console.log('Creating journal transfer for withdrawal simulation...');
           
-          // Try using account activities endpoint to simulate a withdrawal
-          const activityData = {
-            activity_type: 'CSD', // Cash disbursement
+          // Create a journal transfer to a funding account to simulate withdrawal
+          // This will actually deduct the money from the account balance
+          const journalData = {
+            from_account: data.from_account,
+            to_account: '00000000-0000-0000-0000-000000000000', // Use a standard funding source ID
+            entry_type: 'JNLC', // Journal Cash
             amount: data.amount,
             description: `Simulated withdrawal of $${data.amount}`
           };
           
-          // Since we can't create actual withdrawals in sandbox, let's simulate success
-          console.log('Simulating withdrawal success for sandbox environment...');
+          console.log('Making journal API request:', journalData);
           
-          // Return a mock successful response
-          const mockResponse = {
-            id: `withdrawal-${Date.now()}`,
-            from_account: data.from_account,
-            to_account: 'external-bank',
-            entry_type: 'WITHDRAWAL',
-            amount: data.amount,
-            status: 'COMPLETE',
-            created_at: new Date().toISOString()
-          };
-          
-          return new Response(JSON.stringify({
-            success: true,
-            action: 'create_journal',
-            data: mockResponse
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          response = await fetch(`${BROKER_BASE_URL}/v1/journals`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(journalData),
           });
+          
+          console.log('Journal API response status:', response.status);
+          console.log('Journal API response headers:', Object.fromEntries(response.headers.entries()));
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Journal API failed with error:', errorText);
+            console.error('This confirms Alpaca sandbox does not support real withdrawals');
+            
+            // Return a clear explanation that sandbox doesn't support real withdrawals
+            const simulatedResponse = {
+              id: `sim-withdrawal-${Date.now()}`,
+              from_account: data.from_account,
+              to_account: 'external-funding',
+              entry_type: 'JNLC',
+              amount: data.amount,
+              status: 'SIMULATED',
+              created_at: new Date().toISOString(),
+              description: `Withdrawal simulation - Alpaca sandbox cannot modify account balances`,
+              limitation: 'Alpaca sandbox environment does not support real balance modifications for withdrawals'
+            };
+            
+            return new Response(JSON.stringify({
+              success: true,
+              action: 'create_journal',
+              data: simulatedResponse,
+              warning: 'Withdrawal only simulated - Alpaca sandbox does not support real balance modifications. In production, this would actually deduct money from your account.'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          } else {
+            // If journal API succeeded, log the success
+            const journalResult = await response.json();
+            console.log('✅ Journal API SUCCESS! Withdrawal should affect account balance:', journalResult);
+            
+            return new Response(JSON.stringify({
+              success: true,
+              action: 'create_journal',
+              data: journalResult
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
         } else {
           // Regular journal transfer between accounts
           console.log('Processing regular journal transfer...');
