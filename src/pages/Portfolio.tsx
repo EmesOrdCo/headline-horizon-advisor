@@ -93,12 +93,13 @@ const Portfolio = () => {
         
         if (!userAccountNumber) {
           console.error('❌ No account number found in profile! User needs to complete onboarding.');
-          toast.error('No Alpaca account found. Please complete account setup.');
+          toast.error('No Alpaca account found. Please complete account setup first. Go to Alpaca Onboarding to create an account.');
           setIsLoading(false);
           return;
         }
       } else {
         console.error('❌ No user found');
+        toast.error('Please sign in to view your portfolio.');
         setIsLoading(false);
         return;
       }
