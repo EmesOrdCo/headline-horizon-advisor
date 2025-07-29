@@ -36,6 +36,7 @@ import CompanyLogo from "@/components/CompanyLogo";
 import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 import { usePendingOrders } from "@/hooks/usePendingOrders";
+import { StockPendingOrders } from "@/components/StockPendingOrders";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -427,6 +428,11 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Stock-Specific Pending Orders - Prominent Position */}
+          <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700">
+            <StockPendingOrders symbol={activeSymbol} />
+          </div>
+          
           {/* Professional TradingView Chart */}
           <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
             <LiveTradingViewChart
