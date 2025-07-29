@@ -27,8 +27,8 @@ export const AlpacaTradingModal = ({
   initialMode = "buy" 
 }: AlpacaTradingModalProps) => {
   const { user } = useAuth();
-  const { placeOrder, loading } = useAlpacaBroker();
-  const { availableCash: realAvailableCash, isLoading: accountLoading, selectedAccount } = useAccountData();
+  const { placeOrder, loading, getPositions } = useAlpacaBroker();
+  const { availableCash: realAvailableCash, isLoading: accountLoading, selectedAccount, positions } = useAccountData();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"buy" | "sell">(initialMode);
   const [quantity, setQuantity] = useState("1");
@@ -65,6 +65,10 @@ export const AlpacaTradingModal = ({
     }
   }, [user, open]);
 
+  // Get current position for this symbol
+  const currentPosition = positions?.find(pos => pos.symbol === symbol);
+  const ownedShares = currentPosition ? parseFloat(currentPosition.qty) : 0;
+  
   const totalCost = parseFloat(quantity) * currentPrice;
   const estimatedValue = orderType === "limit" && limitPrice ? parseFloat(quantity) * parseFloat(limitPrice) : totalCost;
 
@@ -81,6 +85,11 @@ export const AlpacaTradingModal = ({
 
     if (orderType === "limit" && (!limitPrice || parseFloat(limitPrice) <= 0)) {
       toast.error('Please enter a valid limit price');
+      return;
+    }
+
+    if (mode === "sell" && parseFloat(quantity) > ownedShares) {
+      toast.error(`You only own ${ownedShares} shares of ${symbol}`);
       return;
     }
 
@@ -204,16 +213,27 @@ export const AlpacaTradingModal = ({
       {/* Order Details */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Quantity</label>
+          <label className="text-sm font-medium">
+            Quantity
+            {mode === "sell" && (
+              <span className="text-xs text-slate-500 ml-2">
+                (You own {ownedShares} shares)
+              </span>
+            )}
+          </label>
           <Input
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="1"
             min="1"
+            max={mode === "sell" ? ownedShares : undefined}
             step="1"
             className="text-lg font-semibold"
           />
+          {mode === "sell" && ownedShares === 0 && (
+            <p className="text-xs text-red-500">You don't own any shares of {symbol}</p>
+          )}
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Order Type</label>
@@ -285,7 +305,12 @@ export const AlpacaTradingModal = ({
       <div className="flex gap-3">
         <Button
           onClick={handlePlaceOrder}
-          disabled={!isAccountLinked || loading}
+          disabled={
+            !isAccountLinked || 
+            loading || 
+            (mode === "sell" && (ownedShares === 0 || parseFloat(quantity) > ownedShares)) ||
+            (mode === "buy" && totalCost > realAvailableCash)
+          }
           className={cn(
             "flex-1 h-12 text-base font-medium",
             mode === "buy" 
@@ -415,21 +440,13 @@ export const AlpacaTradingModal = ({
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 border-0 shadow-xl p-0 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 pb-0">
+        <div className="p-6 pb-0">
           <h2 className="text-xl font-bold">
             {step === "form" && "Place Order"}
             {step === "confirmation" && "Confirm Order"}
             {step === "success" && "Order Complete"}
             {step === "error" && "Order Failed"}
           </h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Content */}
