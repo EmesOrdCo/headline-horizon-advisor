@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { TradingModal } from "@/components/TradingModal";
 
 export const BuySellButtons = () => {
   const location = useLocation();
@@ -95,29 +96,39 @@ export const BuySellButtons = () => {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Sell Button with Bid Price (styled like reference image) */}
-      <Button
-        onClick={handleSell}
-        className="bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10 text-sm px-4 py-2 h-auto rounded-full"
-        size="sm"
+      {/* Sell Button with Bid Price (opens sell modal) */}
+      <TradingModal 
+        symbol={currentSymbol} 
+        currentPrice={currentPrice} 
+        initialMode="sell"
       >
-        <div className="flex items-center space-x-1">
-          <div className="font-medium">S</div>
-          <div className="font-bold">{bidPrice.toFixed(2)}</div>
-        </div>
-      </Button>
+        <Button
+          className="bg-transparent border border-red-500 text-red-400 hover:bg-red-500/10 text-sm px-4 py-2 h-auto rounded-full"
+          size="sm"
+        >
+          <div className="flex items-center space-x-1">
+            <div className="font-medium">Sell</div>
+            <div className="font-bold">${bidPrice.toFixed(2)}</div>
+          </div>
+        </Button>
+      </TradingModal>
 
-      {/* Buy Button with Ask Price (styled like reference image) */}
-      <Button
-        onClick={handleBuy}
-        className="bg-transparent border border-green-500 text-green-400 hover:bg-green-500/10 text-sm px-4 py-2 h-auto rounded-full"
-        size="sm"
+      {/* Buy Button with Ask Price (opens buy modal) */}
+      <TradingModal 
+        symbol={currentSymbol} 
+        currentPrice={currentPrice} 
+        initialMode="buy"
       >
-        <div className="flex items-center space-x-1">
-          <div className="font-medium">B</div>
-          <div className="font-bold">{askPrice.toFixed(2)}</div>
-        </div>
-      </Button>
+        <Button
+          className="bg-transparent border border-green-500 text-green-400 hover:bg-green-500/10 text-sm px-4 py-2 h-auto rounded-full"
+          size="sm"
+        >
+          <div className="flex items-center space-x-1">
+            <div className="font-medium">Buy</div>
+            <div className="font-bold">${askPrice.toFixed(2)}</div>
+          </div>
+        </Button>
+      </TradingModal>
     </div>
   );
 };
