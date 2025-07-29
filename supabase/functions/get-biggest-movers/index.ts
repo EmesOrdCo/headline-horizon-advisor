@@ -23,6 +23,19 @@ serve(async (req) => {
   }
 
   try {
+    // TEMPORARY: Pause all MarketAux API calls to conserve rate limits
+    console.log('⏸️ MarketAux API calls are temporarily paused to conserve rate limits');
+    
+    const fallbackData = {
+      gainers: [],
+      losers: [],
+      lastUpdated: new Date().toISOString()
+    };
+
+    return new Response(JSON.stringify(fallbackData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     
@@ -106,19 +119,19 @@ serve(async (req) => {
 
     console.log(`Processing ${topGainers.length} gainers and ${topLosers.length} losers for news analysis`);
 
-    // Optimize: Only fetch news for top 2 gainers and top 2 losers to reduce API calls
-    const limitedMovers = [...topGainers.slice(0, 2), ...topLosers.slice(0, 2)];
+    // Fetch news and AI analysis for each stock
+    const allMovers = [...topGainers, ...topLosers];
     
-    for (const mover of limitedMovers) {
+    for (const mover of allMovers) {
       try {
         console.log(`Fetching news for ${mover.symbol}...`);
         
-        // Fetch news from Marketaux with timeout - reduced limit to 5 articles
+        // Fetch news from Marketaux with timeout
         const newsController = new AbortController();
-        const newsTimeout = setTimeout(() => newsController.abort(), 8000);
+        const newsTimeout = setTimeout(() => newsController.abort(), 10000);
         
         const newsResponse = await fetch(
-          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=5`,
+          `https://api.marketaux.com/v1/news/all?symbols=${mover.symbol}&filter_entities=true&language=en&api_token=${marketauxApiKey}&limit=10`,
           { signal: newsController.signal }
         );
         
@@ -270,8 +283,8 @@ IMPORTANT:
           throw new Error(`News API error: ${newsResponse.status}`);
         }
         
-        // Reduced wait time between requests
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait between news requests
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
       } catch (error) {
         console.error(`Error fetching news for ${mover.symbol}:`, error);
@@ -282,15 +295,6 @@ IMPORTANT:
         mover.sentimentReasoning = 'Unable to fetch news for sentiment analysis';
       }
     }
-    
-    // Add empty headlines to remaining movers that weren't processed
-    const remainingMovers = [...topGainers.slice(2), ...topLosers.slice(2)];
-    remainingMovers.forEach(mover => {
-      mover.headlines = [];
-      mover.overallImpact = `Limited news analysis available for ${mover.symbol}.`;
-      mover.marketSentiment = 'Neutral';
-      mover.sentimentReasoning = 'API rate limiting - basic data only';
-    });
 
     const result = {
       gainers: topGainers,  

@@ -30,6 +30,9 @@ import {
  } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
+import { BuySellButtons } from "@/components/BuySellButtons";
+import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
+import { useChartDrawing } from "@/hooks/useChartDrawing";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -40,15 +43,30 @@ interface AlpacaBar {
   v: number; // volume
 }
 
-// Alpaca Chart Widget Component
+// Alpaca Chart Widget Component with Drawing Integration
 const AlpacaChartWidget: React.FC<{ 
   symbol: string; 
-}> = ({ symbol }) => {
+  activeTool: DrawingTool;
+  onToolChange: (tool: DrawingTool) => void;
+}> = ({ symbol, activeTool, onToolChange }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<any>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+
+  // Drawing functionality
+  const {
+    drawingState,
+    startDrawing,
+    updateDrawing,
+    finishDrawing,
+    clearAllDrawings,
+    toggleDrawingsVisibility,
+    setSelectedColor,
+    getCoordinatesFromEvent,
+    drawingCanvasRef
+  } = useChartDrawing(chartRef);
 
   // Initialize Lightweight Charts with proper margins
   useEffect(() => {
@@ -201,12 +219,67 @@ const AlpacaChartWidget: React.FC<{
     }
   }, [symbol, chartRef.current, candlestickSeriesRef.current]);
 
+  // Handle chart interactions for drawing
+  const handleChartMouseDown = (event: MouseEvent) => {
+    if (activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      startDrawing(coords);
+    }
+  };
+
+  const handleChartMouseMove = (event: MouseEvent) => {
+    if (!drawingState.isDrawing || activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      updateDrawing(coords);
+    }
+  };
+
+  const handleChartMouseUp = (event: MouseEvent) => {
+    if (!drawingState.isDrawing || activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      finishDrawing(coords, activeTool as any);
+    }
+  };
+
+  // Add event listeners for drawing
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('mousedown', handleChartMouseDown);
+    container.addEventListener('mousemove', handleChartMouseMove);
+    container.addEventListener('mouseup', handleChartMouseUp);
+
+    return () => {
+      container.removeEventListener('mousedown', handleChartMouseDown);
+      container.removeEventListener('mousemove', handleChartMouseMove);
+      container.removeEventListener('mouseup', handleChartMouseUp);
+    };
+  }, [activeTool, drawingState.isDrawing, startDrawing, updateDrawing, finishDrawing]);
+
   return (
     <div className="w-full h-full relative">
       <div 
         ref={chartContainerRef} 
         className="w-full h-full"
         style={{ minHeight: '500px', minWidth: '100%' }}
+      />
+      
+      {/* Drawing Canvas Overlay */}
+      <canvas
+        ref={drawingCanvasRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          zIndex: 10
+        }}
       />
       
       {isLoading && (
@@ -446,8 +519,33 @@ const StockChart: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [chartType, setChartType] = useState<'line' | 'candles'>('candles');
+  const [activeTool, setActiveTool] = useState<DrawingTool>('cursor');
   
-  // Left sidebar drawing tools from TradingView
+  // Fetch current stock data and historical data - use SPY as it has extended hours trading
+  const activeSymbol = symbol || 'AAPL';
+  const { data: stockPrices } = useStockPrices([activeSymbol]);
+  
+  // Fetch watchlist data - include globally traded assets
+  const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
+  const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
+
+  // Drawing toolbar state
+  const [drawingsVisible, setDrawingsVisible] = useState(true);
+  const [selectedColor, setSelectedColor] = useState('#ffffff');
+
+  const handleClearDrawings = () => {
+    // This will be connected to the drawing system
+    console.log('Clear all drawings');
+  };
+
+  const handleToggleVisibility = () => {
+    setDrawingsVisible(!drawingsVisible);
+  };
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+  };
+  
   const leftSidebarTools = [
     { icon: Crosshair, label: 'Cursor' },
     { icon: Move, label: 'Hand' },
@@ -461,14 +559,6 @@ const StockChart: React.FC = () => {
     { icon: Eye, label: 'Hide' },
     { icon: Settings, label: 'Settings' }
   ];
-  
-  // Fetch current stock data and historical data - use SPY as it has extended hours trading
-  const activeSymbol = symbol || 'AAPL';
-  const { data: stockPrices } = useStockPrices([activeSymbol]);
-  
-  // Fetch watchlist data - include globally traded assets
-  const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
-  const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
 
   // Create watchlist with REAL data from APIs
   const watchlistStocks = watchlistSymbols.map(sym => {
@@ -644,10 +734,15 @@ const StockChart: React.FC = () => {
               Data
             </Button>
           </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
+          {/* Buy/Sell Buttons */}
+          <BuySellButtons />
         </div>
       </div>
 
-      {/* Price Header */}
+      {/* Price Header - EXACT replica */}
       <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
@@ -663,43 +758,49 @@ const StockChart: React.FC = () => {
               <div className="text-slate-400">L <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">C <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(1000000)}</span></div>
+              <div className="flex items-center space-x-2 ml-4">
+                <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
+                  Sell ${bidPrice.toFixed(2)}
+                </button>
+                <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
+                  Buy ${askPrice.toFixed(2)}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex flex-1 min-h-0">
-        {/* Left Sidebar - Drawing Tools (from TradingView) */}
-        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
-          {leftSidebarTools.map((tool, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              size="sm"
-              className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4" />
-            </Button>
-          ))}
-        </div>
+        {/* Left Sidebar - Functional Drawing Tools */}
+        <DrawingToolbar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          onClearAll={handleClearDrawings}
+          onToggleVisibility={handleToggleVisibility}
+          isVisible={drawingsVisible}
+          onColorChange={handleColorChange}
+          selectedColor={selectedColor}
+        />
 
-        {/* Chart Container */}
+        {/* Main Chart Area with Trading Panel */}
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Alpaca Chart with Drawing Integration */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
             <AlpacaChartWidget 
               symbol={activeSymbol} 
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
             />
           </div>
-
-          {/* Trading Panel */}
-          <div className="bg-slate-800 border-t border-slate-700 p-4">
+          
+          {/* Bottom Trading Panel - Only spans chart area width */}
+          <div className="border-t border-slate-700 bg-slate-800/50 p-4 flex-shrink-0">
             <TradingPanel symbol={activeSymbol} />
           </div>
         </div>
 
-        {/* Right Sidebar - Watchlist & Info */}
+        {/* Right Sidebar - Watchlist & Info - EXACT replica */}
         <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
           {/* Watchlist Section */}
           <div className="border-b border-slate-700">
@@ -747,7 +848,7 @@ const StockChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Buy/Sell Spread */}
+          {/* Buy/Sell Spread - EXACT replica */}
           <div className="border-b border-slate-700 p-4">
             <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
             <div className="space-y-2">
@@ -772,7 +873,7 @@ const StockChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Stock Details */}
+          {/* Stock Details - EXACT replica */}
           <div className="flex-1 p-4">
             <h3 className="text-white font-medium mb-3">{companyName}</h3>
             <div className="text-sm text-slate-400 mb-3">{exchange} • Real-time • Live</div>
@@ -807,6 +908,7 @@ const StockChart: React.FC = () => {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
