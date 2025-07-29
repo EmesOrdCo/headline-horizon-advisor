@@ -58,9 +58,13 @@ serve(async (req) => {
 
     console.log(`Unique Index Fund articles: ${uniqueArticles.length}`);
 
-    // Clear existing Index Fund articles first
+    // Clear existing Index Fund articles ONLY the historical/placeholder ones, keep real news articles
     for (const symbol of INDEX_FUNDS) {
-      await supabase.from('news_articles').delete().eq('symbol', symbol);
+      await supabase
+        .from('news_articles')
+        .delete()
+        .eq('symbol', symbol)
+        .or('source_links.is.null,source_links.eq.[],ai_reasoning.ilike.*Historical*');
     }
 
     // Store ALL articles immediately for hyperlinking, using keyword matching for symbol association
