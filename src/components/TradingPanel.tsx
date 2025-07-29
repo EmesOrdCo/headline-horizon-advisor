@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
+import { TradingModal } from './TradingModal';
 
 const TradingPanel = () => {
   const { user } = useAuth();
@@ -19,6 +19,8 @@ const TradingPanel = () => {
   const [timeInForce, setTimeInForce] = useState('gtc');
   const [extendedHours, setExtendedHours] = useState(false);
   const [isAccountLinked, setIsAccountLinked] = useState(false);
+  const [showTradingModal, setShowTradingModal] = useState(false);
+  const [modalType, setModalType] = useState<'buy' | 'sell'>('buy');
 
   // Check if Alpaca account is linked
   React.useEffect(() => {
@@ -37,62 +39,22 @@ const TradingPanel = () => {
     checkAccountStatus();
   }, [user]);
 
-  const handleBuyClick = async () => {
+  const handleBuyClick = () => {
     if (!isAccountLinked) {
       toast.error('Please link your Alpaca account first');
       return;
     }
-    
-    try {
-      // Simple market buy order using the form values
-      const orderData = {
-        symbol: 'AAPL', // This should come from the current stock context
-        qty: parseInt(quantity),
-        side: 'buy',
-        type: orderType,
-        time_in_force: timeInForce
-      };
-      
-      const response = await supabase.functions.invoke('alpaca-place-order', {
-        body: orderData
-      });
-      
-      if (response.error) throw response.error;
-      
-      toast.success(`Buy order placed for ${quantity} shares of AAPL`);
-    } catch (error) {
-      console.error('Buy order failed:', error);
-      toast.error('Failed to place buy order');
-    }
+    setModalType('buy');
+    setShowTradingModal(true);
   };
 
-  const handleSellClick = async () => {
+  const handleSellClick = () => {
     if (!isAccountLinked) {
       toast.error('Please link your Alpaca account first');
       return;
     }
-    
-    try {
-      // Simple market sell order using the form values
-      const orderData = {
-        symbol: 'AAPL', // This should come from the current stock context
-        qty: parseInt(quantity),
-        side: 'sell',
-        type: orderType,
-        time_in_force: timeInForce
-      };
-      
-      const response = await supabase.functions.invoke('alpaca-place-order', {
-        body: orderData
-      });
-      
-      if (response.error) throw response.error;
-      
-      toast.success(`Sell order placed for ${quantity} shares of AAPL`);
-    } catch (error) {
-      console.error('Sell order failed:', error);
-      toast.error('Failed to place sell order');
-    }
+    setModalType('sell');
+    setShowTradingModal(true);
   };
 
   return (
@@ -178,21 +140,31 @@ const TradingPanel = () => {
 
             {/* Trading Buttons */}
             <div className="flex space-x-2">
-              <Button
-                onClick={handleBuyClick}
-                disabled={loading || !isAccountLinked}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+              <TradingModal 
+                symbol="AAPL" 
+                currentPrice={150} 
+                initialMode="buy"
               >
-                BUY
-              </Button>
+                <Button
+                  disabled={loading || !isAccountLinked}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+                >
+                  BUY
+                </Button>
+              </TradingModal>
               
-              <Button
-                onClick={handleSellClick}
-                disabled={loading || !isAccountLinked}
-                className="bg-red-600 hover:bg-red-700 text-white px-6"
+              <TradingModal 
+                symbol="AAPL" 
+                currentPrice={150} 
+                initialMode="sell"
               >
-                SELL
-              </Button>
+                <Button
+                  disabled={loading || !isAccountLinked}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6"
+                >
+                  SELL
+                </Button>
+              </TradingModal>
             </div>
           </div>
         </CardContent>

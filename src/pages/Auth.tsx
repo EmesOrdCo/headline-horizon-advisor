@@ -251,17 +251,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated with debounce
+  // Redirect if already authenticated
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (user && !loading) {
-        console.log('Redirecting authenticated user to dashboard');
-        navigate('/dashboard', { replace: true });
-      }
-    }, 100); // Small debounce to prevent rapid navigation
-
-    return () => clearTimeout(timer);
-  }, [user]); // Removed navigate from dependencies
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const updateOnboardingData = (updates: Partial<OnboardingData>) => {
     setOnboardingData(prev => ({ ...prev, ...updates }));
@@ -322,7 +317,7 @@ const Auth = () => {
           title: "Welcome Back",
           description: "You have successfully signed in.",
         });
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard');
       } else {
         if (result.error.message.includes('Invalid login credentials')) {
           toast({
@@ -1088,7 +1083,7 @@ const Auth = () => {
 
       <div className="text-center">
         <Button
-          onClick={() => navigate('/dashboard', { replace: true })}
+          onClick={() => navigate('/dashboard')}
           className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
         >
           Go to Dashboard
