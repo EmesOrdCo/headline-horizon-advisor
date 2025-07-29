@@ -19,6 +19,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { ChartContainer } from "@/components/ui/chart";
 import { toast } from 'sonner';
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
+import { usePendingOrders } from "@/hooks/usePendingOrders";
 
 // Real performance data will be loaded from Alpaca portfolio history
 const defaultPerformanceData = [
@@ -46,6 +47,9 @@ const Portfolio = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [performanceData, setPerformanceData] = useState<any[]>(defaultPerformanceData);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Hook for pending orders data
+  const { buyOrders, sellOrders, totalValue: pendingValue, isLoading: pendingLoading } = usePendingOrders();
   
   const { 
     loading, 
@@ -904,15 +908,21 @@ const Portfolio = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-400">-</div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {pendingLoading ? "..." : buyOrders}
+                    </div>
                     <div className="text-sm text-blue-300">Pending Buy Orders</div>
                   </div>
                   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-400">-</div>
+                    <div className="text-2xl font-bold text-orange-400">
+                      {pendingLoading ? "..." : sellOrders}
+                    </div>
                     <div className="text-sm text-orange-300">Pending Sell Orders</div>
                   </div>
                   <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-400">$0</div>
+                    <div className="text-2xl font-bold text-purple-400">
+                      {pendingLoading ? "$..." : `$${pendingValue.toFixed(2)}`}
+                    </div>
                     <div className="text-sm text-purple-300">Total Pending Value</div>
                   </div>
                 </div>

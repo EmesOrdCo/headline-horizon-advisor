@@ -35,6 +35,7 @@ import { LiveTradingViewChart } from "@/components/chart/LiveTradingViewChart";
 import CompanyLogo from "@/components/CompanyLogo";
 import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
+import { usePendingOrders } from "@/hooks/usePendingOrders";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -60,6 +61,9 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
   
   // Use AAPL as default symbol like in the image
   const activeSymbol = symbol || 'AAPL';
+  
+  // Hook for pending orders data
+  const { buyOrders, sellOrders, totalValue: pendingValue, isLoading: pendingLoading } = usePendingOrders();
   
   // Fetch real-time data
   const { data: stockPrices } = useStockPrices([activeSymbol]);
@@ -452,10 +456,27 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
                 </PendingOrdersModal>
               </div>
               
-              {/* Quick Pending Orders Summary */}
+              {/* Quick Pending Orders Summary with Real Data */}
               <div className="space-y-2">
-                <div className="text-xs text-slate-400">
-                  You have pending limit orders
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="text-center">
+                    <div className="text-blue-400 font-medium">
+                      {pendingLoading ? "..." : buyOrders}
+                    </div>
+                    <div className="text-slate-400">Buy</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-orange-400 font-medium">
+                      {pendingLoading ? "..." : sellOrders}
+                    </div>
+                    <div className="text-slate-400">Sell</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-purple-400 font-medium">
+                      {pendingLoading ? "$..." : `$${pendingValue.toFixed(0)}`}
+                    </div>
+                    <div className="text-slate-400">Value</div>
+                  </div>
                 </div>
                 <PendingOrdersModal>
                   <Button 
