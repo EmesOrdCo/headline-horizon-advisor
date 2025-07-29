@@ -784,7 +784,7 @@ const StockChart: React.FC = () => {
         />
 
         {/* Main Chart Area - Full Height */}
-        <div className="flex-1 bg-slate-900 relative min-h-0">
+        <div className="flex-1 bg-slate-900 relative h-full">
           <AlpacaChartWidget 
             symbol={activeSymbol} 
             activeTool={activeTool}
