@@ -251,11 +251,16 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated with debounce
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard', { replace: true });
-    }
+    const timer = setTimeout(() => {
+      if (user && !loading) {
+        console.log('Redirecting authenticated user to dashboard');
+        navigate('/dashboard', { replace: true });
+      }
+    }, 100); // Small debounce to prevent rapid navigation
+
+    return () => clearTimeout(timer);
   }, [user]); // Removed navigate from dependencies
 
   const updateOnboardingData = (updates: Partial<OnboardingData>) => {
