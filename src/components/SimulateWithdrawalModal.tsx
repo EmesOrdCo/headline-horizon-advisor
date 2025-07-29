@@ -34,7 +34,7 @@ const SimulateWithdrawalModal = ({
   const [errorMessage, setErrorMessage] = useState<string>('');
   
   const { user } = useAuth();
-  const { createJournal, loading } = useAlpacaBroker();
+  const { createTransfer, createACHRelationship, loading } = useAlpacaBroker();
 
   const resetForm = () => {
     setStep('form');
@@ -69,28 +69,43 @@ const SimulateWithdrawalModal = ({
     setStep('processing');
 
     try {
-      console.log('💸 Starting withdrawal simulation...');
+      console.log('💸 Starting ACH withdrawal...');
       console.log('Account ID:', accountId);
       console.log('Withdrawal amount:', amount);
       
-      // Try to use Journal API first
-      let alpacaJournalId = null;
-      
+      // Step 1: Create ACH relationship if needed (for sandbox testing)
+      let achRelationshipId = null;
       try {
-        const journalData = {
-          from_account: accountId,
-          to_account: "alpaca-funding-source", 
-          entry_type: "JNLC",
-          amount: amount
+        const achData = {
+          account_owner_name: 'Demo User',
+          bank_account_type: 'CHECKING',
+          bank_account_number: '123456789',
+          bank_routing_number: '021000021',
+          nickname: 'External Bank Account',
+          plaid_processor_token: null,
+          default: true
         };
-
-        console.log('📤 Creating journal entry for withdrawal:', journalData);
-        const result = await createJournal(journalData);
-        alpacaJournalId = result.id;
-        console.log('✅ Journal withdrawal successful:', result);
-      } catch (journalError) {
-        console.warn('❌ Journal API failed, proceeding with simulation:', journalError);
+        
+        const achResult = await createACHRelationship(accountId, achData);
+        achRelationshipId = achResult.id || 'sandbox_ach_' + Date.now();
+        console.log('✅ ACH relationship created:', achResult);
+      } catch (achError) {
+        console.warn('❌ ACH relationship creation failed, using fallback ID:', achError);
+        achRelationshipId = 'sandbox_ach_' + Date.now();
       }
+
+      // Step 2: Create ACH withdrawal transfer
+      const transferData = {
+        relationship_id: achRelationshipId,
+        amount: amount,
+        direction: 'OUTGOING', // This is the key difference from deposits!
+        transfer_type: 'ACH',
+        reason: `Withdrawal to external bank account - $${amount}`
+      };
+
+      console.log('📤 Creating ACH withdrawal transfer:', transferData);
+      const transferResult = await createTransfer(accountId, transferData);
+      console.log('✅ ACH withdrawal successful:', transferResult);
 
       // Save the withdrawal record to our database
       const { data: transferRecord, error: dbError } = await supabase
@@ -100,10 +115,10 @@ const SimulateWithdrawalModal = ({
           alpaca_account_id: accountId,
           amount: withdrawalAmount,
           direction: 'OUTGOING',
-          status: 'COMPLETE',
-          transfer_type: 'JOURNAL',
-          reason: `Simulated Withdrawal - $${amount}`,
-          alpaca_transfer_id: alpacaJournalId
+          status: transferResult.status || 'PENDING',
+          transfer_type: 'ACH',
+          reason: `ACH Withdrawal - $${amount}`,
+          alpaca_transfer_id: transferResult.id
         })
         .select()
         .single();
@@ -118,14 +133,14 @@ const SimulateWithdrawalModal = ({
       setJournalId(transferRecord.id);
       setStep('success');
       
-      toast.success(`Withdrawal of $${amount} processed successfully`);
+      toast.success(`ACH withdrawal of $${amount} initiated successfully`);
       onWithdrawalComplete();
       
     } catch (error) {
-      console.error('❌ Withdrawal failed:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Withdrawal failed');
+      console.error('❌ ACH withdrawal failed:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'ACH withdrawal failed');
       setStep('error');
-      toast.error('Withdrawal simulation failed');
+      toast.error('ACH withdrawal failed');
     }
   };
 
@@ -150,10 +165,10 @@ const SimulateWithdrawalModal = ({
             <div className="text-center">
               <TrendingDown className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Simulate Withdrawal
+                ACH Withdrawal
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Withdraw funds from your trading account using the Journal API
+                Withdraw funds via ACH transfer to your external bank account
               </p>
             </div>
 
@@ -204,7 +219,7 @@ const SimulateWithdrawalModal = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Method:</span>
-                    <span className="text-gray-900 dark:text-white">Journal Transfer (JNLC)</span>
+                    <span className="text-gray-900 dark:text-white">ACH Transfer</span>
                   </div>
                 </CardContent>
               </Card>
@@ -224,7 +239,7 @@ const SimulateWithdrawalModal = ({
                 ) : (
                   <>
                     <TrendingDown className="h-4 w-4 mr-2" />
-                    Simulate Withdrawal
+                    Start ACH Withdrawal
                   </>
                 )}
               </Button>
@@ -241,16 +256,16 @@ const SimulateWithdrawalModal = ({
             <div className="flex flex-col items-center">
               {getStatusIcon()}
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-4">
-                Processing Withdrawal
+                Processing ACH Withdrawal
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Creating journal entry for ${amount} withdrawal...
+                Creating ACH transfer for ${amount} withdrawal...
               </p>
             </div>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <span className="text-sm">Initiating journal transfer</span>
+                <span className="text-sm">Initiating ACH transfer</span>
                 <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
               </div>
             </div>
@@ -263,7 +278,7 @@ const SimulateWithdrawalModal = ({
             <div className="flex flex-col items-center">
               {getStatusIcon()}
               <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mt-4">
-                Withdrawal Successful!
+                ACH Withdrawal Initiated!
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 ${amount} has been withdrawn from your account
@@ -282,12 +297,12 @@ const SimulateWithdrawalModal = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Type:</span>
-                  <span>Journal Cash (JNLC)</span>
+                  <span>ACH Transfer</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Status:</span>
                   <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                    Completed
+                    Processing
                   </Badge>
                 </div>
               </CardContent>
@@ -305,10 +320,10 @@ const SimulateWithdrawalModal = ({
             <div className="flex flex-col items-center">
               {getStatusIcon()}
               <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mt-4">
-                Withdrawal Failed
+                ACH Withdrawal Failed
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm">
-                {errorMessage || 'The withdrawal could not be processed. Please try again.'}
+                {errorMessage || 'The ACH withdrawal could not be processed. Please try again.'}
               </p>
             </div>
 
@@ -336,9 +351,9 @@ const SimulateWithdrawalModal = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="sr-only">Simulate Withdrawal</DialogTitle>
+          <DialogTitle className="sr-only">ACH Withdrawal</DialogTitle>
           <DialogDescription className="sr-only">
-            Simulate withdrawing funds from your Alpaca trading account
+            Withdraw funds from your Alpaca trading account via ACH transfer
           </DialogDescription>
         </DialogHeader>
         {renderContent()}
