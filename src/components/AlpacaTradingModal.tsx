@@ -8,6 +8,7 @@ import { X, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Loader2 } from "
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAlpacaBroker } from "@/hooks/useAlpacaBroker";
+import { useAccountData } from "@/hooks/useAccountData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CompanyLogo from "./CompanyLogo";
@@ -27,6 +28,7 @@ export const AlpacaTradingModal = ({
 }: AlpacaTradingModalProps) => {
   const { user } = useAuth();
   const { placeOrder, loading } = useAlpacaBroker();
+  const { availableCash: realAvailableCash, isLoading: accountLoading, selectedAccount } = useAccountData();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"buy" | "sell">(initialMode);
   const [quantity, setQuantity] = useState("1");
@@ -35,12 +37,11 @@ export const AlpacaTradingModal = ({
   const [timeInForce, setTimeInForce] = useState<"day" | "gtc">("gtc");
   const [isAccountLinked, setIsAccountLinked] = useState(false);
   const [userAccountId, setUserAccountId] = useState<string | null>(null);
-  const [availableCash, setAvailableCash] = useState(0);
   const [step, setStep] = useState<"form" | "confirmation" | "success" | "error">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Check account status and available cash
+  // Check account status
   useEffect(() => {
     const checkAccountStatus = async () => {
       if (user) {
@@ -53,9 +54,6 @@ export const AlpacaTradingModal = ({
         if (profile?.alpaca_account_id && profile?.alpaca_account_status === 'ACTIVE') {
           setIsAccountLinked(true);
           setUserAccountId(profile.alpaca_account_id);
-          
-          // Get account balance - this would typically come from a real API call
-          setAvailableCash(1000); // Mock data for demo
         } else {
           setIsAccountLinked(false);
         }
@@ -86,7 +84,7 @@ export const AlpacaTradingModal = ({
       return;
     }
 
-    if (mode === "buy" && totalCost > availableCash) {
+    if (mode === "buy" && totalCost > realAvailableCash) {
       toast.error('Insufficient buying power');
       return;
     }
@@ -266,9 +264,9 @@ export const AlpacaTradingModal = ({
         </div>
         <div className="flex justify-between text-sm">
           <span>Available Cash:</span>
-          <span className="font-semibold text-emerald-600">${availableCash.toFixed(2)}</span>
+          <span className="font-semibold text-emerald-600">${realAvailableCash.toFixed(2)}</span>
         </div>
-        {mode === "buy" && totalCost > availableCash && (
+        {mode === "buy" && totalCost > realAvailableCash && (
           <p className="text-red-500 text-sm">Insufficient buying power</p>
         )}
       </div>
