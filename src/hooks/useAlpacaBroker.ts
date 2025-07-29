@@ -8,6 +8,7 @@ export interface AlpacaAccount {
   currency: string;
   created_at: string;
   equity?: string;
+  last_equity?: string; // Added this field
   account_type?: string;
   trading_type?: string;
   

@@ -14,7 +14,7 @@ interface AccountData {
 }
 
 export const useAccountData = () => {
-  const { getAccounts, getPositions, loading, error } = useAlpacaBroker();
+  const { getAccounts, getAccount, getPositions, loading, error } = useAlpacaBroker();
   const [accounts, setAccounts] = useState<AlpacaAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AlpacaAccount | null>(null);
   const [positions, setPositions] = useState<AlpacaPosition[]>([]);
@@ -22,7 +22,9 @@ export const useAccountData = () => {
 
   const loadAccounts = async () => {
     try {
+      console.log('Loading accounts...');
       const accountsData = await getAccounts();
+      console.log('Raw accounts data:', accountsData);
       setAccounts(accountsData);
       
       // Get user's account number from profile
@@ -34,14 +36,33 @@ export const useAccountData = () => {
           .eq('id', user.id)
           .single();
         
+        let targetAccount = null;
         if (profile?.alpaca_account_number) {
-          const activeAccount = accountsData.find(acc => 
+          targetAccount = accountsData.find(acc => 
             acc.account_number === profile.alpaca_account_number
-          ) || accountsData[0];
-          setSelectedAccount(activeAccount || null);
+          );
+          console.log('Found account by profile:', targetAccount);
+        }
+        
+        // Fallback to first account if no specific account found
+        if (!targetAccount && accountsData.length > 0) {
+          targetAccount = accountsData[0];
+          console.log('Using first account as fallback:', targetAccount);
+        }
+        
+        if (targetAccount) {
+          // Get detailed account information
+          console.log('Getting detailed account info for:', targetAccount.id);
+          try {
+            const detailedAccount = await getAccount(targetAccount.id);
+            console.log('Detailed account data:', detailedAccount);
+            setSelectedAccount(detailedAccount || targetAccount);
+          } catch (detailError) {
+            console.error('Failed to get detailed account, using basic:', detailError);
+            setSelectedAccount(targetAccount);
+          }
         } else {
-          // Fallback to first account if no account number in profile
-          setSelectedAccount(accountsData[0] || null);
+          setSelectedAccount(null);
         }
       } else {
         setSelectedAccount(accountsData[0] || null);
@@ -81,11 +102,35 @@ export const useAccountData = () => {
   };
 
   const accountData: AccountData = {
-    totalValue: selectedAccount?.equity ? parseFloat(selectedAccount.equity) : 0,
-    availableCash: selectedAccount?.buying_power ? parseFloat(selectedAccount.buying_power) : 0,
-    investedAmount: selectedAccount?.equity && selectedAccount?.buying_power 
-      ? parseFloat(selectedAccount.equity) - parseFloat(selectedAccount.buying_power)
-      : 0,
+    // Use equity field, falling back to last_equity from basic account data
+    totalValue: selectedAccount?.equity 
+      ? parseFloat(selectedAccount.equity) 
+      : selectedAccount?.last_equity 
+        ? parseFloat(selectedAccount.last_equity) 
+        : 0,
+    
+    // Use cash field, falling back to buying_power 
+    availableCash: selectedAccount?.cash 
+      ? parseFloat(selectedAccount.cash) 
+      : selectedAccount?.buying_power 
+        ? parseFloat(selectedAccount.buying_power) 
+        : 0,
+    
+    // Calculate invested amount as total value minus available cash
+    investedAmount: (() => {
+      const totalVal = selectedAccount?.equity 
+        ? parseFloat(selectedAccount.equity) 
+        : selectedAccount?.last_equity 
+          ? parseFloat(selectedAccount.last_equity) 
+          : 0;
+      const availCash = selectedAccount?.cash 
+        ? parseFloat(selectedAccount.cash) 
+        : selectedAccount?.buying_power 
+          ? parseFloat(selectedAccount.buying_power) 
+          : 0;
+      return Math.max(0, totalVal - availCash);
+    })(),
+    
     isLoading: loading || !isInitialized,
     error: error,
     accounts,
