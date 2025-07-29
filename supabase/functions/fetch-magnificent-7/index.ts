@@ -72,9 +72,11 @@ serve(async (req) => {
 
     const processedAnalyses = [];
     let successfulAnalyses = 0;
+    let apiCallCount = 0;
+    const MAX_API_CALLS = 3; // Respect rate limits
 
-    // Process TOP articles to ensure we get the most recent ones
-    for (const article of uniqueArticles.slice(0, 30)) { // Focus on top 30 most recent
+    // Process fewer articles to avoid rate limits  
+    for (const article of uniqueArticles.slice(0, 10)) { // Reduced to 10 articles
       console.log(`Analyzing article impact: ${article.title}`);
 
       try {

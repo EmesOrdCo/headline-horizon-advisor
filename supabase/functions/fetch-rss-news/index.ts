@@ -292,10 +292,10 @@ serve(async (req) => {
     }
     
     // Fetch recent headlines from MarketAux
-    const headlines = await fetchRecentHeadlines();
+    const freshHeadlines = await fetchRecentHeadlines();
 
-    if (headlines.length > 0) {
-      console.log(`💾 Processing ${headlines.length} headlines for storage...`);
+    if (freshHeadlines.length > 0) {
+      console.log(`💾 Processing ${freshHeadlines.length} headlines for storage...`);
       
       // Get existing articles from the last 24 hours to prevent duplicates
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -329,7 +329,7 @@ serve(async (req) => {
       }) || []);
       
       // Filter out duplicates by URL and similar titles
-      const newHeadlines = headlines.filter(headline => {
+      const newHeadlines = freshHeadlines.filter(headline => {
         // Normalize headline URL for comparison
         let normalizedUrl = headline.url;
         try {
@@ -391,9 +391,9 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Successfully fetched ${headlines.length} recent headlines from MarketAux`,
-      headlineCount: headlines.length,
-      headlines: headlines.slice(0, 5) // Return first 5 as preview
+      message: `Successfully fetched ${freshHeadlines.length} recent headlines from MarketAux`,
+      headlineCount: freshHeadlines.length,
+      headlines: freshHeadlines.slice(0, 5) // Return first 5 as preview
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

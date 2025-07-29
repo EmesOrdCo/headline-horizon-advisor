@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { ExternalLink } from "lucide-react";
+import { SourceArticlesWithWeights } from "@/components/SourceArticlesWithWeights";
 
 interface PriceHistoryPoint {
   timestamp: string;
@@ -537,7 +538,7 @@ const Magnificent7 = () => {
                             />
                           </div>
                           
-                          {/* Right Side - Source Articles */}
+                          {/* Right Side - Source Articles with Weights */}
                           <div className="lg:col-span-3">
                             <div className="flex items-center gap-2 mb-4">
                               <ExternalLink className="w-4 h-4 text-slate-400" />
@@ -545,10 +546,12 @@ const Magnificent7 = () => {
                               <span className="text-slate-500 text-sm">Weighted by significance</span>
                             </div>
                             
-                            <SourceArticles 
-                              parsedSourceLinks={sourceArticles}
+                            <SourceArticlesWithWeights 
+                              sourceArticles={sourceArticles}
+                              symbol={article.symbol}
                               isHistorical={article.ai_reasoning?.includes('Historical')}
-                              weightsLoading={false}
+                              overallSentiment={article.ai_sentiment || 'Neutral'}
+                              overallConfidence={article.ai_confidence || 50}
                             />
                           </div>
                         </div>
