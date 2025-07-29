@@ -72,7 +72,7 @@ const Wallet = () => {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-medium text-gray-700 dark:text-slate-300">
-                    Your Total Value
+                    Available Cash
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Button 
@@ -100,7 +100,7 @@ const Wallet = () => {
                     {isLoading ? (
                       <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-12 w-48 rounded"></div>
                     ) : (
-                      formatCurrency(totalValue)
+                      formatCurrency(availableCash)
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-slate-400">
