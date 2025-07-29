@@ -246,6 +246,17 @@ serve(async (req) => {
   }
 
   try {
+    // TEMPORARY: Pause all MarketAux API calls to conserve rate limits
+    console.log('⏸️ MarketAux API calls are temporarily paused to conserve rate limits');
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'MarketAux API calls temporarily paused',
+      headlineCount: 0,
+      headlines: []
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
     console.log('🚀 Starting recent headlines fetch from MarketAux...');
     
     // Delete old headlines (older than 4 hours) to keep database fresh
