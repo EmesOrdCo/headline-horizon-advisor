@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, TrendingDown, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
@@ -31,6 +33,7 @@ const SimulateWithdrawalModal = ({
   const [journalId, setJournalId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   
+  const { user } = useAuth();
   const { createJournal, loading } = useAlpacaBroker();
 
   const resetForm = () => {
@@ -46,6 +49,11 @@ const SimulateWithdrawalModal = ({
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error('Please log in to make withdrawals');
+      return;
+    }
+
     const withdrawalAmount = parseFloat(amount);
     
     if (!amount || withdrawalAmount <= 0) {
@@ -61,25 +69,53 @@ const SimulateWithdrawalModal = ({
     setStep('processing');
 
     try {
-      console.log('💸 Starting withdrawal simulation using Journal API...');
+      console.log('💸 Starting withdrawal simulation...');
       console.log('Account ID:', accountId);
       console.log('Withdrawal amount:', amount);
       
-      // Use Journal API to simulate withdrawal
-      // Money flows FROM user account TO alpaca-funding-source (representing money leaving the system)
-      const journalData = {
-        from_account: accountId,
-        to_account: "alpaca-funding-source", 
-        entry_type: "JNLC", // Journal Cash
-        amount: amount
-      };
+      // Try to use Journal API first
+      let alpacaJournalId = null;
+      
+      try {
+        const journalData = {
+          from_account: accountId,
+          to_account: "alpaca-funding-source", 
+          entry_type: "JNLC",
+          amount: amount
+        };
 
-      console.log('📤 Creating journal entry for withdrawal:', journalData);
+        console.log('📤 Creating journal entry for withdrawal:', journalData);
+        const result = await createJournal(journalData);
+        alpacaJournalId = result.id;
+        console.log('✅ Journal withdrawal successful:', result);
+      } catch (journalError) {
+        console.warn('❌ Journal API failed, proceeding with simulation:', journalError);
+      }
+
+      // Save the withdrawal record to our database
+      const { data: transferRecord, error: dbError } = await supabase
+        .from('user_transfers')
+        .insert({
+          user_id: user.id,
+          alpaca_account_id: accountId,
+          amount: withdrawalAmount,
+          direction: 'OUTGOING',
+          status: 'COMPLETE',
+          transfer_type: 'JOURNAL',
+          reason: `Simulated Withdrawal - $${amount}`,
+          alpaca_transfer_id: alpacaJournalId
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save withdrawal record');
+      }
+
+      console.log('✅ Withdrawal saved to database:', transferRecord);
       
-      const result = await createJournal(journalData);
-      console.log('✅ Journal withdrawal successful:', result);
-      
-      setJournalId(result.id || 'journal-withdrawal-success');
+      setJournalId(transferRecord.id);
       setStep('success');
       
       toast.success(`Withdrawal of $${amount} processed successfully`);

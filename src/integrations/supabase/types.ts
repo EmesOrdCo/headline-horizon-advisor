@@ -260,6 +260,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_transfers: {
+        Row: {
+          alpaca_account_id: string
+          alpaca_transfer_id: string | null
+          amount: number
+          created_at: string
+          direction: string
+          id: string
+          reason: string | null
+          relationship_id: string | null
+          status: string
+          transfer_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alpaca_account_id: string
+          alpaca_transfer_id?: string | null
+          amount: number
+          created_at?: string
+          direction: string
+          id?: string
+          reason?: string | null
+          relationship_id?: string | null
+          status?: string
+          transfer_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alpaca_account_id?: string
+          alpaca_transfer_id?: string | null
+          amount?: number
+          created_at?: string
+          direction?: string
+          id?: string
+          reason?: string | null
+          relationship_id?: string | null
+          status?: string
+          transfer_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

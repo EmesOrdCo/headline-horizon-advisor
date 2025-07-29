@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, DollarSign, Zap, CheckCircle, XCircle } from 'lucide-react';
 
@@ -22,6 +24,7 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
   const [amount, setAmount] = useState('1000.00');
   const [journalId, setJournalId] = useState<string | null>(null);
   
+  const { user } = useAuth();
   const { createTransfer, getACHRelationships, loading } = useAlpacaBroker();
 
   const resetForm = () => {
@@ -31,6 +34,11 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error('Please log in to make deposits');
+      return;
+    }
+
     if (!amount || parseFloat(amount) <= 0) {
       toast.error('Please enter a valid amount');
       return;
@@ -39,62 +47,77 @@ const SimulateDepositModal = ({ isOpen, onClose, accountId, accountNumber, onDep
     setStep('processing');
 
     try {
-      console.log('💰 Starting real ACH deposit to Alpaca account...');
+      console.log('💰 Starting simulated deposit...');
       console.log('Account ID:', accountId);
       console.log('Deposit amount:', amount);
       
-      // Step 1: Get existing ACH relationships 
-      console.log('🔍 Fetching existing ACH relationships...');
-      const relationships = await getACHRelationships(accountId);
-      console.log('📋 ACH relationships found:', relationships);
+      // Try to create an actual ACH transfer first
+      let alpacaTransferId = null;
+      let transferStatus = 'COMPLETE';
       
-      let relationshipId = null;
-      
-      if (relationships && relationships.length > 0) {
-        // Use the first active relationship
-        const activeRelationship = relationships.find(r => r.status === 'ACTIVE') || relationships[0];
-        relationshipId = activeRelationship.id;
-        console.log('✅ Using existing ACH relationship:', relationshipId);
-      } else {
-        throw new Error('No ACH relationships found. Please set up ACH first.');
+      try {
+        // Step 1: Get existing ACH relationships 
+        console.log('🔍 Fetching existing ACH relationships...');
+        const relationships = await getACHRelationships(accountId);
+        console.log('📋 ACH relationships found:', relationships);
+        
+        if (relationships && relationships.length > 0) {
+          const activeRelationship = relationships.find(r => r.status === 'ACTIVE') || relationships[0];
+          
+          // Step 2: Create the actual ACH transfer using Alpaca's API
+          console.log('💸 Creating ACH transfer...');
+          const transferData = {
+            transfer_type: 'ach',
+            amount: parseFloat(amount),
+            direction: 'INCOMING',
+            timing: 'IMMEDIATE',
+            relationship_id: activeRelationship.id,
+            fee_payment_method: 'ACCOUNT'
+          };
+          
+          const transferResult = await createTransfer(accountId, transferData);
+          alpacaTransferId = transferResult.id;
+          console.log('✅ ACH transfer created successfully:', transferResult);
+        }
+      } catch (alpacaError) {
+        console.warn('❌ Alpaca transfer failed, proceeding with simulation:', alpacaError);
       }
+
+      // Save the transfer record to our database
+      const { data: transferRecord, error: dbError } = await supabase
+        .from('user_transfers')
+        .insert({
+          user_id: user.id,
+          alpaca_account_id: accountId,
+          amount: parseFloat(amount),
+          direction: 'INCOMING',
+          status: transferStatus,
+          transfer_type: 'ACH',
+          reason: `Simulated Deposit - $${amount}`,
+          alpaca_transfer_id: alpacaTransferId
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save transfer record');
+      }
+
+      console.log('✅ Transfer saved to database:', transferRecord);
       
-      // Step 2: Create the actual ACH transfer using Alpaca's API
-      console.log('💸 Creating ACH transfer...');
-      const transferData = {
-        transfer_type: 'ach', // REQUIRED: Specify this is an ACH transfer
-        amount: parseFloat(amount), // Ensure it's a number
-        direction: 'INCOMING', // Money coming into account
-        timing: 'IMMEDIATE', // For demo/sandbox, try immediate
-        relationship_id: relationshipId, // Use the actual relationship ID
-        fee_payment_method: 'ACCOUNT' // Pay fees from account
-      };
-      
-      console.log('📤 Transfer data:', transferData);
-      const transferResult = await createTransfer(accountId, transferData);
-      console.log('✅ ACH transfer created successfully:', transferResult);
-      
-      setJournalId(transferResult.id || 'transfer_' + Date.now());
+      setJournalId(transferRecord.id);
       setStep('success');
       
-      toast.success(`🎉 $${amount} ACH deposit initiated successfully!`);
-      toast.success('✅ Real transfer created in Alpaca database');
+      toast.success(`🎉 $${amount} deposit completed successfully!`);
       
       // Trigger refresh to update account display
       onDepositComplete();
       
     } catch (error) {
-      console.error('❌ ACH deposit failed:', error);
-      
-      // Show detailed error and still show success for demo purposes
-      console.log('🔄 ACH failed, but completing demo anyway...');
-      
-      setJournalId('demo_transfer_' + Date.now());
-      setStep('success');
-      
-      toast.error(`ACH transfer failed: ${error.message}`);
-      toast.info('Demo deposit simulation completed instead');
-      onDepositComplete();
+      console.error('❌ Deposit failed:', error);
+      setStep('error');
+      toast.error(`Deposit failed: ${error.message}`);
     }
   };
 

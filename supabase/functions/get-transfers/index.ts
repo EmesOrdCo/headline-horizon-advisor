@@ -149,32 +149,36 @@ serve(async (req) => {
       }
     }
 
-    // If no real transfers found, create mock data based on known account values
+    // If no real transfers found from Alpaca API, check our database
     if (transfers.length === 0) {
-      console.log('No transfers found from API, creating mock transfers based on account balance');
-      
-      // We know from the account that there should be $1,015 equity
-      // Create mock transfers that would result in this balance
-      transfers = [
-        {
-          id: `mock-deposit-1000-${user.id}`,
-          amount: '1000.00',
-          direction: 'INCOMING',
-          status: 'COMPLETE',
-          created_at: '2025-07-28T05:01:00Z',
-          transfer_type: 'ACH',
-          reason: 'ACH Deposit - $1,000.00'
-        },
-        {
-          id: `mock-deposit-5-${user.id}`,
-          amount: '5.00',
-          direction: 'INCOMING',
-          status: 'COMPLETE',
-          created_at: '2025-07-29T01:57:00Z',
-          transfer_type: 'ACH',
-          reason: 'ACH Deposit - $5.00'
-        }
-      ];
+      console.log('No transfers found from Alpaca API, checking database for user transfer records...');
+
+      // Get transfers from our user_transfers table
+      const { data: userTransfers, error: dbError } = await supabase
+        .from('user_transfers')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('alpaca_account_id', account_id)
+        .order('created_at', { ascending: false });
+
+      if (dbError) {
+        console.error('Database error fetching user transfers:', dbError);
+        transfers = [];
+      } else {
+        console.log('Found user transfers:', userTransfers);
+        
+        // Format user transfers to match expected format
+        transfers = (userTransfers || []).map(transfer => ({
+          id: transfer.id,
+          amount: transfer.amount.toString(),
+          direction: transfer.direction,
+          status: transfer.status,
+          created_at: transfer.created_at,
+          updated_at: transfer.updated_at,
+          transfer_type: transfer.transfer_type,
+          reason: transfer.reason
+        }));
+      }
     }
 
     // Sort transfers by date (newest first)
@@ -183,7 +187,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       data: transfers,
-      source: transfers.length > 0 && transfers[0].id.includes('mock-') ? 'mock' : 'api'
+      source: transfers.length > 0 ? 'database' : 'empty'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
