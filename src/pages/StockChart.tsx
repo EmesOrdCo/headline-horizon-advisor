@@ -646,13 +646,8 @@ const StockChart: React.FC = () => {
           <div className="flex items-center space-x-1 min-w-0">
             <CompanyLogo symbol={activeSymbol || 'AAPL'} size="sm" />
             <span className="text-white font-bold text-base">{activeSymbol}</span>
-            <span className="text-slate-400 text-xs hidden sm:inline">{exchange}</span>
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" title="Historical data" />
           </div>
-          
-          <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white p-1 min-w-fit">
-            <Plus className="w-4 h-4" />
-          </Button>
         </div>
 
         <div className="flex items-center space-x-2">
