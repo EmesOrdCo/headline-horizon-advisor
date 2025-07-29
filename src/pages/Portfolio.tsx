@@ -71,6 +71,69 @@ const Portfolio = () => {
     ogType: "website",
   });
 
+  // Store today's portfolio snapshot
+  const storePortfolioSnapshot = async (accountId: string, accountData: any) => {
+    try {
+      const snapshotData = {
+        user_id: user!.id,
+        account_id: accountId,
+        snapshot_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+        total_equity: parseFloat(accountData.equity || '0'),
+        cash: parseFloat(accountData.cash || '0'),
+        long_market_value: parseFloat(accountData.long_market_value || '0'),
+        buying_power: parseFloat(accountData.buying_power || '0')
+      };
+
+      const { error } = await supabase
+        .from('portfolio_snapshots')
+        .upsert(snapshotData, { 
+          onConflict: 'user_id,account_id,snapshot_date',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('Failed to store portfolio snapshot:', error);
+      } else {
+        console.log('✅ Portfolio snapshot stored successfully');
+      }
+    } catch (err) {
+      console.error('Error storing portfolio snapshot:', err);
+    }
+  };
+
+  // Load historical portfolio data from stored snapshots
+  const loadPortfolioHistory = async (accountId: string) => {
+    try {
+      const { data: snapshots, error } = await supabase
+        .from('portfolio_snapshots')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('user_id', user!.id)
+        .order('snapshot_date', { ascending: true })
+        .limit(30); // Last 30 days
+
+      if (error) {
+        console.error('Failed to load portfolio snapshots:', error);
+        return [];
+      }
+
+      if (snapshots && snapshots.length > 0) {
+        return snapshots.map((snapshot, index) => ({
+          date: snapshot.snapshot_date,
+          value: parseFloat(snapshot.total_equity.toString()),
+          sp500: 4200 + (index * 50), // Demo benchmark data
+          nasdaq: 13000 + (index * 100), // Demo benchmark data
+          btc: 42000 + (index * 1000) // Demo benchmark data
+        }));
+      }
+
+      return [];
+    } catch (err) {
+      console.error('Error loading portfolio history:', err);
+      return [];
+    }
+  };
+
   // Load data on mount - use user's account number from profile
   const loadPortfolioData = async () => {
     try {
@@ -119,19 +182,17 @@ const Portfolio = () => {
         console.log('Selected account ID:', selectedAccountId);
         setSelectedAccount(selectedAccountId);
         
-        // Load account details, positions, orders, portfolio history, and activities
-        const [accountDetails, positionsData, ordersData, portfolioHistoryData, activitiesData] = await Promise.all([
+        // Load account details, positions, orders, and activities
+        const [accountDetails, positionsData, ordersData, activitiesData] = await Promise.all([
           getAccount(selectedAccountId),
           getPositions(selectedAccountId),
           getOrders(selectedAccountId, { status: 'all', limit: 50 }),
-          getPortfolioHistory(selectedAccountId, { period: '1M', timeframe: '1D' }).catch(() => null),
           getActivities(selectedAccountId).catch(() => []) // Handle 404 error gracefully
         ]);
         
         console.log('Raw account details from API:', accountDetails);
         console.log('Positions data:', positionsData);
         console.log('Orders data:', ordersData);
-        console.log('Portfolio history data:', portfolioHistoryData);
         
         // Use ONLY the real data from Alpaca API with better error handling
         console.log('Enhanced account details from API:', accountDetails);
@@ -150,6 +211,28 @@ const Portfolio = () => {
         setAccountData(enhancedAccountData);
         setPositions(positionsData);
         setOrders(ordersData || []);
+        
+        // Store today's portfolio snapshot
+        await storePortfolioSnapshot(selectedAccountId, accountDetails);
+        
+        // Load historical portfolio data from our stored snapshots
+        const historicalData = await loadPortfolioHistory(selectedAccountId);
+        
+        if (historicalData.length > 0) {
+          setPerformanceData(historicalData);
+          console.log(`📈 Loaded ${historicalData.length} historical data points from stored snapshots`);
+        } else {
+          // Fallback to current account value if no historical data
+          const fallbackData = [{
+            date: new Date().toISOString().slice(0, 10),
+            value: parseFloat(accountDetails.equity || '0'),
+            sp500: 4200,
+            nasdaq: 13000,
+            btc: 42000
+          }];
+          setPerformanceData(fallbackData);
+          console.log('📊 Using fallback data - only today\'s value available');
+        }
         
         // Only use order data for trade history (exclude transfers and other activities)
         const filledOrders = (ordersData || [])
@@ -193,27 +276,6 @@ const Portfolio = () => {
           .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
         
         setActivities(combinedActivities);
-        
-        // Process portfolio history data
-        if (portfolioHistoryData && portfolioHistoryData.timestamp && portfolioHistoryData.equity) {
-          const formattedHistoryData = portfolioHistoryData.timestamp.map((timestamp: number, index: number) => ({
-            date: new Date(timestamp * 1000).toISOString().slice(0, 10), // Convert to YYYY-MM-DD
-            value: portfolioHistoryData.equity[index] || 0,
-            sp500: 4200 + (index * 50), // Demo benchmark data
-            nasdaq: 13000 + (index * 100), // Demo benchmark data  
-            btc: 42000 + (index * 1000) // Demo benchmark data
-          }));
-          setPerformanceData(formattedHistoryData);
-        } else {
-          // Fallback to current account value
-          setPerformanceData([{
-            date: new Date().toISOString().slice(0, 10),
-            value: parseFloat(accountDetails.equity || '0'),
-            sp500: 4200,
-            nasdaq: 13000,
-            btc: 42000
-          }]);
-        }
       }
     } catch (err) {
       console.error('Failed to load portfolio data:', err);
