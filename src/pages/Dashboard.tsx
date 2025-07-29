@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +31,7 @@ import CompanyLogo from "@/components/CompanyLogo";
 const Dashboard = () => {
   const fetchRSSNews = useFetchRSSNews();
   const queryClient = useQueryClient();
-  const [isRefreshingHeadlines, setIsRefreshingHeadlines] = useState(false);
+  const [isRefreshingHeadlines, setIsRefreshingHeadlines] = React.useState(false);
 
   useSEO({
     title: "Live Market News Dashboard",
