@@ -663,7 +663,16 @@ const Portfolio = () => {
                     <LineChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="date" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
+                      <YAxis 
+                        stroke="#9CA3AF" 
+                        domain={['dataMin - 100', 'dataMax + 100']}
+                        tickFormatter={(value) => {
+                          if (value >= 1000) {
+                            return `$${(value/1000).toFixed(1)}k`;
+                          }
+                          return `$${Math.round(value)}`;
+                        }}
+                      />
                       <Tooltip 
                         contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #475569', borderRadius: '8px' }}
                         labelStyle={{ color: '#F1F5F9' }}
