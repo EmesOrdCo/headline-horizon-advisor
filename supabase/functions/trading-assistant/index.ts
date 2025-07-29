@@ -3,9 +3,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+console.log('Trading assistant function loaded');
+console.log('OpenAI API key available:', !!openAIApiKey);
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
 };
 
 serve(async (req) => {
@@ -15,6 +19,11 @@ serve(async (req) => {
   }
 
   try {
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      throw new Error('OpenAI API key not configured');
+    }
+
     const { message, symbol, stockData } = await req.json();
 
     console.log('Trading Assistant Request:', { message, symbol, stockData });
@@ -45,7 +54,7 @@ Remember: All trading involves risk. Past performance doesn't guarantee future r
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
