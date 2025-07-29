@@ -20,7 +20,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
   const { isRefreshPaused } = useRefreshControl();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Set up automatic refresh every 15 minutes
+  // Set up automatic refresh every 30 minutes
   useEffect(() => {
     const fetchAndRefresh = async () => {
       if (isRefreshPaused) {
@@ -52,8 +52,8 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
       // Fetch immediately on mount if not paused
       fetchAndRefresh();
       
-      // Set up interval to fetch every 15 minutes (more reasonable interval)
-      intervalRef.current = setInterval(fetchAndRefresh, 15 * 60 * 1000);
+      // Set up interval to fetch every 30 minutes
+      intervalRef.current = setInterval(fetchAndRefresh, 30 * 60 * 1000);
     }
 
     return () => {
@@ -167,7 +167,7 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span>Updates every 15min</span>
+              <span>Updates every 30min</span>
             </div>
             <Button
               variant="outline"
