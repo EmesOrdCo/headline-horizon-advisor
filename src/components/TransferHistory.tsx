@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, XCircle, Clock, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
-import { useAlpacaBroker } from '@/hooks/useAlpacaBroker';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Transfer {
   id: string;
@@ -25,101 +25,42 @@ interface TransferHistoryProps {
 const TransferHistory = ({ accountId }: TransferHistoryProps) => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { getActivities } = useAlpacaBroker();
 
   const loadTransfers = async () => {
     setIsLoading(true);
     try {
       console.log('Loading transfers for account:', accountId);
       
-      // Try to get all activities first without filtering
-      let allActivities: any[] = [];
-      try {
-        const activities = await getActivities(accountId, {});
-        console.log('All activities response:', activities);
-        allActivities = Array.isArray(activities) ? activities : [];
-      } catch (activityError) {
-        console.log('Activities endpoint failed:', activityError);
+      // Call our dedicated get-transfers edge function
+      const { data, error } = await supabase.functions.invoke('get-transfers', {
+        body: { account_id: accountId }
+      });
+
+      if (error) {
+        console.error('Transfer function error:', error);
+        setTransfers([]);
+        return;
       }
+
+      console.log('Transfers response:', data);
       
-      // If still no activities, try with just transfer types
-      if (allActivities.length === 0) {
-        try {
-          const transferActivities = await getActivities(accountId, { 
-            activity_types: 'TRANS,CSD,CSR,JNLC,JNLS,ACATC,ACATS' 
-          });
-          console.log('Transfer activities response:', transferActivities);
-          allActivities = Array.isArray(transferActivities) ? transferActivities : [];
-        } catch (transferError) {
-          console.log('Transfer activities also failed:', transferError);
-        }
+      if (data.success && Array.isArray(data.data)) {
+        const transferData = data.data.map((transfer: any) => ({
+          id: transfer.id,
+          amount: transfer.amount,
+          direction: transfer.direction as 'INCOMING' | 'OUTGOING',
+          status: transfer.status,
+          created_at: transfer.created_at,
+          transfer_type: transfer.transfer_type,
+          reason: transfer.reason
+        }));
+        
+        console.log('Processed transfers:', transferData);
+        setTransfers(transferData);
+      } else {
+        console.log('No transfer data received');
+        setTransfers([]);
       }
-      
-      console.log('Final activities array:', allActivities);
-      
-      // Process activities into transfers
-      const transferData = allActivities
-        .filter((activity: any) => {
-          if (!activity || typeof activity !== 'object') {
-            console.log('Invalid activity object:', activity);
-            return false;
-          }
-          
-          // Check for transfer-related activities
-          const activityType = activity.activity_type || activity.type;
-          const isTransfer = activityType === 'TRANS' || 
-                           activityType === 'CSD' ||  // Cash disbursement
-                           activityType === 'CSR' ||  // Cash receipt
-                           activityType === 'JNLC' || // Journal entry cash
-                           activityType === 'JNLS' || // Journal entry security
-                           activityType === 'ACATC' || // ACATS cash
-                           activityType === 'ACATS' || // ACATS security
-                           activityType === 'ACH' ||
-                           activityType === 'WIRE' ||
-                           (activity.description && activity.description.toLowerCase().includes('deposit')) ||
-                           (activity.description && activity.description.toLowerCase().includes('withdrawal')) ||
-                           (activity.symbol === 'USD' && activity.qty);
-          
-          console.log('Activity type:', activityType, 'isTransfer:', isTransfer, 'activity:', activity);
-          return isTransfer;
-        })
-        .map((activity: any) => {
-          // Extract amount from various possible fields
-          const amount = activity.net_amount || 
-                        activity.qty || 
-                        activity.amount || 
-                        activity.principal_amount ||
-                        activity.gross_amount ||
-                        '0';
-          
-          const numericAmount = parseFloat(amount.toString());
-          const absoluteAmount = Math.abs(numericAmount);
-          
-          return {
-            id: activity.id || 
-                activity.transaction_id || 
-                activity.activity_id ||
-                `${Date.now()}-${Math.random()}`,
-            amount: absoluteAmount.toString(),
-            direction: (numericAmount >= 0 ? 'INCOMING' : 'OUTGOING') as 'INCOMING' | 'OUTGOING',
-            status: activity.status || 'COMPLETE',
-            created_at: activity.transaction_time || 
-                        activity.activity_time || 
-                        activity.created_at || 
-                        activity.date ||
-                        new Date().toISOString(),
-            transfer_type: activity.activity_type || 
-                         activity.type || 
-                         'Transfer',
-            reason: activity.description || 
-                   activity.activity_type || 
-                   `${activity.activity_type || 'Transfer'} - ${activity.symbol || ''}`
-          };
-        })
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      
-      console.log('Processed transfer data:', transferData);
-      setTransfers(transferData);
     } catch (error) {
       console.error('Failed to load transfer history:', error);
       setTransfers([]);

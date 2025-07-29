@@ -202,34 +202,6 @@ const Wallet = () => {
               <BankAccountManager accountId={selectedAccount.id} />
             )}
             
-            {/* Add Funds Card */}
-            <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white">
-                  Add Funds
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  onClick={() => setShowACHTransfer(true)}
-                  disabled={!selectedAccount}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Link Bank & Transfer
-                </Button>
-                <Button 
-                  onClick={() => setShowSimulateDeposit(true)}
-                  disabled={!selectedAccount}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Simulate Deposit
-                </Button>
-              </CardContent>
-            </Card>
-            
             {/* Invite Friends Card */}
             <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
               <CardHeader>
