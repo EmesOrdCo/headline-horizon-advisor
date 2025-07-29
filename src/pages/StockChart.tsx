@@ -679,11 +679,25 @@ const StockChart: React.FC = () => {
       </div>
 
       <div className="flex flex-1 min-h-0">
+        {/* Left Sidebar - Trading Tools */}
+        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
+          {leftSidebarTools.map((tool, index) => (
+            <Button
+              key={index}
+              variant="ghost"
+              size="icon"
+              className="w-10 h-10 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
+              title={tool.label}
+            >
+              <tool.icon className="w-5 h-5" />
+            </Button>
+          ))}
+        </div>
 
         {/* Main Chart Area with Trading Panel */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Alpaca Chart */}
-          <div className="flex-1 bg-slate-900 relative min-h-0 pl-4">
+          <div className="flex-1 bg-slate-900 relative min-h-0">
             <AlpacaChartWidget symbol={activeSymbol} />
           </div>
           
