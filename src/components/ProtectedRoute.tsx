@@ -23,7 +23,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       // If no user or session, redirect to auth
       if (!user || !session) {
         console.log('No authenticated user, redirecting to auth');
-        navigate('/auth');
+        setCheckingProfile(false);
+        navigate('/auth', { replace: true });
         return;
       }
 
@@ -40,7 +41,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           // If profile doesn't exist, redirect to auth to complete setup
           if (error.code === 'PGRST116') {
             console.log('Profile not found, redirecting to auth');
-            navigate('/auth');
+            setCheckingProfile(false);
+            navigate('/auth', { replace: true });
             return;
           }
         }
@@ -48,19 +50,21 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         // If profile exists but onboarding not completed, redirect to auth
         if (data && !data.onboarding_completed) {
           console.log('Onboarding not completed, redirecting to auth');
-          navigate('/auth');
+          setCheckingProfile(false);
+          navigate('/auth', { replace: true });
           return;
         }
 
         setCheckingProfile(false);
       } catch (error) {
         console.error('Error in profile check:', error);
-        navigate('/auth');
+        setCheckingProfile(false);
+        navigate('/auth', { replace: true });
       }
     };
 
     checkUserProfile();
-  }, [user, session, loading, navigate]);
+  }, [user, session, loading]); // Removed navigate from dependencies
 
   if (loading || checkingProfile) {
     return (
