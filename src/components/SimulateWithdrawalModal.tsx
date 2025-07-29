@@ -90,7 +90,7 @@ const SimulateWithdrawalModal = ({
         achRelationshipId = achResult.id || 'sandbox_ach_' + Date.now();
         console.log('✅ ACH relationship created:', achResult);
       } catch (achError) {
-        console.warn('❌ ACH relationship creation failed, using fallback ID:', achError);
+        console.warn('❌ ACH relationship creation failed, using existing or fallback ID:', achError);
         achRelationshipId = 'sandbox_ach_' + Date.now();
       }
 
@@ -104,8 +104,22 @@ const SimulateWithdrawalModal = ({
       };
 
       console.log('📤 Creating ACH withdrawal transfer:', transferData);
-      const transferResult = await createTransfer(accountId, transferData);
-      console.log('✅ ACH withdrawal successful:', transferResult);
+      
+      let transferResult;
+      try {
+        transferResult = await createTransfer(accountId, transferData);
+        console.log('✅ ACH withdrawal successful:', transferResult);
+      } catch (transferError) {
+        console.error('❌ ACH withdrawal failed:', transferError);
+        
+        // Check if this is a sandbox limitation
+        const errorMessage = transferError instanceof Error ? transferError.message : String(transferError);
+        if (errorMessage.includes('sandbox') || errorMessage.includes('not supported') || errorMessage.includes('OUTGOING')) {
+          throw new Error('ACH withdrawals are not supported in Alpaca\'s sandbox environment. In production, this would successfully withdraw money from your account.');
+        } else {
+          throw new Error(`ACH withdrawal failed: ${errorMessage}`);
+        }
+      }
 
       // Save the withdrawal record to our database
       const { data: transferRecord, error: dbError } = await supabase
@@ -177,6 +191,21 @@ const SimulateWithdrawalModal = ({
                 <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
                   <AlertTriangle className="h-4 w-4" />
                   <span className="text-sm font-medium">Available Balance: ${availableCash.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-2 text-yellow-700 dark:text-yellow-400">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium mb-1">Sandbox Environment</p>
+                    <p className="text-xs">
+                      ACH withdrawals may not modify account balance in sandbox mode. 
+                      In production, this would successfully transfer money to your bank account.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
