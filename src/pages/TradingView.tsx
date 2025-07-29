@@ -9,6 +9,7 @@ import {
   Plus, 
   BarChart3, 
   TrendingUp, 
+  TrendingDown,
   AlertTriangle, 
   RotateCcw,
   Crosshair,
@@ -31,7 +32,7 @@ import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LiveTradingViewChart } from "@/components/chart/LiveTradingViewChart";
 import CompanyLogo from "@/components/CompanyLogo";
-import { BuySellButtons } from "@/components/BuySellButtons";
+import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -305,7 +306,29 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
           {/* Buy/Sell Buttons */}
-          <BuySellButtons />
+          <div className="flex items-center space-x-2">
+            <AlpacaTradingModal symbol={activeSymbol} currentPrice={214.28} initialMode="sell">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm px-3 py-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                <TrendingDown className="w-4 h-4 mr-1" />
+                Sell
+              </Button>
+            </AlpacaTradingModal>
+            
+            <AlpacaTradingModal symbol={activeSymbol} currentPrice={214.28} initialMode="buy">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <TrendingUp className="w-4 h-4 mr-1" />
+                Buy
+              </Button>
+            </AlpacaTradingModal>
+          </div>
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
