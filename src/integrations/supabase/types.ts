@@ -146,6 +146,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bank_accounts: {
+        Row: {
+          account_number_last_four: string
+          account_type: string
+          alpaca_account_id: string
+          alpaca_relationship_id: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          nickname: string
+          routing_number: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number_last_four: string
+          account_type?: string
+          alpaca_account_id: string
+          alpaca_relationship_id?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          nickname: string
+          routing_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number_last_four?: string
+          account_type?: string
+          alpaca_account_id?: string
+          alpaca_relationship_id?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          nickname?: string
+          routing_number?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stock_articles: {
         Row: {
           ai_confidence: number | null
