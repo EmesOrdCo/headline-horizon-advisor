@@ -108,12 +108,12 @@ const Wallet = () => {
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
-                    onClick={() => setShowACHTransfer(true)}
+                    onClick={() => alert("Simulate Withdrawal - Demo functionality")}
                     disabled={!selectedAccount}
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Funds via ACH
+                    Simulate Withdrawal
                   </Button>
                   <Button 
                     onClick={() => setShowSimulateDeposit(true)}
