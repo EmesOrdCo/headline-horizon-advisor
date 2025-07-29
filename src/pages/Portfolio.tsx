@@ -235,7 +235,7 @@ const Portfolio = () => {
       <div className="space-y-8 p-6">
         {/* Currency Selector */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">Account Summary</h2>
+          <h2 className="text-2xl font-bold text-white">Account Overview</h2>
           <div className="flex items-center gap-4">
             <Button 
               onClick={refreshData} 
@@ -245,7 +245,7 @@ const Portfolio = () => {
               className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Loading...' : 'Refresh'}
+              {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Select value={selectedCurrency} onValueChange={(value: 'USD' | 'GBP' | 'EUR') => setSelectedCurrency(value)}>
               <SelectTrigger className="w-32 bg-slate-800 border-slate-700 text-white">
