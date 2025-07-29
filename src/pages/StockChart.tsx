@@ -30,8 +30,7 @@ import {
  } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
-import { BuySellButtons } from "@/components/BuySellButtons";
-import { TradingModal } from "@/components/TradingModal";
+import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
 import { useChartDrawing } from "@/hooks/useChartDrawing";
 
@@ -292,236 +291,6 @@ const AlpacaChartWidget: React.FC<{
   );
 };
 
-// Professional Trading Panel Component
-const TradingPanel: React.FC<{ symbol: string }> = ({ symbol }) => {
-  const [userAccountId, setUserAccountId] = useState<string | null>(null);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [orderType, setOrderType] = useState<'market' | 'limit' | 'stop'>('market');
-  const [quantity, setQuantity] = useState('1');
-  const [limitPrice, setLimitPrice] = useState('');
-  const [timeInForce, setTimeInForce] = useState<'day' | 'gtc' | 'ioc' | 'fok'>('gtc');
-  const [extendedHours, setExtendedHours] = useState(false);
-
-  // Get user's Alpaca account ID
-  useEffect(() => {
-    const getUserAccount = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('alpaca_account_id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.alpaca_account_id) {
-          setUserAccountId(profile.alpaca_account_id);
-        }
-      } catch (error) {
-        console.error('Error getting user account:', error);
-      }
-    };
-
-    getUserAccount();
-  }, []);
-
-  // Place buy/sell order via Alpaca
-  const placeOrder = async (side: 'buy' | 'sell') => {
-    if (!userAccountId) {
-      toast.error('Alpaca account not linked. Please complete onboarding first.');
-      return;
-    }
-
-    if (!quantity || parseInt(quantity) <= 0) {
-      toast.error('Please enter a valid quantity');
-      return;
-    }
-
-    if (orderType === 'limit' && (!limitPrice || parseFloat(limitPrice) <= 0)) {
-      toast.error('Please enter a valid limit price');
-      return;
-    }
-
-    setIsPlacingOrder(true);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Please log in to place orders');
-        return;
-      }
-
-      const orderData: any = {
-        account_id: userAccountId,
-        symbol,
-        qty: quantity,
-        side,
-        type: orderType,
-        time_in_force: timeInForce,
-        extended_hours: extendedHours
-      };
-
-      if (orderType === 'limit') {
-        orderData.limit_price = limitPrice;
-      }
-
-      const { data, error } = await supabase.functions.invoke('alpaca-place-order', {
-        body: orderData
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      toast.success(`${side.toUpperCase()} order placed successfully`, {
-        description: `${quantity} shares of ${symbol} - Order ID: ${data.id}`
-      });
-      
-    } catch (error: any) {
-      console.error('Error placing Alpaca order:', error);
-      
-      let errorMessage = error.message || 'Unknown error occurred';
-      
-      if (errorMessage.includes('insufficient')) {
-        errorMessage = 'Insufficient buying power to place order';
-      } else if (errorMessage.includes('market closed') || errorMessage.includes('not tradable')) {
-        errorMessage = 'Market is currently closed or asset not tradable';
-      } else if (errorMessage.includes('forbidden') || errorMessage.includes('403')) {
-        errorMessage = 'Trading not permitted. Check account status.';
-      } else if (errorMessage.includes('404')) {
-        errorMessage = 'Asset not found or account access denied';
-      }
-      
-      toast.error(`Failed to place ${side} order`, {
-        description: errorMessage
-      });
-    } finally {
-      setIsPlacingOrder(false);
-    }
-  };
-
-  return (
-    <div className="w-full">
-      <h3 className="text-white text-lg font-medium mb-4">Trading Panel</h3>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
-        {/* Order Type */}
-        <div>
-          <label className="text-sm text-slate-300 block mb-2">Order Type</label>
-          <Select value={orderType} onValueChange={(value: any) => setOrderType(value)}>
-            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-700 border-slate-600">
-              <SelectItem value="market" className="text-white">Market</SelectItem>
-              <SelectItem value="limit" className="text-white">Limit</SelectItem>
-              <SelectItem value="stop" className="text-white">Stop</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Quantity */}
-        <div>
-          <label className="text-sm text-slate-300 block mb-2">Quantity</label>
-          <Input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Shares"
-            className="bg-slate-700 border-slate-600 text-white"
-            min="1"
-          />
-        </div>
-
-        {/* Limit Price (conditional) */}
-        {orderType === 'limit' && (
-          <div>
-            <label className="text-sm text-slate-300 block mb-2">Limit Price</label>
-            <Input
-              type="number"
-              value={limitPrice}
-              onChange={(e) => setLimitPrice(e.target.value)}
-              placeholder="$0.00"
-              className="bg-slate-700 border-slate-600 text-white"
-              step="0.01"
-            />
-          </div>
-        )}
-
-        {/* Time in Force */}
-        <div>
-          <label className="text-sm text-slate-300 block mb-2">Time in Force</label>
-          <Select value={timeInForce} onValueChange={(value: any) => setTimeInForce(value)}>
-            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-700 border-slate-600">
-              <SelectItem value="day" className="text-white">Day</SelectItem>
-              <SelectItem value="gtc" className="text-white">GTC</SelectItem>
-              <SelectItem value="ioc" className="text-white">IOC</SelectItem>
-              <SelectItem value="fok" className="text-white">FOK</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Extended Hours Toggle */}
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-300 block mb-2">Options</label>
-          <div className="flex items-center space-x-2 h-10">
-            <input
-              type="checkbox"
-              id="extended-hours"
-              checked={extendedHours}
-              onChange={(e) => setExtendedHours(e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded"
-            />
-            <label htmlFor="extended-hours" className="text-sm text-slate-300">
-              Extended Hours
-            </label>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex space-x-2">
-          <TradingModal 
-            symbol={symbol} 
-            currentPrice={0} // Will be calculated inside modal
-            initialMode="buy"
-          >
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 h-10"
-              disabled={!userAccountId || isPlacingOrder}
-            >
-              {isPlacingOrder ? '...' : 'BUY'}
-            </Button>
-          </TradingModal>
-          <TradingModal 
-            symbol={symbol} 
-            currentPrice={0} // Will be calculated inside modal
-            initialMode="sell"
-          >
-            <Button
-              className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 h-10"
-              disabled={!userAccountId || isPlacingOrder}
-            >
-              {isPlacingOrder ? '...' : 'SELL'}
-            </Button>
-          </TradingModal>
-        </div>
-      </div>
-
-      {/* Account Status */}
-      <div className="text-xs text-center mt-3">
-        {userAccountId ? (
-          <span className="text-green-400">✓ Alpaca Account Linked</span>
-        ) : (
-          <span className="text-red-400">⚠ Complete Alpaca onboarding to enable trading</span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const StockChart: React.FC = () => {
   console.log('StockChart component loaded - WebSocketMonitor should be removed');
@@ -726,7 +495,31 @@ const StockChart: React.FC = () => {
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
           {/* Buy/Sell Buttons */}
-          <BuySellButtons />
+          <div className="flex space-x-2">
+            <AlpacaTradingModal 
+              symbol={activeSymbol} 
+              currentPrice={currentPrice}
+              initialMode="sell"
+            >
+              <Button
+                className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1 text-sm"
+              >
+                SELL
+              </Button>
+            </AlpacaTradingModal>
+            
+            <AlpacaTradingModal 
+              symbol={activeSymbol} 
+              currentPrice={currentPrice}
+              initialMode="buy"
+            >
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-1 text-sm"
+              >
+                BUY
+              </Button>
+            </AlpacaTradingModal>
+          </div>
         </div>
       </div>
 
@@ -747,7 +540,7 @@ const StockChart: React.FC = () => {
               <div className="text-slate-400">C <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(1000000)}</span></div>
               <div className="flex items-center space-x-2 ml-4">
-                <TradingModal 
+                <AlpacaTradingModal 
                   symbol={activeSymbol} 
                   currentPrice={currentPrice} 
                   initialMode="sell"
@@ -755,8 +548,8 @@ const StockChart: React.FC = () => {
                   <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
                     Sell ${bidPrice.toFixed(2)}
                   </button>
-                </TradingModal>
-                <TradingModal 
+                </AlpacaTradingModal>
+                <AlpacaTradingModal 
                   symbol={activeSymbol} 
                   currentPrice={currentPrice} 
                   initialMode="buy"
@@ -764,7 +557,7 @@ const StockChart: React.FC = () => {
                   <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
                     Buy ${askPrice.toFixed(2)}
                   </button>
-                </TradingModal>
+                </AlpacaTradingModal>
               </div>
             </div>
           </div>
