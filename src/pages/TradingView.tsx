@@ -37,6 +37,7 @@ import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 import { usePendingOrders } from "@/hooks/usePendingOrders";
 import { StockPendingOrders } from "@/components/StockPendingOrders";
+import TradingChatBot from "@/components/TradingChatBot";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -420,142 +421,146 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 min-h-0">
-        {/* Left Sidebar - Drawing Tools */}
-        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
-          {leftSidebarTools.map((tool, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              size="sm"
-              className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4" />
-            </Button>
-          ))}
-        </div>
-
-        {/* Main Chart Area */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Large Pending Orders Button - Same as Portfolio Page */}
-          <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700">
-            <PendingOrdersModal>
-              <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">
-                <Clock className="w-4 h-4 mr-2" />
-                Manage All Pending Orders
+      <div className="flex flex-1 min-h-0 flex-col">
+        {/* Top Section: Chart and Chat */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left Sidebar - Drawing Tools */}
+          <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 flex-shrink-0">
+            {leftSidebarTools.map((tool, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                size="sm"
+                className="w-8 h-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
+                title={tool.label}
+              >
+                <tool.icon className="w-4 h-4" />
               </Button>
-            </PendingOrdersModal>
+            ))}
           </div>
-          
-          {/* Professional TradingView Chart */}
-          <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
-            <LiveTradingViewChart
-              symbol={activeSymbol}
-              theme={isDarkMode ? 'dark' : 'light'}
-              height={650}
-              isDemo={isDemo}
-              className="w-full h-full"
-            />
+
+          {/* Main Chart Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Large Pending Orders Button - Same as Portfolio Page */}
+            <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700">
+              <PendingOrdersModal>
+                <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Manage All Pending Orders
+                </Button>
+              </PendingOrdersModal>
+            </div>
+            
+            {/* Professional TradingView Chart */}
+            <div className="flex-1 bg-slate-900 relative min-h-0 p-4">
+              <LiveTradingViewChart
+                symbol={activeSymbol}
+                theme={isDarkMode ? 'dark' : 'light'}
+                height={400}
+                isDemo={isDemo}
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
+          {/* Right Sidebar - Chat Bot */}
+          <div className="w-80 flex-shrink-0">
+            <TradingChatBot />
           </div>
         </div>
 
-        {/* Right Sidebar - Watchlist, Pending Orders & Info - EXACT replica */}
-        <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
-          {/* Pending Orders Section - Always Visible */}
-          <div className="border-b border-slate-700">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  Pending Orders
-                </h3>
-                <PendingOrdersModal>
-                  <Button variant="ghost" size="sm" className="text-xs px-2 py-1 text-blue-400 hover:text-blue-300 border border-blue-400/30">
-                    View All
-                  </Button>
-                </PendingOrdersModal>
-              </div>
-              
-              {/* Quick Pending Orders Summary with Real Data */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="text-center">
-                    <div className="text-blue-400 font-medium">
-                      {pendingLoading ? "..." : buyOrders}
-                    </div>
-                    <div className="text-slate-400">Buy</div>
+        {/* Bottom Section: Watchlist, Pending Orders & Info */}
+        <div className="h-64 bg-slate-800 border-t border-slate-700 flex">
+          {/* Pending Orders Section */}
+          <div className="w-80 border-r border-slate-700 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-medium flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-400" />
+                Pending Orders
+              </h3>
+              <PendingOrdersModal>
+                <Button variant="ghost" size="sm" className="text-xs px-2 py-1 text-blue-400 hover:text-blue-300 border border-blue-400/30">
+                  View All
+                </Button>
+              </PendingOrdersModal>
+            </div>
+            
+            {/* Quick Pending Orders Summary with Real Data */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="text-center">
+                  <div className="text-blue-400 font-medium">
+                    {pendingLoading ? "..." : buyOrders}
                   </div>
-                  <div className="text-center">
-                    <div className="text-orange-400 font-medium">
-                      {pendingLoading ? "..." : sellOrders}
-                    </div>
-                    <div className="text-slate-400">Sell</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-purple-400 font-medium">
-                      {pendingLoading ? "$..." : `$${pendingValue.toFixed(0)}`}
-                    </div>
-                    <div className="text-slate-400">Value</div>
-                  </div>
+                  <div className="text-slate-400">Buy</div>
                 </div>
-                <PendingOrdersModal>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full text-left justify-start bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-                  >
-                    <Clock className="w-3 h-3 mr-2 text-blue-400" />
-                    Manage Pending Orders
-                  </Button>
-                </PendingOrdersModal>
+                <div className="text-center">
+                  <div className="text-orange-400 font-medium">
+                    {pendingLoading ? "..." : sellOrders}
+                  </div>
+                  <div className="text-slate-400">Sell</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-purple-400 font-medium">
+                    {pendingLoading ? "$..." : `$${pendingValue.toFixed(0)}`}
+                  </div>
+                  <div className="text-slate-400">Value</div>
+                </div>
               </div>
+              <PendingOrdersModal>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-left justify-start bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                >
+                  <Clock className="w-3 h-3 mr-2 text-blue-400" />
+                  Manage Pending Orders
+                </Button>
+              </PendingOrdersModal>
             </div>
           </div>
 
           {/* Watchlist Section */}
-          <div className="border-b border-slate-700">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-medium">Watchlist</h3>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <Settings className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <MoreHorizontal className="w-3 h-3" />
-                  </Button>
+          <div className="flex-1 border-r border-slate-700 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-medium">Watchlist</h3>
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <Plus className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <Settings className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <MoreHorizontal className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
+              <span className="flex-1">Symbol</span>
+              <span className="w-16 text-right">Last</span>
+              <span className="w-16 text-right">Chg</span>
+              <span className="w-16 text-right">Chg%</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              {watchlistStocks.map((stock) => (
+                <div
+                  key={stock.symbol}
+                  className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
+                >
+                  <span className="w-12 text-white font-medium">{stock.symbol}</span>
+                  <span className="w-14 text-right text-white">{stock.price}</span>
+                  <span className="w-12 text-right text-green-400">{stock.change}</span>
+                  <span className="w-14 text-right text-green-400">{stock.changePercent}</span>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
-                <span className="flex-1">Symbol</span>
-                <span className="w-16 text-right">Last</span>
-                <span className="w-16 text-right">Chg</span>
-                <span className="w-16 text-right">Chg%</span>
-              </div>
-
-              <div className="space-y-1">
-                {watchlistStocks.map((stock) => (
-                  <div
-                    key={stock.symbol}
-                    className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
-                  >
-                    <span className="flex-1 text-white font-medium">{stock.symbol}</span>
-                    <span className="w-16 text-right text-white">{stock.price}</span>
-                    <span className="w-16 text-right text-green-400">{stock.change}</span>
-                    <span className="w-16 text-right text-green-400">{stock.changePercent}</span>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Buy/Sell Spread - EXACT replica */}
-          <div className="border-b border-slate-700 p-4">
+          {/* Buy/Sell Spread */}
+          <div className="w-64 border-r border-slate-700 p-4">
             <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -579,8 +584,8 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
             </div>
           </div>
 
-          {/* Stock Details - EXACT replica */}
-          <div className="flex-1 p-4">
+          {/* Stock Details */}
+          <div className="w-64 p-4">
             <h3 className="text-white font-medium mb-3">Apple Inc.</h3>
             <div className="text-sm text-slate-400 mb-3">NASDAQ • Real-time • Live</div>
             
@@ -609,14 +614,6 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
                 <span className="text-green-400">+0.32 +0.15%</span>
               </div>
               <div className="text-xs text-slate-500 mt-1">Last update: 13:58:16</div>
-            </div>
-
-            <div className="mt-4 space-y-1 text-xs text-slate-500">
-              <div>Key stats</div>
-              <div>Market Cap: N/A</div>
-              <div>P/E Ratio: N/A</div>
-              <div>52W High: N/A</div>
-              <div>52W Low: N/A</div>
             </div>
           </div>
         </div>
