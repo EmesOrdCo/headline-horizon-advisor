@@ -150,16 +150,16 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
-      <CardHeader>
+    <Card className="bg-slate-800/80 border-slate-700/50 backdrop-blur-sm">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Building2 className="w-5 h-5 text-emerald-400" />
-            <CardTitle className="text-white">Linked Bank Accounts</CardTitle>
+            <CardTitle className="text-white text-lg">Linked Bank Accounts</CardTitle>
           </div>
           <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Account
               </Button>
@@ -230,13 +230,13 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {bankAccounts.length === 0 ? (
           <div className="text-center py-8">
             <Building2 className="w-12 h-12 text-slate-500 mx-auto mb-4" />
             <p className="text-slate-400 mb-4">No bank accounts linked</p>
-            <p className="text-sm text-slate-500 mb-6">
-              Add a bank account to enable ACH transfers and fund your trading account
+            <p className="text-sm text-slate-500">
+              Add a bank account to enable ACH transfers
             </p>
           </div>
         ) : (
@@ -244,29 +244,29 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
             {bankAccounts.map((account) => (
               <div
                 key={account.id}
-                className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/50"
+                className="p-4 bg-slate-700/40 rounded-lg border border-slate-600/30 hover:bg-slate-700/60 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-slate-400" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-medium">{account.nickname}</span>
-                      {account.is_default && (
-                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
-                          Default
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-slate-400">
-                      {account.bank_name} • {account.account_type} • {account.account_number}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="w-5 h-5 text-slate-400" />
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-semibold text-lg">{account.nickname}</span>
+                        {account.is_default && (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-xs px-2 py-0.5">
+                            Default
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-slate-400 text-sm">
+                        {account.bank_name} • {account.account_type} • {account.account_number}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={getStatusColor(account.status)}>
-                    <div className="flex items-center gap-1">
+                  <Badge className={`${getStatusColor(account.status)} px-3 py-1`}>
+                    <div className="flex items-center gap-1.5">
                       {getStatusIcon(account.status)}
-                      {account.status}
+                      <span className="font-medium">{account.status}</span>
                     </div>
                   </Badge>
                 </div>
@@ -276,10 +276,13 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         )}
         
         {bankAccounts.length > 0 && (
-          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-blue-400 text-sm">
-              💡 Your bank accounts are ready for ACH transfers. Use the "Add Funds" button to deposit money into your trading account.
-            </p>
+          <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="text-blue-400 text-xl">💡</div>
+              <p className="text-blue-300 text-sm leading-relaxed">
+                Your bank accounts are ready for ACH transfers. Use the "Add Funds" button to deposit money into your trading account.
+              </p>
+            </div>
           </div>
         )}
       </CardContent>
