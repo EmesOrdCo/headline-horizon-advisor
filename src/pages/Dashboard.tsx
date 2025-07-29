@@ -347,7 +347,25 @@ const Dashboard = () => {
           </div>
           
           {/* Live Stock Analysis Interface */}
-          {topMagnificent7Story && (
+          {isLoading ? (
+            <div className="w-full">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center py-16">
+                    <div className="flex flex-col items-center gap-4 animate-fade-in">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+                      <div className="text-slate-400 text-sm animate-pulse">Loading Magnificent 7 analysis...</div>
+                      <div className="flex gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : topMagnificent7Story ? (
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-0">
@@ -472,7 +490,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : null}
         </section>
 
         {/* INDEX FUNDS SECTION */}
@@ -490,7 +508,25 @@ const Dashboard = () => {
           </div>
           
           {/* Live Index Fund Analysis Interface */}
-          {topIndexFundStory && (
+          {isLoading ? (
+            <div className="w-full">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center py-16">
+                    <div className="flex flex-col items-center gap-4 animate-fade-in">
+                      <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                      <div className="text-slate-400 text-sm animate-pulse">Loading Index Funds analysis...</div>
+                      <div className="flex gap-2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : topIndexFundStory ? (
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-0">
@@ -615,7 +651,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : null}
         </section>
 
         {/* CRYPTO COMING SOON SECTION */}
