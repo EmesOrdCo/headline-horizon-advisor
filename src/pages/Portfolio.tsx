@@ -8,7 +8,7 @@ import { useCompanyLogos } from "@/hooks/useCompanyLogos";
 import { useAlpacaBroker, AlpacaAccount, AlpacaPosition } from "@/hooks/useAlpacaBroker";
 import { supabase } from "@/integrations/supabase/client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, Target, Clock, ArrowUpR
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import { toast } from 'sonner';
+import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 
 // Real performance data will be loaded from Alpaca portfolio history
 const defaultPerformanceData = [
@@ -880,6 +881,51 @@ const Portfolio = () => {
         <div className="max-w-7xl mx-auto space-y-12">
 
           <AccountSummary />
+          
+          {/* Pending Orders Section - Always Visible */}
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl text-white flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-400" />
+                  Pending Orders
+                </CardTitle>
+                <PendingOrdersModal>
+                  <Button variant="outline" size="sm" className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10">
+                    View All Orders
+                  </Button>
+                </PendingOrdersModal>
+              </div>
+              <CardDescription>
+                Active limit orders and pending transactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-400">-</div>
+                    <div className="text-sm text-blue-300">Pending Buy Orders</div>
+                  </div>
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-orange-400">-</div>
+                    <div className="text-sm text-orange-300">Pending Sell Orders</div>
+                  </div>
+                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-400">$0</div>
+                    <div className="text-sm text-purple-300">Total Pending Value</div>
+                  </div>
+                </div>
+                
+                <PendingOrdersModal>
+                  <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Manage All Pending Orders
+                  </Button>
+                </PendingOrdersModal>
+              </div>
+            </CardContent>
+          </Card>
           
           <AssetBreakdownAndPerformance />
           <TradeHistory />

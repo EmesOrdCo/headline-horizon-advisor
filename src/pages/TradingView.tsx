@@ -435,8 +435,42 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
           </div>
         </div>
 
-        {/* Right Sidebar - Watchlist & Info - EXACT replica */}
+        {/* Right Sidebar - Watchlist, Pending Orders & Info - EXACT replica */}
         <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
+          {/* Pending Orders Section - Always Visible */}
+          <div className="border-b border-slate-700">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  Pending Orders
+                </h3>
+                <PendingOrdersModal>
+                  <Button variant="ghost" size="sm" className="text-xs px-2 py-1 text-blue-400 hover:text-blue-300 border border-blue-400/30">
+                    View All
+                  </Button>
+                </PendingOrdersModal>
+              </div>
+              
+              {/* Quick Pending Orders Summary */}
+              <div className="space-y-2">
+                <div className="text-xs text-slate-400">
+                  You have pending limit orders
+                </div>
+                <PendingOrdersModal>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-left justify-start bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                  >
+                    <Clock className="w-3 h-3 mr-2 text-blue-400" />
+                    Manage Pending Orders
+                  </Button>
+                </PendingOrdersModal>
+              </div>
+            </div>
+          </div>
+
           {/* Watchlist Section */}
           <div className="border-b border-slate-700">
             <div className="p-4">
