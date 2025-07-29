@@ -33,9 +33,8 @@ serve(async (req) => {
     const { data: existingArticles, error: fetchError } = await supabase
       .from('news_articles')
       .select('*')
-      .neq('symbol', 'GENERAL') // Exclude general headlines
       .order('published_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (fetchError) {
       console.error('Error fetching existing articles:', fetchError);
