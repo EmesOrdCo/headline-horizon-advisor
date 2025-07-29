@@ -783,21 +783,13 @@ const StockChart: React.FC = () => {
           selectedColor={selectedColor}
         />
 
-        {/* Main Chart Area with Trading Panel */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Alpaca Chart with Drawing Integration */}
-          <div className="flex-1 bg-slate-900 relative min-h-0">
-            <AlpacaChartWidget 
-              symbol={activeSymbol} 
-              activeTool={activeTool}
-              onToolChange={setActiveTool}
-            />
-          </div>
-          
-          {/* Bottom Trading Panel - Only spans chart area width */}
-          <div className="border-t border-slate-700 bg-slate-800/50 p-4 flex-shrink-0">
-            <TradingPanel symbol={activeSymbol} />
-          </div>
+        {/* Main Chart Area - Full Height */}
+        <div className="flex-1 bg-slate-900 relative min-h-0">
+          <AlpacaChartWidget 
+            symbol={activeSymbol} 
+            activeTool={activeTool}
+            onToolChange={setActiveTool}
+          />
         </div>
 
         {/* Right Sidebar - Watchlist & Info - EXACT replica */}
