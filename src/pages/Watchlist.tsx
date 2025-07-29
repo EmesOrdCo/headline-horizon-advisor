@@ -662,13 +662,6 @@ const Watchlist = () => {
                   ETFs
                 </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-slate-300 border-slate-600 hover:bg-slate-700 ml-4"
-              >
-                View All
-              </Button>
             </div>
           </div>
         </div>
