@@ -161,6 +161,16 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
+      {/* GIANT PENDING ORDERS BUTTON AT THE TOP - IMPOSSIBLE TO MISS */}
+      <div className="w-full p-3 bg-red-600 border-b-4 border-red-500 flex-shrink-0">
+        <PendingOrdersModal>
+          <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 text-lg">
+            <Clock className="w-5 h-5 mr-2" />
+            🚨 MANAGE ALL PENDING ORDERS 🚨
+          </Button>
+        </PendingOrdersModal>
+      </div>
+
       {/* Top Navigation Bar - Exact replica */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center space-x-4">
