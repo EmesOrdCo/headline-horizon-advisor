@@ -132,63 +132,6 @@ const Wallet = () => {
               </CardContent>
             </Card>
 
-            {/* Account Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* GBP Account */}
-              <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-                <CardHeader className="pb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <CardTitle className="text-xl text-gray-900 dark:text-white">GBP Account</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                    {isLoading ? (
-                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
-                    ) : (
-                      formatCurrency(availableCash, 'GBP')
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed">
-                    Available cash ready for trading and investments.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Investment Account */}
-              <Card className="border-0 shadow-md bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
-                <CardHeader className="pb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg">
-                      <WalletIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <CardTitle className="text-xl text-gray-900 dark:text-white">Investment Account</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {isLoading ? (
-                      <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-9 w-32 rounded"></div>
-                    ) : (
-                      formatCurrency(totalValue, 'GBP')
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm text-gray-600 dark:text-slate-400">Available USD</div>
-                    <div className="text-xl font-semibold text-gray-700 dark:text-slate-300">
-                      {isLoading ? (
-                        <div className="animate-pulse bg-gray-300 dark:bg-slate-600 h-6 w-24 rounded"></div>
-                      ) : (
-                        formatCurrency(availableCash, 'USD')
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Transfer History */}
             {selectedAccount && (
