@@ -21,9 +21,10 @@ export const useMagnificent7Articles = () => {
       }
 
       console.log(`✅ Fetched ${data?.length || 0} Magnificent 7 articles`);
+      console.log('📊 Articles with AI analysis:', data?.filter(article => article.ai_confidence && article.ai_sentiment) || []);
       return data;
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000, // 30 seconds - shorter to pick up new analyses
     refetchInterval: false, // Disable auto-refetch, let component handle it
   });
 };
