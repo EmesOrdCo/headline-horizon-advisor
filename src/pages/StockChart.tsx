@@ -35,6 +35,7 @@ import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
 import { useChartDrawing } from "@/hooks/useChartDrawing";
+import TradingChatBot from "@/components/TradingChatBot";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -580,77 +581,83 @@ const StockChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0">
-        {/* Left Sidebar - Functional Drawing Tools */}
-        <DrawingToolbar
-          activeTool={activeTool}
-          onToolChange={setActiveTool}
-          onClearAll={handleClearDrawings}
-          onToggleVisibility={handleToggleVisibility}
-          isVisible={drawingsVisible}
-          onColorChange={handleColorChange}
-          selectedColor={selectedColor}
-        />
-
-        {/* Main Chart Area - Full Height */}
-        <div className="flex-1 bg-slate-900 relative h-full">
-          <AlpacaChartWidget 
-            symbol={activeSymbol} 
+      <div className="flex flex-1 min-h-0 flex-col">
+        {/* Top Section: Chart and Chat */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left Sidebar - Functional Drawing Tools */}
+          <DrawingToolbar
             activeTool={activeTool}
             onToolChange={setActiveTool}
+            onClearAll={handleClearDrawings}
+            onToggleVisibility={handleToggleVisibility}
+            isVisible={drawingsVisible}
+            onColorChange={handleColorChange}
+            selectedColor={selectedColor}
           />
+
+          {/* Main Chart Area - Full Height */}
+          <div className="flex-1 bg-slate-900 relative h-full">
+            <AlpacaChartWidget 
+              symbol={activeSymbol} 
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
+            />
+          </div>
+
+          {/* Right Sidebar - Chat Bot */}
+          <div className="w-80 flex-shrink-0">
+            <TradingChatBot />
+          </div>
         </div>
 
-        {/* Right Sidebar - Watchlist & Info - EXACT replica */}
-        <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
+        {/* Bottom Section: Watchlist, Spread & Stock Info */}
+        <div className="h-64 bg-slate-800 border-t border-slate-700 flex">
           {/* Watchlist Section */}
-          <div className="border-b border-slate-700">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-medium">Watchlist</h3>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <Settings className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                    <MoreHorizontal className="w-3 h-3" />
-                  </Button>
+          <div className="flex-1 border-r border-slate-700 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-medium">Watchlist</h3>
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <Plus className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <Settings className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                  <MoreHorizontal className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
+              <span className="flex-1">Symbol</span>
+              <span className="w-16 text-right">Last</span>
+              <span className="w-16 text-right">Chg</span>
+              <span className="w-16 text-right">Chg%</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              {watchlistStocks.map((stock) => (
+                <div
+                  key={stock.symbol}
+                  className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
+                  onClick={() => navigate(`/stock-chart/${stock.symbol}`)}
+                >
+                  <span className="w-12 text-white font-medium">{stock.symbol}</span>
+                  <span className="w-14 text-right text-white">{stock.price}</span>
+                  <span className={`w-12 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                    {stock.change}
+                  </span>
+                  <span className={`w-14 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                    {stock.changePercent}
+                  </span>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
-                <span className="flex-1">Symbol</span>
-                <span className="w-16 text-right">Last</span>
-                <span className="w-16 text-right">Chg</span>
-                <span className="w-16 text-right">Chg%</span>
-              </div>
-
-              <div className="space-y-1">
-                {watchlistStocks.map((stock) => (
-                  <div
-                    key={stock.symbol}
-                    className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
-                    onClick={() => navigate(`/stock-chart/${stock.symbol}`)}
-                  >
-                    <span className="flex-1 text-white font-medium">{stock.symbol}</span>
-                    <span className="w-16 text-right text-white">{stock.price}</span>
-                    <span className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                      {stock.change}
-                    </span>
-                    <span className={`w-16 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                      {stock.changePercent}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Buy/Sell Spread - EXACT replica */}
-          <div className="border-b border-slate-700 p-4">
+          {/* Buy/Sell Spread */}
+          <div className="w-64 border-r border-slate-700 p-4">
             <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -674,8 +681,8 @@ const StockChart: React.FC = () => {
             </div>
           </div>
 
-          {/* Stock Details - EXACT replica */}
-          <div className="flex-1 p-4">
+          {/* Stock Details */}
+          <div className="w-64 p-4">
             <h3 className="text-white font-medium mb-3">{companyName}</h3>
             <div className="text-sm text-slate-400 mb-3">{exchange} • Real-time • Live</div>
             
@@ -709,7 +716,6 @@ const StockChart: React.FC = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
