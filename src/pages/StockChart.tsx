@@ -665,6 +665,14 @@ const StockChart: React.FC = () => {
               <div className="text-slate-400">L <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">C <span className="text-white">{currentPrice.toFixed(2)}</span></div>
               <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(1000000)}</span></div>
+              <div className="flex items-center space-x-2 ml-4">
+                <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
+                  Sell ${bidPrice.toFixed(2)}
+                </button>
+                <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
+                  Buy ${askPrice.toFixed(2)}
+                </button>
+              </div>
             </div>
           </div>
         </div>
