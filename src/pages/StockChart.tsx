@@ -713,7 +713,7 @@ const StockChart: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Full Height Trading Chat Bot */}
-        <div className="w-80 h-full absolute right-0 top-0 z-10">
+        <div className="w-80 bg-slate-800 border-l border-slate-700 flex flex-col">
           <TradingChatBot />
         </div>
       </div>
