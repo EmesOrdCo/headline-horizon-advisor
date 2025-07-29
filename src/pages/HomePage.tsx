@@ -8,6 +8,7 @@ import MarketTicker from "@/components/MarketTicker";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import AnalysisPipeline from "@/components/AnalysisPipeline";
+import TradingPanel from "@/components/TradingPanel";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -69,6 +70,13 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4">
             <AnalysisPipeline />
           </div>
+        </div>
+      </section>
+      
+      {/* Trading Panel */}
+      <section className="py-8 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <TradingPanel />
         </div>
       </section>
       
