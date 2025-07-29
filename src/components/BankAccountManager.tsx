@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Building2, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Plus, Building2, CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { useAlpacaBroker } from "@/hooks/useAlpacaBroker";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface BankAccount {
@@ -16,11 +16,12 @@ interface BankAccount {
   nickname: string;
   bank_name?: string;
   account_type: string;
-  account_number: string;
+  account_number_last_four: string;
   routing_number: string;
   status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
   is_default: boolean;
   created_at: string;
+  alpaca_relationship_id?: string;
 }
 
 interface BankAccountManagerProps {
@@ -31,6 +32,7 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
   const { user } = useAuth();
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [newAccount, setNewAccount] = useState({
     nickname: '',
@@ -46,8 +48,8 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
   const loadBankAccounts = async () => {
     if (!user) return;
     
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('user_bank_accounts')
         .select('*')
@@ -64,13 +66,14 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
       const formattedAccounts: BankAccount[] = (data || []).map(account => ({
         id: account.id,
         nickname: account.nickname,
-        bank_name: account.bank_name || 'Unknown Bank',
+        bank_name: account.bank_name,
         account_type: account.account_type,
-        account_number: `****${account.account_number_last_four}`,
+        account_number_last_four: account.account_number_last_four,
         routing_number: account.routing_number,
         status: account.status as 'ACTIVE' | 'PENDING' | 'INACTIVE',
         is_default: account.is_default,
-        created_at: account.created_at
+        created_at: account.created_at,
+        alpaca_relationship_id: account.alpaca_relationship_id
       }));
 
       setBankAccounts(formattedAccounts);
@@ -82,16 +85,13 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
     }
   };
 
-  // Load bank accounts on component mount and when user/accountId changes
   useEffect(() => {
-    if (user && accountId) {
-      loadBankAccounts();
-    }
+    loadBankAccounts();
   }, [user, accountId]);
 
   const handleAddBankAccount = async () => {
     if (!user) {
-      toast.error('Please log in to add a bank account');
+      toast.error('Please log in to add bank accounts');
       return;
     }
 
@@ -102,7 +102,7 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
 
     try {
       const achData = {
-        account_owner_name: user.email || 'Demo User',
+        account_owner_name: user.email || 'User',
         bank_account_type: newAccount.account_type.toUpperCase(),
         bank_account_number: newAccount.account_number,
         bank_routing_number: newAccount.routing_number,
@@ -111,17 +111,17 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         default: bankAccounts.length === 0
       };
 
-      // Try to create ACH relationship via Alpaca
-      let alpacaRelationshipId = null;
+      // Try to create ACH relationship with Alpaca
+      let alpacaRelationshipId: string | undefined;
       try {
         const result = await createACHRelationship(accountId, achData);
         alpacaRelationshipId = result.id;
       } catch (alpacaError) {
-        console.warn('Alpaca ACH creation failed, continuing with database-only storage:', alpacaError);
+        console.warn('Alpaca ACH creation failed, continuing with local storage:', alpacaError);
       }
 
-      // Save to our database regardless of Alpaca success
-      const { data: dbResult, error: dbError } = await supabase
+      // Save to our database
+      const { data, error } = await supabase
         .from('user_bank_accounts')
         .insert({
           user_id: user.id,
@@ -138,11 +138,15 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         .select()
         .single();
 
-      if (dbError) {
-        throw dbError;
+      if (error) {
+        console.error('Database error:', error);
+        toast.error('Failed to save bank account');
+        return;
       }
 
-      // Reset form and reload accounts
+      // Refresh the list
+      await loadBankAccounts();
+      
       setNewAccount({
         nickname: '',
         bank_name: '',
@@ -151,19 +155,11 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
         routing_number: ''
       });
       setIsAddingAccount(false);
-      
-      await loadBankAccounts(); // Reload from database
-      
-      if (alpacaRelationshipId) {
-        toast.success('Bank account added successfully!');
-      } else {
-        toast.success('Bank account saved! (Sandbox mode)');
-        toast.info('Note: This is a sandbox simulation');
-      }
+      toast.success('Bank account added successfully!');
       
     } catch (error) {
       console.error('Failed to add bank account:', error);
-      toast.error('Failed to add bank account. Please try again.');
+      toast.error('Failed to add bank account');
     }
   };
 
@@ -201,83 +197,94 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
             <Building2 className="w-5 h-5 text-emerald-400" />
             <CardTitle className="text-white text-lg">Linked Bank Accounts</CardTitle>
           </div>
-          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
-              <DialogHeader>
-                <DialogTitle className="text-white">Add Bank Account</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nickname" className="text-slate-300">Account Nickname *</Label>
-                  <Input
-                    id="nickname"
-                    placeholder="e.g., Main Checking"
-                    value={newAccount.nickname}
-                    onChange={(e) => setNewAccount(prev => ({ ...prev, nickname: e.target.value }))}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadBankAccounts}
+              disabled={isLoading}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Account
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 border-slate-700">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Add Bank Account</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="nickname" className="text-slate-300">Account Nickname *</Label>
+                    <Input
+                      id="nickname"
+                      placeholder="e.g., Main Checking"
+                      value={newAccount.nickname}
+                      onChange={(e) => setNewAccount(prev => ({ ...prev, nickname: e.target.value }))}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bank_name" className="text-slate-300">Bank Name</Label>
+                    <Input
+                      id="bank_name"
+                      placeholder="e.g., Chase Bank"
+                      value={newAccount.bank_name}
+                      onChange={(e) => setNewAccount(prev => ({ ...prev, bank_name: e.target.value }))}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="account_number" className="text-slate-300">Account Number *</Label>
+                    <Input
+                      id="account_number"
+                      placeholder="123456789"
+                      value={newAccount.account_number}
+                      onChange={(e) => setNewAccount(prev => ({ ...prev, account_number: e.target.value }))}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="routing_number" className="text-slate-300">Routing Number *</Label>
+                    <Input
+                      id="routing_number"
+                      placeholder="021000021"
+                      value={newAccount.routing_number}
+                      onChange={(e) => setNewAccount(prev => ({ ...prev, routing_number: e.target.value }))}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      onClick={handleAddBankAccount}
+                      disabled={loading}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      {loading ? 'Adding...' : 'Add Account'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddingAccount(false)}
+                      className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="bank_name" className="text-slate-300">Bank Name</Label>
-                  <Input
-                    id="bank_name"
-                    placeholder="e.g., Chase Bank"
-                    value={newAccount.bank_name}
-                    onChange={(e) => setNewAccount(prev => ({ ...prev, bank_name: e.target.value }))}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="account_number" className="text-slate-300">Account Number *</Label>
-                  <Input
-                    id="account_number"
-                    placeholder="123456789"
-                    value={newAccount.account_number}
-                    onChange={(e) => setNewAccount(prev => ({ ...prev, account_number: e.target.value }))}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="routing_number" className="text-slate-300">Routing Number *</Label>
-                  <Input
-                    id="routing_number"
-                    placeholder="021000021"
-                    value={newAccount.routing_number}
-                    onChange={(e) => setNewAccount(prev => ({ ...prev, routing_number: e.target.value }))}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    onClick={handleAddBankAccount}
-                    disabled={loading}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {loading ? 'Adding...' : 'Add Account'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAddingAccount(false)}
-                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
+            {[1, 2].map((i) => (
               <div key={i} className="animate-pulse">
                 <div className="h-16 bg-slate-700/40 rounded-lg"></div>
               </div>
@@ -311,7 +318,7 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
                         )}
                       </div>
                       <div className="text-slate-400 text-sm truncate">
-                        {account.bank_name} • {account.account_type} • {account.account_number}
+                        {account.bank_name} • {account.account_type} • ****{account.account_number_last_four}
                       </div>
                     </div>
                   </div>
