@@ -11,6 +11,7 @@ import { useSEO } from "@/hooks/useSEO";
 import { useAccountData } from "@/hooks/useAccountData";
 import ACHTransferModal from "@/components/ACHTransferModal";
 import SimulateDepositModal from "@/components/SimulateDepositModal";
+import SimulateWithdrawalModal from "@/components/SimulateWithdrawalModal";
 import TransferHistory from "@/components/TransferHistory";
 import BankAccountStatus from "@/components/BankAccountStatus";
 import BankAccountManager from "@/components/BankAccountManager";
@@ -26,6 +27,7 @@ const Wallet = () => {
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [showACHTransfer, setShowACHTransfer] = useState(false);
   const [showSimulateDeposit, setShowSimulateDeposit] = useState(false);
+  const [showSimulateWithdrawal, setShowSimulateWithdrawal] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(0.79); // USD to GBP rate (approximate)
   const { totalValue, availableCash, isLoading, refreshData, selectedAccount } = useAccountData();
   
@@ -111,7 +113,7 @@ const Wallet = () => {
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
-                    onClick={() => alert("Simulate Withdrawal - Demo functionality")}
+                    onClick={() => setShowSimulateWithdrawal(true)}
                     disabled={!selectedAccount}
                     className="flex-1 bg-red-500 hover:bg-red-600 text-white"
                   >
@@ -243,6 +245,21 @@ const Wallet = () => {
           onTransferComplete={() => {
             refreshData();
             setShowACHTransfer(false);
+          }}
+        />
+      )}
+
+      {/* Simulate Withdrawal Modal */}
+      {selectedAccount && (
+        <SimulateWithdrawalModal
+          isOpen={showSimulateWithdrawal}
+          onClose={() => setShowSimulateWithdrawal(false)}
+          accountId={selectedAccount.id}
+          accountNumber={selectedAccount.account_number}
+          availableCash={availableCash}
+          onWithdrawalComplete={() => {
+            refreshData();
+            setShowSimulateWithdrawal(false);
           }}
         />
       )}
