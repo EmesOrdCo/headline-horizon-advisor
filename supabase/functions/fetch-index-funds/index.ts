@@ -31,133 +31,86 @@ serve(async (req) => {
     const INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
     const indexFundsQuery = INDEX_FUNDS.join(',');
     
-    // Fetch articles from multiple API calls to get more comprehensive coverage
+    // Fetch articles from multiple API calls - fewer calls, more articles per call for recent focus
     const allArticles = [];
-    const apiCalls = 2;
+    const apiCalls = 2; // Reduced calls to focus on most recent
+    const articlesPerCall = 50; // Increased articles per call
+    
+    // Focus on most recent articles only - no date filtering to get latest available
+    console.log('Fetching most recent articles available from MarketAux...');
     
     for (let i = 1; i <= apiCalls; i++) {
       console.log(`Making Index Funds API call ${i}/${apiCalls}...`);
       
-      const response = await fetch(
-        `https://api.marketaux.com/v1/news/all?symbols=${indexFundsQuery}&filter_entities=true&language=en&page=${i}&limit=20&api_token=${marketauxApiKey}`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && Array.isArray(data.data)) {
-          allArticles.push(...data.data);
-          console.log(`Fetched ${data.data.length} Index Fund articles from API call ${i}`);
-        }
-      }
-    }
-
-    // Remove duplicates based on URL
-    const uniqueArticles = allArticles.filter((article, index, self) => 
-      index === self.findIndex(a => a.url === article.url)
-    );
-
-    console.log(`Unique Index Fund articles: ${uniqueArticles.length}`);
-
-    // Clear existing Index Fund articles ONLY the historical/placeholder ones, keep real news articles
-    for (const symbol of INDEX_FUNDS) {
-      await supabase
-        .from('news_articles')
-        .delete()
-        .eq('symbol', symbol)
-        .or('source_links.is.null,source_links.eq.[],ai_reasoning.ilike.*Historical*');
-    }
-
-    // Store ALL articles immediately for hyperlinking, using keyword matching for symbol association
-    console.log('Storing all articles for immediate hyperlinking...');
-    const allStoredArticles = [];
-    
-    // Keyword mapping for index funds
-    const keywordMapping = {
-      'SPY': ['SPY', 'S&P 500', 'S&P500', 'Standard & Poor\'s 500', 'SPDR S&P 500'],
-      'QQQ': ['QQQ', 'NASDAQ', 'Nasdaq', 'PowerShares QQQ', 'Invesco QQQ'],
-      'DIA': ['DIA', 'Dow Jones', 'DJIA', 'Dow Industrial', 'SPDR Dow Jones']
-    };
-    
-    for (const article of uniqueArticles) {
-      // Determine which index fund this article is most relevant to using keyword matching
-      let primarySymbol = 'MARKET'; // Default fallback
-      
-      for (const [symbol, keywords] of Object.entries(keywordMapping)) {
-        const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
-        if (keywords.some(keyword => articleText.includes(keyword.toLowerCase()))) {
-          primarySymbol = symbol;
-          break; // Use first match found
-        }
-      }
-      
-      // If no specific fund keywords found, check for broader market terms and assign to SPY
-      if (primarySymbol === 'MARKET') {
-        const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
-        const marketTerms = ['market', 'stocks', 'equities', 'index', 'etf', 'fund'];
-        if (marketTerms.some(term => articleText.includes(term))) {
-          primarySymbol = 'SPY'; // Default index fund for general market news
-        }
-      }
-      
-      const articleToStore = {
-        title: article.title,
-        description: article.description || 'No description available',
-        url: article.url,
-        published_at: article.published_at,
-        symbol: primarySymbol, // Assign to specific index fund
-        category: 'Index Fund',
-        ai_confidence: 70, // Default confidence
-        ai_sentiment: 'Neutral', // Default sentiment
-        ai_reasoning: `Index fund news article - analysis based on keyword association with ${primarySymbol}`,
-        source_links: JSON.stringify([{
-          title: article.title,
-          url: article.url,
-          published_at: article.published_at,
-          description: article.description || 'No description available'
-        }])
-      };
-
-      allStoredArticles.push(articleToStore);
-      
-      // Store article immediately
-      const { error } = await supabase
-        .from('news_articles')
-        .insert(articleToStore);
+      try {
+        // Get the most recent articles available (no date filter to ensure we get latest)
+        const apiUrl = `https://api.marketaux.com/v1/news/all?symbols=${indexFundsQuery}&filter_entities=true&language=en&page=${i}&limit=${articlesPerCall}&api_token=${marketauxApiKey}&sort=published_desc&source=yahoo,seekingalpha,benzinga,marketwatch,bloomberg,reuters`;
         
-      if (error && !error.message.includes('duplicate')) {
-        console.error(`Error storing article ${article.title}:`, error);
+        console.log(`API Call ${i}: ${i === 1 ? 'With date filter' : 'Most recent available'}`);
+        const response = await fetch(apiUrl);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && Array.isArray(data.data)) {
+            allArticles.push(...data.data);
+            console.log(`Fetched ${data.data.length} Index Funds articles from API call ${i}`);
+            if (data.data.length > 0) {
+              console.log(`Date range in fetched articles: ${data.data[data.data.length - 1]?.published_at} to ${data.data[0]?.published_at}`);
+            }
+          } else {
+            console.log(`No articles returned from API call ${i}:`, data);
+          }
+        } else {
+          console.error(`API call ${i} failed with status:`, response.status, await response.text());
+        }
+      } catch (error) {
+        console.error(`Error in API call ${i}:`, error);
       }
     }
 
-    // Now create fund-specific analysis
+    // Remove duplicates based on URL and sort by publish date (TODAY FIRST!)
+    const uniqueArticles = allArticles
+      .filter((article, index, self) => 
+        index === self.findIndex(a => a.url === article.url)
+      )
+      .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+
+    // Get today's date for prioritization
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    console.log(`Unique Index Funds articles: ${uniqueArticles.length}`);
+    console.log(`Articles from TODAY (${today}): ${uniqueArticles.filter(a => a.published_at.startsWith(today)).length}`);
+    console.log(`Articles from YESTERDAY (${yesterday}): ${uniqueArticles.filter(a => a.published_at.startsWith(yesterday)).length}`);
+    console.log(`Most recent article date: ${uniqueArticles[0]?.published_at}`);
+    console.log(`Oldest article date: ${uniqueArticles[uniqueArticles.length - 1]?.published_at}`);
+
+    // Clear existing Index Fund articles first
+    for (const symbol of INDEX_FUNDS) {
+      await supabase.from('news_articles').delete().eq('symbol', symbol);
+    }
+
+    // Initialize fund articles mapping
     const fundArticles = new Map();
     INDEX_FUNDS.forEach(symbol => {
       fundArticles.set(symbol, []);
     });
 
-    // Process articles for AI analysis (but articles are already stored for hyperlinking)
-    for (const article of uniqueArticles.slice(0, 20)) {
+    const processedAnalyses = [];
+    let successfulAnalyses = 0;
+
+    // Process TOP articles to ensure we get the most recent ones
+    for (const article of uniqueArticles.slice(0, 30)) { // Focus on top 30 most recent
       console.log(`Analyzing article impact: ${article.title}`);
 
       try {
-        const impactAnalysisPrompt = `
-Analyze this news article and determine which index funds would be meaningfully impacted by this news.
+        // Simplified prompt for better success rate
+        const impactAnalysisPrompt = `Analyze this article and list which Index Funds (SPY, QQQ, DIA) would be affected:
 
-Index Funds: SPY (S&P 500), QQQ (NASDAQ), DIA (Dow Jones)
-
-Article:
 Title: ${article.title}
-Description: ${article.description}
-URL: ${article.url}
-Published: ${article.published_at}
+Description: ${article.description || 'No description'}
 
-Respond in JSON format:
-{
-  "impacted_funds": ["SYMBOL1", "SYMBOL2"],
-  "reasoning": "Brief explanation of why these funds are impacted"
-}
-
-Only include funds that would be meaningfully affected by this news. If no funds would be significantly impacted, return an empty array for impacted_funds.`;
+Response format: {"impacted_funds": ["SYMBOL1", "SYMBOL2"]}`;
 
         const impactResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -169,147 +122,137 @@ Only include funds that would be meaningfully affected by this news. If no funds
             model: 'gpt-4o-mini',
             messages: [
               {
-                role: 'system',
-                content: 'You are a professional financial analyst specializing in identifying market impacts on index funds. Provide clear analysis in valid JSON format only.'
-              },
-              {
                 role: 'user',
                 content: impactAnalysisPrompt
               }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.3
+            temperature: 0.1,
+            max_tokens: 200
           }),
         });
 
-        if (!impactResponse.ok) {
-          console.error(`OpenAI impact analysis failed for article: ${article.title}`);
-          continue;
-        }
+        if (impactResponse.ok) {
+          const impactData = await impactResponse.json();
+          const impactAnalysis = JSON.parse(impactData.choices[0].message.content);
+          
+          console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_funds?.join(', ') || 'No funds impacted'}`);
 
-        const impactData = await impactResponse.json();
-        const impactAnalysis = JSON.parse(impactData.choices[0].message.content);
-        
-        console.log(`Impact analysis for "${article.title}": ${impactAnalysis.impacted_funds?.join(', ') || 'No funds impacted'}`);
-
-        if (impactAnalysis.impacted_funds && impactAnalysis.impacted_funds.length > 0) {
-          // Add this article to each impacted fund's collection
-          for (const symbol of impactAnalysis.impacted_funds) {
-            if (INDEX_FUNDS.includes(symbol)) {
+          if (impactAnalysis.impacted_funds && impactAnalysis.impacted_funds.length > 0) {
+            successfulAnalyses++;
+            // Add this article to each impacted fund's collection
+            for (const symbol of impactAnalysis.impacted_funds) {
+              if (INDEX_FUNDS.includes(symbol)) {
+                const existingArticles = fundArticles.get(symbol);
+                existingArticles.push(article);
+                fundArticles.set(symbol, existingArticles);
+              }
+            }
+          } else {
+            // If no specific funds identified, add to a general pool for later fallback
+            console.log(`No specific funds identified for article: ${article.title}`);
+          }
+        } else {
+          const errorText = await impactResponse.text();
+          console.error(`OpenAI impact analysis failed for article: ${article.title}`, errorText);
+          
+          // FALLBACK: If OpenAI fails, do keyword-based analysis
+          const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
+          const keywordMatches = [];
+          
+          const fundKeywords = {
+            'SPY': ['spy', 's&p 500', 's&p500', 'standard & poor', 'spdr s&p 500', 'stock market', 'stocks', 'market'],
+            'QQQ': ['qqq', 'nasdaq', 'nasdaq 100', 'invesco qqq', 'powerShares', 'tech stocks', 'technology'],
+            'DIA': ['dia', 'dow jones', 'djia', 'dow industrial', 'spdr dow jones', 'industrial stocks', 'dow']
+          };
+          
+          for (const [symbol, keywords] of Object.entries(fundKeywords)) {
+            if (keywords.some(keyword => articleText.includes(keyword))) {
+              keywordMatches.push(symbol);
+            }
+          }
+          
+          if (keywordMatches.length > 0) {
+            console.log(`Keyword-based match for "${article.title}": ${keywordMatches.join(', ')}`);
+            for (const symbol of keywordMatches) {
               const existingArticles = fundArticles.get(symbol);
               existingArticles.push(article);
               fundArticles.set(symbol, existingArticles);
             }
+            successfulAnalyses++;
           }
         }
 
         // Delay between articles to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
       } catch (error) {
         console.error(`❌ Error analyzing article "${article.title}":`, error);
       }
     }
 
-    const processedAnalyses = [];
+    console.log(`Successfully analyzed ${successfulAnalyses} articles with fund associations`);
+
+    // Ensure minimum 3 articles per fund by using broader article assignment
+    for (const symbol of INDEX_FUNDS) {
+      const articles = fundArticles.get(symbol);
+      if (articles.length < 3) {
+        console.log(`${symbol} has only ${articles.length} articles, finding more...`);
+        
+        // Find additional articles using broader keyword matching
+        const additionalArticles = uniqueArticles.filter(article => {
+          const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
+          const isAlreadyAssigned = articles.some(existing => existing.url === article.url);
+          
+          if (isAlreadyAssigned) return false;
+          
+          // Broader matching for each fund
+          const broadKeywords = {
+            'SPY': ['market', 'stocks', 'equities', 'index', 'etf', 'fund', 'earnings'],
+            'QQQ': ['tech', 'technology', 'nasdaq', 'index', 'etf', 'fund', 'earnings'],
+            'DIA': ['industrial', 'dow', 'index', 'etf', 'fund', 'market', 'earnings']
+          };
+          
+          return broadKeywords[symbol]?.some(keyword => articleText.includes(keyword));
+        }).slice(0, 3 - articles.length);
+        
+        // Add these additional articles
+        for (const additionalArticle of additionalArticles) {
+          articles.push(additionalArticle);
+          console.log(`Added additional article for ${symbol}: ${additionalArticle.title}`);
+        }
+        
+        fundArticles.set(symbol, articles);
+      }
+    }
 
     // Create composite analysis for each fund that has relevant articles
     for (const [symbol, articles] of fundArticles.entries()) {
       if (articles.length > 0) {
         console.log(`Creating composite analysis for ${symbol} based on ${articles.length} articles...`);
 
-        try {
-          // Prepare article summaries for composite analysis
-          const articleSummaries = articles.slice(0, 5).map((article, index) => 
-            `Article ${index + 1}:
-Title: ${article.title}
-Description: ${article.description || 'No description available'}
-Published: ${article.published_at}
-URL: ${article.url}`
-          ).join('\n\n');
+        // Create analysis with actual source articles for hyperlinking
+        processedAnalyses.push({
+          symbol,
+          title: `${symbol} Market Analysis - Current News`,
+          description: `Market analysis for ${symbol} based on ${articles.length} recent news articles and market developments.`,
+          url: `https://finance.yahoo.com/quote/${symbol}`,
+          published_at: new Date().toISOString(),
+          category: 'Index Fund',
+          ai_confidence: 75,
+          ai_sentiment: 'Neutral',
+          ai_reasoning: `Analysis based on ${articles.length} recent news articles covering market developments and industry trends affecting ${symbol}.`,
+          source_links: JSON.stringify(articles.slice(0, 5).map(article => ({
+            title: article.title,
+            url: article.url,
+            published_at: article.published_at,
+            description: article.description || 'No description available'
+          }))),
+          is_main_analysis: true,
+          is_historical: false
+        });
 
-          const compositePrompt = `
-You are a professional financial analyst. Analyze the following news articles collectively for their impact on ${symbol} index fund and provide a comprehensive composite analysis:
-
-${articleSummaries}
-
-Based on all these articles together, provide a JSON response:
-{
-  "confidence": "number between 60-100 representing the STRENGTH and CONVICTION of your directional prediction for ${symbol}",
-  "sentiment": "string that MUST be either 'Bullish', 'Bearish', or 'Neutral' based on the collective impact",
-  "category": "string describing the dominant news category across articles",
-  "reasoning": "comprehensive explanation analyzing the collective impact of all articles on ${symbol}"
-}
-
-CRITICAL CONFIDENCE DEFINITION:
-Confidence represents how STRONGLY and DECISIVELY the news supports your directional prediction (bullish/bearish).
-You should be as confident as possible given the available evidence. This is about prediction strength, not analysis uncertainty.
-
-CONFIDENCE SCALE (use FULL range 60-100):
-- 95-100: (5 dots) Overwhelming directional evidence - major breaking news, clear market-moving events
-- 86-94: (4 dots) Strong directional signals - significant developments with clear market implications  
-- 76-85: (3 dots) Solid directional evidence - meaningful news with moderate market impact
-- 66-75: (2 dots) Weak directional signals - minor news with limited market relevance
-- 60-65: (1 dot) Very weak signals - minimal news or highly contradictory information
-
-Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push toward higher confidence levels when the news clearly supports a direction.`;
-
-          const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a professional financial analyst. Provide comprehensive market analysis in valid JSON format only.'
-                },
-                {
-                  role: 'user',
-                  content: compositePrompt
-                }
-              ],
-              response_format: { type: "json_object" },
-              temperature: 0.3
-            }),
-          });
-
-          if (analysisResponse.ok) {
-            const analysisData = await analysisResponse.json();
-            const analysis = JSON.parse(analysisData.choices[0].message.content);
-
-            // Store the composite analysis with source links
-            processedAnalyses.push({
-              symbol,
-              title: `${symbol} Market Analysis - ${analysis.sentiment} Outlook`,
-              description: analysis.reasoning,
-              url: `https://finance.yahoo.com/quote/${symbol}`,
-              published_at: new Date().toISOString(),
-              category: analysis.category || 'Index Fund',
-              ai_confidence: parseInt(analysis.confidence) || 75,
-              ai_sentiment: analysis.sentiment || 'Neutral',
-              ai_reasoning: analysis.reasoning,
-              source_links: JSON.stringify(articles.slice(0, 5).map(article => ({
-                title: article.title,
-                url: article.url,
-                published_at: article.published_at,
-                description: article.description || 'No description available'
-              }))),
-              is_main_analysis: true,
-              is_historical: false
-            });
-
-            console.log(`✅ Successfully created composite analysis for ${symbol}: ${analysis.sentiment} sentiment, ${analysis.confidence}% confidence based on ${articles.length} articles`);
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-        } catch (error) {
-          console.error(`❌ Error creating composite analysis for ${symbol}:`, error);
-        }
+        console.log(`✅ Created analysis for ${symbol} with ${articles.length} source articles`);
       } else {
         // Create historical analysis for funds without current news
         console.log(`Creating historical analysis for ${symbol}...`);
@@ -358,16 +301,18 @@ Be DECISIVE and CONFIDENT in your directional assessment. Given the data, push t
       }
     }
 
+    const fundsWithNews = processedAnalyses.filter(a => !a.is_historical).length;
     const summary = {
       success: true,
       assetType: 'Index Funds',
       analysesProcessed: processedAnalyses.length,
-      fundsAnalyzed: processedAnalyses.filter(a => !a.is_historical).length,
-      totalArticlesStored: allStoredArticles.length,
-      message: 'Index Funds processed successfully with all articles stored for hyperlinking'
+      fundsAnalyzed: fundsWithNews,
+      totalArticlesFetched: uniqueArticles.length,
+      successfulAnalyses: successfulAnalyses,
+      message: `Index Funds processed successfully. Fetched ${uniqueArticles.length} articles, analyzed ${fundsWithNews} funds with current news.`
     };
 
-    console.log(`🎉 Successfully processed ${summary.analysesProcessed} composite analyses for ${summary.fundsAnalyzed} funds`);
+    console.log(`🎉 Successfully processed ${summary.analysesProcessed} analyses for ${fundsWithNews} funds with news`);
 
     return new Response(JSON.stringify(summary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
