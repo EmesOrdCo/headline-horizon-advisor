@@ -73,12 +73,6 @@ const HomePage = () => {
         </div>
       </section>
       
-      {/* Trading Panel */}
-      <section className="py-8 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <TradingPanel />
-        </div>
-      </section>
       
       <Footer />
     </div>
