@@ -347,7 +347,7 @@ const Dashboard = () => {
           </div>
           
           {/* Live Stock Analysis Interface */}
-          {isLoading ? (
+          {isLoading || !topMagnificent7Story ? (
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-6">
@@ -365,7 +365,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          ) : topMagnificent7Story ? (
+          ) : (
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-0">
@@ -490,7 +490,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          ) : null}
+          )}
         </section>
 
         {/* INDEX FUNDS SECTION */}
@@ -508,7 +508,7 @@ const Dashboard = () => {
           </div>
           
           {/* Live Index Fund Analysis Interface */}
-          {isLoading ? (
+          {isLoading || !topIndexFundStory ? (
             <div className="w-full">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-6">
