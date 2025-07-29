@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle, Loader2, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -411,7 +411,8 @@ const Dashboard = () => {
                         <div className="text-emerald-400 font-semibold">$214.06</div>
                       </div>
                       <Button variant="outline" size="sm" className="border-slate-600">
-                        📊 Chart
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Chart
                       </Button>
                     </div>
                   </div>
@@ -502,28 +503,6 @@ const Dashboard = () => {
               <p className="text-slate-400 text-sm">Market index performance and insights</p>
             </div>
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    console.log('🚀 Triggering Index Funds analysis...');
-                    const { data, error } = await supabase.functions.invoke('fetch-index-funds');
-                    if (error) {
-                      console.error('❌ Error:', error);
-                    } else {
-                      console.log('✅ Success:', data);
-                      // Refresh the page to show updated data
-                      window.location.reload();
-                    }
-                  } catch (error) {
-                    console.error('❌ Exception:', error);
-                  }
-                }}
-                className="text-purple-400 border-purple-400 hover:bg-purple-400/10"
-              >
-                Refresh Analysis
-              </Button>
               <Link to="/index-funds">
                 <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400/10">
                   View All Funds <ArrowRight className="w-4 h-4 ml-2" />
@@ -596,7 +575,8 @@ const Dashboard = () => {
                         <div className="text-emerald-400 font-semibold">$458.52</div>
                       </div>
                       <Button variant="outline" size="sm" className="border-slate-600">
-                        📊 Chart
+                        <BarChart3 className="w-4 h-4 mr-2" />
+                        Chart
                       </Button>
                     </div>
                   </div>
