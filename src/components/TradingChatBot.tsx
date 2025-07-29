@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Loader2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useStockPrices } from '@/hooks/useStockPrices';
+import { toast } from 'sonner';
 
 interface ChatMessage {
   id: string;
@@ -12,11 +16,15 @@ interface ChatMessage {
 }
 
 const TradingChatBot: React.FC = () => {
+  const { symbol } = useParams<{ symbol: string }>();
+  const activeSymbol = symbol || 'AAPL';
+  const { data: stockPrices } = useStockPrices([activeSymbol]);
+  
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       type: 'bot',
-      content: 'Hello! I\'m your trading assistant. I can help you with market analysis, stock research, and trading questions. What would you like to know?',
+      content: `Hello! I'm your AI trading assistant. I can help you with market analysis, stock research, and trading strategies${symbol ? ` for ${symbol}` : ''}. What would you like to know?`,
       timestamp: new Date()
     }
   ]);
@@ -51,18 +59,54 @@ const TradingChatBot: React.FC = () => {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual AI integration)
-    setTimeout(() => {
+    try {
+      // Get current stock data for context
+      const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
+      const stockData = currentStock ? {
+        price: currentStock.price,
+        change: currentStock.change,
+        changePercent: currentStock.changePercent,
+        marketStatus: 'Live Trading' // You can expand this with real market status
+      } : null;
+
+      // Call OpenAI trading assistant
+      const { data, error } = await supabase.functions.invoke('trading-assistant', {
+        body: {
+          message: inputValue,
+          symbol: activeSymbol,
+          stockData
+        }
+      });
+
+      if (error) {
+        console.error('Trading assistant error:', error);
+        throw error;
+      }
+
       const botResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: `I understand you're asking about "${inputValue}". As your trading assistant, I'd be happy to help with market analysis, stock research, or trading strategies. This is a demo response - in production, this would connect to a real AI trading assistant.`,
+        content: data.response || data.fallbackResponse || 'I apologize, but I\'m experiencing technical difficulties. Please try again.',
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Error calling trading assistant:', error);
+      toast.error('Failed to get AI response. Please try again.');
+      
+      // Add error message
+      const errorResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: 'I\'m currently experiencing technical difficulties. Please try again in a moment. Remember that all trading involves risk and you should always do your own research.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1000 + Math.random() * 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
