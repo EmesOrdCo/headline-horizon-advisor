@@ -246,27 +246,27 @@ const BankAccountManager = ({ accountId }: BankAccountManagerProps) => {
                 key={account.id}
                 className="p-4 bg-slate-700/40 rounded-lg border border-slate-600/30 hover:bg-slate-700/60 transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-5 h-5 text-slate-400" />
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-white font-semibold text-lg">{account.nickname}</span>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Building2 className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-white font-semibold text-lg truncate">{account.nickname}</span>
                         {account.is_default && (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-xs px-2 py-0.5">
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-xs px-2 py-0.5 flex-shrink-0">
                             Default
                           </Badge>
                         )}
                       </div>
-                      <div className="text-slate-400 text-sm">
+                      <div className="text-slate-400 text-sm truncate">
                         {account.bank_name} • {account.account_type} • {account.account_number}
                       </div>
                     </div>
                   </div>
-                  <Badge className={`${getStatusColor(account.status)} px-3 py-1`}>
+                  <Badge className={`${getStatusColor(account.status)} px-3 py-1 flex-shrink-0`}>
                     <div className="flex items-center gap-1.5">
                       {getStatusIcon(account.status)}
-                      <span className="font-medium">{account.status}</span>
+                      <span className="font-medium whitespace-nowrap">{account.status}</span>
                     </div>
                   </Badge>
                 </div>
