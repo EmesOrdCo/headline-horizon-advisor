@@ -23,19 +23,6 @@ serve(async (req) => {
   }
 
   try {
-    // TEMPORARY: Pause all MarketAux API calls to conserve rate limits
-    console.log('⏸️ MarketAux API calls are temporarily paused to conserve rate limits');
-    
-    const fallbackData = {
-      gainers: [],
-      losers: [],
-      lastUpdated: new Date().toISOString()
-    };
-
-    return new Response(JSON.stringify(fallbackData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
     const marketauxApiKey = Deno.env.get('MARKETAUX_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     
