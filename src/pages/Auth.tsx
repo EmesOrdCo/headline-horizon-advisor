@@ -254,9 +254,9 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user]); // Removed navigate from dependencies
 
   const updateOnboardingData = (updates: Partial<OnboardingData>) => {
     setOnboardingData(prev => ({ ...prev, ...updates }));
@@ -317,7 +317,7 @@ const Auth = () => {
           title: "Welcome Back",
           description: "You have successfully signed in.",
         });
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       } else {
         if (result.error.message.includes('Invalid login credentials')) {
           toast({
@@ -1083,7 +1083,7 @@ const Auth = () => {
 
       <div className="text-center">
         <Button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/dashboard', { replace: true })}
           className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
         >
           Go to Dashboard
