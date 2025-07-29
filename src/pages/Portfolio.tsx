@@ -151,7 +151,7 @@ const Portfolio = () => {
         setPositions(positionsData);
         setOrders(ordersData || []);
         
-        // Combine orders and activities like ActivitiesHistory does
+        // Only use order data for trade history (exclude transfers and other activities)
         const filledOrders = (ordersData || [])
           .filter((order: any) => order.status === 'filled')
           .map((order: any) => ({
@@ -180,8 +180,16 @@ const Portfolio = () => {
             order_id: order.id
           }));
 
-        // Combine all activities and sort by date
-        const combinedActivities = [...(activitiesData || []), ...filledOrders, ...pendingOrders]
+        // Only include trade-related activities (not transfers)
+        const tradeActivities = (activitiesData || [])
+          .filter((activity: any) => 
+            activity.activity_type === 'FILL' || 
+            activity.activity_type === 'PARTIAL_FILL' ||
+            activity.order_id  // Has an order ID, so it's trade-related
+          );
+
+        // Combine only trade activities and orders, sort by date
+        const combinedActivities = [...tradeActivities, ...filledOrders, ...pendingOrders]
           .sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
         
         setActivities(combinedActivities);
