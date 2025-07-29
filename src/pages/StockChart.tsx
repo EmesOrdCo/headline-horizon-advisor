@@ -31,6 +31,8 @@ import {
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
 import { BuySellButtons } from "@/components/BuySellButtons";
+import { DrawingToolbar, DrawingTool } from "@/components/chart/DrawingToolbar";
+import { useChartDrawing } from "@/hooks/useChartDrawing";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -41,13 +43,30 @@ interface AlpacaBar {
   v: number; // volume
 }
 
-// Alpaca Chart Widget Component
-const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
+// Alpaca Chart Widget Component with Drawing Integration
+const AlpacaChartWidget: React.FC<{ 
+  symbol: string; 
+  activeTool: DrawingTool;
+  onToolChange: (tool: DrawingTool) => void;
+}> = ({ symbol, activeTool, onToolChange }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<any>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+
+  // Drawing functionality
+  const {
+    drawingState,
+    startDrawing,
+    updateDrawing,
+    finishDrawing,
+    clearAllDrawings,
+    toggleDrawingsVisibility,
+    setSelectedColor,
+    getCoordinatesFromEvent,
+    drawingCanvasRef
+  } = useChartDrawing(chartRef);
 
   // Initialize Lightweight Charts with proper margins
   useEffect(() => {
@@ -200,15 +219,71 @@ const AlpacaChartWidget: React.FC<{ symbol: string }> = ({ symbol }) => {
     }
   }, [symbol, chartRef.current, candlestickSeriesRef.current]);
 
+  // Handle chart interactions for drawing
+  const handleChartMouseDown = (event: MouseEvent) => {
+    if (activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      startDrawing(coords);
+    }
+  };
+
+  const handleChartMouseMove = (event: MouseEvent) => {
+    if (!drawingState.isDrawing || activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      updateDrawing(coords);
+    }
+  };
+
+  const handleChartMouseUp = (event: MouseEvent) => {
+    if (!drawingState.isDrawing || activeTool === 'cursor' || activeTool === 'hand') return;
+    
+    if (chartContainerRef.current) {
+      const coords = getCoordinatesFromEvent(event, chartContainerRef.current);
+      finishDrawing(coords, activeTool as any);
+    }
+  };
+
+  // Add event listeners for drawing
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('mousedown', handleChartMouseDown);
+    container.addEventListener('mousemove', handleChartMouseMove);
+    container.addEventListener('mouseup', handleChartMouseUp);
+
+    return () => {
+      container.removeEventListener('mousedown', handleChartMouseDown);
+      container.removeEventListener('mousemove', handleChartMouseMove);
+      container.removeEventListener('mouseup', handleChartMouseUp);
+    };
+  }, [activeTool, drawingState.isDrawing, startDrawing, updateDrawing, finishDrawing]);
+
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <div 
         ref={chartContainerRef} 
         className="w-full h-full"
         style={{ minHeight: '500px', minWidth: '100%' }}
       />
+      
+      {/* Drawing Canvas Overlay */}
+      <canvas
+        ref={drawingCanvasRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          zIndex: 10
+        }}
+      />
+      
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-20">
           <div className="text-lg text-slate-300">Loading chart data...</div>
         </div>
       )}
@@ -444,6 +519,7 @@ const StockChart: React.FC = () => {
   const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [chartType, setChartType] = useState<'line' | 'candles'>('candles');
+  const [activeTool, setActiveTool] = useState<DrawingTool>('cursor');
   
   // Fetch current stock data and historical data - use SPY as it has extended hours trading
   const activeSymbol = symbol || 'AAPL';
@@ -452,6 +528,23 @@ const StockChart: React.FC = () => {
   // Fetch watchlist data - include globally traded assets
   const watchlistSymbols = ['SPY', 'QQQ', 'GLD', 'TLT', 'EEM', 'IWM', 'XLF'];
   const { data: watchlistPrices } = useStockPrices(watchlistSymbols);
+
+  // Drawing toolbar state
+  const [drawingsVisible, setDrawingsVisible] = useState(true);
+  const [selectedColor, setSelectedColor] = useState('#ffffff');
+
+  const handleClearDrawings = () => {
+    // This will be connected to the drawing system
+    console.log('Clear all drawings');
+  };
+
+  const handleToggleVisibility = () => {
+    setDrawingsVisible(!drawingsVisible);
+  };
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+  };
   
   const leftSidebarTools = [
     { icon: Crosshair, label: 'Cursor' },
@@ -679,26 +772,26 @@ const StockChart: React.FC = () => {
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Left Sidebar - Trading Tools */}
-        <div className="w-12 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
-          {leftSidebarTools.map((tool, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              size="icon"
-              className="w-10 h-10 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
-              title={tool.label}
-            >
-              <tool.icon className="w-5 h-5" />
-            </Button>
-          ))}
-        </div>
+        {/* Left Sidebar - Functional Drawing Tools */}
+        <DrawingToolbar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          onClearAll={handleClearDrawings}
+          onToggleVisibility={handleToggleVisibility}
+          isVisible={drawingsVisible}
+          onColorChange={handleColorChange}
+          selectedColor={selectedColor}
+        />
 
         {/* Main Chart Area with Trading Panel */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Alpaca Chart */}
+          {/* Alpaca Chart with Drawing Integration */}
           <div className="flex-1 bg-slate-900 relative min-h-0">
-            <AlpacaChartWidget symbol={activeSymbol} />
+            <AlpacaChartWidget 
+              symbol={activeSymbol} 
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
+            />
           </div>
           
           {/* Bottom Trading Panel - Only spans chart area width */}
