@@ -46,7 +46,12 @@ const TradingChatBot: React.FC = () => {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    console.log('🚀 handleSendMessage called with:', inputValue);
+    
+    if (!inputValue.trim()) {
+      console.log('❌ Empty input, returning early');
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -55,9 +60,11 @@ const TradingChatBot: React.FC = () => {
       timestamp: new Date()
     };
 
+    console.log('👤 Adding user message:', userMessage);
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    console.log('⏳ Set loading to true');
 
     try {
       console.log('🤖 Trading Assistant: Starting request...');

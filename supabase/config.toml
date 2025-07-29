@@ -73,3 +73,6 @@ verify_jwt = false
 
 [functions.admin-delete-account]
 verify_jwt = false
+
+[functions.trading-assistant]
+verify_jwt = true
