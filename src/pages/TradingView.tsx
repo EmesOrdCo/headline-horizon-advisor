@@ -428,9 +428,14 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
         {/* Main Chart Area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Stock-Specific Pending Orders - Prominent Position */}
-          <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700">
-            <StockPendingOrders symbol={activeSymbol} />
+          {/* Large Pending Orders Button - Same as Portfolio Page */}
+          <div className="px-4 py-3 bg-slate-800/50 border-b border-slate-700">
+            <PendingOrdersModal>
+              <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">
+                <Clock className="w-4 h-4 mr-2" />
+                Manage All Pending Orders
+              </Button>
+            </PendingOrdersModal>
           </div>
           
           {/* Professional TradingView Chart */}
