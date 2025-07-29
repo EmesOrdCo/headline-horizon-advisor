@@ -95,6 +95,45 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_snapshots: {
+        Row: {
+          account_id: string
+          buying_power: number
+          cash: number
+          created_at: string
+          id: string
+          long_market_value: number
+          snapshot_date: string
+          total_equity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          buying_power?: number
+          cash?: number
+          created_at?: string
+          id?: string
+          long_market_value?: number
+          snapshot_date?: string
+          total_equity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          buying_power?: number
+          cash?: number
+          created_at?: string
+          id?: string
+          long_market_value?: number
+          snapshot_date?: string
+          total_equity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           alpaca_account_created_at: string | null
