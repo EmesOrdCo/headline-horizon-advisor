@@ -277,6 +277,17 @@ serve(async (req) => {
         });
         break;
 
+      case 'cancel_order':
+        url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/orders/${data.order_id}`;
+        console.log(`Making cancel order request to: ${url}`);
+        console.log(`Order ID to cancel: ${data.order_id}`);
+        
+        response = await fetch(url, {
+          method: 'DELETE',
+          headers,
+        });
+        break;
+
       case 'get_positions':
         url = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/positions`;
         response = await fetch(url, {

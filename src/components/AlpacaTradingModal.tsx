@@ -12,6 +12,7 @@ import { useAccountData } from "@/hooks/useAccountData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CompanyLogo from "./CompanyLogo";
+import { PendingOrdersModal } from "./PendingOrdersModal";
 
 interface AlpacaTradingModalProps {
   children: React.ReactNode;
@@ -404,11 +405,26 @@ export const AlpacaTradingModal = ({
         {orderId && (
           <p className="text-sm text-slate-500 mt-2">Order ID: {orderId}</p>
         )}
+        
+        {orderType === "limit" && (
+          <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+            Your limit order is pending. You can view and cancel it if needed.
+          </p>
+        )}
       </div>
       
-      <Button onClick={handleClose} className="w-full h-12 text-base font-medium">
-        Close
-      </Button>
+      <div className="flex gap-3">
+        {orderType === "limit" && (
+          <PendingOrdersModal>
+            <Button variant="outline" className="flex-1">
+              View Pending Orders
+            </Button>
+          </PendingOrdersModal>
+        )}
+        <Button onClick={handleClose} className={cn("h-12 text-base font-medium", orderType === "limit" ? "flex-1" : "w-full")}>
+          Close
+        </Button>
+      </div>
     </div>
   );
 

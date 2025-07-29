@@ -226,6 +226,10 @@ export const useAlpacaBroker = () => {
     return callBrokerAPI('get_orders', accountId, filters);
   };
 
+  const cancelOrder = async (accountId: string, orderId: string): Promise<void> => {
+    return callBrokerAPI('cancel_order', accountId, { order_id: orderId });
+  };
+
   const getPositions = async (accountId: string): Promise<AlpacaPosition[]> => {
     return callBrokerAPI('get_positions', accountId);
   };
@@ -271,6 +275,7 @@ export const useAlpacaBroker = () => {
     // Trading
     placeOrder,
     getOrders,
+    cancelOrder,
     getPositions,
     // Activities
     getActivities,
