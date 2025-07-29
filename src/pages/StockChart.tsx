@@ -30,6 +30,7 @@ import {
  } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import CompanyLogo from "@/components/CompanyLogo";
+import { BuySellButtons } from "@/components/BuySellButtons";
 
 interface AlpacaBar {
   t: string; // timestamp
@@ -640,6 +641,11 @@ const StockChart: React.FC = () => {
               Data
             </Button>
           </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
+          {/* Buy/Sell Buttons */}
+          <BuySellButtons />
         </div>
       </div>
 

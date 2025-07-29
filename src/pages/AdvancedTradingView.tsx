@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, BarChart3, Activity, Zap } from 'lucide-react';
+import { BuySellButtons } from '@/components/BuySellButtons';
 
 const AdvancedTradingView: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
@@ -100,6 +101,11 @@ const AdvancedTradingView: React.FC = () => {
                   {symbol}
                 </Button>
               ))}
+            </div>
+
+            {/* Buy/Sell Buttons */}
+            <div className="ml-auto">
+              <BuySellButtons />
             </div>
           </div>
 

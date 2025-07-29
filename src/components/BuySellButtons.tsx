@@ -25,12 +25,18 @@ export const BuySellButtons = () => {
     } else if (path.includes('/trading-view/')) {
       const symbol = path.split('/trading-view/')[1];
       setCurrentSymbol(symbol?.toUpperCase() || "");
+    } else if (path.includes('/alpaca-live-chart/')) {
+      const symbol = path.split('/alpaca-live-chart/')[1];
+      setCurrentSymbol(symbol?.toUpperCase() || "");
     } else if (path.includes('/magnificent-7') || path.includes('/magnificent7')) {
       // Default to AAPL for Mag7 page
       setCurrentSymbol("AAPL");
     } else if (path.includes('/index-funds')) {
       // Default to SPY for Index Funds page
       setCurrentSymbol("SPY");
+    } else if (path.includes('/advanced-trading-view')) {
+      // Default to AAPL for Advanced Trading View
+      setCurrentSymbol("AAPL");
     } else {
       // Default to SPY for dashboard/other pages
       setCurrentSymbol("SPY");

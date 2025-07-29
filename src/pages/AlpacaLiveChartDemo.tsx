@@ -14,6 +14,7 @@ import { AlertTriangle, Info, BarChart3, TrendingUp, Webhook, Copy, ExternalLink
 import { useAccountData } from '@/hooks/useAccountData';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { BuySellButtons } from '@/components/BuySellButtons';
 
 const AlpacaLiveChartDemo: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -130,6 +131,9 @@ const AlpacaLiveChartDemo: React.FC = () => {
               >
                 Update Chart
               </Button>
+              
+              {/* Buy/Sell Buttons */}
+              <BuySellButtons />
             </div>
           </CardContent>
         </Card>
