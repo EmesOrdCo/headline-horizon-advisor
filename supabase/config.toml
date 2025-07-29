@@ -52,6 +52,9 @@ enable_email_confirmations = false
 enable_email_change_confirmations = true
 enable_phone_confirmations = false
 enable_phone_change_confirmations = true
+enable_anonymous_users = false
+password_min_length = 8
+enable_leaked_password_protection = true
 
 [auth.email]
 enable_signup = true
