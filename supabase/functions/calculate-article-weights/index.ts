@@ -13,20 +13,13 @@ serve(async (req) => {
   }
 
   try {
-    // Try primary key first, then fallback to secondary key
-    let openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    let usingSecondaryKey = false;
-    
-    if (!openaiApiKey) {
-      openaiApiKey = Deno.env.get('OPENAI_API_KEY_2');
-      usingSecondaryKey = true;
-    }
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openaiApiKey) {
       throw new Error('Missing OpenAI API key');
     }
 
-    console.log(`Using ${usingSecondaryKey ? 'secondary' : 'primary'} OpenAI API key for weight calculation`);
+    console.log(`Using OpenAI API key for weight calculation`);
 
     const { articles, overallSentiment, overallConfidence, symbol } = await req.json();
 
@@ -107,38 +100,6 @@ Weight scale:
       }),
     });
 
-    // If primary key fails with quota error and we have a secondary key, try it
-    if (!response.ok && !usingSecondaryKey) {
-      const errorText = await response.text();
-      if (errorText.includes('quota') || errorText.includes('429')) {
-        const secondaryKey = Deno.env.get('OPENAI_API_KEY_2');
-        if (secondaryKey) {
-          console.log(`Primary key failed with quota error, trying secondary key for weights...`);
-          response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${secondaryKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4.1-2025-04-14',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a financial analyst expert at evaluating the significance of news articles on stock sentiment. Provide accurate weight assessments in valid JSON format.'
-                },
-                {
-                  role: 'user',
-                  content: weightPrompt
-                }
-              ],
-              response_format: { type: "json_object" },
-              temperature: 0.3
-            }),
-          });
-        }
-      }
-    }
 
     if (!response.ok) {
       const errorText = await response.text();

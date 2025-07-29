@@ -19,20 +19,13 @@ serve(async (req) => {
   }
 
   try {
-    // Try primary key first, then fallback to secondary key
-    let openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    let usingSecondaryKey = false;
-    
-    if (!openaiApiKey) {
-      openaiApiKey = Deno.env.get('OPENAI_API_KEY_2');
-      usingSecondaryKey = true;
-    }
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openaiApiKey) {
       throw new Error('Missing OpenAI API key');
     }
 
-    console.log(`Using ${usingSecondaryKey ? 'secondary' : 'primary'} OpenAI API key for analysis`)
+    console.log(`Using OpenAI API key for analysis`)
 
     const requestBody = await req.json();
     const { articles, symbol } = requestBody;
@@ -107,39 +100,6 @@ Rules:
       }),
     });
 
-    // If primary key fails with quota error and we have a secondary key, try it
-    if (!chatResponse.ok && !usingSecondaryKey) {
-      const errorText = await chatResponse.text();
-      if (errorText.includes('quota') || errorText.includes('429')) {
-        const secondaryKey = Deno.env.get('OPENAI_API_KEY_2');
-        if (secondaryKey) {
-          console.log(`Primary key failed with quota error, trying secondary key for ${symbol}...`);
-          chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${secondaryKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4.1-2025-04-14',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a professional financial analyst with expertise in stock market analysis. Provide clear, actionable market analysis in valid JSON format only.'
-                },
-                {
-                  role: 'user',
-                  content: analysisPrompt
-                }
-              ],
-              response_format: { type: "json_object" },
-              temperature: 0.7,
-              max_tokens: 1000
-            }),
-          });
-        }
-      }
-    }
 
     if (!chatResponse.ok) {
       const errorText = await chatResponse.text();
