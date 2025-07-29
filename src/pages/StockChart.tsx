@@ -581,22 +581,22 @@ const StockChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 flex-col">
-        {/* Top Section: Chart and Chat */}
-        <div className="flex flex-1 min-h-0">
-          {/* Left Sidebar - Functional Drawing Tools */}
-          <DrawingToolbar
-            activeTool={activeTool}
-            onToolChange={setActiveTool}
-            onClearAll={handleClearDrawings}
-            onToggleVisibility={handleToggleVisibility}
-            isVisible={drawingsVisible}
-            onColorChange={handleColorChange}
-            selectedColor={selectedColor}
-          />
+      <div className="flex flex-1 min-h-0">
+        {/* Left Sidebar - Functional Drawing Tools */}
+        <DrawingToolbar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          onClearAll={handleClearDrawings}
+          onToggleVisibility={handleToggleVisibility}
+          isVisible={drawingsVisible}
+          onColorChange={handleColorChange}
+          selectedColor={selectedColor}
+        />
 
-          {/* Main Chart Area - Full Height */}
-          <div className="flex-1 bg-slate-900 relative h-full">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Chart Area */}
+          <div className="flex-1 bg-slate-900 relative">
             <AlpacaChartWidget 
               symbol={activeSymbol} 
               activeTool={activeTool}
@@ -604,117 +604,117 @@ const StockChart: React.FC = () => {
             />
           </div>
 
-          {/* Right Sidebar - Chat Bot */}
-          <div className="w-80 flex-shrink-0">
-            <TradingChatBot />
+          {/* Bottom Section: Watchlist, Spread & Stock Info */}
+          <div className="h-64 bg-slate-800 border-t border-slate-700 flex">
+            {/* Watchlist Section */}
+            <div className="flex-1 border-r border-slate-700 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-medium">Watchlist</h3>
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                    <Settings className="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
+                    <MoreHorizontal className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
+                <span className="flex-1">Symbol</span>
+                <span className="w-16 text-right">Last</span>
+                <span className="w-16 text-right">Chg</span>
+                <span className="w-16 text-right">Chg%</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {watchlistStocks.map((stock) => (
+                  <div
+                    key={stock.symbol}
+                    className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
+                    onClick={() => navigate(`/stock-chart/${stock.symbol}`)}
+                  >
+                    <span className="w-12 text-white font-medium">{stock.symbol}</span>
+                    <span className="w-14 text-right text-white">{stock.price}</span>
+                    <span className={`w-12 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                      {stock.change}
+                    </span>
+                    <span className={`w-14 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
+                      {stock.changePercent}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Buy/Sell Spread */}
+            <div className="w-64 border-r border-slate-700 p-4">
+              <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-green-400 font-medium">BID (Sell)</span>
+                  <span className="text-green-400 font-bold text-lg">${bidPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-red-400 font-medium">ASK (Buy)</span>
+                  <span className="text-red-400 font-bold text-lg">${askPrice.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-slate-600 pt-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-400">Spread</span>
+                    <span className="text-white">${spread.toFixed(4)}</span>
+                  </div>
+                  <div className="text-xs text-slate-500 text-right">{spreadPercent.toFixed(3)}%</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-slate-500">
+                Real-time bid/ask prices for {activeSymbol}
+              </div>
+            </div>
+
+            {/* Stock Details */}
+            <div className="w-64 p-4">
+              <h3 className="text-white font-medium mb-3">{companyName}</h3>
+              <div className="text-sm text-slate-400 mb-3">{exchange} • Real-time • Live</div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Market Cap</span>
+                  <span className="text-white">N/A</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">P/E Ratio</span>
+                  <span className="text-white">N/A</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">52W High</span>
+                  <span className="text-white">N/A</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">52W Low</span>
+                  <span className="text-white">N/A</span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span className="text-white">{currentPrice.toFixed(2)}</span>
+                  <span className={change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {change >= 0 ? '+' : ''}{change.toFixed(2)} {change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                  </span>
+                </div>
+                <div className="text-xs text-slate-500 mt-1">Last update: {new Date().toLocaleTimeString()}</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Section: Watchlist, Spread & Stock Info */}
-        <div className="h-64 bg-slate-800 border-t border-slate-700 flex">
-          {/* Watchlist Section */}
-          <div className="flex-1 border-r border-slate-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium">Watchlist</h3>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                  <Plus className="w-3 h-3" />
-                </Button>
-                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                  <Settings className="w-3 h-3" />
-                </Button>
-                <Button variant="ghost" size="sm" className="w-6 h-6 p-0 text-slate-400 hover:text-white">
-                  <MoreHorizontal className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 text-xs text-slate-400 border-b border-slate-600 pb-2 mb-2">
-              <span className="flex-1">Symbol</span>
-              <span className="w-16 text-right">Last</span>
-              <span className="w-16 text-right">Chg</span>
-              <span className="w-16 text-right">Chg%</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              {watchlistStocks.map((stock) => (
-                <div
-                  key={stock.symbol}
-                  className="flex items-center space-x-2 py-1 hover:bg-slate-700/50 cursor-pointer text-xs rounded"
-                  onClick={() => navigate(`/stock-chart/${stock.symbol}`)}
-                >
-                  <span className="w-12 text-white font-medium">{stock.symbol}</span>
-                  <span className="w-14 text-right text-white">{stock.price}</span>
-                  <span className={`w-12 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                    {stock.change}
-                  </span>
-                  <span className={`w-14 text-right ${stock.positive ? 'text-green-400' : 'text-red-400'}`}>
-                    {stock.changePercent}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Buy/Sell Spread */}
-          <div className="w-64 border-r border-slate-700 p-4">
-            <h3 className="text-white font-medium mb-3">Buy/Sell Spread</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-green-400 font-medium">BID (Sell)</span>
-                <span className="text-green-400 font-bold text-lg">${bidPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-red-400 font-medium">ASK (Buy)</span>
-                <span className="text-red-400 font-bold text-lg">${askPrice.toFixed(2)}</span>
-              </div>
-              <div className="border-t border-slate-600 pt-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Spread</span>
-                  <span className="text-white">${spread.toFixed(4)}</span>
-                </div>
-                <div className="text-xs text-slate-500 text-right">{spreadPercent.toFixed(3)}%</div>
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-slate-500">
-              Real-time bid/ask prices for {activeSymbol}
-            </div>
-          </div>
-
-          {/* Stock Details */}
-          <div className="w-64 p-4">
-            <h3 className="text-white font-medium mb-3">{companyName}</h3>
-            <div className="text-sm text-slate-400 mb-3">{exchange} • Real-time • Live</div>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Market Cap</span>
-                <span className="text-white">N/A</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">P/E Ratio</span>
-                <span className="text-white">N/A</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">52W High</span>
-                <span className="text-white">N/A</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">52W Low</span>
-                <span className="text-white">N/A</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span className="text-white">{currentPrice.toFixed(2)}</span>
-                <span className={change >= 0 ? 'text-green-400' : 'text-red-400'}>
-                  {change >= 0 ? '+' : ''}{change.toFixed(2)} {change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
-                </span>
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Last update: {new Date().toLocaleTimeString()}</div>
-            </div>
-          </div>
+        {/* Right Sidebar - Full Height Trading Chat Bot */}
+        <div className="w-80 h-full absolute right-0 top-0 z-10">
+          <TradingChatBot />
         </div>
       </div>
     </div>
