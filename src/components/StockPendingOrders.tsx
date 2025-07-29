@@ -19,14 +19,23 @@ export const StockPendingOrders: React.FC<StockPendingOrdersProps> = ({ symbol }
   const [cancelingOrders, setCancelingOrders] = useState<Set<string>>(new Set());
 
   const loadPendingOrders = async () => {
-    if (!selectedAccount?.id || !symbol) return;
+    console.log('🔍 StockPendingOrders: Loading pending orders for symbol:', symbol);
+    console.log('🔍 StockPendingOrders: Selected Account:', selectedAccount);
+    
+    if (!selectedAccount?.id || !symbol) {
+      console.log('❌ StockPendingOrders: Missing account ID or symbol:', { accountId: selectedAccount?.id, symbol });
+      return;
+    }
 
     setIsLoading(true);
     try {
+      console.log('📡 StockPendingOrders: Fetching orders...');
       const allOrders = await getOrders(selectedAccount.id, { 
         status: 'open', 
         limit: 50 
       });
+      
+      console.log('📋 StockPendingOrders: All orders received:', allOrders);
       
       // Filter for this specific symbol and pending statuses
       const pendingOrders = allOrders.filter(order => 
@@ -34,9 +43,10 @@ export const StockPendingOrders: React.FC<StockPendingOrdersProps> = ({ symbol }
         ['new', 'partially_filled', 'pending_new', 'accepted', 'pending_cancel', 'pending_replace'].includes(order.status)
       );
       
+      console.log(`⏳ StockPendingOrders: Filtered pending orders for ${symbol}:`, pendingOrders);
       setOrders(pendingOrders);
     } catch (error) {
-      console.error('Failed to load pending orders:', error);
+      console.error('❌ StockPendingOrders: Failed to load pending orders:', error);
       toast.error('Failed to load pending orders');
     } finally {
       setIsLoading(false);
@@ -88,7 +98,14 @@ export const StockPendingOrders: React.FC<StockPendingOrdersProps> = ({ symbol }
     return order.order_type.charAt(0).toUpperCase() + order.order_type.slice(1);
   };
 
-  if (!symbol) return null;
+  if (!symbol) {
+    console.log('❌ StockPendingOrders: No symbol provided');
+    return null;
+  }
+
+  console.log('🔧 StockPendingOrders: Rendering component for symbol:', symbol);
+  console.log('🔧 StockPendingOrders: Current orders:', orders);
+  console.log('🔧 StockPendingOrders: Account data:', { accountId: selectedAccount?.id, isLoading });
 
   return (
     <Card className="bg-slate-800/50 border-slate-700">
