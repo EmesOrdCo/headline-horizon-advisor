@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,10 +17,45 @@ serve(async (req) => {
   try {
     const { account_id } = await req.json();
     
+    // Get the authorization header for user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from auth header
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    // Verify that the account_id belongs to the authenticated user
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('alpaca_account_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('User profile not found');
+    }
+
+    if (profile.alpaca_account_id !== account_id) {
+      throw new Error('Unauthorized: Account does not belong to user');
+    }
+    
     const apiKey = Deno.env.get("ALPACA_API_KEY");
     const secretKey = Deno.env.get("ALPACA_SECRET_KEY");
 
-    console.log(`=== GET TRANSFERS FOR ACCOUNT ${account_id} ===`);
+    console.log(`=== GET TRANSFERS FOR USER ${user.id} ACCOUNT ${account_id} ===`);
     console.log('API Key exists:', !!apiKey);
     console.log('Secret Key exists:', !!secretKey);
 
@@ -121,7 +157,7 @@ serve(async (req) => {
       // Create mock transfers that would result in this balance
       transfers = [
         {
-          id: 'mock-deposit-1000',
+          id: `mock-deposit-1000-${user.id}`,
           amount: '1000.00',
           direction: 'INCOMING',
           status: 'COMPLETE',
@@ -130,7 +166,7 @@ serve(async (req) => {
           reason: 'ACH Deposit - $1,000.00'
         },
         {
-          id: 'mock-deposit-5',
+          id: `mock-deposit-5-${user.id}`,
           amount: '5.00',
           direction: 'INCOMING',
           status: 'COMPLETE',
@@ -147,7 +183,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       data: transfers,
-      source: transfers.length > 0 && transfers[0].id.startsWith('mock-') ? 'mock' : 'api'
+      source: transfers.length > 0 && transfers[0].id.includes('mock-') ? 'mock' : 'api'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
