@@ -12,6 +12,9 @@ import RealTimePriceChart from "@/components/RealTimePriceChart";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
 import ChartModal from "@/components/ChartModal";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
+import { AIAnalysisSection } from "@/components/NewsCard/AIAnalysisSection";
+import { SentimentIndicator } from "@/components/NewsCard/SentimentIndicator";
+import { DetailedAnalysis } from "@/components/NewsCard/DetailedAnalysis";
 import { useMagnificent7Articles, useFetchMagnificent7 } from "@/hooks/useMagnificent7";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
@@ -20,6 +23,8 @@ import CompanyLogo from "@/components/CompanyLogo";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
+import { useArticleWeights } from "@/hooks/useArticleWeights";
+import { ExternalLink } from "lucide-react";
 
 interface PriceHistoryPoint {
   timestamp: string;
@@ -490,20 +495,56 @@ const Magnificent7 = () => {
                       {/* News Analysis Content */}
                       <CardContent className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                          <div className="lg:col-span-2">
-                            <NewsCard 
+                          {/* Left Side - AI Analysis */}
+                          <div className="lg:col-span-2 space-y-4">
+                            {/* Stock Badge */}
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-blue-500 text-white">{article.symbol}</Badge>
+                              <span className="text-slate-400">Stock</span>
+                            </div>
+
+                            {/* Main Title */}
+                            <h3 className="text-xl font-bold text-white">
+                              {compositeHeadline}
+                            </h3>
+
+                            {/* Description */}
+                            <p className="text-slate-300 text-sm">
+                              Market analysis for {article.symbol} based on {sourceArticles.length} recent news articles and market developments.
+                            </p>
+
+                            {/* AI Analysis Section */}
+                            <AIAnalysisSection 
                               symbol={article.symbol}
-                              title={compositeHeadline}
-                              description={article.description}
-                              confidence={article.ai_confidence}
-                              sentiment={article.ai_sentiment}
-                              category={article.category}
+                              sentiment={article.ai_sentiment || 'Neutral'}
+                              confidence={article.ai_confidence || 50}
                               isHistorical={article.ai_reasoning?.includes('Historical')}
-                              sourceLinks="[]"
-                              stockPrice={stockData}
+                              sourceLinksCount={sourceArticles.length}
+                            />
+
+                            {/* Market Sentiment */}
+                            <SentimentIndicator 
+                              sentiment={article.ai_sentiment || 'Neutral'}
+                              category="Technology Stock"
+                            />
+
+                            {/* Detailed Analysis */}
+                            <DetailedAnalysis 
+                              symbol={article.symbol}
+                              sentiment={article.ai_sentiment || 'Neutral'}
+                              confidence={article.ai_confidence || 50}
+                              aiReasoning={article.ai_reasoning}
                             />
                           </div>
+                          
+                          {/* Right Side - Source Articles */}
                           <div className="lg:col-span-3">
+                            <div className="flex items-center gap-2 mb-4">
+                              <ExternalLink className="w-4 h-4 text-slate-400" />
+                              <h4 className="text-white font-semibold">Source Articles ({sourceArticles.length})</h4>
+                              <span className="text-slate-500 text-sm">Weighted by significance</span>
+                            </div>
+                            
                             <SourceArticles 
                               parsedSourceLinks={sourceArticles}
                               isHistorical={article.ai_reasoning?.includes('Historical')}
