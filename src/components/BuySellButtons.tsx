@@ -25,8 +25,14 @@ export const BuySellButtons = () => {
     } else if (path.includes('/trading-view/')) {
       const symbol = path.split('/trading-view/')[1];
       setCurrentSymbol(symbol?.toUpperCase() || "");
+    } else if (path.includes('/magnificent-7') || path.includes('/magnificent7')) {
+      // Default to AAPL for Mag7 page
+      setCurrentSymbol("AAPL");
+    } else if (path.includes('/index-funds')) {
+      // Default to SPY for Index Funds page
+      setCurrentSymbol("SPY");
     } else {
-      // Default to a popular symbol for dashboard/other pages
+      // Default to SPY for dashboard/other pages
       setCurrentSymbol("SPY");
     }
   }, [location.pathname]);

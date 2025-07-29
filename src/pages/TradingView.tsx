@@ -31,6 +31,7 @@ import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LiveTradingViewChart } from "@/components/chart/LiveTradingViewChart";
 import CompanyLogo from "@/components/CompanyLogo";
+import { BuySellButtons } from "@/components/BuySellButtons";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -300,6 +301,11 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
               Data
             </Button>
           </div>
+
+          <div className="w-px h-6 bg-slate-600 mx-2" />
+
+          {/* Buy/Sell Buttons */}
+          <BuySellButtons />
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
