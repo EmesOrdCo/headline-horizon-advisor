@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, ArrowLeft, BarChart3, TrendingUp, TrendingDown, Wifi, WifiOff, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
@@ -9,11 +10,13 @@ import MarketTicker from "@/components/MarketTicker";
 import Footer from "@/components/Footer";
 import RealTimePriceChart from "@/components/RealTimePriceChart";
 import HistoricalPriceChart from "@/components/HistoricalPriceChart";
+import ChartModal from "@/components/ChartModal";
 import { SourceArticles } from "@/components/NewsCard/SourceArticles";
 import { useIndexFundsArticles, useFetchIndexFunds } from "@/hooks/useIndexFunds";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
-import { useArticleWeights } from "@/hooks/useArticleWeights";
+import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import CompanyLogo from "@/components/CompanyLogo";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/useSEO";
@@ -57,16 +60,24 @@ const IndexFunds = () => {
       ]
     }
   });
+  
   const { data: newsData, isLoading, refetch } = useIndexFundsArticles();
   const { data: stockPrices, isLoading: stockPricesLoading, error: stockPricesError } = useStockPrices();
   const fetchNews = useFetchIndexFunds();
   const [isFetching, setIsFetching] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
+  const [selectedChart, setSelectedChart] = useState<{ symbol: string; stockName: string } | null>(null);
   const [priceHistory, setPriceHistory] = useState<{[key: string]: PriceHistoryPoint[]}>({});
   const { toast } = useToast();
 
   // Focus on major index funds
   const MAJOR_INDEX_FUNDS = ['SPY', 'QQQ', 'DIA'];
+  
+  // Get company logos for the funds
+  const { logos, loading: logosLoading, getLogoUrl } = useCompanyLogos(MAJOR_INDEX_FUNDS);
+  
+  // TEST: Only stream one fund to debug WebSocket issues - use useMemo to prevent recreation
+  const TEST_SYMBOLS = useMemo(() => ['SPY'], []);
 
   // Enhanced market hours detection
   const marketStatus = useMemo(() => {
@@ -137,12 +148,12 @@ const IndexFunds = () => {
     streamData: wsData,
     errorMessage: wsError
   } = useAlpacaStreamSingleton({
-    symbols: MAJOR_INDEX_FUNDS,
+    symbols: TEST_SYMBOLS, // TEST: Only stream SPY
     enabled: useWebSocket && !window.location.pathname.includes('/alpaca-live-chart')
   });
 
   useEffect(() => {
-    MAJOR_INDEX_FUNDS.forEach(symbol => {
+    TEST_SYMBOLS.forEach(symbol => { // TEST: Only process the symbol we're streaming
       if (wsData[symbol] && useWebSocket) {
         const newDataPoint: PriceHistoryPoint = {
           timestamp: wsData[symbol].timestamp || new Date().toISOString(),
@@ -156,7 +167,21 @@ const IndexFunds = () => {
         }));
       }
     });
-  }, [wsData, MAJOR_INDEX_FUNDS, useWebSocket]);
+  }, [wsData, TEST_SYMBOLS, useWebSocket]);
+
+  // Auto-refresh news when page loads
+  useEffect(() => {
+    const autoRefresh = async () => {
+      try {
+        await fetchNews();
+        await refetch();
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+    
+    autoRefresh();
+  }, []); // Only run once on mount
 
   const getStockPrice = (symbol: string) => {
     const apiPrice = stockPrices?.find(stock => stock.symbol === symbol);
@@ -165,64 +190,6 @@ const IndexFunds = () => {
     }
     
     return null;
-  };
-
-  const indexFundArticles = MAJOR_INDEX_FUNDS.map(symbol => {
-    return newsData?.find(item => 
-      item.symbol === symbol && 
-      item.ai_confidence && 
-      item.ai_sentiment
-    );
-  }).filter(Boolean) || [];
-
-  // Get source articles for a story
-  const getSourceArticles = (story: any) => {
-    if (!story?.source_links) return [];
-    
-    try {
-      return JSON.parse(story.source_links);
-    } catch {
-      return [];
-    }
-  };
-
-  // Call hooks for each symbol at the top level to comply with Rules of Hooks
-  // Add safety checks to prevent accessing undefined data
-  const spyArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'SPY') : null;
-  const spySourceArticles = spyArticle ? getSourceArticles(spyArticle) : [];
-  const { data: spyArticleWeights, isLoading: spyWeightsLoading } = useArticleWeights({
-    articles: spySourceArticles,
-    overallSentiment: spyArticle?.ai_sentiment || 'Neutral',
-    overallConfidence: spyArticle?.ai_confidence || 50,
-    symbol: 'SPY',
-    enabled: Boolean(spyArticle && spySourceArticles.length > 0 && !spyArticle?.ai_reasoning?.includes('Historical'))
-  });
-
-  const qqqArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'QQQ') : null;
-  const qqqSourceArticles = qqqArticle ? getSourceArticles(qqqArticle) : [];
-  const { data: qqqArticleWeights, isLoading: qqqWeightsLoading } = useArticleWeights({
-    articles: qqqSourceArticles,
-    overallSentiment: qqqArticle?.ai_sentiment || 'Neutral',
-    overallConfidence: qqqArticle?.ai_confidence || 50,
-    symbol: 'QQQ',
-    enabled: Boolean(qqqArticle && qqqSourceArticles.length > 0 && !qqqArticle?.ai_reasoning?.includes('Historical'))
-  });
-
-  const diaArticle = newsData ? indexFundArticles.find(item => item?.symbol === 'DIA') : null;
-  const diaSourceArticles = diaArticle ? getSourceArticles(diaArticle) : [];
-  const { data: diaArticleWeights, isLoading: diaWeightsLoading } = useArticleWeights({
-    articles: diaSourceArticles,
-    overallSentiment: diaArticle?.ai_sentiment || 'Neutral',
-    overallConfidence: diaArticle?.ai_confidence || 50,
-    symbol: 'DIA',
-    enabled: Boolean(diaArticle && diaSourceArticles.length > 0 && !diaArticle?.ai_reasoning?.includes('Historical'))
-  });
-
-  // Create a lookup object for the article weights
-  const articleWeightsData = {
-    'SPY': { data: spyArticleWeights, isLoading: spyWeightsLoading },
-    'QQQ': { data: qqqArticleWeights, isLoading: qqqWeightsLoading },
-    'DIA': { data: diaArticleWeights, isLoading: diaWeightsLoading }
   };
 
   const generateCompositeHeadline = (item: any): string => {
@@ -245,6 +212,8 @@ const IndexFunds = () => {
         summary = sentiment === 'bullish' ? 'Fed policy supports markets' : 'Rate concerns pressure indices';
       } else if (titles.some(t => t.includes('market') || t.includes('index') || t.includes('trading'))) {
         summary = sentiment === 'bullish' ? 'Strong market momentum' : 'Market volatility increases';
+      } else if (titles.some(t => t.includes('earnings') || t.includes('revenue') || t.includes('profit'))) {
+        summary = sentiment === 'bullish' ? 'Strong market performance' : 'Market concerns emerge';
       } else {
         summary = sentiment === 'bullish' ? 'Positive market outlook' : 'Market headwinds emerge';
       }
@@ -324,17 +293,6 @@ const IndexFunds = () => {
     };
   };
 
-  // Get source articles for a story
-  const getSourceArticlesForStory = (story: any) => {
-    if (!story?.source_links) return [];
-    
-    try {
-      return JSON.parse(story.source_links);
-    } catch {
-      return [];
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-900">
       <DashboardNav />
@@ -357,14 +315,6 @@ const IndexFunds = () => {
                 </Link>
                 <div className="flex items-center gap-4">
                   <Button 
-                    onClick={() => setShowCharts(!showCharts)}
-                    variant="outline" 
-                    className="bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-600/50"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    {showCharts ? 'Hide Charts' : 'Show Charts'}
-                  </Button>
-                  <Button 
                     onClick={handleRefreshNews}
                     disabled={isFetching}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -377,72 +327,11 @@ const IndexFunds = () => {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Index Funds Analysis</h1>
                 <p className="text-gray-600 dark:text-slate-400 text-sm sm:text-base">
-                  Real-time data and analysis for major market index funds
+                  Real-time fund data and analysis for major market index funds
                 </p>
               </div>
             </div>
           </div>
-
-          {/* Market Status Banner */}
-          <Card className={`mb-6 ${
-            marketStatus.isOpen 
-              ? 'bg-emerald-900/20 border-emerald-600/50' 
-              : 'bg-slate-800/50 border-slate-600'
-          }`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
-                    marketStatus.isOpen 
-                      ? 'bg-emerald-600/20 text-emerald-400' 
-                      : 'bg-slate-700/50 text-slate-300'
-                  }`}>
-                    <div className={`w-3 h-3 rounded-full ${
-                      marketStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
-                    }`} />
-                    <div className="font-medium">
-                      {marketStatus.message}
-                    </div>
-                    <Badge 
-                      variant={marketStatus.isOpen ? "default" : "secondary"}
-                      className={marketStatus.isOpen 
-                        ? "bg-emerald-600 text-white" 
-                        : "bg-slate-600 text-slate-200"
-                      }
-                    >
-                      {marketStatus.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium ${
-                    useWebSocket 
-                      ? 'bg-emerald-600/20 text-emerald-400' 
-                      : 'bg-blue-600/20 text-blue-400'
-                  }`}>
-                    {useWebSocket ? (
-                      <>
-                        <Wifi className="w-4 h-4" />
-                        Live WebSocket Data
-                        {wsConnected && <span className="text-xs">(Connected)</span>}
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4" />
-                        REST API Data
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {!marketStatus.isOpen && (
-                <div className="mt-3 text-sm text-slate-400 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Using REST API for market data during off-hours. Data may be delayed.
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* WebSocket Status Alert - Only show if there are connection issues during market hours */}
           {useWebSocket && wsError && (
@@ -462,7 +351,7 @@ const IndexFunds = () => {
           )}
 
           {/* All Index Fund Analysis Sections */}
-          <div className="space-y-12">
+          <div className="space-y-8">
             {MAJOR_INDEX_FUNDS.map((symbol) => {
               const stockData = getBestStockData(symbol);
               const article = newsData?.find(item => 
@@ -480,108 +369,121 @@ const IndexFunds = () => {
               
               const compositeHeadline = article ? generateCompositeHeadline(article) : `${symbol}: Market Analysis`;
               
-              return (
-                <div key={symbol} className="w-full">
-                  <Card className="mb-6 bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center justify-between">
-                        <span>{symbol} - Live Price</span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          stockData?.isRealTime && useWebSocket ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-600/20 text-slate-400'
-                        }`}>
-                          {stockData?.isRealTime && useWebSocket ? 'Live' : 'Delayed'}
-                        </span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {stockData?.error ? (
-                        <div className="bg-red-900/20 border border-red-600/50 rounded-lg p-4">
-                          <div className="text-center text-red-400">
-                            <div className="text-lg font-bold">No Data</div>
-                            <div className="text-sm text-red-300 mt-1">
-                              {stockData.errorMessage || 'Unable to fetch stock price'}
-                            </div>
+              // Show loading state while stock prices are loading
+              if (stockPricesLoading) {
+                return (
+                  <Card key={symbol} className="mb-8 bg-slate-800/50 border-slate-700">
+                    <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="w-8 h-8 rounded" />
+                            <Skeleton className="w-16 h-6 rounded" />
+                            <Skeleton className="w-24 h-4 rounded" />
+                          </div>
+                          <div className="flex items-center gap-6 text-sm">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                              <div key={index} className="text-center">
+                                <Skeleton className="w-12 h-3 mb-1" />
+                                <Skeleton className="w-16 h-4" />
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      ) : (
-                        <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
-                          <div className="text-center mb-4">
-                            <div className="text-2xl font-bold text-white mb-1">
-                              ${stockData.price.toFixed(2)}
-                            </div>
-                            
-                            {!stockData.isRealTime && (
-                              <div className={`flex items-center justify-center gap-2 text-sm ${
-                                stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                              }`}>
-                                {stockData.change >= 0 ? (
-                                  <TrendingUp className="w-4 h-4" />
-                                ) : (
-                                  <TrendingDown className="w-4 h-4" />
-                                )}
-                                <span>
-                                  {stockData.change >= 0 ? '+' : ''}{stockData.change.toFixed(2)} 
-                                  ({stockData.changePercent >= 0 ? '+' : ''}{stockData.changePercent.toFixed(2)}%)
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-600">
-                            <div className="text-center">
-                              <div className="text-sm font-bold text-red-400">
-                                ${stockData.bidPrice.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-slate-400">Bid</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-sm font-bold text-emerald-400">
-                                ${stockData.askPrice.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-slate-400">Ask</div>
-                            </div>
-                          </div>
+                        <Skeleton className="w-20 h-8 rounded" />
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-center h-32">
+                        <div className="flex items-center gap-3 text-slate-400">
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          <span className="text-sm">Loading fund data...</span>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Historical Price Chart for each index */}
-                  <Card className="mb-8 bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">
-                        Historical Price Chart ({symbol})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-slate-700/30 rounded-lg p-4">
-                        <HistoricalPriceChart symbol={symbol} limit={30} />
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Live Chart if enabled */}
-                  {showCharts && (
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
-                      <CardHeader>
-                        <CardTitle className="text-white">
-                          {symbol} {useWebSocket ? 'Live' : 'Real-Time'} Price Chart
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="bg-slate-700/30 rounded-lg p-4">
-                          <RealTimePriceChart
-                            data={priceHistory[symbol] || []}
-                            symbol={symbol}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* News Analysis Section for each index */}
+                );
+              }
+              
+              return (
+                <div key={symbol} className="w-full">
+                  {/* Integrated Fund Info and News Analysis */}
                   {article ? (
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
+                      {/* Compact Fund Header */}
+                      <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                              <CompanyLogo symbol={symbol} className="w-8 h-8" />
+                              <Badge className="bg-purple-600 text-white font-semibold">{symbol}</Badge>
+                              <span className="text-white font-medium">{symbol} Index Fund</span>
+                            </div>
+                            
+                            {/* Technical Data Spread Out */}
+                            {!stockData?.error && (
+                              <div className="flex items-center gap-6 text-sm">
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Price</div>
+                                  <div className="text-white font-medium">
+                                    ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Change</div>
+                                  <div className={`font-medium ${
+                                    stockData?.change && stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                                  }`}>
+                                    {stockData?.change && stockData.change >= 0 ? '+' : ''}
+                                    {stockData?.change ? stockData.change.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Change %</div>
+                                  <div className={`font-medium ${
+                                    stockData?.changePercent && stockData.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'
+                                  }`}>
+                                    {stockData?.changePercent ? (stockData.changePercent >= 0 ? '+' : '') + stockData.changePercent.toFixed(2) : '0.00'}%
+                                  </div>
+                                </div>
+                                {stockData?.bidPrice && stockData?.askPrice && (
+                                  <>
+                                    <div className="text-center">
+                                      <div className="text-slate-400 text-xs">Bid</div>
+                                      <div className="text-red-400 font-medium">${stockData.bidPrice.toFixed(2)}</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-slate-400 text-xs">Ask</div>
+                                      <div className="text-emerald-400 font-medium">${stockData.askPrice.toFixed(2)}</div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Index Fund` })}
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover-scale"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Chart
+                          </Button>
+                        </div>
+                        
+                        {stockData?.error && (
+                          <div className="mt-3 text-red-400 text-center">
+                            <div className="font-bold">No Data Available</div>
+                            <div className="text-xs text-red-300">
+                              {stockData.errorMessage || 'Unable to fetch price'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* News Analysis Content */}
                       <CardContent className="p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                           <div className="lg:col-span-2">
@@ -608,7 +510,81 @@ const IndexFunds = () => {
                       </CardContent>
                     </Card>
                   ) : (
-                    <Card className="mb-8 bg-slate-800/50 border-slate-700">
+                    /* Standalone Fund Card when no news */
+                    <Card className="mb-8 bg-slate-800/50 border-slate-700 animate-fade-in">
+                      {/* Compact Fund Header */}
+                      <div className="bg-slate-700/30 border-b border-slate-600 px-6 py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                              <CompanyLogo symbol={symbol} className="w-8 h-8" />
+                              <Badge className="bg-purple-600 text-white font-semibold">{symbol}</Badge>
+                              <span className="text-white font-medium">{symbol} Index Fund</span>
+                            </div>
+                            
+                            {/* Technical Data Spread Out */}
+                            {!stockData?.error && (
+                              <div className="flex items-center gap-6 text-sm">
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Price</div>
+                                  <div className="text-white font-medium">
+                                    ${stockData?.price ? stockData.price.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Change</div>
+                                  <div className={`font-medium ${
+                                    stockData?.change && stockData.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                                  }`}>
+                                    {stockData?.change && stockData.change >= 0 ? '+' : ''}
+                                    {stockData?.change ? stockData.change.toFixed(2) : '0.00'}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-slate-400 text-xs">Change %</div>
+                                  <div className={`font-medium ${
+                                    stockData?.changePercent && stockData.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'
+                                  }`}>
+                                    {stockData?.changePercent ? (stockData.changePercent >= 0 ? '+' : '') + stockData.changePercent.toFixed(2) : '0.00'}%
+                                  </div>
+                                </div>
+                                {stockData?.bidPrice && stockData?.askPrice && (
+                                  <>
+                                    <div className="text-center">
+                                      <div className="text-slate-400 text-xs">Bid</div>
+                                      <div className="text-red-400 font-medium">${stockData.bidPrice.toFixed(2)}</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-slate-400 text-xs">Ask</div>
+                                      <div className="text-emerald-400 font-medium">${stockData.askPrice.toFixed(2)}</div>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedChart({ symbol, stockName: `${symbol} Index Fund` })}
+                            className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover-scale"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Chart
+                          </Button>
+                        </div>
+                        
+                        {stockData?.error && (
+                          <div className="mt-3 text-red-400 text-center">
+                            <div className="font-bold">No Data Available</div>
+                            <div className="text-xs text-red-300">
+                              {stockData.errorMessage || 'Unable to fetch price'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <CardContent className="p-6">
                         <div className="flex flex-col items-center justify-center py-8">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
@@ -624,6 +600,16 @@ const IndexFunds = () => {
           </div>
         </div>
       </div>
+      
+      {/* Chart Modal */}
+      {selectedChart && (
+        <ChartModal
+          isOpen={!!selectedChart}
+          onClose={() => setSelectedChart(null)}
+          symbol={selectedChart.symbol}
+          stockName={selectedChart.stockName}
+        />
+      )}
       
       <Footer />
     </div>
