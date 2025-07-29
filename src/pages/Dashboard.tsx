@@ -420,7 +420,7 @@ const Dashboard = () => {
                           ${getStockPrice(topMagnificent7Story.symbol)?.price?.toFixed(2) || '214.00'}
                         </div>
                       </div>
-                      <Link to={`/stock-chart?symbol=${topMagnificent7Story.symbol}`}>
+                      <Link to={`/stock-chart/${topMagnificent7Story.symbol}`}>
                         <Button variant="outline" size="sm" className="border-slate-600">
                           <BarChart3 className="w-4 h-4 mr-2" />
                           Chart
@@ -566,7 +566,7 @@ const Dashboard = () => {
                           ${getStockPrice(topIndexFundStory.symbol)?.price?.toFixed(2) || '458.50'}
                         </div>
                       </div>
-                      <Link to={`/stock-chart?symbol=${topIndexFundStory.symbol}`}>
+                      <Link to={`/stock-chart/${topIndexFundStory.symbol}`}>
                         <Button variant="outline" size="sm" className="border-slate-600">
                           <BarChart3 className="w-4 h-4 mr-2" />
                           Chart
