@@ -703,7 +703,7 @@ const StockChart: React.FC = () => {
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span className="text-white">{currentPrice.toFixed(2)}</span>
                   <span className={change >= 0 ? 'text-green-400' : 'text-red-400'}>
-                    {change >= 0 ? '+' : ''}{change.toFixed(2)} {change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                    {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
                   </span>
                 </div>
                 <div className="text-xs text-slate-500 mt-1">Last update: {new Date().toLocaleTimeString()}</div>
