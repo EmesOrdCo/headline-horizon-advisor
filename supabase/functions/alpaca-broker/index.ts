@@ -480,8 +480,16 @@ serve(async (req) => {
       throw new Error(errorMessage);
     }
 
-    const responseData = await response.json();
-    console.log(`${action} response:`, responseData);
+    // Handle different response types
+    let responseData;
+    if (response.status === 204) {
+      // 204 No Content - successful but no response body (e.g., order cancellation)
+      console.log(`${action} completed successfully (204 No Content)`);
+      responseData = { message: 'Operation completed successfully' };
+    } else {
+      responseData = await response.json();
+      console.log(`${action} response:`, responseData);
+    }
 
     return new Response(JSON.stringify({
       success: true,
