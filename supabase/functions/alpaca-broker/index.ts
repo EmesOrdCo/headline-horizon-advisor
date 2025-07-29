@@ -87,11 +87,70 @@ serve(async (req) => {
         break;
 
       case 'get_account':
+        // For trading accounts, we need to get both the basic account info and trading details
         url = `${BROKER_BASE_URL}/v1/accounts/${account_id}`;
         response = await fetch(url, {
           method: 'GET',
           headers,
         });
+        
+        // If successful, also fetch trading account details
+        if (response.ok) {
+          const basicAccount = await response.json();
+          
+          // Try to get trading account data - this has the equity, cash, buying_power fields
+          const tradingUrl = `${BROKER_BASE_URL}/v1/trading/accounts/${account_id}/account`;
+          const tradingResponse = await fetch(tradingUrl, {
+            method: 'GET',
+            headers,
+          });
+          
+          if (tradingResponse.ok) {
+            const tradingAccount = await tradingResponse.json();
+            console.log('Trading account data:', tradingAccount);
+            
+            // Merge the data, prioritizing trading account fields
+            const mergedAccount = {
+              ...basicAccount,
+              ...tradingAccount,
+              // Ensure we have the expected field names
+              equity: tradingAccount.equity || tradingAccount.last_equity || '0',
+              cash: tradingAccount.cash || '0',
+              buying_power: tradingAccount.buying_power || tradingAccount.cash || '0',
+              long_market_value: tradingAccount.long_market_value || '0',
+              short_market_value: tradingAccount.short_market_value || '0',
+              // Also keep the original last_equity for reference
+              last_equity: basicAccount.last_equity
+            };
+            
+            return new Response(JSON.stringify({
+              success: true,
+              action,
+              data: mergedAccount
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          } else {
+            console.log('Trading account endpoint failed, using basic account data only');
+            // Fallback: use basic account data but map fields appropriately
+            const mappedAccount = {
+              ...basicAccount,
+              equity: basicAccount.last_equity || '0',
+              cash: '0', // Default since not available in basic account
+              buying_power: '0', // Default since not available in basic account  
+              long_market_value: '0', // Default since not available in basic account
+              short_market_value: '0' // Default since not available in basic account
+            };
+            
+            return new Response(JSON.stringify({
+              success: true,
+              action,
+              data: mappedAccount
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
         break;
 
       case 'create_ach_relationship':

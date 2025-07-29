@@ -133,10 +133,19 @@ const Portfolio = () => {
         console.log('Orders data:', ordersData);
         console.log('Portfolio history data:', portfolioHistoryData);
         
-        // Use ONLY the real data from Alpaca API - NO FALLBACK VALUES
+        // Use ONLY the real data from Alpaca API with better error handling
+        console.log('Enhanced account details from API:', accountDetails);
+        
         const enhancedAccountData = {
           ...accountDetails
         };
+        
+        console.log('Final account data being set:', enhancedAccountData);
+        console.log('Parsed values:', {
+          totalValue: accountDetails?.equity ? parseFloat(accountDetails.equity) : 0,
+          availableCash: accountDetails?.cash ? parseFloat(accountDetails.cash) : 0,
+          investedAmount: accountDetails?.long_market_value ? parseFloat(accountDetails.long_market_value) : 0,
+        });
         
         setAccountData(enhancedAccountData);
         setPositions(positionsData);
