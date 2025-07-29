@@ -84,6 +84,7 @@ const NewsAnalysisDisplay = ({ userStocks, newsArticles, stockPrices }: NewsAnal
                 sentiment={article.ai_sentiment}
                 category={article.category}
                 sourceLinks={article.source_links}
+                aiReasoning={article.ai_reasoning}
                 stockPrice={stockPrice ? {
                   price: stockPrice.price,
                   change: stockPrice.change,

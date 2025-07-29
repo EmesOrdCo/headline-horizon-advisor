@@ -16,6 +16,7 @@ interface NewsCardProps {
   category?: string;
   isHistorical?: boolean;
   sourceLinks?: string;
+  aiReasoning?: string;
   stockPrice?: {
     price: number;
     change: number;
@@ -23,7 +24,7 @@ interface NewsCardProps {
   };
 }
 
-const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, sourceLinks, stockPrice }: NewsCardProps) => {
+const NewsCard = ({ symbol, title, description, confidence, sentiment, category, isHistorical, sourceLinks, aiReasoning, stockPrice }: NewsCardProps) => {
   // Helper function to get asset type and styling
   const getAssetInfo = (symbol: string) => {
     const MAGNIFICENT_7 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META'];
@@ -89,6 +90,7 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
             symbol={symbol}
             sentiment={sentiment}
             confidence={confidence}
+            aiReasoning={aiReasoning}
           />
         </>
       )}
@@ -104,3 +106,4 @@ const NewsCard = ({ symbol, title, description, confidence, sentiment, category,
 };
 
 export default NewsCard;
+export type { NewsCardProps };
