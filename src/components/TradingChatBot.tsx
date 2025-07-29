@@ -60,6 +60,10 @@ const TradingChatBot: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log('🤖 Trading Assistant: Starting request...');
+      console.log('User message:', inputValue);
+      console.log('Active symbol:', activeSymbol);
+      
       // Get current stock data for context
       const currentStock = stockPrices?.find(s => s.symbol === activeSymbol);
       const stockData = currentStock ? {
@@ -69,7 +73,10 @@ const TradingChatBot: React.FC = () => {
         marketStatus: 'Live Trading' // You can expand this with real market status
       } : null;
 
+      console.log('Stock data for context:', stockData);
+
       // Call OpenAI trading assistant
+      console.log('🚀 Calling trading-assistant edge function...');
       const { data, error } = await supabase.functions.invoke('trading-assistant', {
         body: {
           message: inputValue,
@@ -78,8 +85,10 @@ const TradingChatBot: React.FC = () => {
         }
       });
 
+      console.log('📥 Edge function response:', { data, error });
+
       if (error) {
-        console.error('Trading assistant error:', error);
+        console.error('🚨 Trading assistant error:', error);
         throw error;
       }
 
