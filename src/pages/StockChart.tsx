@@ -680,24 +680,6 @@ const StockChart: React.FC = () => {
             </Button>
           </div>
 
-          {/* Timeframe Buttons */}
-          <div className="flex items-center space-x-1">
-            {['1m', '5m', '15m', '30m', '1h', '4h', '1D', '1W', '1M'].map((timeframe) => (
-              <Button
-                key={timeframe}
-                variant="ghost"
-                size="sm"
-                className={`text-sm px-2 py-1 h-8 rounded ${
-                  timeframe === selectedTimeframe 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                }`}
-                onClick={() => setSelectedTimeframe(timeframe)}
-              >
-                {timeframe}
-              </Button>
-            ))}
-          </div>
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
