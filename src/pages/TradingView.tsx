@@ -25,7 +25,8 @@ import {
   MoreHorizontal,
   Star,
   Activity,
-  Zap
+  Zap,
+  Clock
 } from "lucide-react";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useAlpacaStreamSingleton } from "@/hooks/useAlpacaStreamSingleton";
@@ -33,6 +34,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { LiveTradingViewChart } from "@/components/chart/LiveTradingViewChart";
 import CompanyLogo from "@/components/CompanyLogo";
 import { AlpacaTradingModal } from "@/components/AlpacaTradingModal";
+import { PendingOrdersModal } from "@/components/PendingOrdersModal";
 
 interface TradingViewProps {
   isDemo?: boolean;
@@ -305,8 +307,19 @@ const TradingView: React.FC<TradingViewProps> = ({ isDemo = false }) => {
 
           <div className="w-px h-6 bg-slate-600 mx-2" />
 
-          {/* Buy/Sell Buttons */}
+          {/* Pending Orders & Buy/Sell Buttons */}
           <div className="flex items-center space-x-2">
+            <PendingOrdersModal>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-sm px-3 py-1 text-blue-400 hover:text-blue-300 hover:bg-slate-700 border border-blue-400/30"
+              >
+                <Clock className="w-4 h-4 mr-1" />
+                Pending Orders
+              </Button>
+            </PendingOrdersModal>
+            
             <AlpacaTradingModal symbol={activeSymbol} currentPrice={214.28} initialMode="sell">
               <Button
                 variant="ghost"

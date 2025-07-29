@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAlpacaBroker, AlpacaOrder } from '@/hooks/useAlpacaBroker';
-import { Loader2, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp, TrendingDown, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface OrderHistoryProps {
@@ -15,7 +15,8 @@ interface OrderHistoryProps {
 const OrderHistory = ({ accountId, refreshTrigger }: OrderHistoryProps) => {
   const [orders, setOrders] = useState<AlpacaOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { getOrders } = useAlpacaBroker();
+  const [cancelingOrders, setCancelingOrders] = useState<Set<string>>(new Set());
+  const { getOrders, cancelOrder } = useAlpacaBroker();
 
   const loadOrders = async () => {
     if (!accountId) return;
@@ -45,6 +46,33 @@ const OrderHistory = ({ accountId, refreshTrigger }: OrderHistoryProps) => {
   useEffect(() => {
     loadOrders();
   }, [accountId, refreshTrigger]);
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!accountId) return;
+
+    setCancelingOrders(prev => new Set(prev).add(orderId));
+    
+    try {
+      await cancelOrder(accountId, orderId);
+      toast.success('Order cancelled successfully');
+      
+      // Remove the cancelled order from the list and refresh
+      await loadOrders();
+    } catch (error: any) {
+      console.error('Failed to cancel order:', error);
+      toast.error(`Failed to cancel order: ${error.message}`);
+    } finally {
+      setCancelingOrders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
+  };
+
+  const isPendingOrder = (status: string) => {
+    return ['new', 'partially_filled', 'pending_new', 'accepted', 'pending_cancel', 'pending_replace'].includes(status);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusColor = {
@@ -166,6 +194,7 @@ const OrderHistory = ({ accountId, refreshTrigger }: OrderHistoryProps) => {
                     <TableHead>Type</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                     <TableHead>Time</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,7 +202,14 @@ const OrderHistory = ({ accountId, refreshTrigger }: OrderHistoryProps) => {
                   {orders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-gray-50">
                       <TableCell className="font-mono font-semibold">
-                        {order.symbol}
+                        <div className="flex items-center gap-2">
+                          {order.symbol}
+                          {isPendingOrder(order.status) && (
+                            <span title="Pending order">
+                              <Clock className="w-3 h-3 text-blue-500" />
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -193,6 +229,31 @@ const OrderHistory = ({ accountId, refreshTrigger }: OrderHistoryProps) => {
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(order.status)}
+                      </TableCell>
+                      <TableCell>
+                        {isPendingOrder(order.status) ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={cancelingOrders.has(order.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {cancelingOrders.has(order.id) ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                Cancelling...
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-3 h-3 mr-1" />
+                                Cancel
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {formatDate(order.created_at)}
