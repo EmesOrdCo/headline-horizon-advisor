@@ -735,6 +735,46 @@ const StockChart: React.FC = () => {
         </div>
       </div>
 
+      {/* Price Header - EXACT replica */}
+      <div className="px-4 py-3 bg-slate-800/30 border-b border-slate-700 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-3">
+              <span className="text-white text-2xl font-bold">{currentPrice.toFixed(2)}</span>
+              <span className={`px-2 py-1 text-sm rounded ${change >= 0 ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                {change >= 0 ? '+' : ''}{change.toFixed(2)} ({change >= 0 ? '+' : ''}{changePercent.toFixed(2)}%)
+              </span>
+            </div>
+            <div className="flex space-x-6 text-sm">
+              <div className="text-slate-400">O <span className="text-white">{currentPrice.toFixed(2)}</span></div>
+              <div className="text-slate-400">H <span className="text-white">{currentPrice.toFixed(2)}</span></div>
+              <div className="text-slate-400">L <span className="text-white">{currentPrice.toFixed(2)}</span></div>
+              <div className="text-slate-400">C <span className="text-white">{currentPrice.toFixed(2)}</span></div>
+              <div className="text-slate-400">Vol <span className="text-blue-400">{formatVolume(1000000)}</span></div>
+              <div className="flex items-center space-x-2 ml-4">
+                <TradingModal 
+                  symbol={activeSymbol} 
+                  currentPrice={currentPrice} 
+                  initialMode="sell"
+                >
+                  <button className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors">
+                    Sell ${bidPrice.toFixed(2)}
+                  </button>
+                </TradingModal>
+                <TradingModal 
+                  symbol={activeSymbol} 
+                  currentPrice={currentPrice} 
+                  initialMode="buy"
+                >
+                  <button className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-medium transition-colors">
+                    Buy ${askPrice.toFixed(2)}
+                  </button>
+                </TradingModal>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="flex flex-1 min-h-0">
         {/* Left Sidebar - Functional Drawing Tools */}
