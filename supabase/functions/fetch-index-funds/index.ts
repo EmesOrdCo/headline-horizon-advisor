@@ -63,21 +63,48 @@ serve(async (req) => {
       await supabase.from('news_articles').delete().eq('symbol', symbol);
     }
 
-    // Store ALL articles immediately for hyperlinking, regardless of AI analysis success
+    // Store ALL articles immediately for hyperlinking, using keyword matching for symbol association
     console.log('Storing all articles for immediate hyperlinking...');
     const allStoredArticles = [];
     
+    // Keyword mapping for index funds
+    const keywordMapping = {
+      'SPY': ['SPY', 'S&P 500', 'S&P500', 'Standard & Poor\'s 500', 'SPDR S&P 500'],
+      'QQQ': ['QQQ', 'NASDAQ', 'Nasdaq', 'PowerShares QQQ', 'Invesco QQQ'],
+      'DIA': ['DIA', 'Dow Jones', 'DJIA', 'Dow Industrial', 'SPDR Dow Jones']
+    };
+    
     for (const article of uniqueArticles) {
+      // Determine which index fund this article is most relevant to using keyword matching
+      let primarySymbol = 'MARKET'; // Default fallback
+      
+      for (const [symbol, keywords] of Object.entries(keywordMapping)) {
+        const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
+        if (keywords.some(keyword => articleText.includes(keyword.toLowerCase()))) {
+          primarySymbol = symbol;
+          break; // Use first match found
+        }
+      }
+      
+      // If no specific fund keywords found, check for broader market terms and assign to SPY
+      if (primarySymbol === 'MARKET') {
+        const articleText = `${article.title} ${article.description || ''}`.toLowerCase();
+        const marketTerms = ['market', 'stocks', 'equities', 'index', 'etf', 'fund'];
+        if (marketTerms.some(term => articleText.includes(term))) {
+          primarySymbol = 'SPY'; // Default index fund for general market news
+        }
+      }
+      
       const articleToStore = {
         title: article.title,
         description: article.description || 'No description available',
         url: article.url,
         published_at: article.published_at,
-        symbol: 'MARKET', // Will be updated based on analysis
-        category: 'Market News',
+        symbol: primarySymbol, // Assign to specific index fund
+        category: 'Index Fund',
         ai_confidence: 70, // Default confidence
         ai_sentiment: 'Neutral', // Default sentiment
-        ai_reasoning: 'Market news article - analysis pending',
+        ai_reasoning: `Index fund news article - analysis based on keyword association with ${primarySymbol}`,
         source_links: JSON.stringify([{
           title: article.title,
           url: article.url,
