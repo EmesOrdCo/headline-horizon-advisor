@@ -22,6 +22,7 @@ import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
 import { useCompanyLogos } from "@/hooks/useCompanyLogos";
+import { supabase } from "@/integrations/supabase/client";
 import CompanyLogo from "@/components/CompanyLogo";
 
 const Dashboard = () => {
@@ -500,11 +501,35 @@ const Dashboard = () => {
               <h2 className="text-2xl font-bold text-white">Index Funds</h2>
               <p className="text-slate-400 text-sm">Market index performance and insights</p>
             </div>
-            <Link to="/index-funds">
-              <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400/10">
-                View All Funds <ArrowRight className="w-4 h-4 ml-2" />
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    console.log('🚀 Triggering Index Funds analysis...');
+                    const { data, error } = await supabase.functions.invoke('fetch-index-funds');
+                    if (error) {
+                      console.error('❌ Error:', error);
+                    } else {
+                      console.log('✅ Success:', data);
+                      // Refresh the page to show updated data
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    console.error('❌ Exception:', error);
+                  }
+                }}
+                className="text-purple-400 border-purple-400 hover:bg-purple-400/10"
+              >
+                Refresh Analysis
               </Button>
-            </Link>
+              <Link to="/index-funds">
+                <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400/10">
+                  View All Funds <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
           
           {/* Live Index Fund Analysis Interface */}
