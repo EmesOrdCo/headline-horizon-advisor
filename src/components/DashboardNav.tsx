@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { BuySellButtons } from "./BuySellButtons";
 
 import FeedbackModal from "./FeedbackModal";
 import {
@@ -122,6 +123,9 @@ const DashboardNav = () => {
 
           {/* Right Side Controls */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Buy/Sell Buttons - Always visible on dashboard pages */}
+            <BuySellButtons />
+            
             {!isMobile && (
               <span className="text-slate-400 text-sm font-medium">{formatTime(currentTime)}</span>
             )}
