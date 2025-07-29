@@ -182,19 +182,6 @@ const RSSHeadlines = ({ maxItems = 15, compact = false }: RSSHeadlinesProps) => 
         </div>
       )}
       
-      {compact && (
-        <div className="flex items-center justify-end mb-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleManualRefresh}
-            disabled={isManualRefreshing}
-            className="h-6 w-6 p-0 hover:bg-slate-700/50"
-          >
-            <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin' : ''} text-slate-400 hover:text-white`} />
-          </Button>
-        </div>
-      )}
       
       {error && (
         <div className="flex-1 flex items-center justify-center">

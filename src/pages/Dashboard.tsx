@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle, Loader2, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Clock, Activity, ExternalLink, Coins, AlertTriangle, Loader2, BarChart3, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardNav from "@/components/DashboardNav";
 import NewsCard from "@/components/NewsCard";
@@ -18,6 +19,8 @@ import AINewsInsights from "@/components/StockDetail/AINewsInsights";
 import { useNews } from "@/hooks/useNews";
 import { useStockPrices } from "@/hooks/useStockPrices";
 import { useSEO } from "@/hooks/useSEO";
+import { useFetchRSSNews } from "@/hooks/useRSSHeadlines";
+import { useQueryClient } from "@tanstack/react-query";
 import { useConsistentTopStories } from "@/hooks/useConsistentTopStories";
 import { useArticleWeights } from "@/hooks/useArticleWeights";
 import { useBiggestMovers } from "@/hooks/useBiggestMovers";
@@ -26,6 +29,10 @@ import { supabase } from "@/integrations/supabase/client";
 import CompanyLogo from "@/components/CompanyLogo";
 
 const Dashboard = () => {
+  const fetchRSSNews = useFetchRSSNews();
+  const queryClient = useQueryClient();
+  const [isRefreshingHeadlines, setIsRefreshingHeadlines] = useState(false);
+
   useSEO({
     title: "Live Market News Dashboard",
     description: "News-first layout with comprehensive sidebar navigation and real-time market updates.",
@@ -242,7 +249,30 @@ const Dashboard = () => {
             {/* Recent Headlines */}
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white text-sm">Recent Headlines</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-sm">Recent Headlines</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      setIsRefreshingHeadlines(true);
+                      try {
+                        const result = await fetchRSSNews();
+                        if (result.success) {
+                          await queryClient.invalidateQueries({ queryKey: ['rss-headlines'] });
+                        }
+                      } catch (error) {
+                        console.error('Error refreshing headlines:', error);
+                      } finally {
+                        setIsRefreshingHeadlines(false);
+                      }
+                    }}
+                    disabled={isRefreshingHeadlines}
+                    className="h-6 w-6 p-0 hover:bg-slate-700/50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isRefreshingHeadlines ? 'animate-spin' : ''} text-slate-400 hover:text-white`} />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 <RSSHeadlines maxItems={15} compact={true} />
