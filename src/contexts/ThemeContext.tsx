@@ -17,16 +17,16 @@ export const useTheme = () => {
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
-    // Remove dark mode - using light mode only
-    document.documentElement.classList.remove('dark');
+    // Always apply dark mode
+    document.documentElement.classList.add('dark');
   }, []);
 
   const toggleTheme = () => {
-    // Theme toggle disabled during aesthetic overhaul
+    // Do nothing - we only have dark mode
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode: false, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDarkMode: true, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
