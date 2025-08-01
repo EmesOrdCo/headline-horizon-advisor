@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DashboardNav from "@/components/DashboardNav";
+import { LogoPopulationTrigger } from "@/components/LogoPopulationTrigger";
+import { AutoLogoPopulator } from "@/components/AutoLogoPopulator";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -114,8 +116,18 @@ const Settings = () => {
           </Alert>
         </div>
 
-        <div className="max-w-7xl mx-auto w-full flex-1 flex items-center justify-center">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
+        <div className="max-w-7xl mx-auto w-full flex-1">
+          {/* Logo Population Admin Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Admin Tools</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <LogoPopulationTrigger />
+              <AutoLogoPopulator />
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
             
             {/* Progress Indicator Card - Spans full width */}
             <Card className="col-span-1 md:col-span-2 lg:col-span-3 border-muted-foreground/20">
@@ -195,6 +207,7 @@ const Settings = () => {
                 </Link>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
