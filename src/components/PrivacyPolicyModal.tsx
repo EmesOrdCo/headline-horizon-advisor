@@ -7,12 +7,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 const PrivacyPolicyModal = () => {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const copyToClipboard = () => {
+    const content = document.getElementById('privacy-content');
+    if (content) {
+      navigator.clipboard.writeText(content.innerText).then(() => {
+        toast.success("Privacy Policy copied to clipboard");
+      });
     }
   };
 
@@ -25,16 +37,27 @@ const PrivacyPolicyModal = () => {
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-800 border-slate-700">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold">Privacy Notice</DialogTitle>
+          <DialogTitle className="flex items-center justify-between text-white text-xl font-bold">
+            Privacy Notice
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyToClipboard}
+              className="ml-4"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-6 text-slate-300">
+          <div id="privacy-content" className="space-y-6 text-slate-300">
             <p className="text-sm text-slate-400">Last updated July 07, 2025</p>
             
             {/* Introduction */}
             <div className="space-y-4">
               <p className="text-sm leading-relaxed">
-                This Privacy Notice for <strong>StockPredict AI</strong> ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
+                This Privacy Notice for <strong>MarketSensor</strong> ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
               </p>
               <p className="text-sm leading-relaxed">
                 <strong>Questions or concerns?</strong> Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services.

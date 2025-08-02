@@ -8,12 +8,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 const TermsOfServiceModal = () => {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const copyToClipboard = () => {
+    const content = document.getElementById('terms-content');
+    if (content) {
+      navigator.clipboard.writeText(content.innerText).then(() => {
+        toast.success("Terms of Service copied to clipboard");
+      });
     }
   };
 
@@ -26,26 +38,37 @@ const TermsOfServiceModal = () => {
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-800 border-slate-700">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold">Terms of Service</DialogTitle>
+          <DialogTitle className="flex items-center justify-between text-white text-xl font-bold">
+            Terms of Service
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyToClipboard}
+              className="ml-4"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-          <div className="space-y-6 text-slate-300">
+          <div id="terms-content" className="space-y-6 text-slate-300">
             <p className="text-sm text-slate-400">Last updated July 07, 2025</p>
             
             {/* Agreement Section */}
             <div>
               <h2 className="text-white font-semibold text-lg mb-3">AGREEMENT TO OUR LEGAL TERMS</h2>
               <p className="text-sm leading-relaxed mb-2">
-                We are StockPredict AI (<strong>"Company," "we," "us," "our"</strong>).
+                We are MarketSensor (<strong>"Company," "we," "us," "our"</strong>).
               </p>
               <p className="text-sm leading-relaxed mb-2">
-                We operate StockPredict AI, as well as any other related products and services that refer or link to these legal terms (the <strong>"Legal Terms"</strong>) (collectively, the <strong>"Services"</strong>).
+                We operate MarketSensor, as well as any other related products and services that refer or link to these legal terms (the <strong>"Legal Terms"</strong>) (collectively, the <strong>"Services"</strong>).
               </p>
               <p className="text-sm leading-relaxed mb-2">
-                You can contact us by email at hello@stockpredict.ai or by mail to San Francisco, CA.
+                You can contact us by email at hello@marketsensor.ai or by mail to San Francisco, CA.
               </p>
               <p className="text-sm leading-relaxed mb-2">
-                These Legal Terms constitute a legally binding agreement made between you, whether personally or on behalf of an entity (<strong>"you"</strong>), and StockPredict AI, concerning your access to and use of the Services. You agree that by accessing the Services, you have read, understood, and agreed to be bound by all of these Legal Terms. <strong>IF YOU DO NOT AGREE WITH ALL OF THESE LEGAL TERMS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SERVICES AND YOU MUST DISCONTINUE USE IMMEDIATELY.</strong>
+                These Legal Terms constitute a legally binding agreement made between you, whether personally or on behalf of an entity (<strong>"you"</strong>), and MarketSensor, concerning your access to and use of the Services. You agree that by accessing the Services, you have read, understood, and agreed to be bound by all of these Legal Terms. <strong>IF YOU DO NOT AGREE WITH ALL OF THESE LEGAL TERMS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SERVICES AND YOU MUST DISCONTINUE USE IMMEDIATELY.</strong>
               </p>
               <p className="text-sm leading-relaxed mb-2">
                 Supplemental terms and conditions or documents that may be posted on the Services from time to time are hereby expressly incorporated herein by reference. We reserve the right, in our sole discretion, to make changes or modifications to these Legal Terms at any time and for any reason. We will alert you about any changes by updating the "Last updated" date of these Legal Terms, and you waive any right to receive specific notice of each such change. It is your responsibility to periodically review these Legal Terms to stay informed of updates. You will be subject to, and will be deemed to have been made aware of and to have accepted, the changes in any revised Legal Terms by your continued use of the Services after the date such revised Legal Terms are posted.
@@ -239,7 +262,7 @@ const TermsOfServiceModal = () => {
             <div id="governing-law">
               <h3 className="text-white font-semibold mb-2">10. GOVERNING LAW</h3>
               <p className="text-sm leading-relaxed">
-                These Legal Terms shall be governed by and defined following the laws of the United States. StockPredict AI and yourself irrevocably consent that the courts of the United States shall have exclusive jurisdiction to resolve any dispute which may arise in connection with these Legal Terms.
+                These Legal Terms shall be governed by and defined following the laws of the United States. MarketSensor and yourself irrevocably consent that the courts of the United States shall have exclusive jurisdiction to resolve any dispute which may arise in connection with these Legal Terms.
               </p>
             </div>
 
@@ -337,8 +360,8 @@ const TermsOfServiceModal = () => {
                 In order to resolve a complaint regarding the Services or to receive further information regarding use of the Services, please contact us at:
               </p>
               <div className="mt-3 p-3 bg-slate-700 rounded text-sm">
-                <p><strong>StockPredict AI</strong></p>
-                <p>Email: hello@stockpredict.ai</p>
+                <p><strong>MarketSensor</strong></p>
+                <p>Email: hello@marketsensor.ai</p>
                 <p>San Francisco, CA</p>
               </div>
             </div>

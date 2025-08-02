@@ -8,8 +8,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 const DisclaimerModal = () => {
+  const copyToClipboard = () => {
+    const content = document.getElementById('disclaimer-content');
+    if (content) {
+      navigator.clipboard.writeText(content.innerText).then(() => {
+        toast.success("Disclaimer copied to clipboard");
+      });
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -19,16 +31,27 @@ const DisclaimerModal = () => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] bg-slate-800 border-slate-700">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold">Disclaimer</DialogTitle>
+          <DialogTitle className="flex items-center justify-between text-white text-xl font-bold">
+            Disclaimer
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyToClipboard}
+              className="ml-4"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-4 text-slate-300">
+          <div id="disclaimer-content" className="space-y-4 text-slate-300">
             <p className="text-sm text-slate-400">Last updated July 07, 2025</p>
             
             <div>
               <h3 className="text-white font-semibold mb-2">WEBSITE DISCLAIMER</h3>
               <p className="text-sm leading-relaxed">
-                The information provided by StockPredict AI ('we', 'us', or 'our') on this website (the 'Site') is for general informational purposes only. All information on the Site is provided in good faith, however we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the Site. UNDER NO CIRCUMSTANCE SHALL WE HAVE ANY LIABILITY TO YOU FOR ANY LOSS OR DAMAGE OF ANY KIND INCURRED AS A RESULT OF THE USE OF THE SITE OR RELIANCE ON ANY INFORMATION PROVIDED ON THE SITE. YOUR USE OF THE SITE AND YOUR RELIANCE ON ANY INFORMATION ON THE SITE IS SOLELY AT YOUR OWN RISK.
+                The information provided by MarketSensor ('we', 'us', or 'our') on this website (the 'Site') is for general informational purposes only. All information on the Site is provided in good faith, however we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the Site. UNDER NO CIRCUMSTANCE SHALL WE HAVE ANY LIABILITY TO YOU FOR ANY LOSS OR DAMAGE OF ANY KIND INCURRED AS A RESULT OF THE USE OF THE SITE OR RELIANCE ON ANY INFORMATION PROVIDED ON THE SITE. YOUR USE OF THE SITE AND YOUR RELIANCE ON ANY INFORMATION ON THE SITE IS SOLELY AT YOUR OWN RISK.
               </p>
             </div>
 
